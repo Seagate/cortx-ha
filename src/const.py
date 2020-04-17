@@ -1,0 +1,7 @@
+HA_INIT_DIR='/var/cortx/ha/'
+RA_LOG_DIR='/var/log/seagate/cortx/ha'
+RESOURCE_SCHEMA='/var/seagate/cortx/ha/decision_moniter_conf.json'
+FAILED_STATE='failed'
+RESOLVED_STATE='resolved'
+RESTART_STATE='restart'
+OK_STATE='ok'

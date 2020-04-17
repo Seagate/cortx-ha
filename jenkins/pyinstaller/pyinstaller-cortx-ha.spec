@@ -10,8 +10,8 @@ block_cipher = None
 ha_path="<HA_PATH>"
 
 # Analysis
-hw_comp_ra = Analysis([ha_path + '/resource/hw_comp_ra.py'],
-             pathex=[],
+hw_comp_ra = Analysis([ha_path + '/ha/resource/hw_comp_ra.py'],
+             pathex=[ha_path],
              binaries=[],
              datas=[],
              hiddenimports=[],
