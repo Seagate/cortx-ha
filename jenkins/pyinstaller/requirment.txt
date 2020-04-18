@@ -1,0 +1,9 @@
+toml==0.10.0
+PyYAML==5.1.2
+configparser==4.0.2
+argparse==1.4.0
+schematics==2.1.0
+dataclasses==0.7
+python-consul==1.1.0
+requests==2.22.0
+pathlib==1.0.1
