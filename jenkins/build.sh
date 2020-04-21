@@ -67,9 +67,7 @@ cd $TMPDIR
 
 # Copy Backend files
 cp -rs $BASE_DIR/src/* ${TMPHA}
-
-# Install EOS/py-utils
-yum install eos-py-utils -y
+cp -rf $BASE_DIR/src/conf $HA_DIR/
 
 # Check python package
 req_file=$BASE_DIR/jenkins/pyinstaller/requirment.txt

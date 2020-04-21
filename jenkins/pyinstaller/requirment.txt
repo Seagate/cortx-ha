@@ -7,3 +7,4 @@ dataclasses==0.7
 python-consul==1.1.0
 requests==2.22.0
 pathlib==1.0.1
+git+http://gitlab.mero.colo.seagate.com/eos/py-utils.git
