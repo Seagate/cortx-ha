@@ -1,32 +1,34 @@
 #!/bin/bash
 
+set -eu -o pipefail
+
 HA_PATH="<HA_PATH>"
 
 init() {
     echo "Setup Decision maker"
     lnode=$(grep left-node $ARGS | awk '{print $2}')
     rnode=$(grep right-node $ARGS | awk '{print $2}')
-    host1=$(salt "*" pillar.get cluster:eosnode-1 --output=json | jq '.["eosnode-1"].hostname' | tr -d 'null')
-    host2=$(salt "*" pillar.get cluster:eosnode-2 --output=json | jq '.["eosnode-2"].hostname' | tr -d 'null')
-    uuid1=$(salt "*" grains.get node_id --output=json | jq '.["eosnode-1"]' | tr -d 'null')
-    uuid2=$(salt "*" grains.get node_id --output=json | jq '.["eosnode-2"]' | tr -d 'null')
+    host1=$(salt-call pillar.get cluster --output=json | jq '.local."eosnode-1".hostname' | sed  s/\"//g )
+    host2=$(salt-call pillar.get cluster --output=json | jq '.local."eosnode-2".hostname' | sed  s/\"//g )
+    uuid1=$(salt "*" grains.get node_id --output=json | jq '.["eosnode-1"]' | tr -d 'null' | sed  s/\"//g )
+    uuid2=$(salt "*" grains.get node_id --output=json | jq '.["eosnode-2"]' | tr -d 'null' | sed  s/\"//g )
 
     decision_monitor_conf=${HA_DIR}/conf/decision_monitor_conf.json
     cp -rf $decision_monitor_conf /tmp/decision_monitor_conf1.json
     cp -rf $decision_monitor_conf /tmp/decision_monitor_conf2.json
-    sed -i -e "s|<HOST1>|${host1}|g" \
-        -e "s|<HOST2>|${host2}|g" \
-        -e "s|<UUID1>|${uuid1}|g" \
-        -e "s|<UUID2>|${uuid2}|g" \
-        -e "s|<LOCAL>|${host1}|g" /tmp/decision_monitor_conf1.json
-    sed -i -e "s|<HOST1>|${host1}|g" \
-        -e "s|<HOST2>|${host2}|g" \
-        -e "s|<UUID1>|${uuid1}|g" \
-        -e "s|<UUID2>|${uuid2}|g" \
-        -e "s|<LOCAL>|${host2}|g" /tmp/decision_monitor_conf2.json
+    sed -i -e "s|<LOCAL>|${host1}|g" \
+        -e "s|<HOST1>|${host1}|g" \
+        -e "s|<HOST2>|${host2}|g" /tmp/decision_monitor_conf1.json
+    #sed -i -e "s|<UUID1>|${uuid1}|g" /tmp/decision_monitor_conf1.json
+    #sed -i -e 's|<UUID2>|${uuid2}|g' /tmp/decision_monitor_conf1.json
+    sed -i -e "s|<LOCAL>|${host2}|g" \
+        -e "s|<HOST1>|${host1}|g" \
+        -e "s|<HOST2>|${host2}|g" /tmp/decision_monitor_conf2.json
+    #sed -i -e "s|<UUID1>/${uuid1}|g" /tmp/decision_monitor_conf2.json
+    #sed -i -e "s|<UUID2>/${uuid2}|g" /tmp/decision_monitor_conf2.json
 
-    cp -rf /tmp/decision_monitor_conf1.json /var/seagate/cortx/ha/decision_monitor_conf.json
-    scp -r /tmp/decision_monitor_conf2.json $rnode:/var/seagate/cortx/ha/decision_monitor_conf.json
+    cp -rf /tmp/decision_monitor_conf1.json /etc/cortx/ha/decision_monitor_conf.json
+    scp -r /tmp/decision_monitor_conf2.json $rnode:/etc/cortx/ha/decision_monitor_conf.json
     rm -rf /tmp/decision_monitor_conf1.json /tmp/decision_monitor_conf2.json
 
     pcs cluster cib hw_cfg
