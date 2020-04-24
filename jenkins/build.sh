@@ -80,8 +80,8 @@ pip3 install --user -r $req_file  > /dev/null || {
 
 PYINSTALLER_FILE=$TMPDIR/pyinstaller-cortx-ha.spec
 cp $BASE_DIR/jenkins/pyinstaller/pyinstaller-cortx-ha.spec ${PYINSTALLER_FILE}
-sed -i -e "s|<HA_PATH>|${TMPHA}|g" ${PYINSTALLER_FILE}
-pyinstaller --clean -y --distpath ${HA_DIR} --key ${KEY} ${PYINSTALLER_FILE}
+sed -i -e "s|<HA_PATH>|${TMPDIR}/cortx|g" ${PYINSTALLER_FILE}
+python3 -m PyInstaller --clean -y --distpath ${HA_DIR} --key ${KEY} ${PYINSTALLER_FILE}
 
 ################## Add HA_PATH #################################
 

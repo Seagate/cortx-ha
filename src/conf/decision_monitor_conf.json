@@ -1,0 +1,7 @@
+{
+    "nodes": {
+        "c1": "<LNODE>",
+        "c2": "<RNODE>",
+        "local":"<LOCAL>"
+    }
+}
