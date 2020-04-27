@@ -150,12 +150,12 @@ class HardwareResourceAgent(ResourceAgent):
         </longdesc>
         <shortdesc lang="en">Hardware Resource agent</shortdesc>
         <parameters>
-        <parameter name="path" unique="1" required="1">
+        <parameter name="path">
         <longdesc lang="en"> Path to check status </longdesc>
         <shortdesc lang="en"> Check io or management path </shortdesc>
         <content type="string"/>
         </parameter>
-        <parameter name="filename" unique="1" required="1">
+        <parameter name="filename">
         <longdesc lang="en"> Node_id for resource </longdesc>
         <shortdesc lang="en"> Node id for resource </shortdesc>
         <content type="string"/>
