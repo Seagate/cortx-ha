@@ -1,0 +1,25 @@
+#!/bin/bash
+
+post_install() {
+    echo "post_install"
+}
+
+init() {
+    echo "init"
+}
+
+config() {
+    echo "config"
+}
+
+test() {
+    echo "test"
+}
+
+reset() {
+    echo "reset"
+}
+
+ACTION=$1
+# Call action
+$ACTION

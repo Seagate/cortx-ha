@@ -5,6 +5,7 @@ Summary: HA Tools
 License: Seagate Proprietary
 URL: http://gitlab.mero.colo.seagate.com/eos/cortx-ha
 Source0: <RPM_NAME>-%{version}.tar.gz
+#TODO: Dependency on Hare rpm
 %define debug_package %{nil}
 
 %description
@@ -24,7 +25,7 @@ exit 0
 %post
 HA_DIR=<HA_PATH>/ha
 RES_AGENT="/usr/lib/ocf/resource.d/seagate"
-mkdir -p ${RES_AGENT} $HA_DIR/bin
+mkdir -p ${RES_AGENT} $HA_DIR/bin /var/seagate/cortx/ha/
 
 # Move binary file
 ln -sf $HA_DIR/lib/hw_comp_ra ${RES_AGENT}/hw_comp_ra

@@ -1,0 +1,50 @@
+#!/bin/bash
+
+init() {
+    echo "Setup Decision maker"
+    lnode=$(grep left-node $ARGS | awk '{print $2}')
+    rnode=$(grep right-node $ARGS | awk '{print $2}')
+
+    decision_monitor_conf=/opt/seagate/cortx/ha/conf/decision_monitor_conf.json
+    cp -rf $decision_monitor_conf /tmp/decision_monitor_conf1.json
+    cp -rf $decision_monitor_conf /tmp/decision_monitor_conf2.json
+    sed -i -e "s|<LNODE>|${lnode}|g" \
+        -e "s|<RNODE>|${rnode}|g" \
+        -e "s|<LOCAL>|${lnode}|g" /tmp/decision_monitor_conf1.json
+    sed -i -e "s|<LNODE>|${lnode}|g" \
+        -e "s|<RNODE>|${rnode}|g" \
+        -e "s|<LOCAL>|${rnode}|g" /tmp/decision_monitor_conf2.json
+
+    cp -rf /tmp/decision_monitor_conf1.json /var/seagate/cortx/ha/decision_monitor_conf.json
+    scp -r /tmp/decision_monitor_conf2.json $rnode:/var/seagate/cortx/ha/decision_monitor_conf.json
+    rm -rf /tmp/decision_monitor_conf1.json /tmp/decision_monitor_conf2.json
+
+    pcs cluster cib hw_cfg
+    pcs -f hw_cfg resource create io_path_health_c1 ocf:seagate:hw_comp_ra path='io' filename='io_path_health_c1'
+    pcs -f hw_cfg resource create io_path_health_c2 ocf:seagate:hw_comp_ra path='io' filename='io_path_health_c2'
+    pcs -f hw_cfg resource create mgmt_path_health_c1 ocf:seagate:hw_comp_ra path='mgmt' filename='mgmt_path_health_c1'
+
+    pcs -f hw_cfg resource group add c1 io_path_health_c1
+    pcs -f hw_cfg resource group add c2 io_path_health_c2
+    pcs -f hw_cfg resource group add csm-kibana mgmt_path_health_c1
+    pcs cluster cib-push hw_cfg
+    rm -rf hw_cfg
+}
+
+cleanup() {
+    echo "Delete resources"
+    resources=(
+        io_path_health_c1
+        io_path_health_c2
+        mgmt_path_health_c1
+    )
+    for r in ${resources[@]}; do
+        pcs resource delete $r || true
+    done
+}
+
+ACTION=$1
+ARGS=$2
+
+$ACTION $ARGS
+
