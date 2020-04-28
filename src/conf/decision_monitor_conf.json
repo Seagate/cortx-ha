@@ -5,11 +5,11 @@
         "local":"<LOCAL>"
     },
     "network": {
-        "eosnode-1": {
+        "<HOST1>": {
             "data_iface": "<N1_DATA_IFACE>",
             "mgmt_iface": "<N1_MGMT_IFACE>"
         },
-        "eosnode-2": {
+        "<HOST2>": {
             "data_iface": "<N2_DATA_IFACE>",
             "mgmt_iface": "<N2_MGMT_IFACE>"
         }
