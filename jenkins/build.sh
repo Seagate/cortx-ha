@@ -69,6 +69,10 @@ cd $TMPDIR
 cp -rs $BASE_DIR/src/* ${TMPHA}
 cp -rf $BASE_DIR/src/conf $HA_DIR/
 
+#Update HA path in setup
+sed -i -e "s|<HA_PATH>|${HA_PATH}/ha|g" ${HA_DIR}/conf/ha_setup
+sed -i -e "s|<HA_PATH>|${HA_PATH}/ha|g" ${HA_DIR}/conf/build-cortx-ha
+
 # Check python package
 req_file=$BASE_DIR/jenkins/pyinstaller/requirment.txt
 echo "Installing python packages..."
