@@ -1,7 +1,11 @@
 #!/bin/bash
 
+HA_PATH="<HA_PATH>"
+
 post_install() {
     echo "post_install"
+    mkdir -p /etc/logrotate.d/
+    cp -rf ${HA_PATH}/conf/logrotate/cortx_ha_log.conf /etc/logrotate.d/
 }
 
 init() {
