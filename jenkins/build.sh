@@ -99,6 +99,7 @@ rm -rf ${DIST}/rpmbuild
 mkdir -p ${DIST}/rpmbuild/SOURCES
 
 cd ${DIST}
+cp -rp ${TMPHA}/conf ${CORTX}/ha
 # Create tar for ha
 echo "Creating tar for ha build"
 tar -czf ${DIST}/rpmbuild/SOURCES/${RPM_NAME}-${VER}.tar.gz ${CORTX}
