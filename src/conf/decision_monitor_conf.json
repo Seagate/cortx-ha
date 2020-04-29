@@ -3,5 +3,15 @@
         "<UUID1>": "<HOST1>",
         "<UUID2>": "<HOST2>",
         "local":"<LOCAL>"
+    },
+    "network": {
+        "<HOST1>": {
+            "data_iface": "<N1_DATA_IFACE>",
+            "mgmt_iface": "<N1_MGMT_IFACE>"
+        },
+        "<HOST2>": {
+            "data_iface": "<N2_DATA_IFACE>",
+            "mgmt_iface": "<N2_MGMT_IFACE>"
+        }
     }
 }

@@ -14,8 +14,16 @@ init() {
     uuid2=$(salt "*" grains.get node_id --output=json | jq '.["eosnode-2"]' | tr -d 'null' | sed  s/\"//g )
 
     decision_monitor_conf=${HA_DIR}/conf/decision_monitor_conf.json
+    
+    echo "Reading cluster.sls"
+    node1_data_nw=$(salt-call --local pillar.get cluster:eosnode-1 --output=json | jq '.["local"].network["data_nw"].iface')
+    node1_mgmt_nw=$(salt-call --local pillar.get cluster:eosnode-1 --output=json | jq '.["local"].network["mgmt_nw"].iface')
+    node2_data_nw=$(salt-call --local pillar.get cluster:eosnode-2 --output=json | jq '.["local"].network["data_nw"].iface')
+    node2_mgmt_nw=$(salt-call --local pillar.get cluster:eosnode-2 --output=json | jq '.["local"].network["data_nw"].iface')
+    
     cp -rf $decision_monitor_conf /tmp/decision_monitor_conf1.json
     cp -rf $decision_monitor_conf /tmp/decision_monitor_conf2.json
+
     sed -i -e "s|<LOCAL>|${host1}|g" \
         -e "s|<HOST1>|${host1}|g" \
         -e "s|<HOST2>|${host2}|g" /tmp/decision_monitor_conf1.json
@@ -26,6 +34,16 @@ init() {
         -e "s|<HOST2>|${host2}|g" /tmp/decision_monitor_conf2.json
     #sed -i -e "s|<UUID1>/${uuid1}|g" /tmp/decision_monitor_conf2.json
     #sed -i -e "s|<UUID2>/${uuid2}|g" /tmp/decision_monitor_conf2.json
+
+    sed -i -e "s|\"<N1_DATA_IFACE>\"|${node1_data_nw//$'\n'/}|g" \
+        -e "s|\"<N1_MGMT_IFACE>\"|${node1_mgmt_nw//$'\n'/}|g" \
+        -e "s|\"<N2_DATA_IFACE>\"|${node2_data_nw//$'\n'/}|g" \
+        -e "s|\"<N2_MGMT_IFACE>\"|${node2_mgmt_nw//$'\n'/}|g" /tmp/decision_monitor_conf1.json
+
+    sed -i -e "s|\"<N1_DATA_IFACE>\"|${node1_data_nw//$'\n'/}|g" \
+        -e "s|\"<N1_MGMT_IFACE>\"|${node1_mgmt_nw//$'\n'/}|g" \
+        -e "s|\"<N2_DATA_IFACE>\"|${node2_data_nw//$'\n'/}|g" \
+        -e "s|\"<N2_MGMT_IFACE>\"|${node2_mgmt_nw//$'\n'/}|g" /tmp/decision_monitor_conf2.json
 
     cp -rf /tmp/decision_monitor_conf1.json /etc/cortx/ha/decision_monitor_conf.json
     scp -r /tmp/decision_monitor_conf2.json $rnode:/etc/cortx/ha/decision_monitor_conf.json
