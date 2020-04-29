@@ -83,12 +83,23 @@ class ResourceAgent:
             Log.error(e)
             return {}
 
-    def acknowledge_event(self, key):
+    def acknowledge_event_group(self, key):
         """
         Ack event
         """
         try:
             self.decision_monitor.acknowledge_resource_group(key)
+            return OCF_SUCCESS
+        except Exception as e:
+            Log.error("Failed to delete key: %s" %(key))
+            return OCF_ERR_GENERIC
+
+    def acknowledge_event(self, key):
+        """
+        Ack event
+        """
+        try:
+            self.decision_monitor.acknowledge_resource(key)
             return OCF_SUCCESS
         except Exception as e:
             Log.error("Failed to delete key: %s" %(key))
@@ -120,7 +131,7 @@ class HardwareResourceAgent(ResourceAgent):
             return OCF_SUCCESS
         elif status == Action.RESOLVED:
             Log.info("Ack IEM for %s with key %s" %(filename, path+'_'+key))
-            return self.acknowledge_event(path+'_'+key)
+            return self.acknowledge_event_group(path+'_'+key)
         else:
             Log.error("Unimplemented value for status %s" %status)
             return OCF_ERR_UNIMPLEMENTED
@@ -217,7 +228,7 @@ class IEMResourceAgent(ResourceAgent):
         if not os.path.exists(const.HA_INIT_DIR + filename):
             return OCF_NOT_RUNNING
         key = self.nodes['local']
-        status = self.decision_monitor.get_resource_group_status(path+'_'+key)
+        status = self.decision_monitor.get_resource_status(path+'_'+key)
         Log.debug("In monitor group key: %s, status: %s, service: %s" %(path+'_'+key, status, service))
         if status == Action.FAILED:
             return OCF_ERR_GENERIC
@@ -246,11 +257,13 @@ class IEMResourceAgent(ResourceAgent):
         """
         filename, path, service, node = self._get_params()
         Log.debug("In start for %s" %filename)
-        key = self.nodes['local']
         os.makedirs(const.HA_INIT_DIR, exist_ok=True)
         if not os.path.exists(const.HA_INIT_DIR + filename):
             with open(const.HA_INIT_DIR + filename, 'w'): pass
-        if key != node:
+        key = self.nodes['local']
+        if node == '-':
+            pass
+        elif key != node:
             Log.info("Ack IEM for %s with key %s" %(filename, path+'_'+key))
             self.acknowledge_event(path+'_'+key)
         return self.monitor()
@@ -276,11 +289,11 @@ class IEMResourceAgent(ResourceAgent):
         env=r'''
         <?xml version="1.0"?>
         <!DOCTYPE resource-agent SYSTEM "ra-api-1.dtd">
-        <resource-agent name="hw_comp_ra">
+        <resource-agent name="iem_comp_ra">
         <version>1.0</version>
 
         <longdesc lang="en">
-        Hardware Resource agent
+        IEM Resource agent
         </longdesc>
         <shortdesc lang="en">Hardware Resource agent</shortdesc>
         <parameters>
@@ -298,11 +311,11 @@ class IEMResourceAgent(ResourceAgent):
         <longdesc lang="en"> Enter service name to handle </longdesc>
         <shortdesc lang="en"> Handle service for IEM </shortdesc>
         <content type="string" default="-"/>
+        </parameter>
         <parameter name="node">
         <longdesc lang="en"> Node id </longdesc>
         <shortdesc lang="en"> Node id to identify resource on same node </shortdesc>
-        <content type="string"/>
-        </parameter>
+        <content type="string" default="-"/>
         </parameter>
         </parameters>
         <actions>
@@ -323,10 +336,8 @@ class IEMResourceAgent(ResourceAgent):
             ocf_env = self.get_env()
             filename = ocf_env['OCF_RESKEY_filename']
             path = ocf_env['OCF_RESKEY_path']
-            path = ocf_env['OCF_RESKEY_node']
-            if 'OCF_RESKEY_service' not in ocf_env:
-                ocf_env['OCF_RESKEY_service'] = '-'
-            service = ocf_env['OCF_RESKEY_service']
+            node = ocf_env['OCF_RESKEY_node'] if 'OCF_RESKEY_node' in ocf_env else '-'
+            service = ocf_env['OCF_RESKEY_service'] if 'OCF_RESKEY_service' in ocf_env else '-'
             return filename, path, service, node
         except Exception as e:
             Log.error(e)
