@@ -53,6 +53,8 @@ exit 0
 # TODO - Verify permissions, user and groups for directory.
 %defattr(-, root, root, -)
 <HA_PATH>/*
+<HA_PATH>/ha/conf
+
 
 %changelog
 * Mon Jul 29 2019 Ajay Paratmandali <ajay.paratmandali@seagate.com> - 1.0.0
