@@ -26,6 +26,7 @@ exit 0
 HA_DIR=<HA_PATH>/ha
 RES_AGENT="/usr/lib/ocf/resource.d/seagate"
 mkdir -p ${RES_AGENT} $HA_DIR/bin /etc/cortx/ha/
+cp -rf /opt/seagate/cortx/ha/conf/rules_engine_schema.json /etc/cortx/ha/
 
 # Move binary file
 ln -sf $HA_DIR/lib/hw_comp_ra ${RES_AGENT}/hw_comp_ra
@@ -53,7 +54,6 @@ exit 0
 # TODO - Verify permissions, user and groups for directory.
 %defattr(-, root, root, -)
 <HA_PATH>/*
-<HA_PATH>/ha/conf
 
 
 %changelog
