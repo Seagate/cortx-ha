@@ -3,34 +3,34 @@
                                 {
                                     "alert_type": "fault",
                                     "severity": "critical",
-                                    "action": "Failed"
+                                    "action": "failed"
                                 },
                                 {
                                     "alert_type": "fault_resolved",
                                     "severity": "informational",
-                                    "action": "Recovered"
+                                    "action": "resolved"
                                 },
                                 {
                                     "alert_type": "missing",
                                     "severity": "critical",
-                                    "action": "Failed"
+                                    "action": "failed"
                                 },
                                 {
                                     "alert_type": "insertion",
                                     "severity": "informational",
-                                    "action": "Recovered"
+                                    "action": "resolved"
                                 }
                            ],
     "node:interface:nw": [
                                 {
                                     "alert_type": "fault",
                                     "severity": "warning",
-                                    "action": "Failed"
+                                    "action": "failed"
                                 },
                                 {
                                     "alert_type": "fault_resolved",
                                     "severity": "informational",
-                                    "action": "Recovered"
+                                    "action": "resolved"
                                 }
                          ],
     "iem":              [
@@ -46,7 +46,7 @@
                                     "severity": "FATAL",
                                     "component_id": "mero",
                                     "module_id": "I/O",
-                                    "action": "Failed"
+                                    "action": "failed"
                                 }
                          ]
 }
