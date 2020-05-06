@@ -229,6 +229,11 @@ class IEMResourceAgent(ResourceAgent):
             return OCF_NOT_RUNNING
         key = self.nodes['local']
         status = self.decision_monitor.get_resource_status(path+'_'+key)
+        if node != '-' and node != key:
+            status_other_node = self.decision_monitor.get_resource_status(path+'_'+node)
+            if status_other_node == Action.RESOLVED:
+                Log.info("Ack IEM for %s with key %s" %(filename, path+'_'+node))
+                self.acknowledge_event(path+'_'+node)
         Log.debug("In monitor group key: %s, status: %s, service: %s" %(path+'_'+key, status, service))
         if status == Action.FAILED:
             return OCF_ERR_GENERIC
@@ -260,12 +265,6 @@ class IEMResourceAgent(ResourceAgent):
         os.makedirs(const.HA_INIT_DIR, exist_ok=True)
         if not os.path.exists(const.HA_INIT_DIR + filename):
             with open(const.HA_INIT_DIR + filename, 'w'): pass
-        key = self.nodes['local']
-        if node == '-':
-            pass
-        elif key != node:
-            Log.info("Ack IEM for %s with key %s" %(filename, path+'_'+key))
-            self.acknowledge_event(path+'_'+key)
         return self.monitor()
 
     def stop(self):
