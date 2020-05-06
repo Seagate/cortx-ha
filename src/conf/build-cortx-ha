@@ -50,9 +50,9 @@ init() {
     rm -rf /tmp/decision_monitor_conf1.json /tmp/decision_monitor_conf2.json
 
     pcs cluster cib hw_cfg
-    pcs -f hw_cfg resource create io_path_health_c1 ocf:seagate:hw_comp_ra path='io' filename='io_path_health_c1' meta failure-timeout=30s op monitor timeout=20s interval=20s op start timeout=20s op stop timeout=20s
-    pcs -f hw_cfg resource create io_path_health_c2 ocf:seagate:hw_comp_ra path='io' filename='io_path_health_c2' meta failure-timeout=30s op monitor timeout=20s interval=20s op start timeout=20s op stop timeout=20s
-    pcs -f hw_cfg resource create mgmt_path_health_c1 ocf:seagate:hw_comp_ra path='mgmt' filename='mgmt_path_health_c1' meta failure-timeout=30s op monitor timeout=20s interval=20s op start timeout=20s op stop timeout=20s
+    pcs -f hw_cfg resource create io_path_health_c1 ocf:seagate:hw_comp_ra path='io' filename='io_path_health_c1' op monitor timeout=30s interval=30s
+    pcs -f hw_cfg resource create io_path_health_c2 ocf:seagate:hw_comp_ra path='io' filename='io_path_health_c2' op monitor timeout=30s interval=30s
+    pcs -f hw_cfg resource create mgmt_path_health_c1 ocf:seagate:hw_comp_ra path='mgmt' filename='mgmt_path_health_c1' op monitor timeout=30s interval=30s
 
     pcs -f hw_cfg resource group add c1 io_path_health_c1
     pcs -f hw_cfg resource group add c2 io_path_health_c2
@@ -61,17 +61,17 @@ init() {
     pcs -f hw_cfg constraint order set consul-c1 io_path_health_c1
     pcs -f hw_cfg constraint order set consul-c2 io_path_health_c2
     pcs -f hw_cfg constraint order set consul-c1 mgmt_path_health_c1
-    pcs -f hw_cfg cluster cib-push hw_cfg
+    pcs cluster cib-push hw_cfg
 
     pcs cluster cib iem_cfg
-    pcs -f iem_cfg resource create node_iem_mero_c1 ocf:seagate:iem_comp_ra path='node_iem_mero' filename='node_iem_mero_c1' node=$lnode meta failure-timeout=30s op monitor timeout=20s interval=20s op start timeout=20s op stop timeout=20s
-    pcs -f iem_cfg resource create node_iem_mero_c2 ocf:seagate:iem_comp_ra path='node_iem_mero' filename='node_iem_mero_c2' node=$rnode meta failure-timeout=30s op monitor timeout=20s interval=20s op start timeout=20s op stop timeout=20s
+    pcs -f iem_cfg resource create node_iem_mero_c1 ocf:seagate:iem_comp_ra path='node_iem_mero' filename='node_iem_mero_c1' node=$lnode op monitor timeout=30s interval=30s
+    pcs -f iem_cfg resource create node_iem_mero_c2 ocf:seagate:iem_comp_ra path='node_iem_mero' filename='node_iem_mero_c2' node=$rnode op monitor timeout=30s interval=30s
     pcs -f iem_cfg resource group add c1 node_iem_mero_c1
     pcs -f iem_cfg resource group add c2 node_iem_mero_c2
     pcs -f iem_cfg constraint order set consul-c1 node_iem_mero_c1
     pcs -f iem_cfg constraint order set consul-c2 node_iem_mero_c2
 
-    pcs -f iem_cfg resource create node_iem_s3 ocf:seagate:iem_comp_ra path='node_iem_s3' filename='node_iem_s3' service="slapd" meta failure-timeout=20s op monitor timeout=20s interval=20s op start timeout=30s op stop timeout=30s
+    pcs -f iem_cfg resource create node_iem_s3 ocf:seagate:iem_comp_ra path='node_iem_s3' filename='node_iem_s3' service="slapd" op monitor timeout=30s interval=30s
     pcs -f iem_cfg resource clone node_iem_s3 clone-max=2 clone-node-max=1
     pcs -f iem_cfg constraint location node_iem_s3-clone prefers ${lnode}=INFINITY
     pcs -f iem_cfg constraint location node_iem_s3-clone prefers ${rnode}=INFINITY
