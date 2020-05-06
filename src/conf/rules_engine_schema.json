@@ -39,7 +39,7 @@
                                     "severity": "FATAL",
                                     "component_id": "s3",
                                     "module_id": "Connection",
-                                    "action": "Restart"
+                                    "action": "restart"
                                 },
                                 {
                                     "alert_type": "fault",
@@ -47,6 +47,18 @@
                                     "component_id": "mero",
                                     "module_id": "I/O",
                                     "action": "failed"
+                                }
+                         ],
+    "node:interface:sas": [
+                                {
+                                    "alert_type": "fault",
+                                    "severity": "critical",
+                                    "action": "failed"
+                                },
+                                {
+                                    "alert_type": "fault_resolved",
+                                    "severity": "informational",
+                                    "action": "resolved"
                                 }
                          ]
 }
