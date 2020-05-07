@@ -43,7 +43,8 @@ class ResourceAgent:
     Base class resource agent to monitor services
     """
     def __init__(self, decision_monitor, resource_schema):
-        pass
+        self.decision_monitor = decision_monitor
+        self.nodes = resource_schema['nodes']
 
     def monitor(self):
         """
@@ -83,7 +84,7 @@ class ResourceAgent:
             Log.error(e)
             return {}
 
-    def acknowledge_event_group(self, key):
+    def _acknowledge_event_group(self, key):
         """
         Ack event
         """
@@ -94,7 +95,7 @@ class ResourceAgent:
             Log.error("Failed to delete key: %s" %(key))
             return OCF_ERR_GENERIC
 
-    def acknowledge_event(self, key):
+    def _acknowledge_event(self, key):
         """
         Ack event
         """
@@ -105,14 +106,55 @@ class ResourceAgent:
             Log.error("Failed to delete key: %s" %(key))
             return OCF_ERR_GENERIC
 
+    def _get_status(self, callback_status, path):
+        """
+        Handle failover status
+        """
+        self_node = self.nodes['local']
+        nodes_list = list(set(self.nodes.values()))
+        nodes_list.remove(self_node)
+        other_node = nodes_list[0]
+        self_node_status = callback_status(path+'_'+self_node)
+        other_node_status = callback_status(path+'_'+other_node)
+        Log.debug("Get status for %s " %path)
+        return self_node, other_node, self_node_status, other_node_status
+
+    def _monitor_action(self, callback_ack, **args):
+        """
+        Return action on status
+        """
+        Log.debug(str(args))
+        if args['self_node_status'] == Action.FAILED and args['other_node_status'] == Action.FAILED:
+            return OCF_SUCCESS
+        elif args['self_node_status'] == Action.FAILED:
+            return OCF_ERR_GENERIC
+        elif args['self_node_status'] == Action.OK:
+            return OCF_SUCCESS
+        elif args['self_node_status'] == Action.RESOLVED:
+            Log.info("Ack IEM for %s with key %s" %(args['filename'], args['path']+'_'+args['self_node']))
+            return callback_ack(args['path']+'_'+args['self_node'])
+        elif args['self_node_status'] == Action.RESTART:
+            if 'service' in args and args['service'] != "-":
+                cmd = "systemctl restart " + args['service']
+                proc = SimpleProcess(cmd)
+                output, err, rc = proc.run(universal_newlines=True)
+                callback_ack(args['path']+'_'+args['self_node'])
+                Log.info("Ack IEM for %s with key %s" %(args['filename'], args['path']+'_'+args['self_node']))
+                return OCF_ERR_GENERIC if rc != 0 else OCF_SUCCESS
+            else:
+                # Get service name from any lib and restart service
+                return OCF_SUCCESS
+        else:
+            Log.error("Unimplemented value for status %s" %args['self_node_status'])
+            return OCF_ERR_UNIMPLEMENTED
+
 class HardwareResourceAgent(ResourceAgent):
     """
     Resource agent to monitor hardware service
     """
     def __init__(self, decision_monitor, resource_schema):
         super(HardwareResourceAgent, self).__init__(decision_monitor, resource_schema)
-        self.decision_monitor = decision_monitor
-        self.nodes = resource_schema['nodes']
+        pass
 
     def monitor(self):
         """
@@ -122,19 +164,13 @@ class HardwareResourceAgent(ResourceAgent):
         Log.debug("In monitor for %s" %filename)
         if not os.path.exists(const.HA_INIT_DIR + filename):
             return OCF_NOT_RUNNING
-        key = self.nodes['local']
-        Log.debug("In monitor group key is {}".format(path+'_'+key))
-        status = self.decision_monitor.get_resource_group_status(path+'_'+key)
-        if status == Action.FAILED:
-            return OCF_ERR_GENERIC
-        elif status == Action.OK:
-            return OCF_SUCCESS
-        elif status == Action.RESOLVED:
-            Log.info("Ack IEM for %s with key %s" %(filename, path+'_'+key))
-            return self.acknowledge_event_group(path+'_'+key)
-        else:
-            Log.error("Unimplemented value for status %s" %status)
-            return OCF_ERR_UNIMPLEMENTED
+        self_node, other_node, self_node_status, other_node_status = self._get_status(
+            self.decision_monitor.get_resource_group_status, path)
+        Log.debug("In monitor group key is {}".format(path+'_'+self_node))
+        return self._monitor_action(self._acknowledge_event_group,
+            self_node=self_node, other_node=other_node,
+            self_node_status=self_node_status, other_node_status=other_node_status,
+            filename=filename, path=path)
 
     def start(self):
         """
@@ -216,8 +252,7 @@ class IEMResourceAgent(ResourceAgent):
     """
     def __init__(self, decision_monitor, resource_schema):
         super(IEMResourceAgent, self).__init__(decision_monitor, resource_schema)
-        self.decision_monitor = decision_monitor
-        self.nodes = resource_schema['nodes']
+        pass
 
     def monitor(self):
         """
@@ -227,34 +262,17 @@ class IEMResourceAgent(ResourceAgent):
         Log.debug("In monitor for %s" %filename)
         if not os.path.exists(const.HA_INIT_DIR + filename):
             return OCF_NOT_RUNNING
-        key = self.nodes['local']
-        status = self.decision_monitor.get_resource_status(path+'_'+key)
-        if node != '-' and node != key:
-            status_other_node = self.decision_monitor.get_resource_status(path+'_'+node)
-            if status_other_node == Action.RESOLVED:
-                Log.info("Ack IEM for %s with key %s" %(filename, path+'_'+node))
-                self.acknowledge_event(path+'_'+node)
-        Log.debug("In monitor group key: %s, status: %s, service: %s" %(path+'_'+key, status, service))
-        if status == Action.FAILED:
-            return OCF_ERR_GENERIC
-        elif status == Action.OK:
-            return OCF_SUCCESS
-        elif status == Action.RESOLVED:
-            return self.acknowledge_event(path+'_'+key)
-        elif status == Action.RESTART:
-            if service != "-":
-                cmd = "systemctl restart " + service
-                proc = SimpleProcess(cmd)
-                output, err, rc = proc.run(universal_newlines=True)
-                self.acknowledge_event(path+'_'+key)
-                Log.info("Ack IEM for %s with key %s" %(filename, path+'_'+key))
-                return OCF_ERR_GENERIC if rc != 0 else OCF_SUCCESS
-            else:
-                # Get service name from any lib and restart service
-                return OCF_SUCCESS
-        else:
-            Log.error("Unimplemented value for status %s" %status)
-            return OCF_ERR_UNIMPLEMENTED
+        self_node, other_node, self_node_status, other_node_status = self._get_status(
+            self.decision_monitor.get_resource_status, path)
+        Log.debug("In monitor group key: %s, status: %s, service: %s"
+            %(path+'_'+self_node, self_node_status, service))
+        if node != '-' and node != self_node and other_node_status == Action.RESOLVED:
+            Log.info("Ack IEM for %s with key %s" %(filename, path+'_'+node))
+            self._acknowledge_event(path+'_'+node)
+        return self._monitor_action(self._acknowledge_event,
+            self_node=self_node, other_node=other_node,
+            self_node_status=self_node_status, other_node_status=other_node_status,
+            filename=filename, path=path, service=service)
 
     def start(self):
         """
