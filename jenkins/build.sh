@@ -73,25 +73,42 @@ cp -rf $BASE_DIR/src/conf $HA_DIR/
 sed -i -e "s|<HA_PATH>|${HA_PATH}/ha|g" ${HA_DIR}/conf/ha_setup
 sed -i -e "s|<HA_PATH>|${HA_PATH}/ha|g" ${HA_DIR}/conf/build-cortx-ha
 
+# Setup Python virtual environment
+VENV="${TMPDIR}/${CORTX}/venv"
+if [ -d "${VENV}/bin" ]; then
+    echo "Using existing Python virtual environment..."
+else
+    echo "Setting up Python 3.6 virtual environment..."
+    python3.6 -m venv "${VENV}"
+fi
+source "${VENV}/bin/activate"
+python --version
+pip install --upgrade pip
+pip install pyinstaller==3.5
+
 # Check python package
 req_file=$BASE_DIR/jenkins/pyinstaller/requirment.txt
 echo "Installing python packages..."
-pip3 install --user -r $req_file  > /dev/null || {
+pip install -r $req_file > /dev/null || {
     echo "Unable to install package from $req_file"; exit 1;
 };
+
+pip uninstall -y numpy
+pip install numpy --no-binary :all:
 
 PYINSTALLER_FILE=$TMPDIR/pyinstaller-cortx-ha.spec
 cp $BASE_DIR/jenkins/pyinstaller/pyinstaller-cortx-ha.spec ${PYINSTALLER_FILE}
 sed -i -e "s|<HA_PATH>|${TMPDIR}/cortx|g" ${PYINSTALLER_FILE}
-python3 -m PyInstaller --clean -y --distpath ${HA_DIR} --key ${KEY} ${PYINSTALLER_FILE}
+pyinstaller --clean -y --distpath ${HA_DIR} --key ${KEY} ${PYINSTALLER_FILE}
 
+deactivate
 ################## Add HA_PATH #################################
 
 # Genrate spec file for HA
 sed -i -e "s/<RPM_NAME>/${RPM_NAME}/g" \
     -e "s|<HA_PATH>|${HA_PATH}|g" $TMPDIR/cortx-ha.spec
 
-################### TAR & RPM BUILD ##############################
+################## TAR & RPM BUILD ##############################
 
 # Remove existing directory tree and create fresh one.
 cd $BASE_DIR

@@ -17,7 +17,7 @@ init() {
     node1_data_nw=$(salt-call --local pillar.get cluster:eosnode-1 --output=json | jq '.["local"].network["data_nw"].iface')
     node1_mgmt_nw=$(salt-call --local pillar.get cluster:eosnode-1 --output=json | jq '.["local"].network["mgmt_nw"].iface')
     node2_data_nw=$(salt-call --local pillar.get cluster:eosnode-2 --output=json | jq '.["local"].network["data_nw"].iface')
-    node2_mgmt_nw=$(salt-call --local pillar.get cluster:eosnode-2 --output=json | jq '.["local"].network["data_nw"].iface')
+    node2_mgmt_nw=$(salt-call --local pillar.get cluster:eosnode-2 --output=json | jq '.["local"].network["mgmt_nw"].iface')
 
     decision_monitor_conf=${HA_PATH}/conf/decision_monitor_conf.json
     cp -rf $decision_monitor_conf /tmp/decision_monitor_conf1.json
