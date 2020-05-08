@@ -51,6 +51,30 @@
       "component": "nw",
       "component_id": "mgmt"
     },
+    "node_nw_cable_data_<HOST1>": {
+      "entity": "node",
+      "entity_id": "<HOST1>",
+      "component": "cable",
+      "component_id": "data"
+    },
+    "node_nw_cable_data_<HOST2>": {
+      "entity": "node",
+      "entity_id": "<HOST2>",
+      "component": "cable",
+      "component_id": "data"
+    },
+    "node_nw_cable_mgmt_<HOST1>": {
+      "entity": "node",
+      "entity_id": "<HOST1>",
+      "component": "cable",
+      "component_id": "mgmt"
+    },
+    "node_nw_cable_mgmt_<HOST2>": {
+      "entity": "node",
+      "entity_id": "<HOST2>",
+      "component": "cable",
+      "component_id": "mgmt"
+    },
     "node_iem_s3_<HOST1>": {
       "entity": "node",
       "entity_id": "<HOST1>",
@@ -92,18 +116,22 @@
     "io_<HOST1>": [
       "encl_ctrl_<HOST1>",
       "node_nw_data_<HOST1>",
+      "node_nw_cable_data_<HOST1>",
       "node_sas_<HOST1>"
     ],
     "io_<HOST2>": [
       "encl_ctrl_<HOST2>",
       "node_nw_data_<HOST2>",
+      "node_nw_cable_data_<HOST2>",
       "node_sas_<HOST2>"
     ],
     "mgmt_<HOST1>": [
-      "node_nw_mgmt_<HOST1>"
+      "node_nw_mgmt_<HOST1>",
+      "node_nw_cable_mgmt_<HOST1>"
     ],
     "mgmt_<HOST2>": [
-      "node_nw_mgmt_<HOST2>"
+      "node_nw_mgmt_<HOST2>",
+      "node_nw_cable_mgmt_<HOST2>"
     ]
   }
 }
