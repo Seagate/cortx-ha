@@ -29,43 +29,35 @@ from eos.utils.ha.dm.decision_monitor import DecisionMonitor
 from eos.utils.ha.dm.actions import Action
 from ha import const
 
-OCF_SUCCESS=0
-OCF_ERR_GENERIC=1
-OCF_ERR_ARGS=2
-OCF_ERR_UNIMPLEMENTED=3
-OCF_ERR_PERM=4
-OCF_ERR_INSTALLED=5
-OCF_ERR_CONFIGURED=6
-OCF_NOT_RUNNING=7
-
 class ResourceAgent:
     """
     Base class resource agent to monitor services
     """
     def __init__(self, decision_monitor, resource_schema):
-        pass
+        self.decision_monitor = decision_monitor
+        self.nodes = resource_schema[const.NODE_LIST]
 
     def monitor(self):
         """
         Monitor service
         """
-        return OCF_ERR_UNIMPLEMENTED
+        return const.OCF_ERR_UNIMPLEMENTED
 
     def start(self):
         """
         Start service
         """
-        return OCF_ERR_UNIMPLEMENTED
+        return const.OCF_ERR_UNIMPLEMENTED
 
     def stop(self):
         """
         Stop service
         """
-        return OCF_ERR_UNIMPLEMENTED
+        return const.OCF_ERR_UNIMPLEMENTED
 
     def metadata(self):
         pass
-    
+
     def get_env(self):
         """
         Get env variable and parameter provided by pacemaker
@@ -83,27 +75,69 @@ class ResourceAgent:
             Log.error(e)
             return {}
 
-    def acknowledge_event_group(self, key):
+    def _acknowledge_event_group(self, key):
         """
         Ack event
         """
         try:
             self.decision_monitor.acknowledge_resource_group(key)
-            return OCF_SUCCESS
+            return const.OCF_SUCCESS
         except Exception as e:
             Log.error("Failed to delete key: %s" %(key))
-            return OCF_ERR_GENERIC
+            return const.OCF_ERR_GENERIC
 
-    def acknowledge_event(self, key):
+    def _acknowledge_event(self, key):
         """
         Ack event
         """
         try:
             self.decision_monitor.acknowledge_resource(key)
-            return OCF_SUCCESS
+            return const.OCF_SUCCESS
         except Exception as e:
             Log.error("Failed to delete key: %s" %(key))
-            return OCF_ERR_GENERIC
+            return const.OCF_ERR_GENERIC
+
+    def _get_status(self, callback_status, path):
+        """
+        Handle failover status
+        """
+        self_node = self.nodes[const.LOCALHOST_KEY]
+        nodes_list = list(set(self.nodes.values()))
+        nodes_list.remove(self_node)
+        other_node = nodes_list[0]
+        self_node_status = callback_status(path+'_'+self_node)
+        other_node_status = callback_status(path+'_'+other_node)
+        Log.debug("Get status for %s " %path)
+        return self_node, other_node, self_node_status, other_node_status
+
+    def _monitor_action(self, callback_ack, **args):
+        """
+        Return action on status
+        """
+        Log.debug(str(args))
+        if args[const.CURRENT_NODE_STATUS] == Action.FAILED and args[const.OTHER_NODE_STATUS] == Action.FAILED:
+            return const.OCF_SUCCESS
+        elif args[const.CURRENT_NODE_STATUS] == Action.FAILED:
+            return const.OCF_ERR_GENERIC
+        elif args[const.CURRENT_NODE_STATUS] == Action.OK:
+            return const.OCF_SUCCESS
+        elif args[const.CURRENT_NODE_STATUS] == Action.RESOLVED:
+            Log.info("Ack IEM for %s with key %s" %(args[const.FILENAME_KEY], args[const.PATH_KEY]+'_'+args[const.CURRENT_NODE]))
+            return callback_ack(args[const.PATH_KEY]+'_'+args[const.CURRENT_NODE])
+        elif args[const.CURRENT_NODE_STATUS] == Action.RESTART:
+            if const.SERVICE_KEY in args and args[const.SERVICE_KEY] != "-":
+                cmd = "systemctl restart " + args[const.SERVICE_KEY]
+                proc = SimpleProcess(cmd)
+                output, err, rc = proc.run(universal_newlines=True)
+                callback_ack(args[const.PATH_KEY]+'_'+args[const.CURRENT_NODE])
+                Log.info("Ack IEM for %s with key %s" %(args[const.FILENAME_KEY], args[const.PATH_KEY]+'_'+args[const.CURRENT_NODE]))
+                return const.OCF_ERR_GENERIC if rc != 0 else const.OCF_SUCCESS
+            else:
+                # Get service name from any lib and restart service
+                return const.OCF_SUCCESS
+        else:
+            Log.error("Unimplemented value for status %s" %args[const.CURRENT_NODE_STATUS])
+            return const.OCF_ERR_UNIMPLEMENTED
 
 class HardwareResourceAgent(ResourceAgent):
     """
@@ -111,8 +145,7 @@ class HardwareResourceAgent(ResourceAgent):
     """
     def __init__(self, decision_monitor, resource_schema):
         super(HardwareResourceAgent, self).__init__(decision_monitor, resource_schema)
-        self.decision_monitor = decision_monitor
-        self.nodes = resource_schema['nodes']
+        pass
 
     def monitor(self):
         """
@@ -121,20 +154,14 @@ class HardwareResourceAgent(ResourceAgent):
         filename, path = self._get_params()
         Log.debug("In monitor for %s" %filename)
         if not os.path.exists(const.HA_INIT_DIR + filename):
-            return OCF_NOT_RUNNING
-        key = self.nodes['local']
-        Log.debug("In monitor group key is {}".format(path+'_'+key))
-        status = self.decision_monitor.get_resource_group_status(path+'_'+key)
-        if status == Action.FAILED:
-            return OCF_ERR_GENERIC
-        elif status == Action.OK:
-            return OCF_SUCCESS
-        elif status == Action.RESOLVED:
-            Log.info("Ack IEM for %s with key %s" %(filename, path+'_'+key))
-            return self.acknowledge_event_group(path+'_'+key)
-        else:
-            Log.error("Unimplemented value for status %s" %status)
-            return OCF_ERR_UNIMPLEMENTED
+            return const.OCF_NOT_RUNNING
+        self_node, other_node, self_node_status, other_node_status = self._get_status(
+            self.decision_monitor.get_resource_group_status, path)
+        Log.debug("In monitor group key is {}".format(path+'_'+self_node))
+        return self._monitor_action(self._acknowledge_event_group,
+            self_node=self_node, other_node=other_node,
+            self_node_status=self_node_status, other_node_status=other_node_status,
+            filename=filename, path=path)
 
     def start(self):
         """
@@ -156,10 +183,10 @@ class HardwareResourceAgent(ResourceAgent):
         if os.path.exists(const.HA_INIT_DIR + filename):
             os.remove(const.HA_INIT_DIR + filename)
         while True:
-            if self.monitor() != OCF_SUCCESS:
+            if self.monitor() != const.OCF_SUCCESS:
                 time.sleep(2)
                 break
-        return OCF_SUCCESS
+        return const.OCF_SUCCESS
 
     def metadata(self):
         """
@@ -203,12 +230,12 @@ class HardwareResourceAgent(ResourceAgent):
         """
         try:
             ocf_env = self.get_env()
-            filename = ocf_env['OCF_RESKEY_filename']
-            path = ocf_env['OCF_RESKEY_path']
+            filename = ocf_env[const.OCF_FILENAME]
+            path = ocf_env[const.OCF_PATH]
             return filename, path
         except Exception as e:
             Log.error(e)
-            return OCF_ERR_CONFIGURED
+            return const.OCF_ERR_CONFIGURED
 
 class IEMResourceAgent(ResourceAgent):
     """
@@ -216,8 +243,7 @@ class IEMResourceAgent(ResourceAgent):
     """
     def __init__(self, decision_monitor, resource_schema):
         super(IEMResourceAgent, self).__init__(decision_monitor, resource_schema)
-        self.decision_monitor = decision_monitor
-        self.nodes = resource_schema['nodes']
+        pass
 
     def monitor(self):
         """
@@ -226,35 +252,18 @@ class IEMResourceAgent(ResourceAgent):
         filename, path, service, node = self._get_params()
         Log.debug("In monitor for %s" %filename)
         if not os.path.exists(const.HA_INIT_DIR + filename):
-            return OCF_NOT_RUNNING
-        key = self.nodes['local']
-        status = self.decision_monitor.get_resource_status(path+'_'+key)
-        if node != '-' and node != key:
-            status_other_node = self.decision_monitor.get_resource_status(path+'_'+node)
-            if status_other_node == Action.RESOLVED:
-                Log.info("Ack IEM for %s with key %s" %(filename, path+'_'+node))
-                self.acknowledge_event(path+'_'+node)
-        Log.debug("In monitor group key: %s, status: %s, service: %s" %(path+'_'+key, status, service))
-        if status == Action.FAILED:
-            return OCF_ERR_GENERIC
-        elif status == Action.OK:
-            return OCF_SUCCESS
-        elif status == Action.RESOLVED:
-            return self.acknowledge_event(path+'_'+key)
-        elif status == Action.RESTART:
-            if service != "-":
-                cmd = "systemctl restart " + service
-                proc = SimpleProcess(cmd)
-                output, err, rc = proc.run(universal_newlines=True)
-                self.acknowledge_event(path+'_'+key)
-                Log.info("Ack IEM for %s with key %s" %(filename, path+'_'+key))
-                return OCF_ERR_GENERIC if rc != 0 else OCF_SUCCESS
-            else:
-                # Get service name from any lib and restart service
-                return OCF_SUCCESS
-        else:
-            Log.error("Unimplemented value for status %s" %status)
-            return OCF_ERR_UNIMPLEMENTED
+            return const.OCF_NOT_RUNNING
+        self_node, other_node, self_node_status, other_node_status = self._get_status(
+            self.decision_monitor.get_resource_status, path)
+        Log.debug("In monitor group key: %s, status: %s, service: %s"
+            %(path+'_'+self_node, self_node_status, service))
+        if node != '-' and node != self_node and other_node_status == Action.RESOLVED:
+            Log.info("Ack IEM for %s with key %s" %(filename, path+'_'+node))
+            self._acknowledge_event(path+'_'+node)
+        return self._monitor_action(self._acknowledge_event,
+            self_node=self_node, other_node=other_node,
+            self_node_status=self_node_status, other_node_status=other_node_status,
+            filename=filename, path=path, service=service)
 
     def start(self):
         """
@@ -276,10 +285,10 @@ class IEMResourceAgent(ResourceAgent):
         if os.path.exists(const.HA_INIT_DIR + filename):
             os.remove(const.HA_INIT_DIR + filename)
         while True:
-            if self.monitor() != OCF_SUCCESS:
+            if self.monitor() != const.OCF_SUCCESS:
                 time.sleep(2)
                 break
-        return OCF_SUCCESS
+        return const.OCF_SUCCESS
 
     def metadata(self):
         """
@@ -333,14 +342,14 @@ class IEMResourceAgent(ResourceAgent):
         """
         try:
             ocf_env = self.get_env()
-            filename = ocf_env['OCF_RESKEY_filename']
-            path = ocf_env['OCF_RESKEY_path']
-            node = ocf_env['OCF_RESKEY_node'] if 'OCF_RESKEY_node' in ocf_env else '-'
-            service = ocf_env['OCF_RESKEY_service'] if 'OCF_RESKEY_service' in ocf_env else '-'
+            filename = ocf_env[const.OCF_FILENAME]
+            path = ocf_env[const.OCF_PATH]
+            node = ocf_env[const.OCF_NODE] if const.OCF_NODE in ocf_env else '-'
+            service = ocf_env[const.OCF_SERVICE] if const.OCF_SERVICE in ocf_env else '-'
             return filename, path, service, node
         except Exception as e:
             Log.error(e)
-            return OCF_ERR_CONFIGURED
+            return const.OCF_ERR_CONFIGURED
 
 def main(resource, action=''):
     try:
@@ -363,4 +372,4 @@ def main(resource, action=''):
             exit()
     except Exception as e:
         Log.error(e)
-        return OCF_ERR_GENERIC
+        return const.OCF_ERR_GENERIC
