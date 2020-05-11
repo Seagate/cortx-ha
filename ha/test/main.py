@@ -2,8 +2,8 @@
 
 """
  ****************************************************************************
- Filename:          iem_comp_ra.py
- Description:       iem_comp_ra resource agent
+ Filename:          run_test.py
+ Description:       resource_agent resource agent
 
  Creation Date:     04/15/2020
  Author:            Ajay Paratmandali
@@ -18,11 +18,11 @@
 """
 
 import os
-import sys
 import pathlib
+import sys
+import pytest
 
 if __name__ == '__main__':
     sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..'))
-    from ha.resource import resource_agent
-    action = sys.argv[1] if len(sys.argv) > 1 else ""
-    sys.exit(resource_agent.main(resource_agent.IEMResourceAgent, action))
+    path = sys.argv[1] if len(sys.argv) == 2 else os.path.join(os.path.dirname(pathlib.Path(__file__)), '.')
+    pytest.main(['-v', path])

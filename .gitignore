@@ -4,6 +4,7 @@ node_modules
 dist
 web-dist
 __pycache__
+.pytest_cache
 
 # local env files
 .env.local

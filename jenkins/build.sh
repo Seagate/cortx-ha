@@ -89,6 +89,7 @@ sed -i -e "s/<RPM_NAME>/${RPM_NAME}/g" \
 
 # Copy Backend files
 cp -rs $HA_SRC_PATH/* ${TMPHA}
+
 PYINSTALLER_FILE=$TMPDIR/pyinstaller-cortx-ha.spec
 cp $BASE_DIR/jenkins/pyinstaller/pyinstaller-cortx-ha.spec ${PYINSTALLER_FILE}
 sed -i -e "s|<HA_PATH>|${TMPDIR}/cortx|g" ${PYINSTALLER_FILE}
