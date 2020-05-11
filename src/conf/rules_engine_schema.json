@@ -33,6 +33,18 @@
                                     "action": "resolved"
                                 }
                          ],
+    "node:interface:nw:cable": [
+                                {
+                                    "alert_type": "fault",
+                                    "severity": "warning",
+                                    "action": "failed"
+                                },
+                                {
+                                    "alert_type": "fault_resolved",
+                                    "severity": "informational",
+                                    "action": "resolved"
+                                }
+                         ],
     "iem":              [
                                 {
                                     "alert_type": "fault",
