@@ -141,48 +141,6 @@ class ResourceAgent:
             Log.error(f"Unimplemented value for status {args[const.CURRENT_NODE_STATUS]}")
             return const.OCF_ERR_UNIMPLEMENTED
 
-    def _get_status(self, callback_status, path):
-        """
-        Handle failover status
-        """
-        self_node = self.nodes['local']
-        nodes_list = list(set(self.nodes.values()))
-        nodes_list.remove(self_node)
-        other_node = nodes_list[0]
-        self_node_status = callback_status(path+'_'+self_node)
-        other_node_status = callback_status(path+'_'+other_node)
-        Log.debug("Get status for %s " %path)
-        return self_node, other_node, self_node_status, other_node_status
-
-    def _monitor_action(self, callback_ack, **args):
-        """
-        Return action on status
-        """
-        Log.debug(str(args))
-        if args['self_node_status'] == Action.FAILED and args['other_node_status'] == Action.FAILED:
-            return OCF_SUCCESS
-        elif args['self_node_status'] == Action.FAILED:
-            return OCF_ERR_GENERIC
-        elif args['self_node_status'] == Action.OK:
-            return OCF_SUCCESS
-        elif args['self_node_status'] == Action.RESOLVED:
-            Log.info("Ack IEM for %s with key %s" %(args['filename'], args['path']+'_'+args['self_node']))
-            return callback_ack(args['path']+'_'+args['self_node'])
-        elif args['self_node_status'] == Action.RESTART:
-            if 'service' in args and args['service'] != "-":
-                cmd = "systemctl restart " + args['service']
-                proc = SimpleProcess(cmd)
-                output, err, rc = proc.run(universal_newlines=True)
-                callback_ack(args['path']+'_'+args['self_node'])
-                Log.info("Ack IEM for %s with key %s" %(args['filename'], args['path']+'_'+args['self_node']))
-                return OCF_ERR_GENERIC if rc != 0 else OCF_SUCCESS
-            else:
-                # Get service name from any lib and restart service
-                return OCF_SUCCESS
-        else:
-            Log.error("Unimplemented value for status %s" %args['self_node_status'])
-            return OCF_ERR_UNIMPLEMENTED
-
 class HardwareResourceAgent(ResourceAgent):
     """
     Resource agent to monitor hardware service

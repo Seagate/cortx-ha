@@ -70,8 +70,14 @@ cp $BASE_DIR/jenkins/cortx-ha.spec ${TMPDIR}
 # Build HA
 cd $TMPDIR
 
+# Copy Backend files
+cp -rf $BASE_DIR/src/conf $HA_DIR/
+
 [ "$DEV" == true ] && {
+    cp -rs $BASE_DIR/src/* ${TMPHA}
+    cp -rs $BASE_DIR/test ${TMPHA}
     cp -rf $BASE_DIR/src/* $HA_DIR/
+    cp -rf $BASE_DIR/test $HA_DIR/
     cp -rf $BASE_DIR/jenkins/pyinstaller/requirment.txt $HA_DIR/
     sed -i -e "s/<RPM_NAME>/${RPM_NAME}/g" \
         -e "s|<HA_PATH>|${HA_PATH}|g" \
@@ -83,13 +89,12 @@ cd $TMPDIR
 
     # Copy Backend files
     cp -rs $BASE_DIR/src/* ${TMPHA}
+    cp -rs $BASE_DIR/test ${TMPHA}
     PYINSTALLER_FILE=$TMPDIR/pyinstaller-cortx-ha.spec
     cp $BASE_DIR/jenkins/pyinstaller/pyinstaller-cortx-ha.spec ${PYINSTALLER_FILE}
     sed -i -e "s|<HA_PATH>|${TMPDIR}/cortx|g" ${PYINSTALLER_FILE}
     python3 -m PyInstaller --clean -y --distpath ${HA_DIR} --key ${KEY} ${PYINSTALLER_FILE}
 }
-
-cp -rf $BASE_DIR/src/conf $HA_DIR/
 
 # Update HA path in setup
 sed -i -e "s|<HA_PATH>|${HA_PATH}/ha|g" ${HA_DIR}/conf/ha_setup
@@ -116,7 +121,7 @@ echo rpmbuild --define "version $VER" --define "dist $BUILD" --define "_topdir $
 rpmbuild --define "version $VER" --define "dist $BUILD" --define "_topdir $TOPDIR" -bb $TMPDIR/cortx-ha.spec
 
 # Remove temporary directory
-\rm -rf ${DIST}/tmp
+\rm -rf ${DIST}/cortx
 
 echo "HA RPMs ..."
 find $BASE_DIR -name *.rpm
