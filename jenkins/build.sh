@@ -69,7 +69,7 @@ cd $TMPDIR
 cp -rs $BASE_DIR/src/* ${TMPHA}
 cp -rf $BASE_DIR/src/conf $HA_DIR/
 
-#Update HA path in setup
+# Update HA path in setup
 sed -i -e "s|<HA_PATH>|${HA_PATH}/ha|g" ${HA_DIR}/conf/ha_setup
 sed -i -e "s|<HA_PATH>|${HA_PATH}/ha|g" ${HA_DIR}/conf/build-cortx-ha
 
@@ -102,7 +102,8 @@ sed -i -e "s|<HA_PATH>|${TMPDIR}/cortx|g" ${PYINSTALLER_FILE}
 pyinstaller --clean -y --distpath ${HA_DIR} --key ${KEY} ${PYINSTALLER_FILE}
 
 deactivate
-################## Add HA_PATH #################################
+
+################### Add HA_PATH #################################
 
 # Genrate spec file for HA
 sed -i -e "s/<RPM_NAME>/${RPM_NAME}/g" \
