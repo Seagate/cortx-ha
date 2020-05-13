@@ -21,7 +21,9 @@ test() {
 }
 
 reset() {
-    echo "reset"
+    echo "reset log"
+    echo > /var/log/seagate/cortx/ha/resource_agent.log
+    rm -rf /etc/logrotate.d/cortx_ha_log.conf
 }
 
 ACTION=$1

@@ -1,0 +1,96 @@
+{
+  "log": "DEBUG",
+  "nodes": {
+    "27534128-7ecd-4606-bf42-ebc9765095ba": "eosnode1.example.com",
+    "f3c7d479-2249-40f4-9276-91ba59f50034": "eosnode2.example.com",
+    "local": "eosnode1.example.com"
+  },
+  "network": {
+      "eosnode1.example.com": {
+          "data_iface": [  "enp175s0f0",  "enp175s0f1"],
+          "mgmt_iface": [  "eno1"]
+      },
+      "eosnode2.example.com": {
+          "data_iface": [  "enp175s0f0",  "enp175s0f1"],
+          "mgmt_iface": [  "enp175s0f0",  "enp175s0f1"]
+      }
+  },
+  "resources": {
+    "encl_ctrl_eosnode1.example.com": {
+      "entity": "enclosure",
+      "entity_id": "0",
+      "component": "controller",
+      "component_id": "eosnode1.example.com"
+    },
+    "encl_ctrl_eosnode2.example.com": {
+      "entity": "enclosure",
+      "entity_id": "0",
+      "component": "controller",
+      "component_id": "eosnode2.example.com"
+    },
+    "node_nw_data_eosnode1.example.com": {
+      "entity": "node",
+      "entity_id": "eosnode1.example.com",
+      "component": "nw",
+      "component_id": "data"
+    },
+    "node_nw_data_eosnode2.example.com": {
+      "entity": "node",
+      "entity_id": "eosnode2.example.com",
+      "component": "nw",
+      "component_id": "data"
+    },
+    "node_nw_mgmt_eosnode1.example.com": {
+      "entity": "node",
+      "entity_id": "eosnode1.example.com",
+      "component": "nw",
+      "component_id": "mgmt"
+    },
+    "node_nw_mgmt_eosnode2.example.com": {
+      "entity": "node",
+      "entity_id": "eosnode2.example.com",
+      "component": "nw",
+      "component_id": "mgmt"
+    },
+    "node_iem_s3_eosnode1.example.com": {
+      "entity": "node",
+      "entity_id": "eosnode1.example.com",
+      "component": "iem",
+      "component_id": "s3"
+    },
+    "node_iem_s3_eosnode2.example.com": {
+      "entity": "node",
+      "entity_id": "eosnode2.example.com",
+      "component": "iem",
+      "component_id": "s3"
+    },
+    "node_iem_mero_eosnode1.example.com": {
+      "entity": "node",
+      "entity_id": "eosnode1.example.com",
+      "component": "iem",
+      "component_id": "mero"
+    },
+    "node_iem_mero_eosnode2.example.com": {
+      "entity": "node",
+      "entity_id": "eosnode2.example.com",
+      "component": "iem",
+      "component_id": "mero"
+    }
+  },
+  "resource_groups": {
+    "io_eosnode1.example.com": [
+      "encl_ctrl_eosnode1.example.com",
+      "node_nw_data_eosnode1.example.com"
+    ],
+    "io_eosnode2.example.com": [
+      "encl_ctrl_eosnode2.example.com",
+      "node_nw_data_eosnode2.example.com"
+    ],
+    "mgmt_eosnode1.example.com": [
+      "node_nw_mgmt_eosnode1.example.com"
+    ],
+    "mgmt_eosnode2.example.com": [
+      "node_nw_mgmt_eosnode2.example.com"
+    ]
+  }
+}
