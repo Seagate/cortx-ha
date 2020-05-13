@@ -1,3 +1,5 @@
+setuptools==36.0.1
+pyinstaller==3.5
 aiohttp==3.6.1
 paramiko==2.7.1
 toml==0.10.0
@@ -16,11 +18,10 @@ schematics==2.1.0
 dataclasses==0.7
 python-consul==1.1.0
 elasticsearch>=6.0.0,<7.0.0
-elasticsearch-dsl>=6.0.0,<7.0.0
+elasticsearch-dsl==6.4.0
 secure==0.2.1
 requests==2.22.0
 pathlib==1.0.1
 statsd==3.2.2
 urllib3==1.25.7
 cryptography==2.8
-git+http://gitlab.mero.colo.seagate.com/eos/py-utils.git
