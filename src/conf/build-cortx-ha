@@ -6,18 +6,16 @@ HA_PATH="<HA_PATH>"
 
 init() {
     echo "Setup Decision maker"
-    lnode=$(grep left-node $ARGS | awk '{print $2}')
-    rnode=$(grep right-node $ARGS | awk '{print $2}')
-    host1=$(salt-call pillar.get cluster --output=json | jq '.local."srvnode-1".hostname' | sed  s/\"//g )
-    host2=$(salt-call pillar.get cluster --output=json | jq '.local."srvnode-2".hostname' | sed  s/\"//g )
-    uuid1=$(salt "*" grains.get node_id --output=json | jq '.["srvnode-1"]')
-    uuid2=$(salt "*" grains.get node_id --output=json | jq '.["srvnode-2"]')
+    host1=$(grep left-node $ARGS | awk '{print $2}')
+    host2=$(grep right-node $ARGS | awk '{print $2}')
+    uuid1=$(salt "*" grains.get node_id --output=json | jq '.["'$host1'"]')
+    uuid2=$(salt "*" grains.get node_id --output=json | jq '.["'$host2'"]')
 
     echo "Reading cluster.sls"
-    node1_data_nw=$(salt-call --local pillar.get cluster:srvnode-1 --output=json | jq '.["local"].network["data_nw"].iface')
-    node1_mgmt_nw=$(salt-call --local pillar.get cluster:srvnode-1 --output=json | jq '.["local"].network["mgmt_nw"].iface')
-    node2_data_nw=$(salt-call --local pillar.get cluster:srvnode-2 --output=json | jq '.["local"].network["data_nw"].iface')
-    node2_mgmt_nw=$(salt-call --local pillar.get cluster:srvnode-2 --output=json | jq '.["local"].network["mgmt_nw"].iface')
+    node1_data_nw=$(salt-call --local pillar.get cluster:$host1 --output=json | jq '.["local"].network["data_nw"].iface')
+    node1_mgmt_nw=$(salt-call --local pillar.get cluster:$host1 --output=json | jq '.["local"].network["mgmt_nw"].iface')
+    node2_data_nw=$(salt-call --local pillar.get cluster:$host2 --output=json | jq '.["local"].network["data_nw"].iface')
+    node2_mgmt_nw=$(salt-call --local pillar.get cluster:$host2 --output=json | jq '.["local"].network["mgmt_nw"].iface')
 
     decision_monitor_conf=${HA_PATH}/conf/decision_monitor_conf.json
     cp -rf $decision_monitor_conf /tmp/decision_monitor_conf1.json
@@ -46,7 +44,7 @@ init() {
         -e "s|\"<N2_MGMT_IFACE>\"|${node2_mgmt_nw//$'\n'/}|g" /tmp/decision_monitor_conf2.json
 
     cp -rf /tmp/decision_monitor_conf1.json /etc/cortx/ha/decision_monitor_conf.json
-    scp -r /tmp/decision_monitor_conf2.json $rnode:/etc/cortx/ha/decision_monitor_conf.json
+    scp -r /tmp/decision_monitor_conf2.json $host2:/etc/cortx/ha/decision_monitor_conf.json
     rm -rf /tmp/decision_monitor_conf1.json /tmp/decision_monitor_conf2.json
 
     pcs cluster cib hw_cfg
@@ -63,8 +61,8 @@ init() {
     pcs cluster cib-push hw_cfg
 
     pcs cluster cib iem_cfg
-    pcs -f iem_cfg resource create node_iem_mero-c1 ocf:seagate:iem_comp_ra path='node_iem_mero' filename='node_iem_mero-c1' node=$lnode op monitor timeout=30s interval=30s
-    pcs -f iem_cfg resource create node_iem_mero-c2 ocf:seagate:iem_comp_ra path='node_iem_mero' filename='node_iem_mero-c2' node=$rnode op monitor timeout=30s interval=30s
+    pcs -f iem_cfg resource create node_iem_mero-c1 ocf:seagate:iem_comp_ra path='node_iem_mero' filename='node_iem_mero-c1' node=$host1 op monitor timeout=30s interval=30s
+    pcs -f iem_cfg resource create node_iem_mero-c2 ocf:seagate:iem_comp_ra path='node_iem_mero' filename='node_iem_mero-c2' node=$host2 op monitor timeout=30s interval=30s
     pcs -f iem_cfg resource group add c1 node_iem_mero-c1
     pcs -f iem_cfg resource group add c2 node_iem_mero-c2
     pcs -f iem_cfg constraint order consul-c1 then node_iem_mero-c1
@@ -72,8 +70,8 @@ init() {
 
     pcs -f iem_cfg resource create node_iem_s3 ocf:seagate:iem_comp_ra path='node_iem_s3' filename='node_iem_s3' service="slapd" op monitor timeout=30s interval=30s
     pcs -f iem_cfg resource clone node_iem_s3 clone-max=2 clone-node-max=1
-    pcs -f iem_cfg constraint location node_iem_s3-clone prefers ${lnode}=INFINITY
-    pcs -f iem_cfg constraint location node_iem_s3-clone prefers ${rnode}=INFINITY
+    pcs -f iem_cfg constraint location node_iem_s3-clone prefers ${host1}=INFINITY
+    pcs -f iem_cfg constraint location node_iem_s3-clone prefers ${host2}=INFINITY
     pcs cluster cib-push iem_cfg
 }
 
@@ -93,6 +91,7 @@ cleanup() {
     wait
 }
 
+# TODO: remove ARGS(hare file) dependency from cortx-ha
 ACTION=$1
 ARGS=$2
 
