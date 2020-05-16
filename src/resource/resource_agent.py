@@ -22,6 +22,7 @@ import sys
 import re
 import os
 import json
+import traceback
 
 from eos.utils.log import Log
 from eos.utils.process import SimpleProcess
@@ -371,5 +372,5 @@ def main(resource, action=''):
             print('Usage %s [monitor] [start] [stop] [meta-data]' % sys.argv[0])
             exit()
     except Exception as e:
-        Log.error(e)
+        Log.error(traceback.format_exc())
         return const.OCF_ERR_GENERIC

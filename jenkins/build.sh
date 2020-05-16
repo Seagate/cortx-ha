@@ -10,10 +10,11 @@ HA_PATH="/opt/seagate/${CORTX}"
 
 usage() {
     echo """
-usage: $PROG_NAME [-v <coretx-ha version>]
+usage: $PROG_NAME [-v <coretx-ha version>] [-d]
                             [-b <build no>] [-k <key>]
 
 Options:
+    -d : Dev build
     -v : Build rpm with version
     -b : Build rpm with build number
     -k : Provide key for encryption of code
@@ -21,7 +22,7 @@ Options:
     exit 1;
 }
 
-while getopts ":g:v:b:p:k" o; do
+while getopts ":g:v:b:p:kd" o; do
     case "${o}" in
         v)
             VER=${OPTARG}
@@ -31,6 +32,9 @@ while getopts ":g:v:b:p:k" o; do
             ;;
         k)
             KEY=${OPTARG}
+            ;;
+        d)
+            DEV=true
             ;;
         *)
             usage
@@ -43,6 +47,7 @@ cd $BASE_DIR
         || BUILD="${BUILD}_$(git rev-parse --short HEAD)"
 [ -z "$VER" ] && VER=$(cat $BASE_DIR/VERSION)
 [ -z "$KEY" ] && KEY="cortx-ha@pr0duct"
+[ -z "$DEV" ] && DEV=false
 
 echo "Using VERSION=${VER} BUILD=${BUILD}"
 
@@ -65,24 +70,30 @@ cp $BASE_DIR/jenkins/cortx-ha.spec ${TMPDIR}
 # Build HA
 cd $TMPDIR
 
-# Copy Backend files
-cp -rs $BASE_DIR/src/* ${TMPHA}
+[ "$DEV" == true ] && {
+    cp -rf $BASE_DIR/src/* $HA_DIR/
+    cp -rf $BASE_DIR/jenkins/pyinstaller/requirment.txt $HA_DIR/
+    sed -i -e "s/<RPM_NAME>/${RPM_NAME}/g" \
+        -e "s|<HA_PATH>|${HA_PATH}|g" \
+        -e "s|<DEV>|true|g" $TMPDIR/cortx-ha.spec
+} || {
+    sed -i -e "s/<RPM_NAME>/${RPM_NAME}/g" \
+        -e "s|<HA_PATH>|${HA_PATH}|g" \
+        -e "s|<DEV>|false|g" $TMPDIR/cortx-ha.spec
+
+    # Copy Backend files
+    cp -rs $BASE_DIR/src/* ${TMPHA}
+    PYINSTALLER_FILE=$TMPDIR/pyinstaller-cortx-ha.spec
+    cp $BASE_DIR/jenkins/pyinstaller/pyinstaller-cortx-ha.spec ${PYINSTALLER_FILE}
+    sed -i -e "s|<HA_PATH>|${TMPDIR}/cortx|g" ${PYINSTALLER_FILE}
+    python3 -m PyInstaller --clean -y --distpath ${HA_DIR} --key ${KEY} ${PYINSTALLER_FILE}
+}
+
 cp -rf $BASE_DIR/src/conf $HA_DIR/
 
 # Update HA path in setup
 sed -i -e "s|<HA_PATH>|${HA_PATH}/ha|g" ${HA_DIR}/conf/ha_setup
 sed -i -e "s|<HA_PATH>|${HA_PATH}/ha|g" ${HA_DIR}/conf/build-cortx-ha
-
-PYINSTALLER_FILE=$TMPDIR/pyinstaller-cortx-ha.spec
-cp $BASE_DIR/jenkins/pyinstaller/pyinstaller-cortx-ha.spec ${PYINSTALLER_FILE}
-sed -i -e "s|<HA_PATH>|${TMPDIR}/cortx|g" ${PYINSTALLER_FILE}
-python3 -m PyInstaller --clean -y --distpath ${HA_DIR} --key ${KEY} ${PYINSTALLER_FILE}
-
-################### Add HA_PATH #################################
-
-# Genrate spec file for HA
-sed -i -e "s/<RPM_NAME>/${RPM_NAME}/g" \
-    -e "s|<HA_PATH>|${HA_PATH}|g" $TMPDIR/cortx-ha.spec
 
 ################## TAR & RPM BUILD ##############################
 

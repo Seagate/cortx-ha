@@ -22,7 +22,7 @@ import sys
 import pathlib
 
 if __name__ == '__main__':
-    sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..'))
+    sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__).resolve()), '..', '..'))
     from ha.resource import resource_agent
     action = sys.argv[1] if len(sys.argv) > 1 else ""
     sys.exit(resource_agent.main(resource_agent.IEMResourceAgent, action))
