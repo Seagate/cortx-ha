@@ -24,15 +24,22 @@ exit 0
 
 %post
 HA_DIR=<HA_PATH>/ha
+DEV=<DEV>
+
 RES_AGENT="/usr/lib/ocf/resource.d/seagate"
 mkdir -p ${RES_AGENT} $HA_DIR/bin /etc/cortx/ha/
 cp -rf /opt/seagate/cortx/ha/conf/rules_engine_schema.json /etc/cortx/ha/
 
-# Move binary file
-ln -sf $HA_DIR/lib/hw_comp_ra ${RES_AGENT}/hw_comp_ra
-ln -sf $HA_DIR/lib/hw_comp_ra $HA_DIR/bin/hw_comp_ra
-ln -sf $HA_DIR/lib/iem_comp_ra ${RES_AGENT}/iem_comp_ra
-ln -sf $HA_DIR/lib/iem_comp_ra $HA_DIR/bin/iem_comp_ra
+[ "$DEV" == true ] && {
+    ln -sf ${HA_DIR}/resource/hw_comp_ra.py ${RES_AGENT}/hw_comp_ra
+    ln -sf ${HA_DIR}/resource/iem_comp_ra.py ${RES_AGENT}/iem_comp_ra
+} || {
+    # Move binary file
+    ln -sf $HA_DIR/lib/hw_comp_ra ${RES_AGENT}/hw_comp_ra
+    ln -sf $HA_DIR/lib/hw_comp_ra $HA_DIR/bin/hw_comp_ra
+    ln -sf $HA_DIR/lib/iem_comp_ra ${RES_AGENT}/iem_comp_ra
+    ln -sf $HA_DIR/lib/iem_comp_ra $HA_DIR/bin/iem_comp_ra
+}
 exit 0
 
 %preun
