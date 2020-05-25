@@ -61,13 +61,6 @@ init() {
     pcs cluster cib-push hw_cfg
 
     pcs cluster cib iem_cfg
-    pcs -f iem_cfg resource create node_iem_mero-c1 ocf:seagate:iem_comp_ra path='node_iem_mero' filename='node_iem_mero-c1' node=$host1 op monitor timeout=30s interval=30s
-    pcs -f iem_cfg resource create node_iem_mero-c2 ocf:seagate:iem_comp_ra path='node_iem_mero' filename='node_iem_mero-c2' node=$host2 op monitor timeout=30s interval=30s
-    pcs -f iem_cfg resource group add c1 node_iem_mero-c1
-    pcs -f iem_cfg resource group add c2 node_iem_mero-c2
-    pcs -f iem_cfg constraint order consul-c1 then node_iem_mero-c1
-    pcs -f iem_cfg constraint order consul-c2 then node_iem_mero-c2
-
     pcs -f iem_cfg resource create node_iem_s3 ocf:seagate:iem_comp_ra path='node_iem_s3' filename='node_iem_s3' service="slapd" op monitor timeout=30s interval=30s
     pcs -f iem_cfg resource clone node_iem_s3 clone-max=2 clone-node-max=1
     pcs -f iem_cfg constraint location node_iem_s3-clone prefers ${host1}=INFINITY

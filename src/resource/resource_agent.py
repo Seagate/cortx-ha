@@ -123,16 +123,18 @@ class ResourceAgent:
         elif args[const.CURRENT_NODE_STATUS] == Action.OK:
             return const.OCF_SUCCESS
         elif args[const.CURRENT_NODE_STATUS] == Action.RESOLVED:
-            Log.info("Ack IEM for %s with key %s" %(args[const.FILENAME_KEY], args[const.PATH_KEY]+'_'+args[const.CURRENT_NODE]))
+            Log.info("Ack for %s with key %s" %(args[const.FILENAME_KEY], args[const.PATH_KEY]+'_'+args[const.CURRENT_NODE]))
             return callback_ack(args[const.PATH_KEY]+'_'+args[const.CURRENT_NODE])
         elif args[const.CURRENT_NODE_STATUS] == Action.RESTART:
             if const.SERVICE_KEY in args and args[const.SERVICE_KEY] != "-":
-                cmd = "systemctl restart " + args[const.SERVICE_KEY]
-                proc = SimpleProcess(cmd)
-                output, err, rc = proc.run(universal_newlines=True)
+                if const.S3_IEM_KEY == args[const.FILENAME_KEY]:
+                    for action in const.S3_IEM_ACTION:
+                        proc = SimpleProcess(action + " " + args[const.CURRENT_NODE])
+                        output, err, rc = proc.run(universal_newlines=True)
+                        Log.info("Action: %s Output: %s Error: %s" %(action, output, err))
                 callback_ack(args[const.PATH_KEY]+'_'+args[const.CURRENT_NODE])
-                Log.info("Ack IEM for %s with key %s" %(args[const.FILENAME_KEY], args[const.PATH_KEY]+'_'+args[const.CURRENT_NODE]))
-                return const.OCF_ERR_GENERIC if rc != 0 else const.OCF_SUCCESS
+                Log.info("Ack for %s with key %s" %(args[const.FILENAME_KEY], args[const.PATH_KEY]+'_'+args[const.CURRENT_NODE]))
+                return const.OCF_SUCCESS
             else:
                 # Get service name from any lib and restart service
                 return const.OCF_SUCCESS

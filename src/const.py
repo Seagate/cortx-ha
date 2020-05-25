@@ -24,3 +24,7 @@ OCF_ERR_PERM=4
 OCF_ERR_INSTALLED=5
 OCF_ERR_CONFIGURED=6
 OCF_NOT_RUNNING=7
+
+S3_IEM_KEY="node_iem_s3"
+S3_IEM_ACTION=["pcs resource restart ldap-clone",
+               "pcs resource restart s3auth-clone"]
