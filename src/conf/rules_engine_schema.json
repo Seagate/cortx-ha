@@ -24,7 +24,7 @@
     "node:interface:nw":[
         {
             "alert_type":"fault",
-            "severity":"warning",
+            "severity":"critical",
             "action":"failed"
         },
         {
@@ -36,7 +36,7 @@
     "node:interface:nw:cable":[
         {
             "alert_type":"fault",
-            "severity":"warning",
+            "severity":"critical",
             "action":"failed"
         },
         {
