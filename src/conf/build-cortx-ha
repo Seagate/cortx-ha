@@ -51,6 +51,7 @@ init() {
     pcs resource restart csm-agent
 
     pcs cluster cib hw_cfg
+    # Hardware io stack resource
     pcs -f hw_cfg resource create io_path_health-c1 ocf:seagate:hw_comp_ra path='io' filename='io_path_health-c1' op monitor timeout=30s interval=30s
     pcs -f hw_cfg resource create io_path_health-c2 ocf:seagate:hw_comp_ra path='io' filename='io_path_health-c2' op monitor timeout=30s interval=30s
     pcs -f hw_cfg resource create mgmt_path_health-c1 ocf:seagate:hw_comp_ra path='mgmt' filename='mgmt_path_health-c1' op monitor timeout=30s interval=30s
@@ -61,6 +62,13 @@ init() {
     pcs -f hw_cfg constraint order consul-c1 then io_path_health-c1
     pcs -f hw_cfg constraint order consul-c2 then io_path_health-c2
     pcs -f hw_cfg constraint order consul-c1 then mgmt_path_health-c1
+
+    # Hardware resource monitor by sspl master
+    pcs -f hw_cfg resource create sspl_master_hw ocf:seagate:hw_comp_ra path='storage_encl' filename='sspl_master_hw' op monitor timeout=20s interval=20s
+    pcs -f hw_cfg resource update sspl_master_hw meta migration-threshold=1 failure-timeout=40s
+    pcs -f hw_cfg constraint colocation add sspl_master_hw with sspl-master INFINITY with-rsc-role=Master
+    pcs -f hw_cfg constraint location sspl_master_hw prefers $host1=INFINITY
+    pcs -f hw_cfg constraint location sspl_master_hw prefers $host2=INFINITY
     pcs cluster cib-push hw_cfg
 
     pcs cluster cib iem_cfg
