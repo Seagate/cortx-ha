@@ -113,6 +113,14 @@
       "node_nw_cable_data_<HOST2>",
       "node_sas_<HOST2>"
     ],
+    "storage_encl_<HOST1>": [
+      "encl_ctrl_<HOST1>",
+      "node_sas_<HOST1>"
+    ],
+    "storage_encl_<HOST2>": [
+      "encl_ctrl_<HOST2>",
+      "node_sas_<HOST2>"
+    ],
     "mgmt_<HOST1>": [
       "node_nw_mgmt_<HOST1>",
       "node_nw_cable_mgmt_<HOST1>"
