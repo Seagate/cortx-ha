@@ -87,6 +87,7 @@ cleanup() {
         io_path_health-c2
         mgmt_path_health-c1
         node_iem_s3
+        sspl_master_hw
     )
     for r in ${resources[@]}; do
         pcs resource delete $r &
