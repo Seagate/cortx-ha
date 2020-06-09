@@ -52,9 +52,18 @@ init() {
 
     pcs cluster cib hw_cfg
     # Hardware io stack resource
-    pcs -f hw_cfg resource create io_path_health-c1 ocf:seagate:hw_comp_ra path='io' filename='io_path_health-c1' op monitor timeout=30s interval=30s
-    pcs -f hw_cfg resource create io_path_health-c2 ocf:seagate:hw_comp_ra path='io' filename='io_path_health-c2' op monitor timeout=30s interval=30s
-    pcs -f hw_cfg resource create mgmt_path_health-c1 ocf:seagate:hw_comp_ra path='mgmt' filename='mgmt_path_health-c1' op monitor timeout=30s interval=30s
+    pcs -f hw_cfg resource create io_path_health-c1 ocf:seagate:hw_comp_ra path='io' filename='io_path_health-c1' \
+        op start timeout=30s interval=0s \
+        op monitor timeout=30s interval=30s \
+        op stop timeout=30s interval=0s
+    pcs -f hw_cfg resource create io_path_health-c2 ocf:seagate:hw_comp_ra path='io' filename='io_path_health-c2' \
+        op start timeout=30s interval=0s \
+        op monitor timeout=30s interval=30s \
+        op stop timeout=30s interval=0s
+    pcs -f hw_cfg resource create mgmt_path_health-c1 ocf:seagate:hw_comp_ra path='mgmt' filename='mgmt_path_health-c1' \
+        op start timeout=30s interval=0s \
+        op monitor timeout=30s interval=30s \
+        op stop timeout=30s interval=0s
 
     pcs -f hw_cfg resource group add c1 io_path_health-c1
     pcs -f hw_cfg resource group add c2 io_path_health-c2
@@ -64,7 +73,10 @@ init() {
     pcs -f hw_cfg constraint order consul-c1 then mgmt_path_health-c1
 
     # Hardware resource monitor by sspl master
-    pcs -f hw_cfg resource create sspl_master_hw ocf:seagate:hw_comp_ra path='storage_encl' filename='sspl_master_hw' op monitor timeout=20s interval=20s
+    pcs -f hw_cfg resource create sspl_master_hw ocf:seagate:hw_comp_ra path='storage_encl' filename='sspl_master_hw' \
+        op start timeout=30s interval=0s \
+        op monitor timeout=30s interval=30s \
+        op stop timeout=30s interval=0s
     pcs -f hw_cfg resource update sspl_master_hw meta migration-threshold=1 failure-timeout=40s
     pcs -f hw_cfg constraint colocation add sspl_master_hw with sspl-master INFINITY with-rsc-role=Master
     pcs -f hw_cfg constraint location sspl_master_hw prefers $host1=INFINITY
@@ -72,7 +84,10 @@ init() {
     pcs cluster cib-push hw_cfg
 
     pcs cluster cib iem_cfg
-    pcs -f iem_cfg resource create node_iem_s3 ocf:seagate:iem_comp_ra path='node_iem_s3' filename='node_iem_s3' service="slapd" op monitor timeout=30s interval=30s
+    pcs -f iem_cfg resource create node_iem_s3 ocf:seagate:iem_comp_ra path='node_iem_s3' filename='node_iem_s3' service="slapd" \
+        op start timeout=30s interval=0s \
+        op monitor timeout=30s interval=30s \
+        op stop timeout=30s interval=0s
     pcs -f iem_cfg resource clone node_iem_s3 clone-max=2 clone-node-max=1
     pcs -f iem_cfg constraint location node_iem_s3-clone prefers ${host1}=INFINITY
     pcs -f iem_cfg constraint location node_iem_s3-clone prefers ${host2}=INFINITY
