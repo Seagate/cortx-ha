@@ -1,4 +1,5 @@
 {
+  "request_timeout": 2.0,
   "nodes": {
     "<UUID1>": "<HOST1>",
     "<UUID2>": "<HOST2>",
