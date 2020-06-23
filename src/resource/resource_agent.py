@@ -369,6 +369,7 @@ def main(resource, action=''):
         os.makedirs(const.RA_LOG_DIR, exist_ok=True)
         Log.init(service_name='resource_agent', log_path=const.RA_LOG_DIR, level=log_level)
         resource_agent = resource(DecisionMonitor(), resource_schema)
+        Log.debug(f"{resource_agent} initialized for action {action}")
         if action == 'monitor':
             return resource_agent.monitor()
         elif action == 'start':
@@ -381,5 +382,5 @@ def main(resource, action=''):
             print('Usage %s [monitor] [start] [stop] [meta-data]' % sys.argv[0])
             exit()
     except Exception as e:
-        Log.error(traceback.format_exc())
+        Log.error(f"{traceback.format_exc()}")
         return const.OCF_ERR_GENERIC

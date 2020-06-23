@@ -1,32 +1,32 @@
 ha:
     post_install:
-        script: /opt/seagate/cortx/ha/conf/ha_setup
+        script: /opt/seagate/cortx/ha/conf/script/ha_setup
         args: post_install
 
     init:
-        script: /opt/seagate/cortx/ha/conf/ha_setup
+        script: /opt/seagate/cortx/ha/conf/script/ha_setup
         args: init
 
     config:
-        script: /opt/seagate/cortx/ha/conf/ha_setup
+        script: /opt/seagate/cortx/ha/conf/script/ha_setup
         args: config
 
     test:
-        script: /opt/seagate/cortx/ha/conf/ha_setup
+        script: /opt/seagate/cortx/ha/conf/script/ha_setup
         args: test
 
     reset:
-        script: /opt/seagate/cortx/ha/conf/ha_setup
+        script: /opt/seagate/cortx/ha/conf/script/ha_setup
         args: reset
 
     ha:
-        script: /opt/seagate/cortx/ha/conf/build-cortx-ha
+        script: /opt/seagate/cortx/ha/conf/script/build-cortx-ha
         args:
             - init
             - /var/lib/hare/build-ees-ha-args.yaml
 
     ha-cleanup:
-        script: /opt/seagate/cortx/ha/conf/build-cortx-ha
+        script: /opt/seagate/cortx/ha/conf/script/build-cortx-ha
         args:
             - cleanup
             - /var/lib/hare/build-ees-ha-args.yaml

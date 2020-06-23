@@ -92,8 +92,8 @@ cd $TMPDIR
 cp -rf $BASE_DIR/src/conf $HA_DIR/
 
 # Update HA path in setup
-sed -i -e "s|<HA_PATH>|${HA_PATH}/ha|g" ${HA_DIR}/conf/ha_setup
-sed -i -e "s|<HA_PATH>|${HA_PATH}/ha|g" ${HA_DIR}/conf/build-cortx-ha
+sed -i -e "s|<HA_PATH>|${HA_PATH}/ha|g" ${HA_DIR}/conf/script/ha_setup
+sed -i -e "s|<HA_PATH>|${HA_PATH}/ha|g" ${HA_DIR}/conf/script/build-cortx-ha
 
 ################## TAR & RPM BUILD ##############################
 
