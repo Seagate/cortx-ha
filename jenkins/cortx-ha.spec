@@ -28,7 +28,6 @@ DEV=<DEV>
 
 RES_AGENT="/usr/lib/ocf/resource.d/seagate"
 mkdir -p ${RES_AGENT} $HA_DIR/bin /etc/cortx/ha/
-cp -rf /opt/seagate/cortx/ha/conf/etc/rules_engine_schema.json /etc/cortx/ha/
 
 [ "$DEV" == true ] && {
     ln -sf ${HA_DIR}/resource/hw_comp_ra.py ${RES_AGENT}/hw_comp_ra
