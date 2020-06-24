@@ -67,7 +67,7 @@ cp $BASE_DIR/jenkins/cortx-ha.spec ${TMPDIR}
 
 ######################### Backend ##############################
 
-# Build HA
+# Build HA with PyInstaller
 cd $TMPDIR
 
 [ "$DEV" == true ] && {
@@ -102,9 +102,11 @@ cd $BASE_DIR
 rm -rf ${DIST}/rpmbuild
 mkdir -p ${DIST}/rpmbuild/SOURCES
 
-# Create tar for ha
-cd ${DIST}
-echo "Creating tar for ha build"
+cd src
+git ls-files pcswrap | cpio -pd $DIST/$CORTX
+
+cd $DIST
+echo "Creating tar for HA build"
 tar -czf ${DIST}/rpmbuild/SOURCES/${RPM_NAME}-${VER}.tar.gz ${CORTX}
 
 # Generate RPMs
@@ -116,7 +118,7 @@ echo rpmbuild --define "version $VER" --define "dist $BUILD" --define "_topdir $
 rpmbuild --define "version $VER" --define "dist $BUILD" --define "_topdir $TOPDIR" -bb $TMPDIR/cortx-ha.spec
 
 # Remove temporary directory
-\rm -rf ${DIST}/tmp
+rm -rf ${DIST}/tmp
 
 echo "HA RPMs ..."
 find $BASE_DIR -name *.rpm

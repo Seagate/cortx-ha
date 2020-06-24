@@ -1,0 +1,10 @@
+*$py.class
+*.egg-info/
+*.py[cod]
+.eggs/
+.mypy_cache
+.py3venv/
+__pycache__
+build/
+dist/
+tags

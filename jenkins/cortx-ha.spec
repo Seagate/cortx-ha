@@ -18,8 +18,11 @@ HA Tools
 %build
 
 %install
+rm -rf ${RPM_BUILD_ROOT}
 mkdir -p ${RPM_BUILD_ROOT}<HA_PATH>
 cp -rp . ${RPM_BUILD_ROOT}<HA_PATH>
+make -C pcswrap install DESTDIR=${RPM_BUILD_ROOT}<HA_PATH>
+sed -i -e 's@^#!.*\.py3venv@#!/usr@' ${RPM_BUILD_ROOT}<HA_PATH>/bin/*
 exit 0
 
 %post

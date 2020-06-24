@@ -1,3 +1,8 @@
 dataclasses
 defusedxml
+flake8
+mypy
+pkgconfig
+setuptools
 systemd
+wheel
