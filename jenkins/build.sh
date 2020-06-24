@@ -72,7 +72,7 @@ cd $TMPDIR
 
 [ "$DEV" == true ] && {
     cp -rf $BASE_DIR/src/* $HA_DIR/
-    cp -rf $BASE_DIR/jenkins/pyinstaller/requirment.txt $HA_DIR/
+    cp -rf $BASE_DIR/jenkins/pyinstaller/requirements.txt $HA_DIR/
     sed -i -e "s/<RPM_NAME>/${RPM_NAME}/g" \
         -e "s|<HA_PATH>|${HA_PATH}|g" \
         -e "s|<DEV>|true|g" $TMPDIR/cortx-ha.spec
