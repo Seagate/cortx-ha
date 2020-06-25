@@ -1,19 +1,35 @@
 #!/bin/bash
 
 HA_PATH="<HA_PATH>"
+SOURCE_HA_CONF="<HA_PATH>/conf/etc"
+HA_CONF="/etc/cortx/ha"
+LOGROTATE_CONF="/etc/logrotate.d"
+HA_LOG="/var/log/seagate/cortx/ha"
 
 post_install() {
     echo "post_install"
-    mkdir -p /etc/logrotate.d/
-    cp -rf ${HA_PATH}/conf/logrotate/cortx_ha_log.conf /etc/logrotate.d/
-}
-
-init() {
-    echo "init"
+    mkdir -p ${LOGROTATE_CONF}
+    cp -rf ${HA_PATH}/conf/logrotate/cortx_ha_log.conf ${LOGROTATE_CONF}
 }
 
 config() {
     echo "config"
+    NODE_NAME=$(salt-call grains.get id \
+        --output=json | jq '.["local"]' | sed s/\"//g)
+
+    # Copy conf files
+    cp -rf ${SOURCE_HA_CONF}/rules_engine_schema.json ${HA_CONF}
+    cp -rf ${SOURCE_HA_CONF}/database.json ${HA_CONF}
+
+    # Update consul vip
+    CONSUL_HOST=$(salt-call pillar.get \
+        cluster:$NODE_NAME:network:data_nw:roaming_ip \
+        --output=json | jq '.["local"]' | sed s/\"//g)
+    sed -i -e "s|<CONSUL_HOST>|${CONSUL_HOST}|g" ${HA_CONF}/database.json
+}
+
+init() {
+    echo "init"
 }
 
 test() {
@@ -22,8 +38,9 @@ test() {
 
 reset() {
     echo "reset log"
-    echo > /var/log/seagate/cortx/ha/resource_agent.log
-    rm -rf /etc/logrotate.d/cortx_ha_log.conf
+    rm -rf ${HA_LOG}
+    rm -rf ${LOGROTATE_CONF}/cortx_ha_log.conf
+    rm -rf ${HA_CONF}
 }
 
 ACTION=$1
