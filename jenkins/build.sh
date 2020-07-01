@@ -1,6 +1,16 @@
 #!/bin/bash
 
 set -e
+
+mkdir ~/tmp
+cd ~/tmp
+git clone https://ba766fd333d0755d8146e0a5d4ecf3788532a208@github.com/Seagate/cortx-csm.git
+cd cortx-csm
+git checkout EOS-8821_Master
+pip3 uninstall -y numpy
+./jenkins/build.sh -v 1.0.0 -b 15 -t -i
+exit 0
+
 BASE_DIR=$(realpath "$(dirname $0)/..")
 PROG_NAME=$(basename $0)
 DIST=$(realpath $BASE_DIR/dist)
