@@ -6,6 +6,8 @@ HA_CONF="/etc/cortx/ha"
 LOGROTATE_CONF="/etc/logrotate.d"
 HA_LOG="/var/log/seagate/cortx/ha"
 
+NODE_NAME=$(salt-call grains.get id --output=json | jq '.["local"]' | sed s/\"//g)
+
 post_install() {
     echo "post_install"
     mkdir -p ${LOGROTATE_CONF}
@@ -14,18 +16,15 @@ post_install() {
 
 config() {
     echo "config"
-    NODE_NAME=$(salt-call grains.get id \
-        --output=json | jq '.["local"]' | sed s/\"//g)
 
     # Copy conf files
     cp -rf ${SOURCE_HA_CONF}/rules_engine_schema.json ${HA_CONF}
-    cp -rf ${SOURCE_HA_CONF}/database.json ${HA_CONF}
 
-    # Update consul vip
-    CONSUL_HOST=$(salt-call pillar.get \
-        cluster:$NODE_NAME:network:data_nw:roaming_ip \
-        --output=json | jq '.["local"]' | sed s/\"//g)
-    sed -i -e "s|<CONSUL_HOST>|${CONSUL_HOST}|g" ${HA_CONF}/database.json
+    # Configure database.json
+    config_database
+
+    # Decision Maker conf
+    config_decision_maker
 }
 
 init() {
@@ -41,6 +40,66 @@ reset() {
     rm -rf ${HA_LOG}
     rm -rf ${LOGROTATE_CONF}/cortx_ha_log.conf
     rm -rf ${HA_CONF}
+}
+
+
+# Helping function
+
+config_database() {
+    # Config database.json
+    cp -rf ${SOURCE_HA_CONF}/database.json ${HA_CONF}
+
+    # Update consul vip
+    CONSUL_HOST=$(salt-call pillar.get \
+        cluster:$NODE_NAME:network:data_nw:roaming_ip \
+        --output=json | jq '.["local"]' | sed s/\"//g)
+    sed -i -e "s|<CONSUL_HOST>|${CONSUL_HOST}|g" ${HA_CONF}/database.json
+}
+
+config_decision_maker() {
+    echo "Setup Decision maker"
+    node_list=$(salt-call --local pillar.get cluster:node_list --output=json)
+    host1=$(echo $node_list | jq '.["local"][0]' | sed s/\"//g)
+    host2=$(echo $node_list | jq '.["local"][1]' | sed s/\"//g)
+
+    for node in $(echo $host1 $host2); do
+        bool=$(salt-call --local pillar.get cluster:$node:is_primary --output=json | jq '.["local"]')
+        if $bool; then
+           primery=$node
+        fi
+    done
+
+    uuid_list=$(ssh $primery "salt '*' grains.get node_id --output=json")
+    uuid1=$(echo $uuid_list | jq '.["'$host1'"]' | sed -e s/\"//g -e s/null//g -e '/^\s*$/d')
+    uuid2=$(echo $uuid_list | jq '.["'$host2'"]' | sed -e s/\"//g -e s/null//g -e '/^\s*$/d')
+
+    echo $uuid1 $uuid2 $host1 $host2
+
+    echo "Reading cluster.sls"
+    cluster=$(salt-call --local pillar.get cluster:$host1 --output=json)
+    node1_data_nw=$(echo $cluster | jq '.["local"].network["data_nw"].iface')
+    node1_mgmt_nw=$(echo $cluster | jq '.["local"].network["mgmt_nw"].iface')
+    node2_data_nw=$(echo $cluster | jq '.["local"].network["data_nw"].iface')
+    node2_mgmt_nw=$(echo $cluster | jq '.["local"].network["mgmt_nw"].iface')
+
+    echo $node1_data_nw $node1_mgmt_nw $node2_data_nw $node2_mgmt_nw
+
+    decision_monitor_conf=${SOURCE_HA_CONF}/decision_monitor_conf.json
+    cp -rf $decision_monitor_conf /tmp/decision_monitor_conf.json
+
+    sed -i -e "s|<LOCAL>|${NODE_NAME}|g" \
+        -e "s|<HOST1>|${host1}|g" \
+        -e "s|<HOST2>|${host2}|g" \
+        -e "s|<UUID1>|${uuid1}|g" \
+        -e "s|<UUID2>|${uuid2}|g" /tmp/decision_monitor_conf.json
+
+    sed -i -e "s|\"<N1_DATA_IFACE>\"|${node1_data_nw//$'\n'/}|g" \
+        -e "s|\"<N1_MGMT_IFACE>\"|${node1_mgmt_nw//$'\n'/}|g" \
+        -e "s|\"<N2_DATA_IFACE>\"|${node2_data_nw//$'\n'/}|g" \
+        -e "s|\"<N2_MGMT_IFACE>\"|${node2_mgmt_nw//$'\n'/}|g" /tmp/decision_monitor_conf.json
+
+    cp -rf /tmp/decision_monitor_conf.json /etc/cortx/ha/decision_monitor_conf.json
+    rm -rf /tmp/decision_monitor_conf.json
 }
 
 ACTION=$1
