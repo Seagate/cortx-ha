@@ -103,7 +103,7 @@ rm -rf ${DIST}/rpmbuild
 mkdir -p ${DIST}/rpmbuild/SOURCES
 
 cd src
-git ls-files pcswrap | cpio -pd $DIST/$CORTX
+git ls-files pcswrap resource | cpio -pd $DIST/$CORTX
 
 cd $DIST
 echo "Creating tar for HA build"
