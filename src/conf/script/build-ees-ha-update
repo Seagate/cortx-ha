@@ -55,14 +55,14 @@ csmargsfile=${3:-}
 
 hare_dir=/var/lib/hare
 cib_file=/var/lib/hare/cib_cortx_cluster.xml
-hare_exec=/opt/seagate/cortx/hare/libexec
+ha_script=/opt/seagate/cortx/ha/conf/script
 consul_bin=/opt/seagate/cortx/hare/bin
 
 reset_all() {
-    $hare_exec/prov-ha-uds-reset
-    $hare_exec/prov-ha-csm-reset
-    $hare_exec/prov-ha-sspl-reset
-    $hare_exec/prov-ha-reset
+    $ha_script/prov-ha-uds-reset
+    $ha_script/prov-ha-csm-reset
+    $ha_script/prov-ha-sspl-reset
+    $ha_script/prov-ha-reset
 }
 
 echo 'Exporting Consul KV...'
@@ -72,10 +72,10 @@ reset_all
 sudo pcs cluster cib $cib_file
 
 echo 'Updating ha resources for IO path, SSPL, CSM and UDS...'
-$hare_exec/build-ees-ha $cdf $ioargsfile --cib-file $cib_file --update
-$hare_exec/build-ees-ha-csm $csmargsfile --cib-file $cib_file --update
-$hare_exec/build-ees-ha-sspl $ioargsfile --cib-file $cib_file --update
-$hare_exec/build-ees-ha-uds --cib-file $cib_file --update
+$ha_script/build-ees-ha $cdf $ioargsfile --cib-file $cib_file --update
+$ha_script/build-ees-ha-csm $csmargsfile --cib-file $cib_file --update
+$ha_script/build-ees-ha-sspl $ioargsfile --cib-file $cib_file --update
+$ha_script/build-ees-ha-uds --cib-file $cib_file --update
 
 #XXX Presently replacing the cib xml file does not work if in new versions
 # the resources are deleted.
