@@ -1,12 +1,16 @@
-import argparse
 import json
 import logging
 import os
 import sys
-from typing import Any, Callable, List, Optional
+from typing import Callable, List, Optional
 
+from click import ClickException
 from systemd import journal
 
+from pcswrap.cli import parse_opts
+from pcswrap.cli.types import (MaintenanceAll, NoOp, Shutdown, Standby,
+                               StandbyAll, Status, UnmaintenanceAll, Unstandby,
+                               UnstandbyAll)
 from pcswrap.exception import CliException, MaintenanceFailed, TimeoutException
 from pcswrap.internal.connector import CliConnector
 from pcswrap.internal.waiter import Waiter
@@ -206,167 +210,46 @@ class AppRunner:
     def __init__(self):
         self._get_client = self._get_client_default
 
-    def _get_client_default(self, args: Any) -> Client:
-        creds = None
-        if args.username:
-            if not args.password:
-                raise RuntimeError('--password argument is required'
-                                   ' when --username is given')
-            creds = Credentials(username=args.username[0],
-                                password=args.password[0])
-        return Client(credentials=creds)
+    def _get_client_default(self, auth: Optional[Credentials]) -> Client:
+        return Client(credentials=auth)
 
     def run(self, argv: List[str]) -> None:
-        args = self._parse_opts(argv)
+        prog_name = os.environ.get('PCSCLI_PROG_NAME')
+        ctx = parse_opts(args=argv,
+                         prog_name=prog_name,
+                         standalone_mode=False,
+                         obj={'timeout_sec': 120})
 
         def client() -> Client:
             # This function is added to shorten the code below (no need for
             # "self." prefix and no need to add parameters)
-            return self._get_client(args)
+            return self._get_client(ctx.auth)
 
-        is_verbose = args.verbose
-        _setup_logging(is_verbose)
-
-        if hasattr(args, 'standby_node'):
-            if args.standby_node_all:
-                client().standby_all()
-            else:
-                client().standby_node(args.standby_node)
-        elif hasattr(args, 'unstandby_node'):
-            if args.unstandby_node_all:
-                client().unstandby_all()
-            else:
-                client().unstandby_node(args.unstandby_node)
-        elif hasattr(args, 'show_status'):
-            print(client().get_status(is_full=args.full_status))
-        elif hasattr(args, 'shutdown_node'):
-            node = args.shutdown_node[0]
-            client().shutdown_node(node, timeout=args.timeout_sec)
-        elif hasattr(args, 'maintenance_all'):
-            client().cluster_maintenance(timeout=args.timeout_sec)
-        elif hasattr(args, 'unmaintenance_all'):
-            client().cluster_unmaintenance(timeout=args.timeout_sec)
-
-    def _parse_opts(self, argv: List[str]) -> Any:
-        prog_name = os.environ.get('PCSCLI_PROG_NAME')
-
-        p = argparse.ArgumentParser(
-            prog=prog_name, description='Manages the nodes in HA cluster.')
-        p.add_argument('--verbose',
-                       help='Be verbose while executing',
-                       action='store_true',
-                       default=False,
-                       dest='verbose')
-
-        p.add_argument('--username',
-                       help='Username for local authentication at pcsd.'
-                       f' This setting must be specified if {prog_name} is '
-                       ' invoked with non-root privileges.',
-                       dest='username',
-                       nargs=1,
-                       type=str)
-
-        p.add_argument('--password',
-                       help='Password for local authentication at pcsd.'
-                       ' Makes sense if --username is specified.',
-                       dest='password',
-                       nargs=1,
-                       type=str)
-
-        subparsers = p.add_subparsers()
-        status_parser = subparsers.add_parser(
-            'status',
-            help='Show status of all cluster nodes',
-        )
-        unstandby_parser = subparsers.add_parser(
-            'unstandby', help='Remove the given node from standby mode.')
-        standby_parser = subparsers.add_parser(
-            'standby', help='Put the given node into standby mode.')
-        shutdown_parser = subparsers.add_parser(
-            'shutdown', help='Shutdown (power off) the node by name.')
-
-        standby_parser.add_argument('standby_node',
-                                    type=str,
-                                    nargs='?',
-                                    help='Name of the node the operation must '
-                                    'be applied to.')
-        standby_parser.add_argument(
-            '--all',
-            action='store_true',
-            default=False,
-            dest='standby_node_all',
-            help='Put all the nodes in the cluster to standby mode (no node '
-            'name is required)')
-        unstandby_parser.add_argument('unstandby_node',
-                                      type=str,
-                                      nargs='?',
-                                      help='Name of the node the operation '
-                                      'must be applied to.')
-        unstandby_parser.add_argument(
-            '--all',
-            action='store_true',
-            default=False,
-            dest='unstandby_node_all',
-            help='Remove all the nodes in the cluster from standby mode '
-            '(no node name is required).')
-        status_parser.add_argument('--stub',
-                                   dest='show_status',
-                                   default=True,
-                                   help=argparse.SUPPRESS)
-        status_parser.add_argument(
-            '--full',
-            action='store_true',
-            dest='full_status',
-            default=False,
-            help='Show overall cluster status, so not only nodes '
-            'will be included')
-        shutdown_parser.add_argument('shutdown_node',
-                                     type=str,
-                                     nargs=1,
-                                     help='Name of the node to poweroff')
-        shutdown_parser.add_argument(
-            '--timeout-sec',
-            type=int,
-            dest='timeout_sec',
-            default=120,
-            help='Maximum time that this command will'
-            ' wait for any operation to complete before raising an error')
-
-        maintenance_parser = subparsers.add_parser(
-            'maintenance',
-            help='Switch the cluster to maintenance mode',
-        )
-        maintenance_parser.add_argument('--all',
-                                        dest='maintenance_all',
-                                        default=False,
-                                        action='store_true')
-
-        maintenance_parser.add_argument(
-            '--timeout-sec',
-            type=int,
-            dest='timeout_sec',
-            default=120,
-            help='Maximum time that this command will'
-            ' wait for any operation to complete before raising an error')
-
-        unmaintenance_parser = subparsers.add_parser(
-            'unmaintenance',
-            help='Move the cluster from maintenance back to normal mode',
-        )
-        unmaintenance_parser.add_argument('--all',
-                                          dest='unmaintenance_all',
-                                          default=False,
-                                          action='store_true')
-
-        unmaintenance_parser.add_argument(
-            '--timeout-sec',
-            type=int,
-            dest='timeout_sec',
-            default=120,
-            help='Maximum time that this command will'
-            ' wait for any operation to complete before raising an error')
-        opts = p.parse_args(argv)
-        return opts
+        _setup_logging(ctx.verbose)
+        cmd = ctx.command
+        if isinstance(cmd, Standby):
+            client().standby_node(cmd.node)
+        elif isinstance(cmd, StandbyAll):
+            client().standby_all(ctx.timeout_sec)
+        elif isinstance(cmd, Unstandby):
+            client().unstandby_node(cmd.node)
+        elif isinstance(cmd, UnstandbyAll):
+            client().unstandby_all(ctx.timeout_sec)
+        elif isinstance(cmd, Shutdown):
+            client().shutdown_node(cmd.node, timeout=ctx.timeout_sec)
+        elif isinstance(cmd, MaintenanceAll):
+            client().cluster_maintenance(ctx.timeout_sec)
+        elif isinstance(cmd, UnmaintenanceAll):
+            client().cluster_unmaintenance(ctx.timeout_sec)
+        elif isinstance(cmd, Status):
+            print(client().get_status(cmd.is_full))
+        elif isinstance(cmd, NoOp):
+            # --help or some other eager option was passed, nothing to
+            # process here
+            pass
+        else:
+            raise RuntimeError('Business logic error: unknown '
+                               f'command given - {cmd}')
 
 
 def main() -> None:
@@ -384,6 +267,9 @@ def main() -> None:
             ' the cluster to normal mode manually.', prog_name)
         sys.exit(1)
 
+    except ClickException as e:
+        e.show()
+        sys.exit(1)
     except CliException as e:
         logging.error('Exiting with FAILURE: %s', e)
         logging.debug('Detailed info', exc_info=True)

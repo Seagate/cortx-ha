@@ -1,8 +1,9 @@
+click
 dataclasses
 defusedxml
+systemd
 flake8
 mypy
 pkgconfig
 setuptools
-systemd
 wheel

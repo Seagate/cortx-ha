@@ -3,8 +3,10 @@ import sys
 sys.path.insert(0, '..')
 from unittest.mock import MagicMock, call
 from pcswrap.client import Client, AppRunner
+from pcswrap.types import Credentials
 from pcswrap.internal.connector import CliExecutor, CliConnector
 from typing import Tuple
+from click.exceptions import ClickException
 import unittest
 import os
 import inspect
@@ -55,7 +57,7 @@ class AppRunnerTest(unittest.TestCase):
         stub_client = mock_methods(stub_client)
 
         runner = AppRunner()
-        runner._get_client = lambda x: stub_client
+        runner._get_client = MagicMock(return_value=stub_client)
         return (stub_client, runner)
 
     def test_status_works(self):
@@ -67,6 +69,17 @@ class AppRunnerTest(unittest.TestCase):
 
         runner.run(['status'])
         self.assertTrue(stub_client.get_status.called)
+        self.assertEqual([call(False)],
+                         stub_client.get_status.call_args_list)
+
+    def test_status_full_works(self):
+        stub_client, runner = self._create_client_and_runner()
+        stub_client.get_status = MagicMock()
+
+        runner.run(['status', '--full'])
+        self.assertTrue(stub_client.get_status.called)
+        self.assertEqual([call(True)],
+                         stub_client.get_status.call_args_list)
 
     def test_standby_single_node_works(self):
         stub_client, runner = self._create_client_and_runner()
@@ -91,6 +104,25 @@ class AppRunnerTest(unittest.TestCase):
         self.assertTrue(stub_client.unstandby_node.called)
         self.assertEqual([call('mynode')],
                          stub_client.unstandby_node.call_args_list)
+
+    def test_credentials_parsed(self):
+        stub_client, runner = self._create_client_and_runner()
+        stub_client.unstandby_node = MagicMock()
+        runner.run(
+            ['--username=test', '--password=test2', 'unstandby', 'mynode'])
+        self.assertTrue(stub_client.unstandby_node.called)
+        self.assertEqual([call('mynode')],
+                         stub_client.unstandby_node.call_args_list)
+        self.assertEqual(
+            [call(Credentials(username='test', password='test2'))],
+            runner._get_client.call_args_list)
+
+    def test_if_username_given_password_required(self):
+        stub_client, runner = self._create_client_and_runner()
+        stub_client.unstandby_node = MagicMock()
+        with self.assertRaises(ClickException):
+            runner.run(['--username=test', 'unstandby', 'mynode'])
+        self.assertFalse(stub_client.unstandby_node.called)
 
     def test_unstandby_all_works(self):
         stub_client, runner = self._create_client_and_runner()
@@ -120,3 +152,15 @@ class AppRunnerTest(unittest.TestCase):
         self.assertTrue(stub_client.shutdown_node.called)
         self.assertEqual([call('node01', timeout=120)],
                          stub_client.shutdown_node.call_args_list)
+
+    def test_help_not_fails(self):
+        stub_client, runner = self._create_client_and_runner()
+
+        # No exception is expected
+        runner.run(['--help'])
+
+    def test_unknown_command_triggers_exception(self):
+        stub_client, runner = self._create_client_and_runner()
+
+        with self.assertRaises(ClickException):
+            runner.run(['unbeknownst'])
