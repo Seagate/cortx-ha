@@ -42,6 +42,22 @@ while getopts ":g:v:b:p:kd" o; do
     esac
 done
 
+# Workaround for Jenkins CI pipeline. The actual path in BASE_DIR may be very
+# long, for example this happens in Jenkins environment:
+#
+#   /var/jenkins/workspace/GitHub-custom-ci-builds/custom_build_test/cortx-ha
+#
+# It then leads to a failure when running `pip3` installed by pyenv module:
+#
+#   bash: /var/jenkins/workspace/GitHub-custom-ci-builds/custom_build_test/cortx-ha/dist/rpmbuild/BUILD/cortx/pcswrap/.py3venv/bin/pip3: /var/jenkins/workspace/GitHub-custom-ci-builds/custom_build_test/cortx-ha/dist: bad interpreter: No such file or directory
+#
+if [[ $BASE_DIR =~ jenkins/workspace ]] ; then
+    #ln -sfn $BASE_DIR /tmp/$RPM_NAME
+    cp -a $BASE_DIR /tmp/$RPM_NAME
+    BASE_DIR_OLD=$BASE_DIR
+    BASE_DIR=/tmp/$RPM_NAME
+fi
+
 cd $BASE_DIR
 [ -z $"$BUILD" ] && BUILD="$(git rev-parse --short HEAD)" \
         || BUILD="${BUILD}_$(git rev-parse --short HEAD)"
@@ -122,3 +138,7 @@ rm -rf ${DIST}/tmp
 
 echo "HA RPMs ..."
 find $BASE_DIR -name *.rpm
+
+if [[ $BASE_DIR_OLD =~ jenkins/workspace ]] ; then
+    cp -a $DIST $BASE_DIR_OLD
+fi
