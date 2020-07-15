@@ -2,6 +2,8 @@ HA_INIT_DIR='/var/cortx/ha/'
 RA_LOG_DIR='/var/log/seagate/cortx/ha'
 RESOURCE_SCHEMA='/etc/cortx/ha/decision_monitor_conf.json'
 
+RESOURCE_GLOBAL_INDEX='decision_monitor'
+
 CURRENT_NODE_STATUS='self_node_status'
 OTHER_NODE_STATUS='other_node_status'
 CURRENT_NODE='self_node'

@@ -27,17 +27,20 @@ HA_DIR=<HA_PATH>/ha
 DEV=<DEV>
 
 RES_AGENT="/usr/lib/ocf/resource.d/seagate"
-mkdir -p ${RES_AGENT} $HA_DIR/bin /etc/cortx/ha/
+mkdir -p ${RES_AGENT} $HA_DIR/bin /etc/cortx/ha/ /usr/bin
 
 [ "$DEV" == true ] && {
     ln -sf ${HA_DIR}/resource/hw_comp_ra.py ${RES_AGENT}/hw_comp_ra
     ln -sf ${HA_DIR}/resource/iem_comp_ra.py ${RES_AGENT}/iem_comp_ra
+    ln -sf $HA_DIR/cli/cortxha.py /usr/bin/cortxha
 } || {
     # Move binary file
     ln -sf $HA_DIR/lib/hw_comp_ra ${RES_AGENT}/hw_comp_ra
     ln -sf $HA_DIR/lib/hw_comp_ra $HA_DIR/bin/hw_comp_ra
     ln -sf $HA_DIR/lib/iem_comp_ra ${RES_AGENT}/iem_comp_ra
     ln -sf $HA_DIR/lib/iem_comp_ra $HA_DIR/bin/iem_comp_ra
+    ln -sf $HA_DIR/lib/cortxha $HA_DIR/bin/cortxha
+    ln -sf $HA_DIR/lib/cortxha /usr/bin/cortxha
 }
 exit 0
 
@@ -52,6 +55,8 @@ rm -f $HA_DIR/bin/hw_comp_ra 2> /dev/null;
 rm -f ${RES_AGENT}/hw_comp_ra 2> /dev/null;
 rm -f $HA_DIR/bin/iem_comp_ra 2> /dev/null;
 rm -f ${RES_AGENT}/iem_comp_ra 2> /dev/null;
+rm -f /usr/bin/cortxha 2> /dev/null;
+rm -f $HA_DIR/bin/cortxha 2> /dev/null;
 exit 0
 
 %clean

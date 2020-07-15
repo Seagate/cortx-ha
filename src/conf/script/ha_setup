@@ -6,7 +6,7 @@ HA_CONF="/etc/cortx/ha"
 LOGROTATE_CONF="/etc/logrotate.d"
 HA_LOG="/var/log/seagate/cortx/ha"
 
-NODE_NAME=$(salt-call grains.get id --output=json | jq '.["local"]' | sed s/\"//g)
+LOCAL_NODE_MINION_ID=$(salt-call grains.get id --output=json | jq '.["local"]' | sed s/\"//g)
 
 post_install() {
     echo "post_install"
@@ -42,6 +42,33 @@ reset() {
     rm -rf ${HA_CONF}
 }
 
+replace_node() {
+    # Test consul
+    consul_host=$(cat /etc/cortx/ha/database.json | \
+            jq '.databases.consul_db.config.host' | sed s/\"//g)
+    consul_port=$(cat /etc/cortx/ha/database.json | \
+            jq '.databases.consul_db.config.port' | sed s/\"//g)
+
+    echo "Test consul leader for host: $consul_host port: $consul_port"
+    curl http://$consul_host:$consul_port/v1/status/leader
+    [ $? -eq 0 ] || {
+        echo "Consul is not running"; exit 1
+    }
+
+    node_list=$(salt-call --local pillar.get cluster:node_list --output=json)
+    host1=$(echo $node_list | jq '.["local"][0]' | sed s/\"//g)
+    host2=$(echo $node_list | jq '.["local"][1]' | sed s/\"//g)
+
+    # Get Faluty node name
+    if [ $LOCAL_NODE_MINION_ID == $host1 ]; then
+        faulty_node=$host2
+    else
+        faulty_node=$host1
+    fi
+
+    echo "Detected Faulty node $faulty_node"
+    /usr/bin/cortxha cleanup db --node $faulty_node
+}
 
 # Helping function
 
@@ -51,7 +78,7 @@ config_database() {
 
     # Update consul vip
     CONSUL_HOST=$(salt-call pillar.get \
-        cluster:$NODE_NAME:network:data_nw:roaming_ip \
+        cluster:$LOCAL_NODE_MINION_ID:network:data_nw:roaming_ip \
         --output=json | jq '.["local"]' | sed s/\"//g)
     sed -i -e "s|<CONSUL_HOST>|${CONSUL_HOST}|g" ${HA_CONF}/database.json
 }
@@ -73,8 +100,6 @@ config_decision_maker() {
     uuid1=$(echo $uuid_list | jq '.["'$host1'"]' | sed -e s/\"//g -e s/null//g -e '/^\s*$/d')
     uuid2=$(echo $uuid_list | jq '.["'$host2'"]' | sed -e s/\"//g -e s/null//g -e '/^\s*$/d')
 
-    echo $uuid1 $uuid2 $host1 $host2
-
     echo "Reading cluster.sls"
     cluster=$(salt-call --local pillar.get cluster:$host1 --output=json)
     node1_data_nw=$(echo $cluster | jq '.["local"].network["data_nw"].iface')
@@ -82,12 +107,10 @@ config_decision_maker() {
     node2_data_nw=$(echo $cluster | jq '.["local"].network["data_nw"].iface')
     node2_mgmt_nw=$(echo $cluster | jq '.["local"].network["mgmt_nw"].iface')
 
-    echo $node1_data_nw $node1_mgmt_nw $node2_data_nw $node2_mgmt_nw
-
     decision_monitor_conf=${SOURCE_HA_CONF}/decision_monitor_conf.json
     cp -rf $decision_monitor_conf /tmp/decision_monitor_conf.json
 
-    sed -i -e "s|<LOCAL>|${NODE_NAME}|g" \
+    sed -i -e "s|<LOCAL>|${LOCAL_NODE_MINION_ID}|g" \
         -e "s|<HOST1>|${host1}|g" \
         -e "s|<HOST2>|${host2}|g" \
         -e "s|<UUID1>|${uuid1}|g" \
