@@ -42,6 +42,22 @@ while getopts ":g:v:b:p:kd" o; do
     esac
 done
 
+# Workaround for Jenkins CI pipeline. The actual path in BASE_DIR may be very
+# long, for example this happens in Jenkins environment:
+#
+#   /var/jenkins/workspace/GitHub-custom-ci-builds/custom_build_test/cortx-ha
+#
+# It then leads to a failure when running `pip3` installed by pyenv module:
+#
+#   bash: /var/jenkins/workspace/GitHub-custom-ci-builds/custom_build_test/cortx-ha/dist/rpmbuild/BUILD/cortx/pcswrap/.py3venv/bin/pip3: /var/jenkins/workspace/GitHub-custom-ci-builds/custom_build_test/cortx-ha/dist: bad interpreter: No such file or directory
+#
+if [[ $BASE_DIR =~ jenkins/workspace ]] ; then
+    #ln -sfn $BASE_DIR /tmp/$RPM_NAME
+    cp -a $BASE_DIR /tmp/$RPM_NAME
+    BASE_DIR_OLD=$BASE_DIR
+    BASE_DIR=/tmp/$RPM_NAME
+fi
+
 cd $BASE_DIR
 [ -z $"$BUILD" ] && BUILD="$(git rev-parse --short HEAD)" \
         || BUILD="${BUILD}_$(git rev-parse --short HEAD)"
@@ -67,12 +83,12 @@ cp $BASE_DIR/jenkins/cortx-ha.spec ${TMPDIR}
 
 ######################### Backend ##############################
 
-# Build HA
+# Build HA with PyInstaller
 cd $TMPDIR
 
 [ "$DEV" == true ] && {
     cp -rf $BASE_DIR/src/* $HA_DIR/
-    cp -rf $BASE_DIR/jenkins/pyinstaller/requirment.txt $HA_DIR/
+    cp -rf $BASE_DIR/jenkins/pyinstaller/requirements.txt $HA_DIR/
     sed -i -e "s/<RPM_NAME>/${RPM_NAME}/g" \
         -e "s|<HA_PATH>|${HA_PATH}|g" \
         -e "s|<DEV>|true|g" $TMPDIR/cortx-ha.spec
@@ -102,9 +118,11 @@ cd $BASE_DIR
 rm -rf ${DIST}/rpmbuild
 mkdir -p ${DIST}/rpmbuild/SOURCES
 
-# Create tar for ha
-cd ${DIST}
-echo "Creating tar for ha build"
+cd src
+git ls-files pcswrap resource | cpio -pd $DIST/$CORTX
+
+cd $DIST
+echo "Creating tar for HA build"
 tar -czf ${DIST}/rpmbuild/SOURCES/${RPM_NAME}-${VER}.tar.gz ${CORTX}
 
 # Generate RPMs
@@ -116,7 +134,11 @@ echo rpmbuild --define "version $VER" --define "dist $BUILD" --define "_topdir $
 rpmbuild --define "version $VER" --define "dist $BUILD" --define "_topdir $TOPDIR" -bb $TMPDIR/cortx-ha.spec
 
 # Remove temporary directory
-\rm -rf ${DIST}/tmp
+rm -rf ${DIST}/tmp
 
 echo "HA RPMs ..."
 find $BASE_DIR -name *.rpm
+
+if [[ $BASE_DIR_OLD =~ jenkins/workspace ]] ; then
+    cp -a $DIST $BASE_DIR_OLD
+fi

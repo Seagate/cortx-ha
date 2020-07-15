@@ -18,8 +18,16 @@ HA Tools
 %build
 
 %install
+rm -rf ${RPM_BUILD_ROOT}
 mkdir -p ${RPM_BUILD_ROOT}<HA_PATH>
 cp -rp . ${RPM_BUILD_ROOT}<HA_PATH>
+make -C pcswrap install DESTDIR=${RPM_BUILD_ROOT}<HA_PATH>
+sed -i -e 's@^#!.*\.py3venv@#!/usr@' ${RPM_BUILD_ROOT}<HA_PATH>/bin/*
+
+mkdir -p ${RPM_BUILD_ROOT}/usr/lib/ocf/resource.d/cortx/
+mv resource/{dispatch,lnet,sspl} \
+   ${RPM_BUILD_ROOT}/usr/lib/ocf/resource.d/cortx/
+rm -rf resource
 exit 0
 
 %post
@@ -65,7 +73,7 @@ exit 0
 # TODO - Verify permissions, user and groups for directory.
 %defattr(-, root, root, -)
 <HA_PATH>/*
-
+/usr/lib/ocf/resource.d/cortx/*
 
 %changelog
 * Mon Jul 29 2019 Ajay Paratmandali <ajay.paratmandali@seagate.com> - 1.0.0
