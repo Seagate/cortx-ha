@@ -1,4 +1,4 @@
-ees-hare:
+ees-ha:
   post_install:
     script: /opt/seagate/cortx/ha/conf/script/build-ees-ha
     args:
@@ -17,7 +17,7 @@ ees-hare:
     script: null
     args: null
   reset:
-    script: /opt/seagate/cortx/hare/libexec/prov-ha-reset
+    script: /opt/seagate/cortx/ha/conf/script/prov-ha-reset
     args: null
   backup:
     files:
