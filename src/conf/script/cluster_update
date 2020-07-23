@@ -1,0 +1,71 @@
+#!/bin/bash
+
+set -eu -o pipefail
+
+HA_PATH="<HA_PATH>"
+
+LOCAL_NODE_MINION_ID=$(salt-call grains.get id --output=json | jq '.["local"]' | sed s/\"//g)
+
+remove_node() {
+    # Get node name for replace node
+    faulty_node=$( get_faulty_node )
+
+    pcs status nodes | grep $faulty_node || {
+        echo "Node $faulty_node is already removed from cluster"
+        exit 0
+    }
+
+    # Remove node
+    pcs cluster node remove $faulty_node --force
+
+    pcs status nodes | grep $faulty_node && {
+        echo "Failed to remove node from cluster"
+        exit 1
+    }
+
+    exit 0
+}
+
+add_node() {
+    # Get node name for replace node
+    faulty_node=$( get_faulty_node )
+
+    pcs status nodes | grep $faulty_node && {
+        echo "Node $faulty_node is already added to cluster"
+        exit 0
+    }
+
+    # Add new node to cluster
+    pcs cluster node add $faulty_node
+    pcs resource cleanup --all
+    pcs cluster enable $faulty_node
+    pcs cluster start $faulty_node
+    sleep 30
+
+    pcs status nodes | grep $faulty_node || {
+        echo "Failed to add $faulty_node node to cluster"
+        exit 1
+    }
+
+    exit 0
+}
+
+# Helping function
+get_faulty_node(){
+    # Get node name for replace node
+    node_list=$(salt-call --local pillar.get cluster:node_list --output=json)
+    host1=$(echo $node_list | jq '.["local"][0]' | sed s/\"//g)
+    host2=$(echo $node_list | jq '.["local"][1]' | sed s/\"//g)
+
+    # Get Faluty node name
+    if [ $LOCAL_NODE_MINION_ID == $host1 ]; then
+        faulty_node=$host2
+    else
+        faulty_node=$host1
+    fi
+    echo $faulty_node
+}
+
+ACTION=$1
+
+$ACTION
