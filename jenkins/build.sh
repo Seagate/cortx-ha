@@ -110,6 +110,7 @@ cp -rf $BASE_DIR/src/conf $HA_DIR/
 # Update HA path in setup
 sed -i -e "s|<HA_PATH>|${HA_PATH}/ha|g" ${HA_DIR}/conf/script/ha_setup
 sed -i -e "s|<HA_PATH>|${HA_PATH}/ha|g" ${HA_DIR}/conf/script/build-cortx-ha
+sed -i -e "s|<HA_PATH>|${HA_PATH}/ha|g" ${HA_DIR}/conf/script/cluster_update
 
 ################## TAR & RPM BUILD ##############################
 
