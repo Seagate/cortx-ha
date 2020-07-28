@@ -35,6 +35,8 @@ Optional parameters:
   --right-node    <n2>  Right node hostname (default: pod-c2)
   --left-volume   <lv>  Left  node /var/motr volume (default: /dev/sdb)
   --right-volume  <rv>  Right node /var/motr volume (default: /dev/sdc)
+  --left-md-volume <lmd>  Left node MD volume (default created at /var/motr)
+  --right-md-volume <rmd> Right node MD volume (default created at /var/motr)
   --skip-mkfs           Don't mkfs /var/motr
   --net-type <tcp|o2ib> LNet network type (default: tcp)
   --cib-file      <cf>  Pacemaker configuration file
@@ -57,6 +59,7 @@ EOF
 
 TEMP=$(getopt --options h,i: \
               --longoptions help,ip1:,ip2:,interface:,left-node:,right-node: \
+              --longoptions left-md-volume:,right-md-volume: \
               --longoptions left-volume:,right-volume:,skip-mkfs,net-type: \
               --longoptions cib-file:,init,update \
               --name "$PROG" -- "$@" || true)
@@ -72,6 +75,8 @@ lnode=pod-c1
 rnode=pod-c2
 lvolume=/dev/sdb
 rvolume=/dev/sdc
+lmd=
+rmd=
 skip_mkfs=false
 net_type=tcp
 update=false
@@ -88,6 +93,8 @@ while true; do
         --right-node)        rnode=$2; shift 2 ;;
         --left-volume)       lvolume=$2; shift 2 ;;
         --right-volume)      rvolume=$2; shift 2 ;;
+        --left-md-volume)    lmd=$2; shift 2 ;;
+        --right-md-volume)   rmd=$2; shift 2 ;;
         --skip-mkfs)         skip_mkfs=true; shift 1 ;;
         --net-type)          net_type=$2; shift 2 ;;
         --cib-file)          cib_file=$2; shift 2 ;;
@@ -119,6 +126,8 @@ if [[ -f $argsfile ]]; then
            right-node)   rnode=$value   ;;
            left-volume)  lvolume=$value ;;
            right-volume) rvolume=$value ;;
+           left-md-volume) lmd=$value   ;;
+           right-md-volume) rmd=$value  ;;
            skip-mkfs)
                [[ $value == true || $value == false ]] ||
                    die 'Invalid value of `skip-mkfs` parameter.
@@ -139,6 +148,9 @@ fi
 
 [[ -b $lvolume ]] || die "meta-data volume $lvolume is not available"
 [[ -b $rvolume ]] || die "meta-data volume $rvolume is not available"
+
+[[ $lmd && -b $lmd ]] || die "ios MD segment path $lmd is not available"
+[[ $rmd && -b $rmd ]] || die "ios MD segment path $rmd is not available"
 
 # Sample output:
 #   $ ip -oneline -4 address show dev eno1
@@ -287,6 +299,13 @@ motr_config() {
     for f in $rm0confs; do sudo sed '1iMERO_M0D_DATA_DIR=/var/motr2' -i $f; done
     ssh $rnode "for f in $lm0confs; do \
                            sudo sed '1iMERO_M0D_DATA_DIR=/var/motr1' -i \$f; done"
+    ## Append MERO_BE_SEG_PATH for IOS
+    for f in $lm0confs; do \
+        sudo grep -q -e 'MERO_CONF_XC' $f ||
+            echo "MERO_BE_SEG_PATH=$lmd" >> $f; done
+    ssh $rnode "for f in $rm0confs; do \
+        sudo grep -q -e 'MERO_CONF_XC'\$f ||
+            echo 'MERO_BE_SEG_PATH=$rmd' >> $f; done"
 }
 
 cmd_deregister_node() {
