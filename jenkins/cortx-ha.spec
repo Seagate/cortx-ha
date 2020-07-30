@@ -21,6 +21,8 @@ HA Tools
 rm -rf ${RPM_BUILD_ROOT}
 mkdir -p ${RPM_BUILD_ROOT}<HA_PATH>
 cp -rp . ${RPM_BUILD_ROOT}<HA_PATH>
+
+# Compile pcswrap
 make -C pcswrap install DESTDIR=${RPM_BUILD_ROOT}<HA_PATH>/ha
 sed -i -e 's@^#!.*\.py3venv@#!/usr@' ${RPM_BUILD_ROOT}<HA_PATH>/ha/bin/*
 
@@ -32,24 +34,17 @@ exit 0
 
 %post
 HA_DIR=<HA_PATH>/ha
-DEV=<DEV>
 
 RES_AGENT="/usr/lib/ocf/resource.d/seagate"
 mkdir -p ${RES_AGENT} $HA_DIR/bin /etc/cortx/ha/ /usr/bin
 
-[ "$DEV" == true ] && {
-    ln -sf ${HA_DIR}/resource/hw_comp_ra.py ${RES_AGENT}/hw_comp_ra
-    ln -sf ${HA_DIR}/resource/iem_comp_ra.py ${RES_AGENT}/iem_comp_ra
-    ln -sf $HA_DIR/cli/cortxha.py /usr/bin/cortxha
-} || {
-    # Move binary file
-    ln -sf $HA_DIR/lib/hw_comp_ra ${RES_AGENT}/hw_comp_ra
-    ln -sf $HA_DIR/lib/hw_comp_ra $HA_DIR/bin/hw_comp_ra
-    ln -sf $HA_DIR/lib/iem_comp_ra ${RES_AGENT}/iem_comp_ra
-    ln -sf $HA_DIR/lib/iem_comp_ra $HA_DIR/bin/iem_comp_ra
-    ln -sf $HA_DIR/lib/cortxha $HA_DIR/bin/cortxha
-    ln -sf $HA_DIR/lib/cortxha /usr/bin/cortxha
-}
+# Move binary file
+ln -sf $HA_DIR/lib/hw_comp_ra ${RES_AGENT}/hw_comp_ra
+ln -sf $HA_DIR/lib/hw_comp_ra $HA_DIR/bin/hw_comp_ra
+ln -sf $HA_DIR/lib/iem_comp_ra ${RES_AGENT}/iem_comp_ra
+ln -sf $HA_DIR/lib/iem_comp_ra $HA_DIR/bin/iem_comp_ra
+ln -sf $HA_DIR/lib/cortxha $HA_DIR/bin/cortxha
+ln -sf $HA_DIR/lib/cortxha /usr/bin/cortxha
 exit 0
 
 %preun
