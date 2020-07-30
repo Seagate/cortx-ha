@@ -1,0 +1,51 @@
+#!/bin/bash
+
+set -eu -o pipefail
+
+HA_PATH="<HA_PATH>"
+
+LOCAL_NODE_MINION_ID=$(salt-call grains.get id --output=json | jq '.["local"]' | sed s/\"//g)
+
+remove_node() {
+    # Get node name for replace node
+    faulty_node=$( get_faulty_node )
+
+    cortxha cluster remove_node $faulty_node || {
+        echo "Failed to remove $faulty_node node to cluster"
+        exit 1
+    }
+
+    exit 0
+}
+
+add_node() {
+    # Get node name for replace node
+    faulty_node=$( get_faulty_node )
+
+    cortxha cluster add_node $faulty_node || {
+        echo "Failed to add $faulty_node node to cluster"
+        exit 1
+    }
+
+    exit 0
+}
+
+# Helping function
+get_faulty_node(){
+    # Get node name for replace node
+    node_list=$(salt-call --local pillar.get cluster:node_list --output=json)
+    host1=$(echo $node_list | jq '.["local"][0]' | sed s/\"//g)
+    host2=$(echo $node_list | jq '.["local"][1]' | sed s/\"//g)
+
+    # Get Faluty node name
+    if [ $LOCAL_NODE_MINION_ID == $host1 ]; then
+        faulty_node=$host2
+    else
+        faulty_node=$host1
+    fi
+    echo $faulty_node
+}
+
+ACTION=$1
+
+$ACTION
