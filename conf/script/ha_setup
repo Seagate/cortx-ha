@@ -17,6 +17,9 @@ post_install() {
 config() {
     echo "config"
 
+    # TODO: Based on cross-connect check, load appropriate rule_engine
+    # file. If cross-connect - load rules_engine_schema.json
+    # If no cross-connect - load rules_engine_schema.json.sample
     # Copy conf files
     cp -rf ${SOURCE_HA_CONF}/rules_engine_schema.json ${HA_CONF}
 
