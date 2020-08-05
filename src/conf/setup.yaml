@@ -19,7 +19,7 @@ ha:
         script: /opt/seagate/cortx/ha/conf/script/ha_setup
         args: reset
 
-    refresh_context:
+    refresh_config:
         script: /opt/seagate/cortx/ha/conf/script/ha_setup
         args: replace_node
 
