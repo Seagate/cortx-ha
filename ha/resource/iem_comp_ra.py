@@ -2,8 +2,8 @@
 
 """
  ****************************************************************************
- Filename:          hw_comp_ra.py
- Description:       hw_comp_ra resource agent
+ Filename:          iem_comp_ra.py
+ Description:       iem_comp_ra resource agent
 
  Creation Date:     04/15/2020
  Author:            Ajay Paratmandali
@@ -22,7 +22,7 @@ import sys
 import pathlib
 
 if __name__ == '__main__':
-    sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__).resolve()), '..', '..'))
+    sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..'))
     from ha.resource import resource_agent
     action = sys.argv[1] if len(sys.argv) > 1 else ""
-    sys.exit(resource_agent.main(resource_agent.HardwareResourceAgent, action))
+    sys.exit(resource_agent.main(resource_agent.IEMResourceAgent, action))

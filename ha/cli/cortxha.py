@@ -99,7 +99,7 @@ class HACli:
             sys.exit(1)
 
 if __name__ == '__main__':
-    sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__).resolve()), '..', '..'))
+    sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..'))
     from ha import const
     from ha.core.cleanup import Cleanup
     from ha.core.cluster import PcsCluster
