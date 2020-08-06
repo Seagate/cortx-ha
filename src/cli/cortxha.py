@@ -22,12 +22,14 @@ import sys
 import traceback
 import argparse
 import pathlib
+import json
 
+from datetime import datetime
 from eos.utils.schema.conf import Conf
 from eos.utils.log import Log
 from eos.utils.schema.payload import *
 
-#TODO - Move the cli to cortxcli framework once cortxcli is created as a separate module.
+#TODO - Move the cli to cortxcli frameowrk once cortxcli is created as a separate module.
 class HACli:
 
     def __init__(self):
@@ -42,26 +44,22 @@ class HACli:
         log_level = Conf.get(const.RESOURCE_GLOBAL_INDEX, "log", "INFO")
         Log.init(service_name='cortxha', log_path=const.RA_LOG_DIR, level=log_level)
 
-    @staticmethod
-    def _usage():
+    def _usage(self):
         return """
 
     Example:
     cortxha cleanup db --node <node_minion_id>
-    cortxha cluster add_node <node_minion_id>
-    cortxha cluster remove_node <node_minion_id>
     """
 
     def command(self):
         try:
             argParser = argparse.ArgumentParser(
-                usage = "%(prog)s\n\n" +  HACli._usage(),
+                usage = "%(prog)s\n\n" +  self._usage(),
                 formatter_class = argparse.RawDescriptionHelpFormatter)
 
             component_parser = argParser.add_subparsers(
                 help = "Select one of given component.")
 
-            # Cleanup
             cleanup_parser = component_parser.add_parser("cleanup",
                                 help = "Cleanup db and resource")
             cleanup_parser.add_argument("cleanup",
@@ -71,37 +69,15 @@ class HACli:
             cleanup_parser.add_argument("-n", "--node",
                 help="Cleanup data for node")
 
-            # Cluster
-            cluster_parser =  component_parser.add_parser("cluster",
-                                help = "Manage cluster")
-            cluster_parser.add_argument("cluster",
-                help = "Cluster add remove node",
-                choices = ["add_node", "remove_node"])
-            cluster_parser.add_argument("node",
-                help="Node name", action="store")
-
             args = argParser.parse_args()
-
-            if len(sys.argv) <= 1:
-                argParser.print_help(sys.stderr)
-            elif sys.argv[1] == "cluster":
-                cluster = PcsCluster()
-                if args.cluster == "add_node":
-                    cluster.add_node(args.node)
-                elif args.cluster == "remove_node":
-                    cluster.remove_node(args.node)
-            elif sys.argv[1] == "cleanup":
-                Cleanup(args).cleanup_db()
-            else:
-                argParser.print_help(sys.stderr)
+            Cleanup(args).cleanup_db()
         except Exception as e:
-            Log.error(f"{traceback.format_exc()}, {e}")
+            Log.error(f"{traceback.format_exc()}")
             sys.exit(1)
 
 if __name__ == '__main__':
     sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__).resolve()), '..', '..'))
     from ha import const
     from ha.core.cleanup import Cleanup
-    from ha.core.cluster import PcsCluster
     ha_cli = HACli()
     ha_cli.command()
