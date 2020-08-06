@@ -21,8 +21,8 @@ HA Tools
 rm -rf ${RPM_BUILD_ROOT}
 mkdir -p ${RPM_BUILD_ROOT}<HA_PATH>
 cp -rp . ${RPM_BUILD_ROOT}<HA_PATH>
-make -C pcswrap install DESTDIR=${RPM_BUILD_ROOT}<HA_PATH>/ha
-sed -i -e 's@^#!.*\.py3venv@#!/usr@' ${RPM_BUILD_ROOT}<HA_PATH>/ha/bin/*
+make -C pcswrap install DESTDIR=${RPM_BUILD_ROOT}<HA_PATH>
+sed -i -e 's@^#!.*\.py3venv@#!/usr@' ${RPM_BUILD_ROOT}<HA_PATH>/bin/*
 
 mkdir -p ${RPM_BUILD_ROOT}/usr/lib/ocf/resource.d/cortx/
 mv resource/{dispatch,lnet,sspl} \
