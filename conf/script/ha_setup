@@ -22,25 +22,20 @@ post_install() {
 config() {
     echo "config"
 
+    rule_file=${HA_CROSS_CONNECT_RULE_FILE}
+
     # Based on cross-connect check, load appropriate rule_engine
     # file. If cross-connect - load rules_engine_schema.json
     # If no cross-connect - load rules_engine_schema_without_crossconnect.json
-    [[ -f ${CROSS_CONNECT_FILE} ]] && {
-        echo "Cross connect File Exists"
-        cp -rf ${SOURCE_HA_CONF}/${HA_CROSS_CONNECT_RULE_FILE} ${HA_CONF}
+    [[ -f ${SYSTEM_CROSS_CONNECT_FILE} ]] && echo "Cross connect File Exists" || {
 
-        # Rename a rule file to 'rules_engine_schema.json' as HA component search
-        # for this specific name
-        mv ${HA_CONF}/${HA_CROSS_CONNECT_RULE_FILE} ${HA_CONF}/${HA_CONF_RULE_FILE}
-
-    } || {
         echo "Cross connect file does not exist"
-        cp -rf ${SOURCE_HA_CONF}/${HA_NON_CROSS_CONNECT_RULE_FILE} ${HA_CONF}
-
-        # Rename a rule file to 'rules_engine_schema.json' as HA component search
-        # for this specific name
-        mv ${HA_CONF}/${HA_NON_CROSS_CONNECT_RULE_FILE} ${HA_CONF}/${HA_CONF_RULE_FILE}
+        rule_file=${HA_NON_CROSS_CONNECT_RULE_FILE}
     }
+
+    # Copy a relevant rule file to HA_CONF directory with name as
+    # 'rules_engine_schema.json' as HA component search for this specific name
+    cp -rf ${SOURCE_HA_CONF}/${rule_file} ${HA_CONF}/${HA_CONF_RULE_FILE}
 
     # Configure database.json
     config_database
