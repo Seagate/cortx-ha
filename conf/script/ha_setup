@@ -10,7 +10,8 @@ LOCAL_NODE_MINION_ID=$(salt-call grains.get id --output=json | jq '.["local"]' |
 SYSTEM_CROSS_CONNECT_FILE="/opt/seagate/cortx/provisioner/generated_configs/$LOCAL_NODE_MINION_ID.cc"
 
 HA_NON_CROSS_CONNECT_RULE_FILE='rules_engine_schema_without_crossconnect.json'
-HA_CROSS_CONNECT_RULE_FILE='rules_engine_schema.json'
+HA_CROSS_CONNECT_RULE_FILE='rules_engine_schema_with_crossconnect.json'
+HA_CONF_RULE_FILE='rules_engine_schema.json'
 
 post_install() {
     echo "post_install"
@@ -27,9 +28,18 @@ config() {
     [[ -f ${CROSS_CONNECT_FILE} ]] && {
         echo "Cross connect File Exists"
         cp -rf ${SOURCE_HA_CONF}/${HA_CROSS_CONNECT_RULE_FILE} ${HA_CONF}
+
+        # Rename a rule file to 'rules_engine_schema.json' as HA component search
+        # for this specific name
+        mv ${HA_CONF}/${HA_CROSS_CONNECT_RULE_FILE} ${HA_CONF}/${HA_CONF_RULE_FILE}
+
     } || {
         echo "Cross connect file does not exist"
         cp -rf ${SOURCE_HA_CONF}/${HA_NON_CROSS_CONNECT_RULE_FILE} ${HA_CONF}
+
+        # Rename a rule file to 'rules_engine_schema.json' as HA component search
+        # for this specific name
+        mv ${HA_CONF}/${HA_NON_CROSS_CONNECT_RULE_FILE} ${HA_CONF}/${HA_CONF_RULE_FILE}
     }
 
     # Configure database.json
