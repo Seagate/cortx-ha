@@ -32,7 +32,7 @@
       "entity": "enclosure",
       "entity_id": "0",
       "component": "connectivity",
-      "component_id": "<HOST2>"
+      "component_id": "<HOST1>"
     },
     "encl_con_<HOST2>": {
       "entity": "enclosure",
