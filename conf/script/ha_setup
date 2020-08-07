@@ -5,7 +5,11 @@ SOURCE_HA_CONF="<HA_PATH>/conf/etc"
 HA_CONF="/etc/cortx/ha"
 LOGROTATE_CONF="/etc/logrotate.d"
 HA_LOG="/var/log/seagate/cortx/ha"
+HA_PARAM="${HA_CONF}/ha_param.yaml"
 
+NODE_LIST=$(salt-call --local pillar.get cluster:node_list --output=json)
+HOST1=$(echo $NODE_LIST | jq '.["local"][0]' | sed s/\"//g)
+HOST2=$(echo $NODE_LIST | jq '.["local"][1]' | sed s/\"//g)
 LOCAL_NODE_MINION_ID=$(salt-call grains.get id --output=json | jq '.["local"]' | sed s/\"//g)
 SYSTEM_CROSS_CONNECT_FILE="/opt/seagate/cortx/provisioner/generated_configs/$LOCAL_NODE_MINION_ID.cc"
 
@@ -21,6 +25,10 @@ post_install() {
 
 config() {
     echo "config"
+    # copy ha_param.yaml
+    cp -rf ${SOURCE_HA_CONF}/ha_param.yaml ${HA_PARAM}
+    sed -i -e "s|<HOST1>|${HOST1}|g" \
+        -e "s|<HOST2>|${HOST2}|g" ${HA_PARAM}
 
     rule_file=${HA_CROSS_CONNECT_RULE_FILE}
 
@@ -72,15 +80,11 @@ replace_node() {
         echo "Consul is not running"; exit 1
     }
 
-    node_list=$(salt-call --local pillar.get cluster:node_list --output=json)
-    host1=$(echo $node_list | jq '.["local"][0]' | sed s/\"//g)
-    host2=$(echo $node_list | jq '.["local"][1]' | sed s/\"//g)
-
     # Get Faluty node name
-    if [ $LOCAL_NODE_MINION_ID == $host1 ]; then
-        faulty_node=$host2
+    if [ $LOCAL_NODE_MINION_ID == $HOST1 ]; then
+        faulty_node=$HOST2
     else
-        faulty_node=$host1
+        faulty_node=$HOST1
     fi
 
     echo "Detected Faulty node $faulty_node"
@@ -102,11 +106,7 @@ config_database() {
 
 config_decision_maker() {
     echo "Setup Decision maker"
-    node_list=$(salt-call --local pillar.get cluster:node_list --output=json)
-    host1=$(echo $node_list | jq '.["local"][0]' | sed s/\"//g)
-    host2=$(echo $node_list | jq '.["local"][1]' | sed s/\"//g)
-
-    for node in $(echo $host1 $host2); do
+    for node in $(echo $HOST1 $HOST2); do
         bool=$(salt-call --local pillar.get cluster:$node:is_primary --output=json | jq '.["local"]')
         if $bool; then
            primery=$node
@@ -114,11 +114,11 @@ config_decision_maker() {
     done
 
     uuid_list=$(ssh $primery "salt '*' grains.get node_id --output=json")
-    uuid1=$(echo $uuid_list | jq '.["'$host1'"]' | sed -e s/\"//g -e s/null//g -e '/^\s*$/d')
-    uuid2=$(echo $uuid_list | jq '.["'$host2'"]' | sed -e s/\"//g -e s/null//g -e '/^\s*$/d')
+    uuid1=$(echo $uuid_list | jq '.["'$HOST1'"]' | sed -e s/\"//g -e s/null//g -e '/^\s*$/d')
+    uuid2=$(echo $uuid_list | jq '.["'$HOST2'"]' | sed -e s/\"//g -e s/null//g -e '/^\s*$/d')
 
     echo "Reading cluster.sls"
-    cluster=$(salt-call --local pillar.get cluster:$host1 --output=json)
+    cluster=$(salt-call --local pillar.get cluster:$HOST1 --output=json)
     node1_data_nw=$(echo $cluster | jq '.["local"].network["data_nw"].iface')
     node1_mgmt_nw=$(echo $cluster | jq '.["local"].network["mgmt_nw"].iface')
     node2_data_nw=$(echo $cluster | jq '.["local"].network["data_nw"].iface')
@@ -128,8 +128,8 @@ config_decision_maker() {
     cp -rf $decision_monitor_conf /tmp/decision_monitor_conf.json
 
     sed -i -e "s|<LOCAL>|${LOCAL_NODE_MINION_ID}|g" \
-        -e "s|<HOST1>|${host1}|g" \
-        -e "s|<HOST2>|${host2}|g" \
+        -e "s|<HOST1>|${HOST1}|g" \
+        -e "s|<HOST2>|${HOST2}|g" \
         -e "s|<UUID1>|${uuid1}|g" \
         -e "s|<UUID2>|${uuid2}|g" /tmp/decision_monitor_conf.json
 

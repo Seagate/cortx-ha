@@ -2,16 +2,64 @@
 
 set -eu -o pipefail
 
-HA_PATH="<HA_PATH>"
+PROG=$(basename $0)
+LOG_PATH="/var/log/seagate/cortx/ha"
+TMP_LOG="/tmp/ha.log"
+LOG="${LOG_PATH}/${0##*/}.log"
+
+resources=(
+    io_path_health-c1
+    io_path_health-c2
+    mgmt_path_health-c1
+    sspl_master_hw
+    node_iem_s3
+)
+
+dependency_resource=(
+    consul-c1
+    consul-c2
+    sspl-master
+    ldap-clone
+)
+
+handle_error() {
+    MSG=$(cat ${TMP_LOG})
+    echo "$(date '+%Y-%m-%d %H:%M:%S'): ${MSG}" >> ${LOG}
+    echo ${MSG} | grep -q "already" || {
+        echo "ERROR: ${MSG}"
+        exit 1
+    }
+}
+
+verify_resources() {
+    RESOURCE_LIST=$(pcs resource)
+    for resource in ${resources[@]}; do
+        echo ${RESOURCE_LIST} | grep -q ${resource} || {
+            echo "Error: ${resource} resource is missing. Log at ${LOG}"
+            exit 1
+        }
+    done
+    echo "HW and IEM resource configured successfully."
+}
+
+verify_dependency_resources() {
+    RESOURCE_LIST=$(pcs resource)
+    for resource in ${dependency_resource[@]}; do
+        echo ${RESOURCE_LIST} | grep -q ${resource} || {
+            echo "Error: ${resource} resource is missing. Log at ${LOG}"
+            exit 1
+        }
+    done
+    echo "Dependency resource check passed..."
+}
 
 init() {
-    # Get node name
-    node_list=$(salt-call --local pillar.get cluster:node_list --output=json)
-    host1=$(echo $node_list | jq '.["local"][0]' | sed s/\"//g)
-    host2=$(echo $node_list | jq '.["local"][1]' | sed s/\"//g)
+    # Check dependency resource
+    verify_dependency_resources
 
+    RESOURCE_LIST=$(pcs resource)
     # Restart csm to enable decision maker changes
-    pcs resource restart csm-agent
+    echo $RESOURCE_LIST | grep -q csm-agent && pcs resource restart csm-agent
 
     pcs cluster cib hw_cfg
     # Hardware io stack resource
@@ -19,35 +67,37 @@ init() {
         path='io' filename='io_path_health-c1' \
         op start timeout=30s interval=0s \
         op monitor timeout=30s interval=30s \
-        op stop timeout=30s interval=0s
+        op stop timeout=30s interval=0s 2> "${TMP_LOG}" || handle_error
+
     pcs -f hw_cfg resource create io_path_health-c2 ocf:seagate:hw_comp_ra \
         path='io' filename='io_path_health-c2' \
         op start timeout=30s interval=0s \
         op monitor timeout=30s interval=30s \
-        op stop timeout=30s interval=0s
+        op stop timeout=30s interval=0s 2> "${TMP_LOG}" || handle_error
+
     pcs -f hw_cfg resource create mgmt_path_health-c1 ocf:seagate:hw_comp_ra \
         path='mgmt' filename='mgmt_path_health-c1' \
         op start timeout=30s interval=0s \
         op monitor timeout=30s interval=30s \
-        op stop timeout=30s interval=0s
+        op stop timeout=30s interval=0s 2> "${TMP_LOG}" || handle_error
 
-    pcs -f hw_cfg resource group add c1 io_path_health-c1
-    pcs -f hw_cfg resource group add c2 io_path_health-c2
-    pcs -f hw_cfg resource group add csm-kibana mgmt_path_health-c1
-    pcs -f hw_cfg constraint order consul-c1 then io_path_health-c1
-    pcs -f hw_cfg constraint order consul-c2 then io_path_health-c2
-    pcs -f hw_cfg constraint order consul-c1 then mgmt_path_health-c1
+    pcs -f hw_cfg resource group add c1 io_path_health-c1 2> "${TMP_LOG}" || handle_error
+    pcs -f hw_cfg resource group add c2 io_path_health-c2 2> "${TMP_LOG}" || handle_error
+    pcs -f hw_cfg resource group add csm-kibana mgmt_path_health-c1 2> "${TMP_LOG}" || handle_error
+    pcs -f hw_cfg constraint order consul-c1 then io_path_health-c1 2> "${TMP_LOG}" || handle_error
+    pcs -f hw_cfg constraint order consul-c2 then io_path_health-c2 2> "${TMP_LOG}" || handle_error
+    pcs -f hw_cfg constraint order consul-c1 then mgmt_path_health-c1 2> "${TMP_LOG}" || handle_error
 
     # Hardware resource monitor by sspl master
     pcs -f hw_cfg resource create sspl_master_hw ocf:seagate:hw_comp_ra \
         path='storage_encl' filename='sspl_master_hw' \
         op start timeout=30s interval=0s \
         op monitor timeout=30s interval=30s \
-        op stop timeout=30s interval=0s
-    pcs -f hw_cfg resource update sspl_master_hw meta migration-threshold=1 failure-timeout=40s
-    pcs -f hw_cfg constraint colocation add sspl_master_hw with sspl-master INFINITY with-rsc-role=Master
-    pcs -f hw_cfg constraint location sspl_master_hw prefers $host1=INFINITY
-    pcs -f hw_cfg constraint location sspl_master_hw prefers $host2=INFINITY
+        op stop timeout=30s interval=0s 2> "${TMP_LOG}" || handle_error
+    pcs -f hw_cfg resource update sspl_master_hw meta migration-threshold=1 failure-timeout=40s 2> "${TMP_LOG}" || handle_error
+    pcs -f hw_cfg constraint colocation add sspl_master_hw with sspl-master INFINITY with-rsc-role=Master 2> "${TMP_LOG}" || handle_error
+    pcs -f hw_cfg constraint location sspl_master_hw prefers "${HOST1}"=INFINITY 2> "${TMP_LOG}" || handle_error
+    pcs -f hw_cfg constraint location sspl_master_hw prefers "${HOST2}"=INFINITY 2> "${TMP_LOG}" || handle_error
     pcs cluster cib-push hw_cfg
 
     pcs cluster cib iem_cfg
@@ -55,30 +105,65 @@ init() {
         path='node_iem_s3' filename='node_iem_s3' service="slapd" \
         op start timeout=30s interval=0s \
         op monitor timeout=30s interval=30s \
-        op stop timeout=30s interval=0s
-    pcs -f iem_cfg resource clone node_iem_s3 clone-max=2 clone-node-max=1
-    pcs -f iem_cfg constraint location node_iem_s3-clone prefers ${host1}=INFINITY
-    pcs -f iem_cfg constraint location node_iem_s3-clone prefers ${host2}=INFINITY
-    pcs -f iem_cfg constraint order node_iem_s3-clone then ldap-clone
+        op stop timeout=30s interval=0s 2> "${TMP_LOG}" || handle_error
+    pcs -f iem_cfg resource clone node_iem_s3 clone-max=2 clone-node-max=1 2> "${TMP_LOG}" || handle_error
+    pcs -f iem_cfg constraint location node_iem_s3-clone prefers "${HOST1}"=INFINITY 2> "${TMP_LOG}" || handle_error
+    pcs -f iem_cfg constraint location node_iem_s3-clone prefers "${HOST2}"=INFINITY 2> "${TMP_LOG}" || handle_error
+    pcs -f iem_cfg constraint order node_iem_s3-clone then ldap-clone 2> "${TMP_LOG}" || handle_error
     pcs cluster cib-push iem_cfg
+
+    verify_resources
 }
 
 cleanup() {
+    RESOURCE_LIST=$(pcs resource)
     echo "Delete resources"
-    resources=(
-        io_path_health-c1
-        io_path_health-c2
-        mgmt_path_health-c1
-        node_iem_s3
-        sspl_master_hw
-    )
-    for r in ${resources[@]}; do
-        pcs resource delete $r &
+    for resource in ${resources[@]}; do
+        echo $RESOURCE_LIST | grep -q $resource && pcs resource delete $resource || {
+            echo "$resource resource already deleted"
+        } &
     done
     wait
 }
 
-ACTION=$1
-ARGS=$2
+usage() {
+    cat <<EOF
+Usage: $PROG <Action> [node_schama]
 
-$ACTION $ARGS
+Configures HW/IEM HA by preparing the configuration files and
+adding resources into the Pacemaker.
+
+Caveats:
+
+* The script expects Pacemaker to be started and have no resources configured.
+  Check with 'pcs status'.
+
+* hw_comp_ra, iem_comp_ra resource should be available.
+
+Mandatery Parameters:
+Action:
+    init: To configure all hw/iem resources
+    cleanup: To delete hw/iem resources
+node_schama:
+    It need prameter.yaml file
+
+prameter.yaml
+----------------------------
+HOST1: <HOST1>
+HOST2: <HOST2>
+
+EOF
+}
+
+ACTION=$1
+PARAM=$2
+mkdir -p ${LOG_PATH}
+
+if [ -f $PARAM ]; then
+    HOST1=$(cat $PARAM | grep HOST1 | awk '{print $2}')
+    HOST2=$(cat $PARAM | grep HOST2 | awk '{print $2}')
+else
+    usage
+fi
+
+$ACTION

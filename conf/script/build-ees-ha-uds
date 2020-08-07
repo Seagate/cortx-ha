@@ -33,6 +33,10 @@ eval set -- "$TEMP"
 
 update=false
 cib_file=/var/lib/hare/cib_cortx_cluster.xml
+ha_lib=/var/lib/hare/
+LOG_DIR="/var/log/seagate/cortx/ha"
+TMP_LOG="/tmp/ha.log"
+LOG="${LOG_DIR}/${0##*/}.log"
 
 while true; do
     case "${1:-default}" in
@@ -44,6 +48,46 @@ while true; do
     esac
 done
 
+resources=(
+    uds
+)
+
+dependency_resource=(
+    csm-agent
+)
+
+handle_error() {
+    MSG=$(cat ${TMP_LOG})
+    echo "$(date '+%Y-%m-%d %H:%M:%S'): ${MSG}" >> ${LOG}
+    echo ${MSG} | grep -q "already" || {
+        echo "ERROR: ${MSG}"
+        exit 1
+    }
+}
+
+verify_resources() {
+    RESOURCE_LIST=$(pcs resource)
+    for resource in ${resources[@]}; do
+        echo ${RESOURCE_LIST} | grep -q ${resource} || {
+            echo "Error: ${resource} resource is missing. Check log at ${LOG}"
+            exit 1
+        }
+    done
+    echo "UDS resource configured successfully."
+    exit 0
+}
+
+verify_dependency_resources() {
+    RESOURCE_LIST=$(pcs resource)
+    for resource in ${dependency_resource[@]}; do
+        echo ${RESOURCE_LIST} | grep -q ${resource} || {
+            echo "Error: ${resource} resource is missing. Log at ${LOG}"
+            exit 1
+        }
+    done
+    echo "Dependency resource check passed..."
+}
+
 precheck() {
     # Abort (set -e) if `csm-agent` resource does not exist.
     sudo pcs resource show csm-agent >/dev/null
@@ -51,15 +95,16 @@ precheck() {
 
 uds_rsc_add() {
     echo 'Adding UDS resource and constraints...'
-    sudo pcs -f $cib_file resource create uds systemd:uds op monitor interval=30s
-    sudo pcs -f $cib_file constraint colocation add uds with csm-agent score=INFINITY
+    sudo pcs -f $cib_file resource create uds systemd:uds op monitor interval=30s 2> "${TMP_LOG}" || handle_error
+    sudo pcs -f $cib_file constraint colocation add uds with csm-agent score=INFINITY 2> "${TMP_LOG}" || handle_error
 
     # According to EOS-9258, there is a bug which requires UDS to be started after csm_agent
-    sudo pcs -f $cib_file constraint order csm-agent then uds
+    sudo pcs -f $cib_file constraint order csm-agent then uds 2> "${TMP_LOG}" || handle_error
 }
 
 cib_init() {
-   sudo pcs cluster cib $cib_file
+    mkdir -p ${ha_lib}
+    sudo pcs cluster cib $cib_file
 }
 
 cib_commit() {
@@ -69,7 +114,9 @@ cib_commit() {
 # HA operations table.
 ha_ops=(
     precheck
+    verify_dependency_resources
     uds_rsc_add
+    verify_resources
 )
 
 # Maps ha operation from the ha_ops table to its respective type.
@@ -78,7 +125,9 @@ ha_ops=(
 # update:      executes during clean install and software update
 declare -A ha_ops_type=(
     [precheck]='bootstrap'
+    [verify_dependency_resources]='bootstrap'
     [uds_rsc_add]='update'
+    [verify_resources]='update'
 )
 
 for op in ${ha_ops[@]}; do

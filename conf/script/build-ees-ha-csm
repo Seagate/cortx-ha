@@ -64,6 +64,12 @@ lnode=pod-c1
 rnode=pod-c2
 update=false
 cib_file=/var/lib/hare/cib_cortx_cluster.xml
+ha_lib=/var/lib/hare/
+LOG_DIR="/var/log/seagate/cortx/ha"
+TMP_LOG="/tmp/ha.log"
+LOG="${LOG_DIR}/${0##*/}.log"
+
+mkdir -p "${LOG_DIR}"
 
 while true; do
     case "$1" in
@@ -97,6 +103,51 @@ fi
 [[ $vip ]] || {
     usage >&2
     exit 1
+}
+
+resources=(
+    kibana-vip
+    kibana
+    csm-agent
+)
+
+dependency_resource=(
+    consul-c1
+    consul-c2
+    els-search-clone
+    rabbitmq-clone
+)
+
+handle_error() {
+    MSG=$(cat ${TMP_LOG})
+    echo "$(date '+%Y-%m-%d %H:%M:%S'): ${MSG}" >> ${LOG}
+    echo ${MSG} | grep -q "already" || {
+        echo "ERROR: ${MSG}"
+        exit 1
+    }
+}
+
+verify_resources() {
+    RESOURCE_LIST=$(pcs resource)
+    for resource in ${resources[@]}; do
+        echo ${RESOURCE_LIST} | grep -q ${resource} || {
+            echo "Error: ${resource} resource is missing. Check log at ${LOG}"
+            exit 1
+        }
+    done
+    echo "CSM Managment resource configured successfully."
+    exit 0
+}
+
+verify_dependency_resources() {
+    RESOURCE_LIST=$(pcs resource)
+    for resource in ${dependency_resource[@]}; do
+        echo ${RESOURCE_LIST} | grep -q ${resource} || {
+            echo "Error: ${resource} resource is missing. Log at ${LOG}"
+            exit 1
+        }
+    done
+    echo "Dependency resource check passed..."
 }
 
 die() {
@@ -146,40 +197,41 @@ kibana_rsc_add() {
         ip=$vip cidr_netmask=24 nic=$iface iflabel=v1 \
         op start   interval=0s timeout=60s \
         op monitor interval=5s timeout=20s \
-        op stop    interval=0s timeout=60s
-    sudo pcs -f $cib_file resource create kibana systemd:kibana op monitor interval=30s
+        op stop    interval=0s timeout=60s 2> "${TMP_LOG}" || handle_error
+    sudo pcs -f $cib_file resource create kibana systemd:kibana op monitor interval=30s 2> "${TMP_LOG}" || handle_error
 }
 
 csm_rsc_add() {
     echo 'Adding csm resources and constraints...'
 
     sudo pcs -f $cib_file resource create csm-agent systemd:csm_agent op \
-        monitor interval=30s
+        monitor interval=30s 2> "${TMP_LOG}" || handle_error
     sudo pcs -f $cib_file resource create csm-web systemd:csm_web op \
-        monitor interval=30s
+        monitor interval=30s 2> "${TMP_LOG}" || handle_error
 
     sudo pcs -f $cib_file resource group add \
-        csm-kibana kibana-vip kibana csm-web csm-agent
+        csm-kibana kibana-vip kibana csm-web csm-agent 2> "${TMP_LOG}" || handle_error
 
-    sudo pcs -f $cib_file constraint order consul-c1 then csm-web
-    sudo pcs -f $cib_file constraint order consul-c2 then csm-web
-    sudo pcs -f $cib_file constraint order els-search-clone then csm-kibana
+    sudo pcs -f $cib_file constraint order consul-c1 then csm-web 2> "${TMP_LOG}" || handle_error
+    sudo pcs -f $cib_file constraint order consul-c2 then csm-web 2> "${TMP_LOG}" || handle_error
+    sudo pcs -f $cib_file constraint order els-search-clone then csm-kibana 2> "${TMP_LOG}" || handle_error
 
-    sudo pcs -f $cib_file constraint location csm-kibana prefers $lnode
+    sudo pcs -f $cib_file constraint location csm-kibana prefers $lnode 2> "${TMP_LOG}" || handle_error
 
     sudo pcs -f $cib_file constraint location csm-kibana rule score=-INFINITY \
-        '#uname' eq $lnode and consul-c1-running eq 0
+        '#uname' eq $lnode and consul-c1-running eq 0 2> "${TMP_LOG}" || handle_error
     sudo pcs -f $cib_file constraint location csm-kibana rule score=-INFINITY \
-        '#uname' eq $rnode and consul-c2-running eq 0
+        '#uname' eq $rnode and consul-c2-running eq 0 2> "${TMP_LOG}" || handle_error
 
     sudo pcs -f $cib_file constraint colocation add csm-kibana with els-search-clone \
-        score=INFINITY
+        score=INFINITY 2> "${TMP_LOG}" || handle_error
     sudo pcs -f $cib_file constraint colocation add csm-kibana with rabbitmq-clone \
-        score=INFINITY
+        score=INFINITY 2> "${TMP_LOG}" || handle_error
 }
 
 cib_init() {
-   sudo pcs cluster cib $cib_file
+    mkdir -p ${ha_lib}
+    sudo pcs cluster cib $cib_file
 }
 
 cib_commit() {
@@ -190,8 +242,10 @@ cib_commit() {
 ha_ops=(
     precheck
     systemd_disable
+    verify_dependency_resources
     kibana_rsc_add
     csm_rsc_add
+    verify_resources
 )
 
 # Maps ha operation from the ha_ops table to its respective type.
@@ -201,8 +255,10 @@ ha_ops=(
 declare -A ha_ops_type=(
     [precheck]='bootstrap'
     [systemd_disable]='bootstrap'
+    [verify_dependency_resources]='bootstrap'
     [kibana_rsc_add]='update'
     [csm_rsc_add]='update'
+    [verify_resources]='update'
 )
 
 for op in ${ha_ops[@]}; do

@@ -27,10 +27,10 @@ ha:
         script: /opt/seagate/cortx/ha/conf/script/build-cortx-ha
         args:
             - init
-            - /var/lib/hare/build-ees-ha-args.yaml
+            - /etc/cortx/ha/ha_param.yaml
 
     ha-cleanup:
         script: /opt/seagate/cortx/ha/conf/script/build-cortx-ha
         args:
             - cleanup
-            - /var/lib/hare/build-ees-ha-args.yaml
+            - /etc/cortx/ha/ha_param.yaml
