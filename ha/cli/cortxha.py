@@ -26,6 +26,7 @@ import pathlib
 from eos.utils.schema.conf import Conf
 from eos.utils.log import Log
 from eos.utils.schema.payload import *
+from eos.utils.ha.dm.decision_monitor import DecisionMonitor
 
 #TODO - Move the cli to cortxcli framework once cortxcli is created as a separate module.
 class HACli:
@@ -41,6 +42,7 @@ class HACli:
         Conf.load(const.RESOURCE_GLOBAL_INDEX, Json(const.RESOURCE_SCHEMA))
         log_level = Conf.get(const.RESOURCE_GLOBAL_INDEX, "log", "INFO")
         Log.init(service_name='cortxha', log_path=const.RA_LOG_DIR, level=log_level)
+        self._decision_monitor = DecisionMonitor()
 
     @staticmethod
     def _usage():
@@ -50,6 +52,7 @@ class HACli:
     cortxha cleanup db --node <node_minion_id>
     cortxha cluster add_node <node_minion_id>
     cortxha cluster remove_node <node_minion_id>
+    cortxha resource failback --src <node_minion_id>
     """
 
     def command(self):
@@ -80,18 +83,32 @@ class HACli:
             cluster_parser.add_argument("node",
                 help="Node name", action="store")
 
+            # Resource
+            resource_parser = component_parser.add_parser("resource",
+                                help = "Manage resources")
+            failback_parser = resource_parser.add_subparsers(help="Perform failback")
+            failback = failback_parser.add_parser("failback", help="Perform node failback")
+            failback.add_argument("-s", "--src", help="Source node",
+                                default=Conf.get(const.RESOURCE_GLOBAL_INDEX, "nodes.local"))
+
             args = argParser.parse_args()
 
+            _cluster = PcsCluster(self._decision_monitor)
+            _cleanup = PcsCleanup(self._decision_monitor)
             if len(sys.argv) <= 1:
                 argParser.print_help(sys.stderr)
             elif sys.argv[1] == "cluster":
-                cluster = PcsCluster()
                 if args.cluster == "add_node":
-                    cluster.add_node(args.node)
+                    _cluster.add_node(args.node)
                 elif args.cluster == "remove_node":
-                    cluster.remove_node(args.node)
+                    _cluster.remove_node(args.node)
+            elif sys.argv[1] == "resource":
+                if sys.argv[2] == "failback":
+                    _cluster.failback(args.src)
+                else:
+                    argParser.print_help(sys.stderr)
             elif sys.argv[1] == "cleanup":
-                Cleanup(args).cleanup_db()
+                _cleanup.cleanup_db(args.node)
             else:
                 argParser.print_help(sys.stderr)
         except Exception as e:
@@ -101,7 +118,7 @@ class HACli:
 if __name__ == '__main__':
     sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..'))
     from ha import const
-    from ha.core.cleanup import Cleanup
+    from ha.core.cleanup import PcsCleanup
     from ha.core.cluster import PcsCluster
     ha_cli = HACli()
     ha_cli.command()
