@@ -28,6 +28,18 @@
       "component": "controller",
       "component_id": "<HOST2>"
     },
+    "encl_con_<HOST1>": {
+      "entity": "enclosure",
+      "entity_id": "0",
+      "component": "connectivity",
+      "component_id": "<HOST1>"
+    },
+    "encl_con_<HOST2>": {
+      "entity": "enclosure",
+      "entity_id": "0",
+      "component": "connectivity",
+      "component_id": "<HOST2>"
+    },
     "node_nw_data_<HOST1>": {
       "entity": "node",
       "entity_id": "<HOST1>",
@@ -105,18 +117,26 @@
     "io_<HOST1>": [
       "node_nw_data_<HOST1>",
       "node_nw_cable_data_<HOST1>",
-      "node_sas_<HOST1>"
+      "node_sas_<HOST1>",
+      "encl_con_<HOST1>",
+      "encl_ctrl_<HOST1>"
     ],
     "io_<HOST2>": [
       "node_nw_data_<HOST2>",
       "node_nw_cable_data_<HOST2>",
-      "node_sas_<HOST2>"
+      "node_sas_<HOST2>",
+      "encl_con_<HOST2>",
+      "encl_ctrl_<HOST2>"
     ],
     "storage_encl_<HOST1>": [
-      "node_sas_<HOST1>"
+      "node_sas_<HOST1>",
+      "encl_con_<HOST1>",
+      "encl_ctrl_<HOST1>"
     ],
     "storage_encl_<HOST2>": [
-      "node_sas_<HOST2>"
+      "node_sas_<HOST2>",
+      "encl_con_<HOST2>",
+      "encl_ctrl_<HOST2>"
     ],
     "mgmt_<HOST1>": [
       "node_nw_mgmt_<HOST1>",

@@ -1,4 +1,16 @@
 {
+    "enclosure":[
+        {
+            "alert_type": "fault",
+            "severity": "critical",
+            "action": "failed"
+        },
+        {
+            "alert_type": "fault_resolved",
+            "severity": "informational",
+            "action": "resolved"
+        }
+    ],
     "enclosure:fru:controller":[
         {
             "alert_type":"fault",
