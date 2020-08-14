@@ -1,3 +1,5 @@
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/f6cc639394904affa325a6e8b84706e8)](https://www.codacy.com?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=Seagate/cortx-ha&amp;utm_campaign=Badge_Grade)
+
 # cortx-ha
 
 HA Project
