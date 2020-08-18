@@ -39,6 +39,7 @@ class HACli:
         }
         Conf.init()
         Conf.load(const.RESOURCE_GLOBAL_INDEX, Json(const.RESOURCE_SCHEMA))
+        Conf.load(const.RULE_GLOBAL_INDEX, Json(const.RULE_ENGINE_SCHAMA))
         log_level = Conf.get(const.RESOURCE_GLOBAL_INDEX, "log", "INFO")
         Log.init(service_name='cortxha', log_path=const.RA_LOG_DIR, level=log_level)
 

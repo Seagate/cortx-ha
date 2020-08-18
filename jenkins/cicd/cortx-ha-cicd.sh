@@ -11,8 +11,7 @@ mkdir -p "${TMPHA}"
 cp -rs "$BASE_DIR"/ha/* "${TMPHA}"
 
 mkdir -p /etc/cortx/ha/
-cp -rf "${BASE_DIR}"/jenkins/cicd/etc/decision_monitor_conf.json /etc/cortx/ha/decision_monitor_conf.json
-cp -rf "${BASE_DIR}"/jenkins/cicd/etc/database.json /etc/cortx/ha/database.json
+cp -rf "${BASE_DIR}"/jenkins/cicd/etc/* /etc/cortx/ha/
 
 # Perform unit test
 python3 "${TMPHA}"/test/main.py "${TMPHA}"/test/unit

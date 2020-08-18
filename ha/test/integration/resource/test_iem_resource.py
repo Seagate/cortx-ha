@@ -2,7 +2,7 @@
 
 """
  ****************************************************************************
- Filename:          run_test.py
+ Filename:          test_hw_resource.py
  Description:       resource_agent resource agent
 
  Creation Date:     04/15/2020
@@ -16,13 +16,10 @@
  prohibited. All other rights are expressly reserved by Seagate Technology, LLC.
  ****************************************************************************
 """
+def init(args):
+    pass
 
-import os
-import pathlib
-import sys
-import pytest
+def run_tests(args):
+    pass
 
-if __name__ == '__main__':
-    sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..'))
-    path = sys.argv[1] if len(sys.argv) == 2 else os.path.join(os.path.dirname(pathlib.Path(__file__)), '.')
-    pytest.main(['-v', path])
+test_list = [run_tests]

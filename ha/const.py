@@ -1,8 +1,11 @@
 HA_INIT_DIR='/var/cortx/ha/'
 RA_LOG_DIR='/var/log/seagate/cortx/ha'
-RESOURCE_SCHEMA='/etc/cortx/ha/decision_monitor_conf.json'
 
+CONFIG_DIR="/etc/cortx/ha"
+RESOURCE_SCHEMA="{}/decision_monitor_conf.json".format(CONFIG_DIR)
+RULE_ENGINE_SCHAMA="{}/rules_engine_schema.json".format(CONFIG_DIR)
 RESOURCE_GLOBAL_INDEX='decision_monitor'
+RULE_GLOBAL_INDEX='rules_engine'
 
 CURRENT_NODE_STATUS='self_node_status'
 OTHER_NODE_STATUS='other_node_status'
