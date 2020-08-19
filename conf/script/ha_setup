@@ -5,16 +5,22 @@ SOURCE_HA_CONF="<HA_PATH>/conf/etc"
 HA_CONF="/etc/cortx/ha"
 LOGROTATE_CONF="/etc/logrotate.d"
 HA_LOG="/var/log/seagate/cortx/ha"
-
-LOCAL_NODE_MINION_ID=$(salt-call grains.get id --output=json | jq '.["local"]' | sed s/\"//g)
-SYSTEM_CROSS_CONNECT_FILE="/opt/seagate/cortx/provisioner/generated_configs/$LOCAL_NODE_MINION_ID.cc"
-
 HA_NON_CROSS_CONNECT_RULE_FILE='rules_engine_schema_without_crossconnect.json'
 HA_CROSS_CONNECT_RULE_FILE='rules_engine_schema_with_crossconnect.json'
 HA_CONF_RULE_FILE='rules_engine_schema.json'
+SYSTEM_CROSS_CONNECT_FILE="/opt/seagate/cortx/provisioner/generated_configs/$LOCAL_NODE_MINION_ID.cc"
+ENV_OPTIONS="<kvm|two_node_kvm|physical|JBOD>"
+
+LOCAL_NODE_MINION_ID=$(salt-call grains.get id --output=json | jq '.["local"]' | sed s/\"//g)
+SYSTEM_ENV=$(salt-call grains.item virtual --output=json | jq '.["local"].virtual' | sed s/\"//g)
 
 post_install() {
     echo "post_install"
+    # Configure ha config
+    cp -rf "${SOURCE_HA_CONF}"/ha.conf "${HA_CONF}"/
+    sed -i -e "s|${ENV_OPTIONS}|${SYSTEM_ENV}|g" "${HA_CONF}"/ha.conf
+
+    # Logrotate Config
     mkdir -p ${LOGROTATE_CONF}
     cp -rf ${HA_PATH}/conf/logrotate/cortx_ha_log.conf ${LOGROTATE_CONF}
 }
@@ -22,26 +28,14 @@ post_install() {
 config() {
     echo "config"
 
-    rule_file=${HA_CROSS_CONNECT_RULE_FILE}
-
-    # Based on cross-connect check, load appropriate rule_engine
-    # file. If cross-connect - load rules_engine_schema.json
-    # If no cross-connect - load rules_engine_schema_without_crossconnect.json
-    [[ -f ${SYSTEM_CROSS_CONNECT_FILE} ]] && echo "Cross connect File Exists" || {
-
-        echo "Cross connect file does not exist"
-        rule_file=${HA_NON_CROSS_CONNECT_RULE_FILE}
-    }
-
-    # Copy a relevant rule file to HA_CONF directory with name as
-    # 'rules_engine_schema.json' as HA component search for this specific name
-    cp -rf ${SOURCE_HA_CONF}/${rule_file} ${HA_CONF}/${HA_CONF_RULE_FILE}
+    # Configure rules_engine_schema (On vm rule engine not needed)
+    [ "${SYSTEM_ENV}" == "kvm" ] || config_rules_engine
 
     # Configure database.json
-    config_database
+    [ "${SYSTEM_ENV}" == "kvm" ] || config_database
 
     # Decision Maker conf
-    config_decision_maker
+    [ "${SYSTEM_ENV}" == "kvm" ] || config_decision_maker
 }
 
 init() {
@@ -60,6 +54,11 @@ reset() {
 }
 
 replace_node() {
+    [ "${SYSTEM_ENV}" == "kvm" ] && {
+        echo "Replace node not suported in Single VM env."
+        exit 0
+    }
+
     # Test consul
     consul_host=$(cat /etc/cortx/ha/database.json | \
             jq '.databases.consul_db.config.host' | sed s/\"//g)
@@ -88,6 +87,22 @@ replace_node() {
 }
 
 # Helping function
+
+config_rules_engine() {
+    rule_file=${HA_CROSS_CONNECT_RULE_FILE}
+
+    # Based on cross-connect check, load appropriate rule_engine
+    # file. If cross-connect - load rules_engine_schema.json
+    # If no cross-connect - load rules_engine_schema_without_crossconnect.json
+    [[ -f ${SYSTEM_CROSS_CONNECT_FILE} ]] && echo "Cross connect File Exists" || {
+        echo "Cross connect file does not exist"
+        rule_file=${HA_NON_CROSS_CONNECT_RULE_FILE}
+    }
+
+    # Copy a relevant rule file to HA_CONF directory with name as
+    # 'rules_engine_schema.json' as HA component search for this specific name
+    cp -rf ${SOURCE_HA_CONF}/${rule_file} ${HA_CONF}/${HA_CONF_RULE_FILE}
+}
 
 config_database() {
     # Config database.json
