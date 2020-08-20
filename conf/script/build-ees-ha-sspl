@@ -128,6 +128,8 @@ systemd_disable() {
     run_on_both $cmd
 }
 
+# TODO: Replace with non-offensive terms when
+# https://bugs.clusterlabs.org/show_bug.cgi?id=5437 is resolved
 sspl_rsc_add() {
     echo 'Adding sspl resource and constraints...'
 

@@ -54,6 +54,9 @@ init() {
     pcs -f hw_cfg constraint order consul-c2 then io_path_health-c2
     pcs -f hw_cfg constraint order consul-c1 then mgmt_path_health-c1
 
+    # TODO: Replace with non-offensive terms when
+    # https://bugs.clusterlabs.org/show_bug.cgi?id=5437 is resolved
+
     # Hardware resource monitor by sspl master
     pcs -f hw_cfg resource create sspl_primary_hw ocf:seagate:hw_comp_ra \
         path='storage_encl' filename='sspl_primary_hw' \
