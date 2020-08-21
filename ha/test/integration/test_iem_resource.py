@@ -49,7 +49,7 @@ class TestIEMResourceAgent(unittest.TestCase):
         with open(const.RESOURCE_SCHEMA, 'r') as f:
             self.schema = json.load(f)
         self.iem_agent = IEMResourceAgent(DecisionMonitor(), self.schema)
-        self.key = "cortx/base/ha/obj"
+        self.key = "eos/base/ha/obj"
         self.filename = 'node_iem_s3'
         self.path = 'node_iem_s3'
         self.local = self.schema['nodes']['local']
@@ -80,7 +80,7 @@ class TestIEMResourceAgent(unittest.TestCase):
         """
         Put data to consul
         Msg:
-                cortx/base/ha/obj/node/srvnode-1/nw/mgmt/1589609895
+                eos/base/ha/obj/node/srvnode-1/nw/mgmt/1589609895
                 '{"decision_id": "node/srvnode-1/nw/mgmt/1589609895",
                     "action": "failed",
                     "alert_time": "2020-05-16T06:18:15.000000+0000"
@@ -93,7 +93,7 @@ class TestIEMResourceAgent(unittest.TestCase):
     def _remove_data(self, node, recurse=False, key=None):
         """
         Remove data from consul
-        consul kv delete -recurse cortx/base/ha/obj/enclosure
+        consul kv delete -recurse eos/base/ha/obj/enclosure
         """
         if key == None:
             key, alert_id = self._get_key(node)
