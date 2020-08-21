@@ -25,7 +25,7 @@ usage() {
     cat <<EOF
 Usage: $PROG [OPTS] <CDF> [<params.yaml>]
 
-Configures EES-HA by preparing the configuration files and
+Configures HA by preparing the configuration files and
 adding resources into the Pacemaker.
 
 Here are some prerequisites/guidelines:
@@ -118,7 +118,7 @@ cdf=${1:-}
 argsfile=${2:-}
 
 hare_dir=/var/lib/hare
-log_file=${LOG_FILE:-/var/log/build-ees-ha.log}
+log_file=${LOG_FILE:-/var/log/build-ha.log}
 
 die() {
     echo "$PROG: ERROR: $*" >&2

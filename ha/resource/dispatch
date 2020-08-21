@@ -44,8 +44,8 @@ metadata() {
 <!DOCTYPE resource-agent SYSTEM "ra-api-1.dtd">
 <resource-agent name="ha-check">
   <version>0.1</version>
-  <longdesc lang="en">EES HA resource agent.</longdesc>
-  <shortdesc lang="en">EES HA resource agent.</shortdesc>
+  <longdesc lang="en">LDR-R1 HA resource agent.</longdesc>
+  <shortdesc lang="en">LDR-R1 HA resource agent.</shortdesc>
   <parameters>
     <parameter name="check" unique="0" required="1">
       <shortdesc lang="en">Check ID</shortdesc>

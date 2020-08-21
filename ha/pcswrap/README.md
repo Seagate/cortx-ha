@@ -61,7 +61,7 @@ Use `pcswrap` executable.
 $ pcswrap --help
 usage: pcswrap [-h] {status,unstandby,standby,shutdown} ...
 
-EOS HA Wrapper application. The application allows managing the nodes in HA
+CORTX HA Wrapper application. The application allows managing the nodes in HA
 cluster.
 
 positional arguments:

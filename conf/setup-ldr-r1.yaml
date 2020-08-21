@@ -13,18 +13,18 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-ees-ha:
+ldr-r1-ha:
   post_install:
-    script: /opt/seagate/cortx/ha/conf/script/build-ees-ha
+    script: /opt/seagate/cortx/ha/conf/script/build-ha
     args:
       - --init
       - /var/lib/hare/cluster.yaml
-      - /opt/seagate/cortx/ha/conf/build-ees-ha-args.yaml
+      - /opt/seagate/cortx/ha/conf/build-ha-args.yaml
   init:
-    script: /opt/seagate/cortx/ha/conf/script/build-ees-ha
+    script: /opt/seagate/cortx/ha/conf/script/build-ha
     args:
       - /var/lib/hare/cluster.yaml
-      - /opt/seagate/cortx/ha/conf/build-ees-ha-args.yaml
+      - /opt/seagate/cortx/ha/conf/build-ha-args.yaml
   config:
     script: null
     args: null
@@ -43,10 +43,10 @@ ees-ha:
       - /var/lib/hare/node-name
       - /var/lib/hare/hax-env-*
   post_update:
-    script: /opt/seagate/cortx/ha/conf/script/build-ees-ha-update
+    script: /opt/seagate/cortx/ha/conf/script/build-ha-update
     args:
       - /var/lib/hare/cluster.yaml
-      - /opt/seagate/cortx/ha/conf/build-ees-ha-args.yaml
+      - /opt/seagate/cortx/ha/conf/build-ha-args.yaml
       - /opt/seagate/cortx/ha/conf/build-ees-ha-csm-args.yaml
   remove_node:
     script: /opt/seagate/cortx/ha/conf/script/cluster_update
