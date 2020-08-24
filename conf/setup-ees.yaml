@@ -27,7 +27,6 @@ ees-ha:
       - /var/lib/hare/consul-*
       - /var/lib/hare/node-name
       - /var/lib/hare/hax-env-*
-      - /etc/corosync/corosync.conf
   post_update:
     script: /opt/seagate/cortx/ha/conf/script/build-ees-ha-update
     args:
