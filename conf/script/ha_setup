@@ -118,10 +118,16 @@ config_decision_maker() {
     uuid2=$(echo $uuid_list | jq '.["'$host2'"]' | sed -e s/\"//g -e s/null//g -e '/^\s*$/d')
 
     echo "Reading cluster.sls"
+
+    # Data Network
+    node1_clusterip_nw=$(salt-call pillar.get cluster:$host1:network:data_nw:iface:0 --output=newline_values_only)
+    node2_clusterip_nw=$(salt-call pillar.get cluster:$host2:network:data_nw:iface:0 --output=newline_values_only)
+    node1_data_nw="[ $node1_clusterip_nw ]"
+    node2_data_nw="[ $node2_clusterip_nw ]"
+
+    # Managment network
     cluster=$(salt-call --local pillar.get cluster:$host1 --output=json)
-    node1_data_nw=$(echo $cluster | jq '.["local"].network["data_nw"].iface')
     node1_mgmt_nw=$(echo $cluster | jq '.["local"].network["mgmt_nw"].iface')
-    node2_data_nw=$(echo $cluster | jq '.["local"].network["data_nw"].iface')
     node2_mgmt_nw=$(echo $cluster | jq '.["local"].network["mgmt_nw"].iface')
 
     decision_monitor_conf=${SOURCE_HA_CONF}/decision_monitor_conf.json
