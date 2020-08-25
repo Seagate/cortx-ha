@@ -25,7 +25,7 @@ usage() {
     cat <<EOF
 Usage: $PROG [OPTS] <CDF> [<params.yaml>]
 
-Configures HA by preparing the configuration files and
+Configures build-ha-hare by preparing the configuration files and
 adding resources into the Pacemaker.
 
 Here are some prerequisites/guidelines:
