@@ -284,9 +284,9 @@ motr_config() {
     rm0confs=$(sudo ssh $rnode 'echo /etc/sysconfig/m0d-*')
     sudo scp -q $lm0confs $rnode:/etc/sysconfig/
     sudo scp -q $rnode:\{${rm0confs/ /,}\} /etc/sysconfig/
-    for f in $rm0confs; do sudo sed '1iMERO_M0D_DATA_DIR=/var/motr2' -i $f; done
+    for f in $rm0confs; do sudo sed '1iMOTR_M0D_DATA_DIR=/var/motr2' -i $f; done
     ssh $rnode "for f in $lm0confs; do \
-                           sudo sed '1iMERO_M0D_DATA_DIR=/var/motr1' -i \$f; done"
+                           sudo sed '1iMOTR_M0D_DATA_DIR=/var/motr1' -i \$f; done"
 }
 
 cmd_deregister_node() {
