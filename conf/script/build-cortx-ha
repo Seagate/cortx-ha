@@ -98,6 +98,5 @@ cleanup() {
 }
 
 ACTION=$1
-ARGS=$2
 
-$ACTION $ARGS
+$ACTION

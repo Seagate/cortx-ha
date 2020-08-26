@@ -88,7 +88,7 @@ reset_all
 sudo pcs cluster cib $cib_file
 
 echo 'Updating ha resources for IO path, SSPL, CSM and UDS...'
-$ha_script/build-ha $cdf $ioargsfile --cib-file $cib_file --update
+$ha_script/build-ha-io $cdf $ioargsfile --cib-file $cib_file --update
 $ha_script/build-ees-ha-csm $csmargsfile --cib-file $cib_file --update
 $ha_script/build-ha-sspl $ioargsfile --cib-file $cib_file --update
 $ha_script/build-ees-ha-uds --cib-file $cib_file --update
