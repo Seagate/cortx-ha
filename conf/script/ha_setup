@@ -122,8 +122,8 @@ config_decision_maker() {
     # Data Network
     node1_clusterip_nw=$(salt-call pillar.get cluster:$host1:network:data_nw:iface:0 --output=newline_values_only)
     node2_clusterip_nw=$(salt-call pillar.get cluster:$host2:network:data_nw:iface:0 --output=newline_values_only)
-    node1_data_nw="[ $node1_clusterip_nw ]"
-    node2_data_nw="[ $node2_clusterip_nw ]"
+    node1_data_nw="[ \"${node1_clusterip_nw}\" ]"
+    node2_data_nw="[ \"${node2_clusterip_nw}\" ]"
 
     # Managment network
     cluster=$(salt-call --local pillar.get cluster:$host1 --output=json)
