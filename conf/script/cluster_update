@@ -38,7 +38,7 @@ get_faulty_node(){
     host2=$(echo $node_list | jq '.["local"][1]' | sed s/\"//g)
 
     # Get Faluty node name
-    if [ $LOCAL_NODE_MINION_ID == $host1 ]; then
+    if [[ $LOCAL_NODE_MINION_ID == $host1 ]]; then
         faulty_node=$host2
     else
         faulty_node=$host1

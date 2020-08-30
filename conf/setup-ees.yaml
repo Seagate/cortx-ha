@@ -21,7 +21,7 @@ ees-ha:
     args: null
   backup:
     files:
-      - /var/lib/hare/build-ees-ha*-args.yaml
+      - /opt/seagate/cortx/ha/conf/build-ees-ha*-args.yaml
       - /var/lib/hare/cluster.yaml
       - /var/lib/hare/confd.*
       - /var/lib/hare/consul-*
