@@ -1,0 +1,24 @@
+{
+    "enclosure:fru:disk":[
+        {
+            "alert_type":"fault",
+            "severity":"critical",
+            "action":"failed"
+        },
+        {
+            "alert_type":"fault_resolved",
+            "severity":"informational",
+            "action":"resolved"
+        },
+        {
+            "alert_type":"missing",
+            "severity":"critical",
+            "action":"failed"
+        },
+        {
+            "alert_type":"insertion",
+            "severity":"informational",
+            "action":"resolved"
+        }
+    ]
+}
