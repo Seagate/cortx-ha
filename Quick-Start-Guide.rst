@@ -38,3 +38,13 @@ The following prerequisites must be met to install the HA component.
  - **$ python3 setup.py bdist_rpm**
 
  - **$ yum install dist/eos-py-utils-1.0.0-1.noarch.rpm**
+ 
+Cloning the Source Code
+=======================
+To clone the source code, run the following commands:
+
+- **$ git clone --recursive git@github.com:Seagate/cortx-ha.git**
+
+- **$ cd cortx-ha**
+
+**Note**: To clone the source code, it is necessary to generate the SSH public key. To generate the key, refer `SSH Public Key <https://github.com/Seagate/cortx/blob/main/doc/SSH%20Public%20Key.rst>`_.
