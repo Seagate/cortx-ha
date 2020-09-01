@@ -28,3 +28,13 @@ The following prerequisites must be met to install the HA component.
  - **$ yum install systemd-devel**
 
  - **$ yum group install "Development Tools"**
+ 
+- The **eos-py-utils** rpm must be installed. To install the same, run the following command:
+
+ - **$ git clone --recursive git@github.com:Seagate/cortx-py-utils.git**
+
+ - **$ cd cortx-py-utils**
+
+ - **$ python3 setup.py bdist_rpm**
+
+ - **$ yum install dist/eos-py-utils-1.0.0-1.noarch.rpm**
