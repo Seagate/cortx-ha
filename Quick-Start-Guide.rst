@@ -39,6 +39,29 @@ The following prerequisites must be met to install the HA component.
 
  - **$ yum install dist/eos-py-utils-1.0.0-1.noarch.rpm**
  
+Corosync Pacemaker
+==================
+
+Perform the procedure mentioned below to setup the corosync pacemaker. To complete the setup successfully, two Virtual Machines (VMs) are required. In the below mentioned procedure, the first five steps must be performed on both the nodes and the remaining steps must be performed on the primary node.
+
+1. Setup the yum repos. Refer the **Prerequisites** section above to know about the process of setting up.
+
+2. Run the below mentioned commands to disable selinux and firewall.
+
+ - **$ systemctl stop firewalld**
+
+ - **$ systemctl disable firewalld**
+
+ - **$ sestatus**
+
+ - **$ setenforce 0**
+
+ - **$ sed 's/SELINUX=enforcing/SELINUX=disabled/' /etc/sysconfig/selinux**
+
+ - **$ shutdown -r now**
+
+ - **$ getenforce** (It must show **Disabled**)
+ 
 Cloning the Source Code
 =======================
 To clone the source code, run the following commands:
