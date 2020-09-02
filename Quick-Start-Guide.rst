@@ -39,10 +39,10 @@ The following prerequisites must be met to install the HA component.
 
  - **$ yum install dist/eos-py-utils-1.0.0-1.noarch.rpm**
  
-Corosync Pacemaker
-==================
+Corosync and Pacemaker
+======================
 
-Perform the procedure mentioned below to setup the corosync pacemaker. To complete the setup successfully, two Virtual Machines (VMs) are required. In the below mentioned procedure, the first five steps must be performed on both the nodes and the remaining steps must be performed on the primary node.
+Perform the procedure mentioned below to setup corosync and pacemaker. To complete the setup successfully, two Virtual Machines (VMs) are required. In the below mentioned procedure, the first five steps must be performed on both the nodes and the remaining steps must be performed on the primary node.
 
 1. Setup the yum repos. Refer the **Prerequisites** section above to know about the process of setting up.
 
