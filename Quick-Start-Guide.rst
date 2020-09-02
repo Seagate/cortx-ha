@@ -93,6 +93,47 @@ Perform the procedure mentioned below to setup corosync and pacemaker. To comple
   - **$ echo <new-password> | passwd --stdin hacluster**
 
    - Enter the new password in the **<new-password>** field.
+   
+Perform the remaining steps on the primary node.
+
+7. Create and configure the cluster by running the following command.
+
+ - **$ pcs cluster auth node1 node2**
+ 
+   Username: hacluster
+
+   Password: .............
+
+8. Setup the cluster, by defining the name and servers that would be part of the cluster. Run the below command.
+
+ - **$ pcs cluster setup --name EOS_cluster node1 node2**
+
+9. Start the cluster services and enable them. Run the following commands.
+
+ - **$ pcs cluster start --all**
+
+ - **$ pcs cluster enable --all**
+
+10. Disable STONITH and ignore the Quorum Policy by running the following commands.
+
+ - **$ pcs property set stonith-enabled=false**
+
+ - **$ pcs property set no-quorum-policy=ignore**
+
+ - **$ pcs property list**
+
+The example is displayed below.
+
+ ::
+ 
+  [root@ssc-vm-c-0208 534380]# pcs property list
+  Cluster Properties:
+  cluster-infrastructure: corosync
+  cluster-name: EOS_cluster
+  dc-version: 1.1.21-4.el7-f14e36fd43
+  have-watchdog: false
+  no-quorum-policy: ignore
+  stonith-enabled: false
 
  
 Cloning the Source Code
