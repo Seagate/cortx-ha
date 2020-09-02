@@ -67,6 +67,32 @@ To build the source code, perform the following:
 
  - **jenkins/build.sh -b <BUILD-NO>**
  
+ Installing HA
+=============
+To install HA perform the following procedure.
+
+1. On both the nodes, run the following command.
+
+ - **$ yum install -y dist/rpmbuild/RPMS/x86_64/cortx-ha-XXXX.rpm**
+
+   For example, **yum install -y dist/rpmbuild/RPMS/x86_64/cortx-ha-1.0.0-368034b.x86_64.rpm**
+
+2. Navigate to `HA <https://github.com/Seagate/cortx-ha/blob/dev/conf/setup.yaml>`_, and execute the following.
+
+ - post_install
+
+ - config
+
+ - init
+
+ - ha
+
+3. On the salt primary node, run the following command.
+
+ - **$ /opt/seagate/cortx/ha/conf/script/build-cortx-ha init /var/lib/hare/build-ees-ha-args.yaml**
+
+**Note**: To configure HA, the CORTX stack or salt, pacemaker, and consul must be configured on the development box. Please note that HA is supported only on the hardware.
+ 
 Resetting HA
 ============
 To reset HA, run the relevant commands mentioned below.
