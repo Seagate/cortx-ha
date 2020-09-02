@@ -67,6 +67,20 @@ To build the source code, perform the following:
 
  - **jenkins/build.sh -b <BUILD-NO>**
  
+Resetting HA
+============
+To reset HA, run the relevant commands mentioned below.
+
+- On the salt primary node, run the following command:
+
+ - **$ /opt/seagate/cortx/ha/conf/script/build-cortx-ha cleanup /var/lib/hare/build-ees-ha-args.yaml**
+
+- Run the following commands on the two nodes.
+
+ - **$ /opt/seagate/cortx/ha/conf/script/ha_setup reset**
+
+ - **$ yum remove -y cortx-ha-XXXX.rpm**
+ 
 Tests
 =====
 To perform the required tests, run the following commands:
