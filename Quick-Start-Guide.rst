@@ -1,6 +1,6 @@
-============
-HA Component
-============
+===
+HA
+===
 
 This guide provides information to get the HA component ready.
 
