@@ -62,6 +62,21 @@ Perform the procedure mentioned below to setup corosync and pacemaker. To comple
 
  - **$ getenforce** (It must show **Disabled**)
  
+3. Ensure the following:
+
+ - The **/etc/hosts** file is reflected accurately.
+
+ - DNS is updated to resolve host names.
+
+4. Add eth0 IP address of both nodes in the **/etc/hosts** file. Run the following command.
+
+ - **$ cat /etc/hosts**
+
+5. Install the required software by running the following command.
+
+ - **$ yum -y install corosync pacemaker pcs**
+
+ 
 Cloning the Source Code
 =======================
 To clone the source code, run the following commands:
