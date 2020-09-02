@@ -68,7 +68,7 @@ Perform the procedure mentioned below to setup corosync and pacemaker. To comple
 
  - DNS is updated to resolve host names.
 
-4. Add eth0 IP address of both nodes in the **/etc/hosts** file. Run the following command.
+4. Add eth0 IP address of both nodes in the **/etc/hosts** file by running the following command.
 
  - **$ cat /etc/hosts**
 
