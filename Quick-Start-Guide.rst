@@ -122,18 +122,18 @@ Perform the remaining steps on the primary node.
 
  - **$ pcs property list**
 
-The example is displayed below.
+  The example of the output is displayed below.
 
- ::
+  ::
  
-  [root@ssc-vm-c-0208 534380]# pcs property list
-  Cluster Properties:
-  cluster-infrastructure: corosync
-  cluster-name: EOS_cluster
-  dc-version: 1.1.21-4.el7-f14e36fd43
-  have-watchdog: false
-  no-quorum-policy: ignore
-  stonith-enabled: false
+   [root@ssc-vm-c-0208 534380]# pcs property list
+   Cluster Properties:
+   cluster-infrastructure: corosync
+   cluster-name: EOS_cluster
+   dc-version: 1.1.21-4.el7-f14e36fd43
+   have-watchdog: false
+   no-quorum-policy: ignore
+   stonith-enabled: false
 
  
 Cloning the Source Code
