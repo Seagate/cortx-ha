@@ -77,15 +77,23 @@ To install HA perform the following procedure.
 
    For example, **yum install -y dist/rpmbuild/RPMS/x86_64/cortx-ha-1.0.0-368034b.x86_64.rpm**
 
-2. Navigate to `HA <https://github.com/Seagate/cortx-ha/blob/dev/conf/setup.yaml>`_, and execute the following.
+2. Refer `HA <https://github.com/Seagate/cortx-ha/blob/dev/conf/setup.yaml>`_, and execute the following.
 
  - post_install
+ 
+  - **/opt/seagate/cortx/ha/conf/script/ha_setup post_install**
 
  - config
+ 
+  - **/opt/seagate/cortx/ha/conf/script/ha_setup config**
 
  - init
+ 
+  - **/opt/seagate/cortx/ha/conf/script/ha_setup init**
 
  - ha
+ 
+  - **/opt/seagate/cortx/ha/conf/script/ha_setup test**
 
 3. On the salt primary node, run the following command.
 
