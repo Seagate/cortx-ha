@@ -42,7 +42,7 @@ The following prerequisites must be met to install the HA component.
 Corosync and Pacemaker
 ======================
 
-Perform the procedure mentioned below to setup corosync and pacemaker. To complete the setup successfully, two Virtual Machines (VMs) are required. In the below mentioned procedure, the first five steps must be performed on both the nodes and the remaining steps must be performed on the primary node.
+Perform the procedure mentioned below to setup corosync and pacemaker. To complete the setup successfully, two Virtual Machines (VMs) are required. In the below mentioned procedure, the first six steps must be performed on both the nodes and the remaining steps must be performed on the primary node.
 
 1. Setup the yum repos. Refer the **Prerequisites** section above to know about the process of setting up.
 
@@ -75,6 +75,24 @@ Perform the procedure mentioned below to setup corosync and pacemaker. To comple
 5. Install the required software by running the following command.
 
  - **$ yum -y install corosync pacemaker pcs**
+ 
+6. Configure Pacemaker, Corosync, and, Pcsd by running the following commands.
+
+ - **$ systemctl enable pcsd**
+
+ - **$ systemctl enable corosync**
+
+ - **$ systemctl enable pacemaker**
+
+ To start the Pcsd service, run the following command.
+
+ - **$ systemctl start pcsd**
+
+ Configure a password for the **hacluster** user by running the following command.
+
+ - **$ echo <new-password> | passwd --stdin hacluster**
+
+  - Enter the new password in the **<new-password>** field.
 
  
 Cloning the Source Code
