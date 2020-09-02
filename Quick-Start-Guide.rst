@@ -84,15 +84,15 @@ Perform the procedure mentioned below to setup corosync and pacemaker. To comple
 
  - **$ systemctl enable pacemaker**
 
- To start the Pcsd service, run the following command.
+  To start the Pcsd service, run the following command.
 
- - **$ systemctl start pcsd**
+  - **$ systemctl start pcsd**
 
- Configure a password for the **hacluster** user by running the following command.
+  Configure a password for the **hacluster** user by running the following command.
 
- - **$ echo <new-password> | passwd --stdin hacluster**
+  - **$ echo <new-password> | passwd --stdin hacluster**
 
-  - Enter the new password in the **<new-password>** field.
+   - Enter the new password in the **<new-password>** field.
 
  
 Cloning the Source Code
