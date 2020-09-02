@@ -66,3 +66,11 @@ To build the source code, perform the following:
  - **$ jenkins/build.sh**
 
  - **jenkins/build.sh -b <BUILD-NO>**
+ 
+Tests
+=====
+To perform the required tests, run the following commands:
+
+- **$ cd cortx-ha/ha/test/**
+
+- **$ python3 main.py**
