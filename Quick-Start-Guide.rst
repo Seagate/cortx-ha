@@ -67,7 +67,7 @@ To build the source code, perform the following:
 
  - **jenkins/build.sh -b <BUILD-NO>**
  
- Installing HA
+Installing HA
 =============
 To install HA perform the following procedure.
 
