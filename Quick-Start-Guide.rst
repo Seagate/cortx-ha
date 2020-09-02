@@ -134,7 +134,27 @@ Perform the remaining steps on the primary node.
    have-watchdog: false
    no-quorum-policy: ignore
    stonith-enabled: false
+   
+11. Check the cluster status by running the following command.
 
+ - **$ pcs status cluster**
+
+  Example of the output is given below.
+
+  ::
+  
+   [root@ssc-vm-c-0208 534380]# pcs status cluster
+   Cluster Status:
+   Stack: corosync
+   Current DC: node1 (version 1.1.21-4.el7-f14e36fd43) - partition with quorum
+   Last updated: Wed Aug 19 02:04:43 2020
+   Last change: Wed Aug 19 02:03:57 2020 by root via cibadmin on node1
+   2 nodes configured
+   0 resources configured
+
+   PCSD Status:
+   node2: Online
+   node1: Online
  
 Cloning the Source Code
 =======================
