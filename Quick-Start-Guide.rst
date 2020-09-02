@@ -114,7 +114,7 @@ Perform the remaining steps on the primary node.
 
  - **$ pcs cluster enable --all**
 
-10. Disable STONITH and ignore the Quorum Policy by running the following commands.
+10. Disable Stonith and ignore the Quorum Policy by running the following commands.
 
  - **$ pcs property set stonith-enabled=false**
 
