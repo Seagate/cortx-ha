@@ -294,6 +294,22 @@ bootstrap_update_only() {
     hctl shutdown
 }
 
+# Invoked as part of initialisation during node replacement.
+motr_config_init() {
+    if [[ ! -e /etc/sysconfig/motr-kernel ]]; then
+        echo "MOTR_NODE_UUID='$(uuidgen --time)'" |
+            sudo tee /etc/sysconfig/motr-kernel >/dev/null
+    fi
+
+# It is expected for /var/lib/hare/confd.xc to be present during node
+# replacement as a pre step.
+    [[ -f /var/lib/hare/confd.xc ]] ||
+        die 'Cannot bootstrap server node without /var/lib/hare/confd.xc file'
+    sudo mkdir -p /etc/motr
+    sudo cp /var/lib/hare/confd.xc /etc/motr/
+
+}
+
 motr_config() {
     # Prepare Motr conf files on each node:
     lm0confs=$(echo /etc/sysconfig/m0d-*)
@@ -750,6 +766,7 @@ ha_ops=(
     net_config_check
     bootstrap
     bootstrap_update_only
+    motr_config_init
     motr_config
     consul_systemd_prepare
     consul_systemd_update
@@ -786,6 +803,7 @@ declare -A ha_ops_type=(
     [net_config_check]='bootstrap'
     [bootstrap]='bootstrap'
     [bootstrap_update_only]='update-only'
+    [motr_config_init]='init'
     [motr_config]='bootstrap'
     [consul_systemd_prepare]='bootstrap_update_init'
     [consul_systemd_update]='bootstrap_update_init'
