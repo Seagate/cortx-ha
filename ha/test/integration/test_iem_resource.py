@@ -30,9 +30,9 @@ import unittest
 from unittest.mock import patch
 from datetime import datetime
 
-from eos.utils.ha.dm.decision_monitor import DecisionMonitor
-from eos.utils.log import Log
-from eos.utils.ha.dm.actions import Action
+from cortx.utils.ha.dm.decision_monitor import DecisionMonitor
+from cortx.utils.log import Log
+from cortx.utils.ha.dm.actions import Action
 
 from ha.resource.resource_agent import IEMResourceAgent
 from ha import const

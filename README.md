@@ -5,9 +5,9 @@
 HA Project
 
 ### Setup
-1. Install eos-py-utils rpm
+1. Install cortx-py-utils rpm
 ```
-yum install -y eos-py-utils
+yum install -y cortx-py-utils
 ```
 
 2. Install pip packages

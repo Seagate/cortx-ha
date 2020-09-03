@@ -29,10 +29,10 @@ import os
 import json
 import traceback
 
-from eos.utils.log import Log
-from eos.utils.process import SimpleProcess
-from eos.utils.ha.dm.decision_monitor import DecisionMonitor
-from eos.utils.ha.dm.actions import Action
+from cortx.utils.log import Log
+from cortx.utils.process import SimpleProcess
+from cortx.utils.ha.dm.decision_monitor import DecisionMonitor
+from cortx.utils.ha.dm.actions import Action
 from ha import const
 
 class ResourceAgent:
