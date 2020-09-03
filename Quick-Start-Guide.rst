@@ -12,6 +12,8 @@ The following prerequisites must be met to install the HA component.
 - Yum repositories must be available. To setup yum repos, run the following command:
 
  - **$ curl https://raw.githubusercontent.com/Seagate/cortx-prvsnr/dev/cli/src/cortx-prereqs.sh?token=APA75GY34Y2F5DJSOKDCZAK7ITSZC -o cortx-prereqs.sh; chmod a+x cortx-prereqs.sh**
+ 
+ **Note**: If `https://raw.githubusercontent.com/Seagate/cortx-prvsnr/dev/cli/src/cortx-prereqs.sh?token=APA75GY34Y2F5DJSOKDCZAK7ITSZC <https://raw.githubusercontent.com/Seagate/cortx-prvsnr/dev/cli/src/cortx-prereqs.sh?token=APA75GY34Y2F5DJSOKDCZAK7ITSZC>`_ is not accessible, navigate to `https://github.com/Seagate/cortx-prvsnr/blob/dev/cli/src/cortx-prereqs.sh <https://github.com/Seagate/cortx-prvsnr/blob/dev/cli/src/cortx-prereqs.sh>`_ and click **RAW**. Then, copy the URL and use it for deployment.
 
 - Run the below mentioned commands to install Python 3+, PIP, Kernel-devel (3.10.0-1062) as they are mandatory.
 
@@ -39,8 +41,7 @@ The following prerequisites must be met to install the HA component.
 
  - **$ yum install dist/eos-py-utils-1.0.0-1.noarch.rpm**
  
-**Note**: If `https://raw.githubusercontent.com/Seagate/cortx-prvsnr/dev/cli/src/cortx-prereqs.sh?token=APA75GY34Y2F5DJSOKDCZAK7ITSZC <https://raw.githubusercontent.com/Seagate/cortx-prvsnr/dev/cli/src/cortx-prereqs.sh?token=APA75GY34Y2F5DJSOKDCZAK7ITSZC>`_ is not accessible, navigate to `https://github.com/Seagate/cortx-prvsnr/blob/dev/cli/src/cortx-prereqs.sh <https://github.com/Seagate/cortx-prvsnr/blob/dev/cli/src/cortx-prereqs.sh>`_ and click **RAW**. Then, copy the URL and use it for deployment.
- 
+
 Corosync and Pacemaker
 ======================
 
