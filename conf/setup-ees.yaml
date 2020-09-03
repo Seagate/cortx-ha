@@ -13,7 +13,7 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-ldr-r1-ha:
+ees-ha:
   post_install:
     script: /opt/seagate/cortx/ha/conf/script/build-ha-io
     args:
