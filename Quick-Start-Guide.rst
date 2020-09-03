@@ -45,7 +45,7 @@ The following prerequisites must be met to install the HA component.
 Corosync and Pacemaker
 ======================
 
-Perform the procedure mentioned below to setup corosync and pacemaker. To complete the setup successfully, two Virtual Machines (VMs) are required. In the below mentioned procedure, the first six steps must be performed on both the nodes and the remaining steps must be performed on the primary node.
+Perform the procedure mentioned below to setup corosync and pacemaker. To complete the setup successfully, two Virtual Machines (VMs) are required. In the below mentioned procedure, the first five steps must be performed on both the nodes and the remaining steps must be performed on the primary node.
 
 1. Setup the yum repos. Refer the **Prerequisites** section above to know about the process of setting up.
 
@@ -65,21 +65,17 @@ Perform the procedure mentioned below to setup corosync and pacemaker. To comple
 
  - **$ getenforce** (It must show **Disabled**)
  
-3. Ensure the following:
-
- - The **/etc/hosts** file is reflected accurately.
-
- - DNS is updated to resolve host names.
-
-4. Add eth0 IP address of both nodes in the **/etc/hosts** file by running the following command.
+3. Add eth0 IP address of both nodes in the **/etc/hosts** file by running the following command. Ensure that **/etc/hosts** file is reflected properly by running the following command.
 
  - **$ cat /etc/hosts**
 
-5. Install the required software by running the following command.
+ Also, ensure that DNS is updated to resolve host names.
+
+4. Install the required software by running the following command.
 
  - **$ yum -y install corosync pacemaker pcs**
  
-6. Configure Pacemaker, Corosync, and, Pcsd by running the following commands.
+5. Configure Pacemaker, Corosync, and, Pcsd by running the following commands.
 
  - **$ systemctl enable pcsd**
 
@@ -99,7 +95,7 @@ Perform the procedure mentioned below to setup corosync and pacemaker. To comple
    
 Perform the remaining steps on the primary node.
 
-7. Create and configure the cluster by running the following command.
+6. Create and configure the cluster by running the following command.
 
  - **$ pcs cluster auth node1 node2**
  
@@ -107,17 +103,17 @@ Perform the remaining steps on the primary node.
 
    Password: .............
 
-8. Setup the cluster, by defining the name and servers that would be part of the cluster. Run the below command.
+7. Setup the cluster, by defining the name and servers that would be part of the cluster. Run the below command.
 
  - **$ pcs cluster setup --name EOS_cluster node1 node2**
 
-9. Start the cluster services and enable them. Run the following commands.
+8. Start the cluster services and enable them. Run the following commands.
 
  - **$ pcs cluster start --all**
 
  - **$ pcs cluster enable --all**
 
-10. Disable Stonith and ignore the Quorum Policy by running the following commands.
+9. Disable Stonith and ignore the Quorum Policy by running the following commands.
 
  - **$ pcs property set stonith-enabled=false**
 
@@ -138,7 +134,7 @@ Perform the remaining steps on the primary node.
    no-quorum-policy: ignore
    stonith-enabled: false
    
-11. Check the cluster status by running the following command.
+10. Check the cluster status by running the following command.
 
  - **$ pcs status cluster**
 
