@@ -26,7 +26,21 @@ SYSTEM_CROSS_CONNECT_FILE="/opt/seagate/cortx/provisioner/generated_configs/$LOC
 
 HA_NON_CROSS_CONNECT_RULE_FILE='rules_engine_schema_without_crossconnect.json'
 HA_CROSS_CONNECT_RULE_FILE='rules_engine_schema_with_crossconnect.json'
+HA_JBOD_RULE_FILE='rules_engine_schema_JBOD.json'
+HA_VM_RULE_FILE='rules_engine_schema_single_vm.json'
 HA_CONF_RULE_FILE='rules_engine_schema.json'
+
+# Default Rule file will be VM Rule file
+HA_RULE_FILE=$HA_VM_RULE_FILE
+
+# username and password from prvsnrusers group to access Provisioner API
+PRVSNR_USER=''
+PRVSNR_PASSWORD=''
+# Keys to be search from the API json op
+BASE_KEY=".ret"
+SERVER_TYPE_KEY=$BASE_KEY".server_type"
+STORAGE_TYPE_KEY=$BASE_KEY".storage_type"
+
 
 post_install() {
     echo "post_install"
@@ -34,8 +48,30 @@ post_install() {
     cp -rf ${HA_PATH}/conf/logrotate/cortx_ha_log.conf ${LOGROTATE_CONF}
 }
 
-config() {
-    echo "config"
+detect_proper_rule_file() {
+
+    case $1 in
+        "5U84")
+                echo "Physical server with: $1"
+                HA_RULE_FILE=$( rule_file_for_5U84 )
+                ;;
+        "PODS")
+                echo "Physical server with: $1"
+                ;;
+        "JBOD")
+                echo "Physical server with: $1"
+                HA_RULE_FILE=$HA_JBOD_RULE_FILE
+                ;;
+        *)
+                echo "Physical server with: $1"
+                echo -e "storage_type is not supported. Please recheck"
+                echo "Assuming its a virtual Env"
+                ;;
+    esac
+
+}
+
+rule_file_for_5U84() {
 
     rule_file=${HA_CROSS_CONNECT_RULE_FILE}
 
@@ -48,15 +84,50 @@ config() {
         rule_file=${HA_NON_CROSS_CONNECT_RULE_FILE}
     }
 
-    # Copy a relevant rule file to HA_CONF directory with name as
-    # 'rules_engine_schema.json' as HA component search for this specific name
-    cp -rf ${SOURCE_HA_CONF}/${rule_file} ${HA_CONF}/${HA_CONF_RULE_FILE}
+    return $rule_file
+}
+
+config() {
+    echo "config"
+
+    # Get the setup information
+    get_setup_info
+
+    # Copy the appropriate Rules file
+    cp -rf ${SOURCE_HA_CONF}/${HA_RULE_FILE} ${HA_CONF}/${HA_CONF_RULE_FILE}
 
     # Configure database.json
     config_database
 
     # Decision Maker conf
     config_decision_maker
+}
+
+get_setup_info() {
+    # Provisioner API call to get system information
+    system_json_op=`provisioner get_setup_info --username $PRVSNR_USER --password $PRVSNR_PASSWORD --output json`
+    # output for above will be like:
+    # {
+    # "ret": {
+    #     "nodes": 1,
+    #     "server_type": "virtual",
+    #     "servers_per_node": 2,
+    #     "storage_type": "5u84"
+    #     }
+    # }
+    # values for server_type: <"physical" | "virtual">
+    # vales for storage_type: <"5U84" | "PODS" | "JBOD">
+    # NOTE: JBOD detection is not in place yet!!
+
+    server_type="$(echo "$system_json_op" | jq "$server_type_key")"
+    if [ $server_type != "virtual" ]
+        then
+            # If storage type is not "virtual", means its a physical server
+            storage_type="$(echo "$system_json_op" | jq "$storage_type_key")"
+
+            # Get the proper rule file for the storage
+            detect_proper_rule_file $storage_type
+    fi
 }
 
 init() {
