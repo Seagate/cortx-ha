@@ -120,10 +120,12 @@ get_setup_info() {
     # NOTE: JBOD detection is not in place yet!!
 
     server_type="$(echo "$system_json_op" | jq "$server_type_key")"
-    if [ $server_type != "virtual" ]
+    storage_type="$(echo "$system_json_op" | jq "$storage_type_key")"
+    if [ $storage_type != "virtual" ]
         then
-            # If storage type is not "virtual", means its a physical server
-            storage_type="$(echo "$system_json_op" | jq "$storage_type_key")"
+            # storage_type is not "virtual", means its not a single VM
+            # There is a physical storage assosicated with a server, which
+            # is either a VM or Physical server
 
             # Get the proper rule file for the storage
             detect_proper_rule_file $storage_type
