@@ -20,47 +20,36 @@ SOURCE_HA_CONF="<HA_PATH>/conf/etc"
 HA_CONF="/etc/cortx/ha"
 LOGROTATE_CONF="/etc/logrotate.d"
 HA_LOG="/var/log/seagate/cortx/ha"
-
-LOCAL_NODE_MINION_ID=$(salt-call grains.get id --output=json | jq '.["local"]' | sed s/\"//g)
-SYSTEM_CROSS_CONNECT_FILE="/opt/seagate/cortx/provisioner/generated_configs/$LOCAL_NODE_MINION_ID.cc"
-
 HA_NON_CROSS_CONNECT_RULE_FILE='rules_engine_schema_without_crossconnect.json'
 HA_CROSS_CONNECT_RULE_FILE='rules_engine_schema_with_crossconnect.json'
 HA_CONF_RULE_FILE='rules_engine_schema.json'
 
 post_install() {
-    echo "post_install"
-    mkdir -p ${LOGROTATE_CONF}
-    cp -rf ${HA_PATH}/conf/logrotate/cortx_ha_log.conf ${LOGROTATE_CONF}
+    # Setup are JBOD/VM/LDR
+    echo "Perform post_install to detect env"
+
+    # Copy installation env to config file
+    setup_by_installation_type
 }
 
 config() {
-    echo "config"
+    setup_type=$(get_setup_type)
+    echo "Perform config on $setup_type"
 
-    rule_file=${HA_CROSS_CONNECT_RULE_FILE}
-
-    # Based on cross-connect check, load appropriate rule_engine
-    # file. If cross-connect - load rules_engine_schema.json
-    # If no cross-connect - load rules_engine_schema_without_crossconnect.json
-    [[ -f ${SYSTEM_CROSS_CONNECT_FILE} ]] && echo "Cross connect File Exists" || {
-
-        echo "Cross connect file does not exist"
-        rule_file=${HA_NON_CROSS_CONNECT_RULE_FILE}
-    }
-
-    # Copy a relevant rule file to HA_CONF directory with name as
-    # 'rules_engine_schema.json' as HA component search for this specific name
-    cp -rf ${SOURCE_HA_CONF}/${rule_file} ${HA_CONF}/${HA_CONF_RULE_FILE}
-
+    # common
     # Configure database.json
     config_database
 
-    # Decision Maker conf
-    config_decision_maker
+    config_$setup_type
 }
 
 init() {
-    echo "init"
+    setup_type=$(get_setup_type)
+    echo "Perform init on $setup_type"
+
+    # Common
+    mkdir -p ${LOGROTATE_CONF}
+    cp -rf ${HA_PATH}/conf/logrotate/cortx_ha_log.conf ${LOGROTATE_CONF}
 }
 
 test() {
@@ -68,13 +57,17 @@ test() {
 }
 
 reset() {
-    echo "reset log"
+    setup_type=$(get_setup_type)
+    echo "Perform reset on $setup_type"
+
+    # Common
     rm -rf ${HA_LOG}
     rm -rf ${LOGROTATE_CONF}/cortx_ha_log.conf
     rm -rf ${HA_CONF}
 }
 
 replace_node() {
+    local_node_minion_id=$(salt-call grains.get id --output=json | jq '.["local"]' | sed s/\"//g)
     # Test consul
     consul_host=$(cat /etc/cortx/ha/database.json | \
             jq '.databases.consul_db.config.host' | sed s/\"//g)
@@ -87,12 +80,14 @@ replace_node() {
         echo "Consul is not running"; exit 1
     }
 
+    # TODO: Replace node use salt api to detect faulty node
+    # faulty_node=$(salt-call --local pillar.get cluster:node_list --output=json | jq .local[0] | sed s/\"//g)
     node_list=$(salt-call --local pillar.get cluster:node_list --output=json)
     host1=$(echo $node_list | jq '.["local"][0]' | sed s/\"//g)
     host2=$(echo $node_list | jq '.["local"][1]' | sed s/\"//g)
 
     # Get Faluty node name
-    if [ $LOCAL_NODE_MINION_ID == $host1 ]; then
+    if [ $local_node_minion_id == $host1 ]; then
         faulty_node=$host2
     else
         faulty_node=$host1
@@ -102,20 +97,100 @@ replace_node() {
     /usr/bin/cortxha cleanup db --node $faulty_node
 }
 
-# Helping function
+###################### Product Specific Installation #######################
+
+config_virtual() {
+    echo "virtual specific configuration"
+    #TODO: disablr rule and decision as per unsupported feature list
+    decision_monitor_conf=${SOURCE_HA_CONF}/decision_monitor_conf.json
+    cp -rf $decision_monitor_conf ${HA_CONF}/decision_monitor_conf.json
+    cp -rf ${SOURCE_HA_CONF}/rules_engine_schema_vm.json ${HA_CONF}/rules_engine_schema.json
+}
+
+config_JBOD() {
+    echo "jbod specific configuration"
+    # TODO: Update decision maker file as per JBOD env
+    decision_monitor_conf=${SOURCE_HA_CONF}/decision_monitor_conf.json
+    cp -rf $decision_monitor_conf ${HA_CONF}/decision_monitor_conf.json
+    # TODO: Update rule engine file as per JBOD env
+    cp -rf ${SOURCE_HA_CONF}/rules_engine_schema_vm.json rules_engine_schema.json
+}
+
+config_ldr1() {
+    echo "ldr1 specific configuration"
+
+    # Decision maker config
+    config_decision_maker
+
+    # Rule engine config
+    rules_engine_config
+}
+
+###################### Helping function #######################
+
+parse_yaml() {
+    #pip3 install PyYaml
+    python3 -c "import yaml;print(yaml.safe_load(open('$1'))$2)"
+}
+
+get_setup_type() {
+    setup_type=""
+    storage_type=$(parse_yaml ${HA_CONF}/ha.conf "['PRODUCT']['storage_type']")
+    server_type=$(parse_yaml ${HA_CONF}/ha.conf "['PRODUCT']['server_type']")
+
+    if [[ "$server_type" == "virtual" && "$storage_type" != "JBOD" ]]; then
+        setup_type="virtual"
+    elif [[ "$storage_type" == "JBOD" ]]; then
+        # TODO: check if virtual, physical jbod need different check
+        setup_type="JBOD"
+    elif [[ "$storage_type" == "5u84" ]]; then
+        setup_type="ldr1"
+    else
+        echo "Fail to get setup env"
+        exit 1
+    fi
+    echo $setup_type
+}
+
+setup_by_installation_type() {
+    installation_type=$(provisioner get_setup_info --output json)
+    mkdir -p ${HA_CONF}
+
+    # Install PyYaml package for parse_yaml
+    python3 -c "import yaml" || pip3 install PyYaml || {
+        echo "Failed to install yaml package"
+        exit 1
+    }
+
+    echo "Installation type detected ${installation_type}"
+    cp -rf ${SOURCE_HA_CONF}/ha.conf ${HA_CONF}/ha.conf
+    NO_OF_NODES=$(echo $installation_type | jq .ret.nodes  | sed s/\"//g)
+    NO_OF_NODES_PER_SERVER=$(echo $installation_type | jq .ret.servers_per_node  | sed s/\"//g)
+    STORAGE_TYPE=$(echo $installation_type | jq .ret.storage_type  | sed s/\"//g)
+    SERVER_TYPE=$(echo $installation_type | jq .ret.server_type  | sed s/\"//g)
+
+    sed -i -e "s|<NO_OF_NODES>|${NO_OF_NODES}|g" \
+        -e  "s|<NO_OF_NODES_PER_SERVER>|${NO_OF_NODES}|g" \
+        -e "s|<STORAGE_TYPE>|${STORAGE_TYPE}|g" \
+        -e "s|<SERVER_TYPE>|${SERVER_TYPE}|g"  ${HA_CONF}/ha.conf
+}
 
 config_database() {
+    local_node_minion_id=$(salt-call grains.get id --output=json | jq '.["local"]' | sed s/\"//g)
+
     # Config database.json
     cp -rf ${SOURCE_HA_CONF}/database.json ${HA_CONF}
 
     # Update consul vip
     CONSUL_HOST=$(salt-call pillar.get \
-        cluster:$LOCAL_NODE_MINION_ID:network:data_nw:roaming_ip \
+        cluster:$local_node_minion_id:network:data_nw:roaming_ip \
         --output=json | jq '.["local"]' | sed s/\"//g)
     sed -i -e "s|<CONSUL_HOST>|${CONSUL_HOST}|g" ${HA_CONF}/database.json
 }
 
 config_decision_maker() {
+    local_node_minion_id=$(salt-call grains.get id --output=json | jq '.["local"]' | sed s/\"//g)
+
     echo "Setup Decision maker"
     node_list=$(salt-call --local pillar.get cluster:node_list --output=json)
     host1=$(echo $node_list | jq '.["local"][0]' | sed s/\"//g)
@@ -148,7 +223,7 @@ config_decision_maker() {
     decision_monitor_conf=${SOURCE_HA_CONF}/decision_monitor_conf.json
     cp -rf $decision_monitor_conf /tmp/decision_monitor_conf.json
 
-    sed -i -e "s|<LOCAL>|${LOCAL_NODE_MINION_ID}|g" \
+    sed -i -e "s|<LOCAL>|${local_node_minion_id}|g" \
         -e "s|<HOST1>|${host1}|g" \
         -e "s|<HOST2>|${host2}|g" \
         -e "s|<UUID1>|${uuid1}|g" \
@@ -159,8 +234,29 @@ config_decision_maker() {
         -e "s|\"<N2_DATA_IFACE>\"|${node2_data_nw//$'\n'/}|g" \
         -e "s|\"<N2_MGMT_IFACE>\"|${node2_mgmt_nw//$'\n'/}|g" /tmp/decision_monitor_conf.json
 
-    cp -rf /tmp/decision_monitor_conf.json /etc/cortx/ha/decision_monitor_conf.json
+    cp -rf /tmp/decision_monitor_conf.json ${HA_CONF}/decision_monitor_conf.json
     rm -rf /tmp/decision_monitor_conf.json
+}
+
+rules_engine_config(){
+    # Common
+    local_node_minion_id=$(salt-call grains.get id --output=json | jq '.["local"]' | sed s/\"//g)
+    system_cross_connect_file="/opt/seagate/cortx/provisioner/generated_configs/$local_node_minion_id.cc"
+
+    rule_file=${HA_CROSS_CONNECT_RULE_FILE}
+
+    # Based on cross-connect check, load appropriate rule_engine
+    # file. If cross-connect - load rules_engine_schema.json
+    # If no cross-connect - load rules_engine_schema_without_crossconnect.json
+    [[ -f ${system_cross_connect_file} ]] && echo "Cross connect File Exists" || {
+
+        echo "Cross connect file does not exist"
+        rule_file=${HA_NON_CROSS_CONNECT_RULE_FILE}
+    }
+
+    # Copy a relevant rule file to HA_CONF directory with name as
+    # 'rules_engine_schema.json' as HA component search for this specific name
+    cp -rf ${SOURCE_HA_CONF}/${rule_file} ${HA_CONF}/${HA_CONF_RULE_FILE}
 }
 
 ACTION=$1
