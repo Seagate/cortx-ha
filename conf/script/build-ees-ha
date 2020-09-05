@@ -504,8 +504,8 @@ hax_systemd_update() {
 
 hax_rsc_add() {
     log "${FUNCNAME[0]}: Adding hax to Pacemaker..."
-    sudo pcs -f $cib_file resource create hax-c1 systemd:hare-hax-c1 op stop timeout=30
-    sudo pcs -f $cib_file resource create hax-c2 systemd:hare-hax-c2 op stop timeout=30
+    sudo pcs -f $cib_file resource create hax-c1 systemd:hare-hax-c1 op stop timeout=100
+    sudo pcs -f $cib_file resource create hax-c2 systemd:hare-hax-c2 op stop timeout=100
     sudo pcs -f $cib_file resource group add c1 hax-c1
     sudo pcs -f $cib_file resource group add c2 hax-c2
     sudo pcs -f $cib_file constraint order motr-kernel-clone then hax-c1
