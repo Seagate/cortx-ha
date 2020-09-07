@@ -37,12 +37,14 @@ rm -rf ${RPM_BUILD_ROOT}
 mkdir -p ${RPM_BUILD_ROOT}<HA_PATH>
 cp -rp . ${RPM_BUILD_ROOT}<HA_PATH>
 
+# TODO: Not needed in vm and JBOD
 # Compile pcswrap
 make -C pcswrap install DESTDIR=${RPM_BUILD_ROOT}<HA_PATH>/ha
 sed -i -e 's@^#!.*\.py3venv@#!/usr@' ${RPM_BUILD_ROOT}<HA_PATH>/ha/bin/*
 
+# TODO: Not needed in vm and JBOD
 mkdir -p ${RPM_BUILD_ROOT}/usr/lib/ocf/resource.d/cortx/
-mv resource/{dispatch,lnet,sspl} \
+mv resource/{dispatch,lnet} \
    ${RPM_BUILD_ROOT}/usr/lib/ocf/resource.d/cortx/
 rm -rf resource
 exit 0
