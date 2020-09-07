@@ -15,13 +15,13 @@
 
 ees-ha:
   post_install:
-    script: /opt/seagate/cortx/ha/conf/script/build-ees-ha
+    script: /opt/seagate/cortx/ha/conf/script/build-ha-io
     args:
       - --init
       - /var/lib/hare/cluster.yaml
       - /opt/seagate/cortx/ha/conf/build-ees-ha-args.yaml
   init:
-    script: /opt/seagate/cortx/ha/conf/script/build-ees-ha
+    script: /opt/seagate/cortx/ha/conf/script/build-ha-io
     args:
       - /var/lib/hare/cluster.yaml
       - /opt/seagate/cortx/ha/conf/build-ees-ha-args.yaml

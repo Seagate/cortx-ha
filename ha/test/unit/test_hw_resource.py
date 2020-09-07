@@ -45,9 +45,9 @@ class TestHardwareResourceAgent(unittest.TestCase):
         self.decision_monitor.get_resource_group_status.side_effect = self._side_effect_group_status
         self.schama = {
             "nodes": {
-                "27534128-7ecd-4606-bf42-ebc9765095ba": "eosnode1.example.com",
-                "f3c7d479-2249-40f4-9276-91ba59f50034": "eosnode2.example.com",
-                "local": "eosnode1.example.com"
+                "27534128-7ecd-4606-bf42-ebc9765095ba": "cortxnode1.example.com",
+                "f3c7d479-2249-40f4-9276-91ba59f50034": "cortxnode2.example.com",
+                "local": "cortxnode1.example.com"
             }
         }
         self.status = None
