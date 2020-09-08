@@ -42,6 +42,8 @@ ees-ha:
       - /var/lib/hare/consul-*
       - /var/lib/hare/node-name
       - /var/lib/hare/hax-env-*
+      - /etc/sysconfig/m0d-*
+      - /etc/sysconfig/s3server-*
   post_update:
     script: /opt/seagate/cortx/ha/conf/script/build-ees-ha-update
     args:
