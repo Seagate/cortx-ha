@@ -25,7 +25,7 @@ usage() {
     cat <<EOF
 Usage: $PROG [OPTS] <CDF> [<params.yaml>]
 
-Formats EES Cortx MOTR storage.
+Formats LDR-R1 Cortx MOTR storage.
 
 Here are some prerequisites/guidelines:
 

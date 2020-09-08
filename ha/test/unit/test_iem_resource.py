@@ -40,14 +40,14 @@ class TestIEMResourceAgent(unittest.TestCase):
     def setUp(self):
         Log.init(service_name='resource_agent', log_path=const.RA_LOG_DIR, level="DEBUG")
         self.decision_monitor = MagicMock()
-        self.filename = 'node_iem_mero'
+        self.filename = 'node_iem_motr'
         self.path = 'io'
         self.decision_monitor.get_resource_status.side_effect = self._side_effect_group_status
         self.schama = {
             "nodes": {
-                "27534128-7ecd-4606-bf42-ebc9765095ba": "eosnode1.example.com",
-                "f3c7d479-2249-40f4-9276-91ba59f50034": "eosnode2.example.com",
-                "local": "eosnode1.example.com"
+                "27534128-7ecd-4606-bf42-ebc9765095ba": "cortxnode1.example.com",
+                "f3c7d479-2249-40f4-9276-91ba59f50034": "cortxnode2.example.com",
+                "local": "cortxnode1.example.com"
             }
         }
         self.status = None
@@ -76,7 +76,7 @@ class TestIEMResourceAgent(unittest.TestCase):
             'OCF_RESKEY_filename': self.filename,
             'OCF_RESKEY_path': 'io',
             'OCF_RESKEY_service': 'ldap',
-            'OCF_RESKEY_node': 'eosnode1.example.com'
+            'OCF_RESKEY_node': 'cortxnode1.example.com'
         }
         self.status = Action.OK
         status = self.iem_agent.start()
@@ -101,7 +101,7 @@ class TestIEMResourceAgent(unittest.TestCase):
             'OCF_RESKEY_filename': self.filename,
             'OCF_RESKEY_path': 'io',
             'OCF_RESKEY_service': 'ldap',
-            'OCF_RESKEY_node': 'eosnode1.example.com'
+            'OCF_RESKEY_node': 'cortxnode1.example.com'
         }
         self.decision_monitor.get_resource_status.return_value = Action.FAILED
         status = self.iem_agent.stop()
@@ -122,7 +122,7 @@ class TestIEMResourceAgent(unittest.TestCase):
             'OCF_RESKEY_filename': self.filename,
             'OCF_RESKEY_path': 'io',
             'OCF_RESKEY_service': 'ldap',
-            'OCF_RESKEY_node': 'eosnode1.example.com'
+            'OCF_RESKEY_node': 'cortxnode1.example.com'
         }
         os.makedirs(const.HA_INIT_DIR, exist_ok=True)
         if os.path.exists(const.HA_INIT_DIR + self.filename):

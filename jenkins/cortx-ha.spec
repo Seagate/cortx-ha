@@ -18,7 +18,7 @@ Version: %{version}
 Release: %{dist}
 Summary: HA Tools
 License: Seagate Proprietary
-URL: http://gitlab.mero.colo.seagate.com/eos/cortx-ha
+URL: https://github.com/Seagate/cortx-ha
 Source0: <RPM_NAME>-%{version}.tar.gz
 #TODO: Dependency on Hare rpm
 %define debug_package %{nil}
