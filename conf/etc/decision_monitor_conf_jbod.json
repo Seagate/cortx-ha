@@ -1,0 +1,54 @@
+{
+  "request_timeout": 2.0,
+  "nodes": {
+    "<UUID1>": "<HOST1>",
+    "<UUID2>": "<HOST2>",
+    "<UUID3>": "<HOST3>",
+    "local": "<LOCAL>"
+  },
+  "network": {
+      "<HOST1>": {
+          "data_iface": "<N1_DATA_IFACE>",
+          "mgmt_iface": "<N1_MGMT_IFACE>"
+      },
+      "<HOST2>": {
+          "data_iface": "<N2_DATA_IFACE>",
+          "mgmt_iface": "<N2_MGMT_IFACE>"
+      },
+      "<HOST3>": {
+          "data_iface": "<N3_DATA_IFACE>",
+          "mgmt_iface": "<N3_MGMT_IFACE>"
+      }
+  },
+  "resources": {
+    "encl_disk_<HOST1>": {
+      "entity": "enclosure",
+      "entity_id": "0",
+      "component": "disk",
+      "component_id": "<HOST1>"
+    },
+    "encl_disk_<HOST2>": {
+      "entity": "enclosure",
+      "entity_id": "0",
+      "component": "disk",
+      "component_id": "<HOST2>"
+    },
+    "encl_disk_<HOST3>": {
+      "entity": "enclosure",
+      "entity_id": "0",
+      "component": "disk",
+      "component_id": "<HOST3>"
+    }
+  },
+  "resource_groups": {
+    "io_<HOST1>": [
+      "encl_disk_<HOST1>"
+    ],
+    "io_<HOST2>": [
+      "encl_disk_<HOST2>"
+    ],
+    "io_<HOST3>": [
+      "encl_disk_<HOST3>"
+    ]
+  }
+}
