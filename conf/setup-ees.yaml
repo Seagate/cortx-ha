@@ -15,11 +15,8 @@
 
 ees-ha:
   post_install:
-    script: /opt/seagate/cortx/ha/conf/script/build-ha-io
-    args:
-      - --init
-      - /var/lib/hare/cluster.yaml
-      - /opt/seagate/cortx/ha/conf/build-ees-ha-args.yaml
+    script: null
+    args: null
   init:
     script: /opt/seagate/cortx/ha/conf/script/build-ha-io
     args:
@@ -39,17 +36,18 @@ ees-ha:
       - /opt/seagate/cortx/ha/conf/build-ees-ha*-args.yaml
       - /var/lib/hare/cluster.yaml
       - /var/lib/hare/confd.*
-      - /var/lib/hare/consul-*
-      - /var/lib/hare/node-name
-      - /var/lib/hare/hax-env-*
-      - /etc/sysconfig/m0d-*
-      - /etc/sysconfig/s3server-*
   post_update:
     script: /opt/seagate/cortx/ha/conf/script/build-ees-ha-update
     args:
       - /var/lib/hare/cluster.yaml
       - /opt/seagate/cortx/ha/conf/build-ees-ha-args.yaml
       - /opt/seagate/cortx/ha/conf/build-ees-ha-csm-args.yaml
+  refresh_config:
+    script: /opt/seagate/cortx/ha/conf/script/build-ha-io
+    args:
+      - --restore-conf
+      - /var/lib/hare/cluster.yaml
+      - /opt/seagate/cortx/ha/conf/build-ees-ha-args.yaml
   remove_node:
     script: /opt/seagate/cortx/ha/conf/script/cluster_update
     args: remove_node
