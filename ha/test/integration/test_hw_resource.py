@@ -29,9 +29,9 @@ import time
 from datetime import datetime
 from unittest.mock import patch
 
-from eos.utils.log import Log
-from eos.utils.ha.dm.actions import Action
-from eos.utils.ha.dm.decision_monitor import DecisionMonitor
+from cortx.utils.log import Log
+from cortx.utils.ha.dm.actions import Action
+from cortx.utils.ha.dm.decision_monitor import DecisionMonitor
 
 from ha.resource.resource_agent import HardwareResourceAgent
 from ha import const

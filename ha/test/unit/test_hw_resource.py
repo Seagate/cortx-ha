@@ -27,8 +27,8 @@ import unittest
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
-from eos.utils.log import Log
-from eos.utils.ha.dm.actions import Action
+from cortx.utils.log import Log
+from cortx.utils.ha.dm.actions import Action
 from ha.resource.resource_agent import HardwareResourceAgent
 from ha import const
 

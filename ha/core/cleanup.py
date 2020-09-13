@@ -24,8 +24,8 @@
 
 import sys
 
-from eos.utils.schema.conf import Conf
-from eos.utils.ha.dm.decision_monitor import DecisionMonitor
+from cortx.utils.schema.conf import Conf
+from cortx.utils.ha.dm.decision_monitor import DecisionMonitor
 
 from ha import const
 

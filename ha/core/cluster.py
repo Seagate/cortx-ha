@@ -24,8 +24,8 @@
 
 import time
 
-from eos.utils.log import Log
-from eos.utils.process import SimpleProcess
+from cortx.utils.log import Log
+from cortx.utils.process import SimpleProcess
 
 class Cluster:
     def __init__(self):
