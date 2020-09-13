@@ -29,57 +29,57 @@ init() {
     # Restart csm to enable decision maker changes
     pcs resource restart csm-agent
 
-    pcs cluster cib hw_cfg
+    # IEM Resources
+    pcs cluster cib hw_iem_cfg
     # Hardware io stack resource
-    pcs -f hw_cfg resource create io_path_health-c1 ocf:seagate:hw_comp_ra \
+    pcs -f hw_iem_cfg resource create io_path_health-c1 ocf:seagate:hw_comp_ra \
         path='io' filename='io_path_health-c1' \
         op start timeout=30s interval=0s \
         op monitor timeout=30s interval=30s \
         op stop timeout=30s interval=0s
-    pcs -f hw_cfg resource create io_path_health-c2 ocf:seagate:hw_comp_ra \
+    pcs -f hw_iem_cfg resource create io_path_health-c2 ocf:seagate:hw_comp_ra \
         path='io' filename='io_path_health-c2' \
         op start timeout=30s interval=0s \
         op monitor timeout=30s interval=30s \
         op stop timeout=30s interval=0s
-    pcs -f hw_cfg resource create mgmt_path_health-c1 ocf:seagate:hw_comp_ra \
+    pcs -f hw_iem_cfg resource create mgmt_path_health-c1 ocf:seagate:hw_comp_ra \
         path='mgmt' filename='mgmt_path_health-c1' \
         op start timeout=30s interval=0s \
         op monitor timeout=30s interval=30s \
         op stop timeout=30s interval=0s
 
-    pcs -f hw_cfg resource group add c1 io_path_health-c1
-    pcs -f hw_cfg resource group add c2 io_path_health-c2
-    pcs -f hw_cfg resource group add csm-kibana mgmt_path_health-c1
-    pcs -f hw_cfg constraint order consul-c1 then io_path_health-c1
-    pcs -f hw_cfg constraint order consul-c2 then io_path_health-c2
-    pcs -f hw_cfg constraint order consul-c1 then mgmt_path_health-c1
+    pcs -f hw_iem_cfg resource group add c1 io_path_health-c1
+    pcs -f hw_iem_cfg resource group add c2 io_path_health-c2
+    pcs -f hw_iem_cfg resource group add csm-kibana mgmt_path_health-c1
+    pcs -f hw_iem_cfg constraint order consul-c1 then io_path_health-c1
+    pcs -f hw_iem_cfg constraint order consul-c2 then io_path_health-c2
+    pcs -f hw_iem_cfg constraint order consul-c1 then mgmt_path_health-c1
 
     # TODO: Replace with non-offensive terms when
     # https://bugs.clusterlabs.org/show_bug.cgi?id=5437 is resolved
 
     # Hardware resource monitor by sspl master
-    pcs -f hw_cfg resource create sspl_primary_hw ocf:seagate:hw_comp_ra \
+    pcs -f hw_iem_cfg resource create sspl_primary_hw ocf:seagate:hw_comp_ra \
         path='storage_encl' filename='sspl_primary_hw' \
         op start timeout=30s interval=0s \
         op monitor timeout=30s interval=30s \
         op stop timeout=30s interval=0s
-    pcs -f hw_cfg resource update sspl_primary_hw meta migration-threshold=1 failure-timeout=40s
-    pcs -f hw_cfg constraint colocation add sspl_primary_hw with sspl-master INFINITY with-rsc-role=Master
-    pcs -f hw_cfg constraint location sspl_primary_hw prefers $host1=INFINITY
-    pcs -f hw_cfg constraint location sspl_primary_hw prefers $host2=INFINITY
-    pcs cluster cib-push hw_cfg
+    pcs -f hw_iem_cfg resource update sspl_primary_hw meta migration-threshold=1 failure-timeout=40s
+    pcs -f hw_iem_cfg constraint colocation add sspl_primary_hw with sspl-master INFINITY with-rsc-role=Master
+    pcs -f hw_iem_cfg constraint location sspl_primary_hw prefers $host1=INFINITY
+    pcs -f hw_iem_cfg constraint location sspl_primary_hw prefers $host2=INFINITY
 
-    pcs cluster cib iem_cfg
-    pcs -f iem_cfg resource create node_iem_s3 ocf:seagate:iem_comp_ra \
+    # IEM Resources
+    pcs -f hw_iem_cfg resource create node_iem_s3 ocf:seagate:iem_comp_ra \
         path='node_iem_s3' filename='node_iem_s3' service="slapd" \
         op start timeout=30s interval=0s \
         op monitor timeout=30s interval=30s \
         op stop timeout=30s interval=0s
-    pcs -f iem_cfg resource clone node_iem_s3 clone-max=2 clone-node-max=1
-    pcs -f iem_cfg constraint location node_iem_s3-clone prefers ${host1}=INFINITY
-    pcs -f iem_cfg constraint location node_iem_s3-clone prefers ${host2}=INFINITY
-    pcs -f iem_cfg constraint order node_iem_s3-clone then ldap-clone
-    pcs cluster cib-push iem_cfg
+    pcs -f hw_iem_cfg resource clone node_iem_s3 clone-max=2 clone-node-max=1
+    pcs -f hw_iem_cfg constraint location node_iem_s3-clone prefers ${host1}=INFINITY
+    pcs -f hw_iem_cfg constraint location node_iem_s3-clone prefers ${host2}=INFINITY
+    pcs -f hw_iem_cfg constraint order node_iem_s3-clone then ldap-clone
+    pcs cluster cib-push hw_iem_cfg
 }
 
 cleanup() {
