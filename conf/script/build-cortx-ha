@@ -92,9 +92,8 @@ cleanup() {
         sspl_primary_hw
     )
     for r in ${resources[@]}; do
-        pcs resource delete $r &
+        pcs resource delete $r || true
     done
-    wait
 }
 
 ACTION=$1
