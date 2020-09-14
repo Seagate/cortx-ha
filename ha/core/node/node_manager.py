@@ -20,7 +20,7 @@
  Description:       Node Manager
  ****************************************************************************
 """
-from node import Node
+from ha.core.node.node import Node
 from ha.utility.error import HAUnimplemented, HACommandTerminated
 
 from eos.utils.schema.conf import Conf
@@ -86,35 +86,25 @@ class CortxNodeManager(NodeManager):
         Args:
             args ([dict]): Parameter pass to request to process.
         """
-        if args.action == const.NODE_COMMAND:
+        if action == const.NODE_COMMAND:
+            node = self.get_node_instance(args.node)
+
             if args.command == "start":
-                if self.validate_node(args.node):
-                    Node = self.get_node_instance(args.node)
-                    Node.start()
-                else:
-                    Log.error(f"Invalid node id {args.node}")
+                node.start()
 
             elif args.command == "stop":
-                if self.validate_node(args.node):
-                    Node = self.get_node_instance(args.node)
-                    Node.shutdown()
-                else:
-                    Log.error(f"Invalid node id {args.node}")
+                node.shutdown()
 
-            elif args.node == "status":
-                if self.validate_node(args.node):
-                    Node = self.get_node_instance(args.node)
-                    Node.status()
-                else:
-                    Log.error(f"Invalid node id {args.node_id}")
+            elif args.command == "status":
+                node.status()
 
             else:
                 raise HAUnimplemented()
 
-        elif args.action == const.SERVICE_COMMMAND:
+        elif action == const.SERVICE_COMMAND:
             pass
 
-        elif args.action == const.CLEANUP_COMMAND:
+        elif action == const.CLEANUP_COMMAND:
             pass
 
         else:
@@ -126,12 +116,6 @@ class CortxNodeManager(NodeManager):
         """
         return self.node_instance_list
 
-    def get_node_instance(self, node_id):
-        """
-        Returns instance of the node
-        """
-        return self.node_instance_list[node_id]
-
     def validate_node(self, node_id):
         """
         Validate requested node is there in the node list
@@ -142,6 +126,17 @@ class CortxNodeManager(NodeManager):
             Valid_Node = True
 
         return Valid_Node
+
+    def get_node_instance(self, node_id):
+        """
+        Returns instance of the node
+        """
+        if self.validate_node(node_id):
+            node = self.node_instance_list[node_id]
+        else:
+            Log.error(f"Invalid node id {node_id}")
+
+        return node
 
 class PcsNodeManager(NodeManager):
     def __init__(self):
