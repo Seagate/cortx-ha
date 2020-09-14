@@ -389,6 +389,16 @@ consul_systemd_update() {
    unset consul_c1_cfg_dir consul_c2_cfg_dir
 }
 
+# Prepare consul-env-c{1,2} for the nodes. consul-env files (created by Hare)
+# are used as a base. Few notes:
+# 1) Only one consul-agent on the node can listen on 127.0.0.1
+# address for the client requests, it will be consul-agent-c1 on node1 and
+# consul-agent-c2 on node2 (hosting agent on each node).
+# 2) `-retry-join $ip2` is added to consul-env-c1 so that during the failover
+# or failback of node1 consul-agent-c1 could re-join with its peer on node2.
+# 3) MODE is updated from `server` to `server-c{1,2}` so that each agent
+# may have its own `-config-dir` at /var/lib/hare (refer to
+# systemd/hare-consul startup script in Hare repo).
 consul_env_prepare() {
     log "${FUNCNAME[0]}: Creating Consul environment..."
     sudo cp $hare_dir/consul-env $hare_dir/consul-env-c1
