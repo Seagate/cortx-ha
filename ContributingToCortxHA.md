@@ -115,6 +115,7 @@ You'll need to **Fork** the cortx-ha repository to clone it into your private Gi
    - Run the commands:
       
       `$ git remote add upstream git@github.com:Seagate/cortx-ha.git`
+      
       `$ git remote -v`
       
       Your upstream repo will now be visible.
