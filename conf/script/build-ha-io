@@ -892,11 +892,11 @@ declare -A ha_ops_type=(
 for op in ${ha_ops[@]}; do
     if $restore_conf && [[ ${ha_ops_type[$op]} =~ .*'restore'.* ]]; then
         $op
-    elif ! $update && ! $restore_conf [[ ${ha_ops_type[$op]} =~ .*'bootstrap'.* ]]; then
+    elif ! $update && ! $restore_conf && [[ ${ha_ops_type[$op]} =~ .*'bootstrap'.* ]]; then
         cib_init
         $op
         cib_commit
-    elif $update && $restore_conf [[ ${ha_ops_type[$op]} =~ .*'update'.* ]]; then
+    elif $update && [[ ${ha_ops_type[$op]} =~ .*'update'.* ]]; then
         # We are using existing CIB as a base and re-applying the pcs
         # instructions, thus some instructions would already exist in the
         # CIB, we ignore them.
