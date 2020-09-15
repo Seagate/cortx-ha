@@ -15,16 +15,14 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-"""
- ****************************************************************************
- Description:       Node class
- ****************************************************************************
-"""
 from eos.utils.schema.conf import Conf
 from eos.utils.log import Log
 from ha import const
 
 class Node:
+    """
+    Node class
+    """
     def __init__(self, node_id):
         """
         Update node related info from the conf file using node id

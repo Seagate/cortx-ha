@@ -15,20 +15,19 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-"""
- ****************************************************************************
- Description:       Node Manager
- ****************************************************************************
-"""
-from ha.core.node.node import Node
-from ha.utility.error import HAUnimplemented, HACommandTerminated
-
-from eos.utils.schema.conf import Conf
 from eos.utils.log import Log
+from eos.utils.schema.conf import Conf
+
 from ha import const
+from ha.core.node.node import Node
+from ha.core.service.service_manager import CortxServiceManager
+from ha.utility.error import HAUnimplemented, HACommandTerminated
 
 
 class NodeManager:
+    """
+    Node Manager
+    """
     def __init__(self):
         """
         Manage node operation
@@ -72,9 +71,11 @@ class CortxNodeManager(NodeManager):
         Prepare node instance list
         """
         self.node_instance_list = {}
-        nodelist = Conf.get(const.HA_GLOBAL_INDEX, "Node.nodelist")
+        self._service_manager = CortxServiceManager()
 
-        for node_id in nodelist.keys():
+        node_list = Conf.get(const.HA_GLOBAL_INDEX, "Node.nodelist")
+
+        for node_id in node_list.keys():
             self.node_instance_list[node_id] = Node(node_id)
 
         Log.debug(f"node_instance_list {self.node_instance_list}")
@@ -120,12 +121,12 @@ class CortxNodeManager(NodeManager):
         """
         Validate requested node is there in the node list
         """
-        Valid_Node = False
+        valid_node = False
 
         if node_id in self.node_instance_list.keys():
-            Valid_Node = True
+            valid_node = True
 
-        return Valid_Node
+        return valid_node
 
     def get_node_instance(self, node_id):
         """

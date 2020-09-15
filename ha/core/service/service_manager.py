@@ -15,37 +15,73 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-"""
- ****************************************************************************
- Description:       Service Manager
- ****************************************************************************
-"""
-from service import ServiceRegistry
-from ha.utility.error import HAUnimplemented, HACommandTerminated
-
 from eos.utils.log import Log
+
+from ha.core.service.service_registry import ServiceRegistry
+from ha.utility.error import HAUnimplemented, HACommandTerminated
 from ha import const
 
 
 class ServiceManager:
+    """
+    Service Manager
+    """
     def __init__(self):
         """
         init service manager
         """
-        ServiceRegistryList = ServiceRegistry()
-        ServiceRegistryList.register_services()
+        pass
+
+    def process_request(self, action, args):
+        """
+        Process requested service
+        """
+        pass
+
+    def start(self, node_id, service_name):
+        """
+        Starts specific service on the requested node
+        """
+        pass
+
+    def stop(self, node_id, service_name):
+        """
+        Stops specific service on the requested node
+        """
+        pass
+
+    def monitor(self, node_id, service_name):
+        """
+        Monitors specific service on the requested node
+        """
+        pass
+
+class CortxServiceManager(ServiceManager):
+    """
+    Cortx Service Manager
+    """
+    def __init__(self):
+        """
+        init service manager
+        """
+        self._service_registry = ServiceRegistry()
+        self._service_registry.register_services()
 
     def process_request(self, action, args):
         """
         Process requested service
         """
         if action == const.SERVICE_COMMAND:
+            service = self._service_registry.get_service(args.service)
+
             if args.command =="start":
-                self.start(args.node, args.service)
+                service.start(args.node)
+
             elif args.command == "stop":
-                self.stop(args.node, args.service)
+                service.stop(args.node)
+
             elif args.command == "monitor":
-                self.monitor(args.node, args.service)
+                service.monitor(args.node)
             else:
                 raise HAUnimplemented()
 
@@ -72,4 +108,37 @@ class ServiceManager:
         Monitors specific service on the requested node
         """
         pass
-    
+
+class PcsServiceManager(ServiceManager):
+    """
+    Pcs Service Manager
+    """
+    def __init__(self):
+        """
+        init service manager
+        """
+        pass
+
+    def process_request(self, action, args):
+        """
+        Process requested service
+        """
+        pass
+
+    def start(self, node_id, service_name):
+        """
+        Starts specific service on the requested node
+        """
+        pass
+
+    def stop(self, node_id, service_name):
+        """
+        Stops specific service on the requested node
+        """
+        pass
+
+    def monitor(self, node_id, service_name):
+        """
+        Monitors specific service on the requested node
+        """
+        pass

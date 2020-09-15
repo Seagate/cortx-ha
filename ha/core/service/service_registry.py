@@ -15,24 +15,33 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-class Service:
-    """
-    Service base class
-    """
+class ServiceRegistry:
     def __init__(self):
+        """
+        """
+        self.services_list = {}
+
+
+    def get_service(self, service_name):
+        """
+        Returns instance of the requested service
+        """
         pass
 
-    def register(self, service_name):
+    def register_services(self):
+        """
+        Register all necessary service on the current node
+        """
         pass
 
-    def start(self, node_id) :
+    def deregister_services(self):
+        """
+        Deregister all the necessary service on the current node
+        """
         pass
 
-    def status(self, node_id):
-        pass
-
-    def stop(self, node_id):
-        pass
-
-    def deregister(self, service_name):
-        pass
+    def get_service_list(self):
+        """
+        Returns service list
+        """
+        return self.services_list
