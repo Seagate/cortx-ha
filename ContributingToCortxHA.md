@@ -204,7 +204,7 @@ $ git rebase upstream/main
 
 **Q** How do I address reviewer comments?
 
-**A** If you need to address comments from the reviewer, commit your changes then rebase your patches on top of dev. Finally submit your patches with:
+**A** If you need to address comments from the reviewer, commit your changes then rebase your patches on top of main branches. Finally submit your patches with:
 
    `$ git push origin -u main`
 
