@@ -65,6 +65,14 @@ precheck() {
     sudo pcs resource show csm-agent >/dev/null
 }
 
+prerequisite() {
+    # disable and update uds service file
+    sudo systemctl disable uds.service
+    sudo sed -i -e s/Restart=always//g /usr/lib/systemd/system/uds.service
+    sudo sed -i -e s/WantedBy=multi-user.target//g /usr/lib/systemd/system/uds.service
+    sudo systemctl daemon-reload
+}
+
 uds_rsc_add() {
     echo 'Adding UDS resource and constraints...'
     sudo pcs -f $cib_file resource create uds systemd:uds op monitor interval=30s
@@ -85,15 +93,18 @@ cib_commit() {
 # HA operations table.
 ha_ops=(
     precheck
+    prereq
     uds_rsc_add
 )
 
 # Maps ha operation from the ha_ops table to its respective type.
 # HA operations are classified and described as follows,
 # bootstrap:   executes during clean installation of the software only
+# prerequisite: disable and update uds service file
 # update:      executes during clean install and software update
 declare -A ha_ops_type=(
     [precheck]='bootstrap'
+    [prereq]='prerequisite'
     [uds_rsc_add]='update'
 )
 
