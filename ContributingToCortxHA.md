@@ -1,19 +1,19 @@
 # Contribute to CORTX-HA
 
 - [1.0 Prerequisites](#10-Prerequisites)
-- [1.2 Set up Git on your Development Box](#12-Set-Up-Git-on-your-Development-Box)
-- [1.3 Submit your changes](#13-Submit-your-Changes)
-   * [1.3.1 Clone the cortx-ha repository](#131-Clone-the-cortx-ha-repository)
-   * [1.3.2 Code Commits](#132-Code-commits)
-   * [1.3.3 Create a Pull Request](#133-Create-a-Pull-Request)
-- [1.4 Run Jenkins and System Tests](#14-Run-Jenkins-and-System-Tests)
+- [1.1 Set up Git on your Development Box](#121-Set-Up-Git-on-your-Development-Box)
+- [1.2 Submit your changes](#12-Submit-your-Changes)
+   * [1.2.1 Clone the cortx-ha repository](#121-Clone-the-cortx-ha-repository)
+   * [1.2.2 Code Commits](#122-Code-commits)
+   * [1.2.3 Create a Pull Request](#123-Create-a-Pull-Request)
+- [1.3 Run Jenkins and System Tests](#13-Run-Jenkins-and-System-Tests)
 - [FAQs](FAQs)
 
 Contributing to the cortx-ha repository is a three-step process where you'll need to:
 
-1. [Clone the cortx-ha repository](#131-Clone-the-cortx-ha-repository)
-2. [Commit your Code](#132-Code-commits)
-3. [Create a Pull Request](#133-Create-a-Pull-Request)
+1. [Clone the cortx-ha repository](#121-Clone-the-cortx-ha-repository)
+2. [Commit your Code](#122-Code-commits)
+3. [Create a Pull Request](#123-Create-a-Pull-Request)
 
 ## 1.0 Prerequisites
 
@@ -43,7 +43,7 @@ Before you set up your GitHub, you'll need to
    </p>
     </details>
 
-## 1.2 Set Up Git on your Development Box
+## 1.1 Set Up Git on your Development Box
 
 <details>
   <summary>Before you begin</summary>
@@ -87,11 +87,11 @@ Once you've installed the prerequisites, follow these steps to set up Git on you
    $ git config --global color.ui auto
    $ git config --global credential.helper cache
    ```
-## 1.3. Submit your Changes
+## 1.2. Submit your Changes
 
 Before you can work on a GitHub feature, you'll need to clone the cortx-ha repository.
 
-### 1.3.1 Clone the cortx-ha repository
+### 1.2.1 Clone the cortx-ha repository
 
 You'll need to **Fork** the cortx-ha repository to clone it into your private GitHub repository. Follow these steps to clone the repository to your gitHub account:
 1. Navigate to the 'cortx-ha' repository homepage on GitHub.
@@ -136,7 +136,7 @@ You'll need to **Fork** the cortx-ha repository to clone it into your private Gi
 
    `$ git checkout -b "your-local-branch-name"`
 
-### 1.3.2 Code Commits
+### 1.2.2 Code Commits
 
 You can make changes to the code and save them in your files.
 
@@ -173,7 +173,7 @@ You can make changes to the code and save them in your files.
    * [new branch] <your-local-branch-name> -> <your-local-branch-name>
    ```
 
-### 1.3.3 Create a Pull Request
+### 1.2.3 Create a Pull Request
 
 
 1. Once you Push changes to GitHub, the output will display a URL for creating a Pull Request, as shown in the sample code above.
@@ -183,7 +183,7 @@ You can make changes to the code and save them in your files.
 4. Click **Create pull request** to create the pull request.
 5. Add reviewers to your pull request to review and provide feedback on your changes.
 
-## 1.4 Run Jenkins and System Tests
+## 1.3 Run Jenkins and System Tests
 
 Creating a pull request automatically triggers Jenkins jobs and System tests. To familiarize yourself with jenkins, please visit the [Jenkins wiki page](https://en.wikipedia.org/wiki/Jenkins_(software)).
 
