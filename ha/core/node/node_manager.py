@@ -88,7 +88,12 @@ class CortxNodeManager(NodeManager):
             args ([dict]): Parameter pass to request to process.
         """
         if action == const.NODE_COMMAND:
-            node = self.get_node_instance(args.node)
+            node = None
+            if args.node is None:
+                local_node = Conf.get(const.HA_GLOBAL_INDEX, "Node.local")
+                node = self.get_node_instance(local_node)
+            else:
+                node = self.get_node_instance(args.node)
 
             if args.command == "start":
                 node.start()
@@ -103,7 +108,7 @@ class CortxNodeManager(NodeManager):
                 raise HAUnimplemented()
 
         elif action == const.SERVICE_COMMAND:
-            pass
+            self._service_manager.process_request(action, args)
 
         elif action == const.CLEANUP_COMMAND:
             pass
