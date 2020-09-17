@@ -7,7 +7,7 @@
    * [1.2.2 Code Commits](#122-Code-commits)
    * [1.2.3 Create a Pull Request](#123-Create-a-Pull-Request)
 - [1.3 Run Jenkins and System Tests](#13-Run-Jenkins-and-System-Tests)
-- [FAQs](FAQs)
+- [FAQs](#FAQs)
 
 Contributing to the cortx-ha repository is a three-step process where you'll need to:
 
