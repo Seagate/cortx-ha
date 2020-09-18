@@ -33,6 +33,7 @@ DEV=$1
 
 if [ "$DEV" == false ]; then
     set -x
+    yum erase eos-py-utils -y && yum install cortx-py-utils -y
     req_file=${BASE_DIR}/jenkins/pyinstaller/requirements.txt
     python3 -m pip install -r $req_file > /dev/null || {
         echo "Unable to install package from $req_file"; exit 1;

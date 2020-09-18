@@ -28,9 +28,9 @@ import traceback
 import argparse
 import pathlib
 
-from eos.utils.schema.conf import Conf
-from eos.utils.log import Log
-from eos.utils.schema.payload import *
+from cortx.utils.schema.conf import Conf
+from cortx.utils.log import Log
+from cortx.utils.schema.payload import *
 
 #TODO - Move the cli to cortxcli framework once cortxcli is created as a separate module.
 class HACli:
