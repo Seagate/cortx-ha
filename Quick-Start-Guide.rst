@@ -105,7 +105,7 @@ Perform the remaining steps on the primary node.
 
 7. Setup the cluster, by defining the name and servers that would be part of the cluster. Run the below command.
 
- - **$ pcs cluster setup --name EOS_cluster node1 node2**
+ - **$ pcs cluster setup --name CORTX_cluster node1 node2**
 
 8. Start the cluster services and enable them. Run the following commands.
 
@@ -128,7 +128,7 @@ Perform the remaining steps on the primary node.
    [root@ssc-vm-c-0208 534380]# pcs property list
    Cluster Properties:
    cluster-infrastructure: corosync
-   cluster-name: EOS_cluster
+   cluster-name: CORTX_cluster
    dc-version: 1.1.21-4.el7-f14e36fd43
    have-watchdog: false
    no-quorum-policy: ignore
