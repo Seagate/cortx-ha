@@ -54,7 +54,10 @@ Optional parameters:
   --skip-mkfs           Don't mkfs /var/motr
   --net-type <tcp|o2ib> LNet network type (default: tcp)
   --cib-file      <cf>  Pacemaker configuration file
-  --update              Preserve Consul and Motr state, reconfigure Pacemaker only.
+  --update              Preserve Consul and Motr state, reconfigure Pacemaker
+                        only.
+  --restore-conf        Restore configuration files from the backup copy on the
+                        peer node.
 
 Note: parameters can be specified either directly via cmd-line options
 or via a yaml file, e.g.:
@@ -74,7 +77,7 @@ EOF
 TEMP=$(getopt --options h,i: \
               --longoptions help,ip1:,ip2:,interface:,left-node:,right-node: \
               --longoptions left-volume:,right-volume:,skip-mkfs,net-type: \
-              --longoptions cib-file:,init,update \
+              --longoptions cib-file:,restore-conf,update \
               --name "$PROG" -- "$@" || true)
 
 (($? == 0)) || { usage >&2; exit 1; }
@@ -91,7 +94,7 @@ rvolume=/dev/sdc
 skip_mkfs=false
 net_type=tcp
 update=false
-init=false
+restore_conf=false
 cib_file=/var/lib/hare/cib_cortx_cluster.xml
 
 while true; do
@@ -108,7 +111,7 @@ while true; do
         --net-type)          net_type=$2; shift 2 ;;
         --cib-file)          cib_file=$2; shift 2 ;;
         --update)            update=true; shift 2 ;;
-        --init)              init=true; shift 2 ;;
+        --restore-conf)      restore_conf=true; shift 2 ;;
         --)                  shift; break ;;
         *)                   break ;;
     esac
@@ -294,22 +297,6 @@ bootstrap_update_only() {
     hctl shutdown
 }
 
-# Invoked as part of initialisation during node replacement.
-motr_config_init() {
-    if [[ ! -e /etc/sysconfig/motr-kernel ]]; then
-        echo "MOTR_NODE_UUID='$(uuidgen --time)'" |
-            sudo tee /etc/sysconfig/motr-kernel >/dev/null
-    fi
-
-# It is expected for /var/lib/hare/confd.xc to be present during node
-# replacement as a pre step.
-    [[ -f /var/lib/hare/confd.xc ]] ||
-        die 'Cannot bootstrap server node without /var/lib/hare/confd.xc file'
-    sudo mkdir -p /etc/motr
-    sudo cp /var/lib/hare/confd.xc /etc/motr/
-
-}
-
 motr_config() {
     # Prepare Motr conf files on each node:
     lm0confs=$(echo /etc/sysconfig/m0d-*)
@@ -387,6 +374,16 @@ consul_systemd_update() {
    unset consul_c1_cfg_dir consul_c2_cfg_dir
 }
 
+# Prepare consul-env-c{1,2} for the nodes. consul-env files (created by Hare)
+# are used as a base. Few notes:
+# 1) Only one consul-agent on the node can listen on 127.0.0.1
+# address for the client requests, it will be consul-agent-c1 on node1 and
+# consul-agent-c2 on node2 (hosting agent on each node).
+# 2) `-retry-join $ip2` is added to consul-env-c1 so that during the failover
+# or failback of node1 consul-agent-c1 could re-join with its peer on node2.
+# 3) MODE is updated from `server` to `server-c{1,2}` so that each agent
+# may have its own `-config-dir` at /var/lib/hare (refer to
+# systemd/hare-consul startup script in Hare repo).
 consul_env_prepare() {
     log "${FUNCNAME[0]}: Creating Consul environment..."
     sudo cp $hare_dir/consul-env $hare_dir/consul-env-c1
@@ -449,6 +446,49 @@ consul_conf_prepare() {
     ssh $rnode "rm /tmp/$conf_dir.json"
 
     unset conf_dir
+}
+
+# Required in case of node replacement.
+node_backup() {
+    to=$1
+    from=$2
+
+    ssh $to "sudo mkdir -p /var/lib/hare/$from"
+    ssh $to "sudo mkdir -p /etc/sysconfig/$from"
+
+    sudo scp -r "$from:/var/lib/hare/consul-*" $to:/var/lib/hare/$from
+    sudo scp $from:/var/lib/hare/node-name $to:/var/lib/hare/$from
+    sudo scp "$from:/var/lib/hare/hax-env-*" $to:/var/lib/hare/$from
+    sudo scp "$from:/etc/sysconfig/m0d-*" $to:/etc/sysconfig/$from
+    sudo scp "$from:/etc/sysconfig/s3server-*" $to:/etc/sysconfig/$from
+}
+
+conf_backup() {
+    node_backup $lnode $rnode
+    node_backup $rnode $lnode
+}
+
+# Required in case of node replacement.
+node_restore() {
+    to=$1
+    from=$2
+
+    if ssh $to "[ -d /var/lib/hare/$from ]"; then
+        # Restore files on lnode from rnode
+        sudo scp -r "$to:/var/lib/hare/$from/consul-*" $from:/var/lib/hare
+        sudo scp "$to:/var/lib/hare/$from/node-name" $from:/var/lib/hare
+        sudo scp "$to:/var/lib/hare/$from/hax-env-*" $from:/var/lib/hare
+        sudo scp "$to:/etc/sysconfig/$from/m0d-*" $from:/etc/sysconfig
+        sudo scp "$to:/etc/sysconfig/$from/s3server-*" $from:/etc/sysconfig
+    fi
+
+   # Backup from each node on each node again.
+   conf_backup
+}
+
+conf_restore() {
+    node_restore $lnode $rnode
+    node_restore $rnode $lnode
 }
 
 consul_rsc_add() {
@@ -766,7 +806,6 @@ ha_ops=(
     net_config_check
     bootstrap
     bootstrap_update_only
-    motr_config_init
     motr_config
     consul_systemd_prepare
     consul_systemd_update
@@ -790,6 +829,8 @@ ha_ops=(
     s3_systemd_update
     s3back_rsc_add
     s3server_rsc_add
+    conf_backup
+    conf_restore
 )
 
 # Maps ha operation from the ha_ops table to its respective type.
@@ -797,22 +838,22 @@ ha_ops=(
 # bootstrap:   executes during clean installation of the software only
 # update:      executes during clean install and software update
 # update-only: executes during software update only
+# restore:     executes typically in-order to restore the configuration files
 declare -A ha_ops_type=(
     [ip_addr_rsc_add]='bootstrap_update'
     [lnet_rsc_add]='bootstrap_update'
     [net_config_check]='bootstrap'
     [bootstrap]='bootstrap'
     [bootstrap_update_only]='update-only'
-    [motr_config_init]='init'
     [motr_config]='bootstrap'
-    [consul_systemd_prepare]='bootstrap_update_init'
-    [consul_systemd_update]='bootstrap_update_init'
+    [consul_systemd_prepare]='bootstrap_update_restore'
+    [consul_systemd_update]='bootstrap_update_restore'
     [consul_env_prepare]='bootstrap'
     [consul_conf_prepare]='bootstrap'
     [consul_rsc_add]='bootstrap_update'
     [motr_kernel_rsc_add]='bootstrap_update'
-    [hax_systemd_prepare]='bootstrap_update_init'
-    [hax_systemd_update]='bootstrap_update_init'
+    [hax_systemd_prepare]='bootstrap_update_restore'
+    [hax_systemd_update]='bootstrap_update_restore'
     [hax_rsc_add]='bootstrap_update'
     [motr_systemd_update]='bootstrap_update'
     [motr_rsc_add]='bootstrap_update'
@@ -827,12 +868,14 @@ declare -A ha_ops_type=(
     [s3_systemd_update]='bootstrap_update'
     [s3back_rsc_add]='bootstrap_update'
     [s3server_rsc_add]='bootstrap_update'
+    [conf_backup]='bootstrap'
+    [conf_restore]='restore'
 )
 
 for op in ${ha_ops[@]}; do
-    if $init && [[ ${ha_ops_type[$op]} =~ .*'init'.* ]]; then
+    if $restore_conf && [[ ${ha_ops_type[$op]} =~ .*'restore'.* ]]; then
         $op
-    elif ! $update && ! $init [[ ${ha_ops_type[$op]} =~ .*'bootstrap'.* ]]; then
+    elif ! $update && ! $restore_conf && [[ ${ha_ops_type[$op]} =~ .*'bootstrap'.* ]]; then
         cib_init
         $op
         cib_commit
