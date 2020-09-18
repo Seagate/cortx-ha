@@ -31,7 +31,7 @@ The following prerequisites must be met to install the HA component.
 
  - **$ yum group install "Development Tools"**
  
-- The **eos-py-utils** rpm must be installed. To install the same, run the following command:
+- The **cortx-py-utils** rpm must be installed. To install the same, run the following command:
 
  - **$ git clone --recursive git@github.com:Seagate/cortx-py-utils.git**
 
@@ -39,7 +39,7 @@ The following prerequisites must be met to install the HA component.
 
  - **$ python3 setup.py bdist_rpm**
 
- - **$ yum install dist/eos-py-utils-1.0.0-1.noarch.rpm**
+ - **$ yum install dist/cortx-py-utils-1.0.0-1.noarch.rpm**
  
 
 Corosync and Pacemaker
