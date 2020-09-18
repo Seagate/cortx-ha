@@ -93,7 +93,6 @@ $ha_script/build-ha-io $cdf $ioargsfile --cib-file $cib_file --update
 $ha_script/build-ha-csm $csmargsfile --cib-file $cib_file --update
 $ha_script/build-ha-sspl $ioargsfile --cib-file $cib_file --update
 $ha_script/build-ees-ha-uds --cib-file $cib_file --update
-$ha_script/build-cortx-ha init
 
 #XXX Presently replacing the cib xml file does not work if in new versions
 # the resources are deleted.
@@ -101,6 +100,9 @@ $ha_script/build-cortx-ha init
 #cibadmin --replace --xml-file $cib_file
 echo 'Updating Pacemaker CIB...'
 sudo pcs cluster cib-push $cib_file --config
+
+$ha_script/build-cortx-ha init
+
 sudo pcs resource cleanup
 
 echo 'Importing Consul KV...'
