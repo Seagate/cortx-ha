@@ -20,3 +20,5 @@ export PS4='+ [${BASH_SOURCE[0]##*/}:${LINENO}${FUNCNAME[0]:+:${FUNCNAME[0]}}] '
 # set -x
 
 pcs resource delete sspl || true
+pcs resource delete sspl_primary_hw || true
+pcs resource cleanup
