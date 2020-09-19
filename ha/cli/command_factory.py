@@ -15,31 +15,25 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
+import inspect
 
-"""
- ****************************************************************************
- Description:       Cleanup Event
- ****************************************************************************
-"""
+from ha.cli import commands
 
-import sys
+class CommandFactory:
+    """
+    Factory for representing and creating command objects using
+    a generic skeleton.
+    """
 
-from cortx.utils.schema.conf import Conf
-from cortx.utils.ha.dm.decision_monitor import DecisionMonitor
-
-from ha import const
-
-class Cleanup:
-    def __init__(self, args):
-        self._args = args
-        self._decision_monitor = DecisionMonitor()
-
-    def cleanup_db(self):
+    @staticmethod
+    def get_command(component_parser):
         """
-        {'entity': 'enclosure', 'entity_id': '0',
-        'component': 'controller', 'component_id': 'srvnode-1'}
+        Get command from command factory
+
+        Args:
+            component_parser (<class 'argparse._SubParsersAction'>): argparse to add subparser.
         """
-        resources = Conf.get(const.RESOURCE_GLOBAL_INDEX, "resources")
-        for key in resources.keys():
-            if self._args.node in key:
-                self._decision_monitor.acknowledge_resource(key, True)
+        command_class = inspect.getmembers(commands, inspect.isclass)
+        for cmd_name, cmd in command_class:
+            if cmd_name != "Command" and "Command" in cmd_name:
+                cmd.add_args(component_parser)
