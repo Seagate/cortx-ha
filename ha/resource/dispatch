@@ -21,8 +21,9 @@ export PS4='+ [${BASH_SOURCE[0]##*/}:${LINENO}${FUNCNAME[0]:+:${FUNCNAME[0]}}] '
 
 ### OCF resource agent.
 ###
-### See the OCF Resource Agent Developer's Guide
-### https://github.com/ClusterLabs/resource-agents/blob/master/doc/dev-guides/ra-dev-guide.asc
+### See the OCF Resource Agent Developer's Guide at 
+### https://github.com/ClusterLabs/resource-agents/
+### located at  doc/dev-guides/ra-dev-guide.asc
 
 [[ -n ${OCF_ROOT:-} ]] || OCF_ROOT=/usr/lib/ocf
 set +eu
