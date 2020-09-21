@@ -95,13 +95,13 @@ class CortxNodeManager(NodeManager):
             else:
                 node = self.get_node_instance(args.node)
 
-            if args.command == "start":
+            if args.node_action == "start":
                 node.start()
 
-            elif args.command == "stop":
+            elif args.node_action == "stop":
                 node.shutdown()
 
-            elif args.command == "status":
+            elif args.node_action == "status":
                 node.status()
 
             else:

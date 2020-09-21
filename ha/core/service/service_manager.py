@@ -44,9 +44,21 @@ class ServiceManager:
         """
         pass
 
+    def start_all(self, node_id):
+        """
+        Starts all the registered services on the requested node
+        """
+        pass
+
     def stop(self, node_id, service_name):
         """
         Stops specific service on the requested node
+        """
+        pass
+
+    def stop_all(self, node_id):
+        """
+        Stops all the registered services on the requested node
         """
         pass
 
@@ -72,16 +84,21 @@ class CortxServiceManager(ServiceManager):
         Process requested service
         """
         if action == const.SERVICE_COMMAND:
-            service = self._service_registry.get_service(args.service)
+            if args.service_action == "start":
+                self.start(args.node, args.service)
 
-            if args.command =="start":
-                service.start(args.node)
+            elif args.service_action == "start all":
+                self.start_all(args.node)
 
-            elif args.command == "stop":
-                service.stop(args.node)
+            elif args.service_action == "stop":
+                self.stop(args.node, args.service)
 
-            elif args.command == "monitor":
-                service.monitor(args.node)
+            elif args.service_action == "stop all":
+                self.stop_all(args.node)
+
+            elif args.service_action == "monitor":
+                self.monitor(args.node, args.service)
+
             else:
                 raise HAUnimplemented()
 
@@ -95,19 +112,50 @@ class CortxServiceManager(ServiceManager):
         """
         Starts specific service on the requested node
         """
-        pass
+        service = self._service_registry.get_service(node_id, service_name)
+
+        if service is not None:
+            service.start()
+        else:
+            Log.error("service instance not found in the service registry")
+
+    def start_all(self, node_id):
+        """
+        Starts all the registered services on the requested node
+        """
+        service_list = self._service_registry.get_service_list(node_id)
+
+        for service in service_list:
+            service.start()
 
     def stop(self, node_id, service_name):
         """
         Stops specific service on the requested node
         """
-        pass
+        service = self._service_registry.get_service(node_id, service_name)
+
+        if service is not None:
+            service.stop()
+        else:
+            Log.error("service instance not found in the service registry")
+
+    def stop_all(self, node_id):
+        """
+        Stops all the registered services on the requested node
+        """
+        service_list = self._service_registry.get_service_list(node_id)
+
+        for service in service_list:
+            service.stop()
 
     def monitor(self, node_id, service_name):
         """
         Monitors specific service on the requested node
         """
-        pass
+        service = self._service_registry.get_service(service_name)
+
+        if service is not None:
+            service.status()
 
 class PcsServiceManager(ServiceManager):
     """
@@ -131,9 +179,21 @@ class PcsServiceManager(ServiceManager):
         """
         pass
 
+    def start_all(self, node_id):
+        """
+        Starts all the registered services on the requested node
+        """
+        pass
+
     def stop(self, node_id, service_name):
         """
         Stops specific service on the requested node
+        """
+        pass
+
+    def stop_all(self, node_id):
+        """
+        Stops all the registered services on the requested node
         """
         pass
 

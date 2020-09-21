@@ -22,7 +22,7 @@ class ServiceRegistry:
         self.services_list = {}
 
 
-    def get_service(self, service_name):
+    def get_service(self, node_id, service_name):
         """
         Returns instance of the requested service
         """
@@ -30,17 +30,17 @@ class ServiceRegistry:
 
     def register_services(self):
         """
-        Register all necessary service on the current node
+        Register all necessary service on the all available nodes
         """
         pass
 
     def deregister_services(self):
         """
-        Deregister all the necessary service on the current node
+        Deregister all the necessary service on the all available nodes
         """
         pass
 
-    def get_service_list(self):
+    def get_service_list(self, node_id):
         """
         Returns service list
         """
