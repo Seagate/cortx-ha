@@ -216,4 +216,7 @@ usage|help)     stateful_usage $OCF_SUCCESS;;
 *)              stateful_usage $OCF_ERR_UNIMPLEMENTED;;
 esac
 
+chown sspl-ll:sspl-ll /var/cortx/sspl/data/state.txt
+chmod 644 /var/cortx/sspl/data/state.txt
+
 exit $?
