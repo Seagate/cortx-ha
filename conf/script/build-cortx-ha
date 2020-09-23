@@ -27,7 +27,10 @@ init() {
     host2=$(echo $node_list | jq '.["local"][1]' | sed s/\"//g)
 
     # Restart csm to enable decision maker changes
-    pcs resource restart csm-agent
+    cnt=10
+    while ! pcs resource restart csm-agent && ((cnt-- > 0)); do
+        sleep 1
+    done
 
     pcs cluster cib hw_cfg
     # Hardware io stack resource
