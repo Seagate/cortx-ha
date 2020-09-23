@@ -15,9 +15,10 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-from eos.utils.schema.conf import Conf
-from eos.utils.log import Log
+from cortx.utils.schema.conf import Conf
+from cortx.utils.log import Log
 from ha import const
+from ha.utility.error import HAUnimplemented, HACommandTerminated
 
 class Node:
     """
@@ -53,16 +54,16 @@ class Node:
         """
         Start the node
         """
-        pass
+         raise HAUnimplemented()
 
     def shutdown(self):
         """
         Shutdown the node
         """
-        pass
+         raise HAUnimplemented()
 
     def status(self):
         """
         Returns the node status
         """
-        pass
+         raise HAUnimplemented()

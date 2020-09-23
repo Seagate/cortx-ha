@@ -105,7 +105,7 @@ class Cleanup:
             self._execute.run_cmd(cmd)
         Log.debug(f"Status: {self._execute.run_cmd(const.PCS_STATUS)}")
 
-class RefreshContex:
+class RefreshContext:
     def __init__(self, decision_monitor):
         pass
 
@@ -119,7 +119,7 @@ class RefreshContex:
         """
         raise HAUnimplemented()
 
-class PcsRefreshContex(RefreshContex):
+class PcsRefreshContext(RefreshContext):
     def __init__(self, decision_monitor):
         self._decision_monitor = decision_monitor
         self._cleanup = Cleanup(self._decision_monitor)
@@ -149,3 +149,17 @@ class PcsRefreshContex(RefreshContex):
             self._cleanup.reset_failover(args.node, args.soft)
         else:
             raise HAUnimplemented()
+
+class CortxRefreshContext(RefreshContext):
+    def __init__(self, decision_monitor):
+        pass
+
+    def process_request(self, action, args, output):
+        """
+        Generic method to handle process request
+
+        Args:
+            action ([string]): Take cluster action for each request.
+            args ([dict]): Parameter pass to request to process.
+        """
+        raise HAUnimplemented()

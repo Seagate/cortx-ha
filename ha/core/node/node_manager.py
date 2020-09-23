@@ -15,11 +15,13 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-from eos.utils.log import Log
-from eos.utils.schema.conf import Conf
+from cortx.utils.ha.dm.decision_monitor import DecisionMonitor
+from cortx.utils.log import Log
+from cortx.utils.schema.conf import Conf
 
 from ha import const
 from ha.core.node.node import Node
+from ha.core.node.replacement.refresh_context import CortxRefreshContext
 from ha.core.service.service_manager import CortxServiceManager
 from ha.utility.error import HAUnimplemented, HACommandTerminated
 
@@ -34,7 +36,7 @@ class NodeManager:
         """
         pass
 
-    def process_request(self, action, args):
+    def process_request(self, action, args, output):
         """
         Generic method to handle process request
 
@@ -80,7 +82,10 @@ class CortxNodeManager(NodeManager):
 
         Log.debug(f"node_instance_list {self.node_instance_list}")
 
-    def process_request(self, action, args):
+        self._decision_monitor = DecisionMonitor()
+        self._refresh_context = CortxRefreshContext(self._decision_monitor)
+
+    def process_request(self, action, args, output):
         """
         Generic method to handle process request
 
@@ -95,23 +100,31 @@ class CortxNodeManager(NodeManager):
             else:
                 node = self.get_node_instance(args.node)
 
+            self._output = output
+
             if args.node_action == "start":
-                node.start()
+                _action_status, _return_code = node.start()
+                self._output.output(_action_status)
+                self._output.rc(_return_code)
 
             elif args.node_action == "stop":
-                node.shutdown()
+                _action_status, _return_code = node.shutdown()
+                self._output.output(_action_status)
+                self._output.rc(_return_code)
 
             elif args.node_action == "status":
-                node.status()
+                _action_status, _return_code = node.status()
+                self._output.output(_action_status)
+                self._output.rc(_return_code)
+
+            elif args.node_action == "refresh":
+                self._refresh_context.process_request(action, args, output)
 
             else:
                 raise HAUnimplemented()
 
         elif action == const.SERVICE_COMMAND:
-            self._service_manager.process_request(action, args)
-
-        elif action == const.CLEANUP_COMMAND:
-            pass
+            self._service_manager.process_request(action, args, output)
 
         else:
             raise HAUnimplemented()
@@ -148,7 +161,7 @@ class PcsNodeManager(NodeManager):
     def __init__(self):
         pass
 
-    def process_request(self, action, args):
+    def process_request(self, action, args, output):
         pass
 
     def get_node_instance_list(self):

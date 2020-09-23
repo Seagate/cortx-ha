@@ -21,7 +21,7 @@ from cortx.utils.log import Log
 from cortx.utils.ha.dm.decision_monitor import DecisionMonitor
 
 from ha.core.error import HAUnimplemented
-from ha.core.node.replacement.refresh_context import PcsRefreshContex
+from ha.core.node.replacement.refresh_context import PcsRefreshContext
 from ha.execute import SimpleCommand
 from ha import const
 
@@ -66,7 +66,7 @@ class PcsClusterManager(ClusterManager):
         self._execute = SimpleCommand()
         self._decision_monitor = DecisionMonitor()
         # TODO: add node_manager class to handle query
-        self._refresh_contex = PcsRefreshContex(self._decision_monitor)
+        self._refresh_context = PcsRefreshContext(self._decision_monitor)
         # TODO move node logic to node manager class
         self._node_status = [ 'Online', 'Standby', 'Maintenance', 'Offline', 'Disconnected']
 
@@ -94,7 +94,7 @@ class PcsClusterManager(ClusterManager):
             elif args.cluster_action == "shutdown":
                 self.shutdown()
         elif action == const.NODE_COMMAND:
-            self._refresh_contex.process_request(action, args)
+            self._refresh_context.process_request(action, args)
         else:
             raise HAUnimplemented()
 

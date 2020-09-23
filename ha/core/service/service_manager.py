@@ -17,9 +17,9 @@
 
 from eos.utils.log import Log
 
+from ha import const
 from ha.core.service.service_registry import ServiceRegistry
 from ha.utility.error import HAUnimplemented, HACommandTerminated
-from ha import const
 
 
 class ServiceManager:
@@ -32,41 +32,41 @@ class ServiceManager:
         """
         pass
 
-    def process_request(self, action, args):
+    def process_request(self, action, args, output):
         """
         Process requested service
         """
-        pass
+        raise HAUnimplemented()
 
     def start(self, node_id, service_name):
         """
         Starts specific service on the requested node
         """
-        pass
+        raise HAUnimplemented()
 
     def start_all(self, node_id):
         """
         Starts all the registered services on the requested node
         """
-        pass
+        raise HAUnimplemented()
 
     def stop(self, node_id, service_name):
         """
         Stops specific service on the requested node
         """
-        pass
+        raise HAUnimplemented()
 
     def stop_all(self, node_id):
         """
         Stops all the registered services on the requested node
         """
-        pass
+        raise HAUnimplemented()
 
-    def monitor(self, node_id, service_name):
+    def status(self, node_id, service_name):
         """
-        Monitors specific service on the requested node
+        Returns status of the specific service on the requested node
         """
-        pass
+        raise HAUnimplemented()
 
 class CortxServiceManager(ServiceManager):
     """
@@ -79,83 +79,111 @@ class CortxServiceManager(ServiceManager):
         self._service_registry = ServiceRegistry()
         self._service_registry.register_services()
 
-    def process_request(self, action, args):
+    def process_request(self, action, args, output):
         """
         Process requested service
         """
+
+        self._output = output
+        _action_status = "Failure"
+        _return_code = 1
+
         if action == const.SERVICE_COMMAND:
             if args.service_action == "start":
-                self.start(args.node, args.service)
+                _action_status, _return_code = self.start(args.node, args.service)
 
             elif args.service_action == "start all":
-                self.start_all(args.node)
+                _action_status, _return_code = self.start_all(args.node)
 
             elif args.service_action == "stop":
-                self.stop(args.node, args.service)
+                _action_status, _return_code = self.stop(args.node, args.service)
 
             elif args.service_action == "stop all":
-                self.stop_all(args.node)
+                _action_status, _return_code = self.stop_all(args.node)
 
-            elif args.service_action == "monitor":
-                self.monitor(args.node, args.service)
+            elif args.service_action == "status":
+                _action_status, _return_code = self.status(args.node, args.service)
 
             else:
                 raise HAUnimplemented()
-
-        elif action == const.CLEANUP_COMMAND:
-            pass
-
         else:
             raise HAUnimplemented()
+
+        self._output.output(_action_status)
+        self._output.rc(_return_code)
 
     def start(self, node_id, service_name):
         """
         Starts specific service on the requested node
         """
+        _action_status = "Failure"
+        _return_code = 1
         service = self._service_registry.get_service(node_id, service_name)
 
         if service is not None:
-            service.start()
+            _action_status, _return_code = service.start()
         else:
             Log.error("service instance not found in the service registry")
+
+        return _action_status, _return_code
 
     def start_all(self, node_id):
         """
         Starts all the registered services on the requested node
         """
+        _action_status = "Failure"
+        _return_code = 1
         service_list = self._service_registry.get_service_list(node_id)
 
         for service in service_list:
-            service.start()
+            _action_status, _return_code = service.start()
+            if _return_code != 0:
+                break
+
+        return _action_status, _return_code
 
     def stop(self, node_id, service_name):
         """
         Stops specific service on the requested node
         """
+        _action_status = "Failure"
+        _return_code = 1
         service = self._service_registry.get_service(node_id, service_name)
 
         if service is not None:
-            service.stop()
+            _action_status, _return_code = service.stop()
         else:
             Log.error("service instance not found in the service registry")
+
+        return _action_status, _return_code
 
     def stop_all(self, node_id):
         """
         Stops all the registered services on the requested node
         """
+        _action_status = "Failure"
+        _return_code = 1
         service_list = self._service_registry.get_service_list(node_id)
 
         for service in service_list:
-            service.stop()
+            _action_status, _return_code = service.stop()
+            if _return_code != 0:
+                break
 
-    def monitor(self, node_id, service_name):
+        return _action_status, _return_code
+
+    def status(self, node_id, service_name):
         """
-        Monitors specific service on the requested node
+        Returns status of the specific service on the requested node
         """
+        _action_status = "Failure"
+        _return_code = 1
         service = self._service_registry.get_service(service_name)
 
         if service is not None:
-            service.status()
+            _action_status, _return_code = service.status()
+
+        return _action_status, _return_code
 
 class PcsServiceManager(ServiceManager):
     """
@@ -167,7 +195,7 @@ class PcsServiceManager(ServiceManager):
         """
         pass
 
-    def process_request(self, action, args):
+    def process_request(self, action, args, output):
         """
         Process requested service
         """
@@ -197,8 +225,8 @@ class PcsServiceManager(ServiceManager):
         """
         pass
 
-    def monitor(self, node_id, service_name):
+    def status(self, node_id, service_name):
         """
-        Monitors specific service on the requested node
+        Returns status of the specific service on the requested node
         """
         pass
