@@ -60,6 +60,9 @@ config() {
     # Decision Maker conf
     cp -rf ${SOURCE_HA_CONF}/decision_monitor_conf_vm.json ${HA_CONF}/decision_monitor_conf.json
     # config_decision_maker
+
+    # Update node info in the ha.conf file
+    python3 ${BASE_DIR}/node_info_update.py
 }
 
 init() {
