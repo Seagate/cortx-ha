@@ -55,6 +55,7 @@ class Cleanup:
             else:
                 pass
         if not data_only:
+            Log.info(f"Reseting HA decision event for {node}")
             self.reset_failover(node)
 
     def is_cleanup_required(self, node=None):
