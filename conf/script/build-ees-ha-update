@@ -82,9 +82,8 @@ fi
 hare_dir=/var/lib/hare
 cib_file=/var/lib/hare/cib_cortx_cluster.xml
 ha_script=/opt/seagate/cortx/ha/conf/script
-hare_bin=/opt/seagate/cortx/hare/bin
-sudo export PATH=$PATH:$hare_bin
-sudo export PATH=$PATH:/usr/bin
+
+export PATH=/opt/seagate/cortx/hare/bin:$PATH
 
 reset_all() {
     $ha_script/prov-ha-uds-reset
