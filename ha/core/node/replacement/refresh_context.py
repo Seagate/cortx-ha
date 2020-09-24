@@ -95,11 +95,11 @@ class Cleanup:
         if soft_cleanup:
             if self.is_cleanup_required(node):
                 _output, _err, _rc = self._execute.run_cmd(const.PCS_FAILCOUNT_STATUS)
-                Log.info(f"Resource failcount before cleanup: {_output}, Error:{_err}, RC:{_rc}")
+                Log.info(f"Resource failcount before Failback: {_output}, Error:{_err}, RC:{_rc}")
                 _output, _err, _rc = self._execute.run_cmd(cmd)
-                Log.info(f"failover is happened, Output:{_output}, Error:{_err}, RC:{_rc}")
+                Log.info(f"Failback is happened, Output:{_output}, Error:{_err}, RC:{_rc}")
                 _output, _err, _rc = self._execute.run_cmd(const.PCS_FAILCOUNT_STATUS)
-                Log.info(f"Resource failcount after cleanup: {_output}, Error:{_err}, RC:{_rc}")
+                Log.info(f"Resource failcount after Failback: {_output}, Error:{_err}, RC:{_rc}")
             else:
                 Log.debug("cleanup is not required alerts are not yet resolved.")
         else:

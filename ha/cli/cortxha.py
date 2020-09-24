@@ -57,7 +57,6 @@ class HACli:
         # TODO Check product env and load specific conf
         Conf.init()
         Conf.load(const.RESOURCE_GLOBAL_INDEX, Json(const.RESOURCE_SCHEMA))
-        Conf.load(const.RULE_GLOBAL_INDEX, Json(const.RULE_ENGINE_SCHAMA))
         Conf.load(const.HA_GLOBAL_INDEX, Yaml(const.HA_CONFIG_FILE))
         log_path = Conf.get(const.HA_GLOBAL_INDEX, "LOG.path")
         log_level = Conf.get(const.HA_GLOBAL_INDEX, "LOG.level")
@@ -83,7 +82,6 @@ class HACli:
             CommandFactory.get_command(component_parser)
             args = argParser.parse_args()
 
-            #sys.exit(0)
             Log.info(f"Executing: {' '.join(sys.argv)}")
             if len(sys.argv) <= 1:
                 argParser.print_help(sys.stderr)
@@ -93,7 +91,6 @@ class HACli:
                 cluster.process_request(args.cortxha_action, args, output)
                 sys.stdout.write(f"{output.get_output()}\n")
                 sys.exit(output.get_rc())
-            # argParser.print_help(sys.stderr)
         except Exception as e:
             sys.stderr.write(f"{e}\n")
             Log.error(f"{traceback.format_exc()}, {e}")

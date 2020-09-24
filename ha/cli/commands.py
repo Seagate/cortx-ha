@@ -115,7 +115,7 @@ class ServiceCommand(Command):
             help="Node name")
 
         status_parser = action_subparser.add_parser("status",
-            help = "status Service")
+            help = "Status of service")
         status_parser.add_argument("service_name",
             help="Service name", action="store")
         status_parser.add_argument("--node",

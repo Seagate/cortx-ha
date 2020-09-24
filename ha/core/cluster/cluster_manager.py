@@ -109,8 +109,8 @@ class PcsClusterManager(ClusterManager):
         """
         # TODO: Limitation for node remove (in cluster node cannot remove it self)
         # Check if node already removed
-        #_output, _err, _rc = self._execute.run_cmd(const.PCS_STATUS)
-        #Log.info(f"Cluster status output before remove node: {_output}, {_err}, {_rc}")
+        _output, _err, _rc = self._execute.run_cmd(const.PCS_STATUS)
+        Log.info(f"Cluster status output before remove node: {_output}, {_err}, {_rc}")
         _rc, status = self.node_status(node)
         if _rc != 1:
             self._execute.run_cmd(f"pcs cluster node remove {node} --force")
@@ -123,15 +123,15 @@ class PcsClusterManager(ClusterManager):
                 Log.info(f"Node {node} removed from cluster")
         else:
             Log.info(f"Node {node} already removed from cluster")
-        #_output, _err, _rc = self._execute.run_cmd(const.PCS_STATUS)
-        #Log.info(f"Cluster status output after remove node: {_output}, {_err}, {_rc}")
+        _output, _err, _rc = self._execute.run_cmd(const.PCS_STATUS)
+        Log.info(f"Cluster status output after remove node: {_output}, {_err}, {_rc}")
 
     def add_node(self, node):
         """
         Add new node to pcs cluster
         """
-        #_output, _err, _rc = self._execute.run_cmd(const.PCS_STATUS)
-        #Log.info(f"Cluster status output before add node: {_output}, {_err}, {_rc}")
+        _output, _err, _rc = self._execute.run_cmd(const.PCS_STATUS)
+        Log.info(f"Cluster status output before add node: {_output}, {_err}, {_rc}")
         # TODO: Limitation for node add (in cluster node cannot add it self)
         commands = [f"pcs cluster node add {node}",
                 "pcs resource cleanup --all",
@@ -151,8 +151,8 @@ class PcsClusterManager(ClusterManager):
                 Log.info(f"Node {node} added to cluster")
         else:
             Log.info(f"Node {node} already added to cluster")
-        #_output, _err, _rc = self._execute.run_cmd(const.PCS_STATUS)
-        #Log.info(f"Cluster status output after add node: {_output}, {_err}, {_rc}")
+        _output, _err, _rc = self._execute.run_cmd(const.PCS_STATUS)
+        Log.info(f"Cluster status output after add node: {_output}, {_err}, {_rc}")
 
     def start(self):
         # TODO Add wrapper to hctl pcswrap
