@@ -64,6 +64,16 @@ cdf=${1:-}
 ioargsfile=${2:-}
 csmargsfile=${3:-}
 
+if [[ -f $ioargsfile ]]; then
+    while IFS=': ' read name value; do
+       case $name in
+           left-node)    lnode=$value   ;;
+           right-node)   rnode=$value   ;;
+           '')           ;;
+       esac
+    done < $ioargsfile
+fi
+
 [[ $cdf ]] && [[ $ioargsfile ]] && [[ $csmargsfile ]] || {
     usage >&2
     exit 1
@@ -72,7 +82,9 @@ csmargsfile=${3:-}
 hare_dir=/var/lib/hare
 cib_file=/var/lib/hare/cib_cortx_cluster.xml
 ha_script=/opt/seagate/cortx/ha/conf/script
-consul_bin=/opt/seagate/cortx/hare/bin
+hare_bin=/opt/seagate/cortx/hare/bin
+sudo export PATH=$PATH:$hare_bin
+sudo export PATH=$PATH:/usr/bin
 
 reset_all() {
     $ha_script/prov-ha-uds-reset
@@ -82,8 +94,30 @@ reset_all() {
     $ha_script/build-cortx-ha cleanup
 }
 
+get_leader() {
+    consul kv get leader
+}
+
+wait4consul() {
+echo 'Waiting for Consul agents to start..'
+    while true; do
+        if [[ `ssh $lnode 'pgrep -a consul | grep "consul agent"'` &&
+              `ssh $rnode 'pgrep -a consul | grep "consul agent"'` ]]; then
+	    break
+        fi
+    sleep 5
+done
+
+while [[ ! $(get_leader) ]]; do
+    sleep 1
+done
+}
+
+wait4consul
 echo 'Exporting Consul KV...'
-$consul_bin/consul kv export > $hare_dir/consul-conf-exported.json
+while ! $(consul kv export > $hare_dir/consul-conf-exported.json); do
+    sleep 1
+done
 
 reset_all
 sudo pcs cluster cib $cib_file
@@ -91,8 +125,16 @@ sudo pcs cluster cib $cib_file
 echo 'Updating ha resources for IO path, SSPL, CSM and UDS...'
 $ha_script/build-ha-io $cdf $ioargsfile --cib-file $cib_file --update
 $ha_script/build-ha-csm $csmargsfile --cib-file $cib_file --update
-$ha_script/build-ha-sspl $ioargsfile --cib-file $cib_file --update
 $ha_script/build-ees-ha-uds --cib-file $cib_file --update
+
+echo 'Updating Pacemaker CIB...'
+sudo pcs cluster cib-push $cib_file --config
+
+wait4consul
+echo 'Importing Consul KV...'
+consul kv import @$hare_dir/consul-conf-exported.json
+
+$ha_script/build-ha-sspl $ioargsfile --cib-file $cib_file --update
 
 #XXX Presently replacing the cib xml file does not work if in new versions
 # the resources are deleted.
@@ -104,6 +146,3 @@ sudo pcs cluster cib-push $cib_file --config
 $ha_script/build-cortx-ha init
 
 sudo pcs resource cleanup
-
-echo 'Importing Consul KV...'
-$consul_bin/consul kv import @$hare_dir/consul-conf-exported.json
