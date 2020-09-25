@@ -1,33 +1,24 @@
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/f6cc639394904affa325a6e8b84706e8)](https://www.codacy.com?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=Seagate/cortx-ha&amp;utm_campaign=Badge_Grade)
 
-# cortx-ha
+# CORTX-HA
 
-HA Project
+CORTX-HA or High-Availability, ensures the availability of CORTX at all times and prevents hardware component or software service failures. If any of your hardware components or software services are affected, CORTX-HA takes over the failover or failback control flow and stabilizes them across the CORTX cluster.
 
-### Setup
-1. Install eos-py-utils rpm
-```
-yum install -y eos-py-utils
-```
+## Get CORTX-HA Ready! 
 
-2. Install pip packages
-```
-bash jenkins/cicd/cortx-ha-dep.sh
-```
+Jump to the [CORTX-HA Quickstart Guide](Quick-Start-Guide.rst) to set up CORTX-HA. 
 
-3. Build RPMs
-```
-./jenkins/build.sh -b <BUILD_NO>
-```
+## Contribute to CORTX-HA
 
-4. Install RPM
-```
-yum install -y cortx-ha
-```
+We are excited about your interest in CORTX and hope you will join us. Refer to the [CORTX Contribution Guide](CONTRIBUTING.md) that hosts all information about community values, code of conduct, how to contribute code and documentation, community and code style guide, and how to reach out to us. 
 
-5. Export RPM to cicd
+We take community very seriously and we are committed to creating a community built on respectful interactions and inclusivity as documented in our [Code of Conduct](CODE_OF_CONDUCT.md).
 
-6. Check CICD if return non zero then exit and fail build
-```
-bash jenkins/cicd/cortx-ha-cicd.sh
-```
+## Reach Out To Us
+
+- Join our CORTX-Open Source Slack Channel to interact with your fellow community members and gets your questions answered. [![Slack Channel](https://img.shields.io/badge/chat-on%20Slack-blue)](https://join.slack.com/t/cortxcommunity/shared_invite/zt-femhm3zm-yiCs5V9NBxh89a_709FFXQ?)
+- If you'd like to contact us directly, drop us a mail at cortx-questions@seagate.com.
+
+## Thank You!
+
+We thank you for stopping by to check out the CORTX Community. We are fully dedicated to our mission to build open source technologies that help the world save unlimited data and solve challenging data problems. Join our mission to help reinvent a data-driven world.

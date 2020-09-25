@@ -29,9 +29,9 @@ import time
 from datetime import datetime
 from unittest.mock import patch
 
-from eos.utils.log import Log
-from eos.utils.ha.dm.actions import Action
-from eos.utils.ha.dm.decision_monitor import DecisionMonitor
+from cortx.utils.log import Log
+from cortx.utils.ha.dm.actions import Action
+from cortx.utils.ha.dm.decision_monitor import DecisionMonitor
 
 from ha.resource.resource_agent import HardwareResourceAgent
 from ha import const
@@ -48,7 +48,7 @@ class TestHardwareResourceAgent(unittest.TestCase):
         with open(const.RESOURCE_SCHEMA, 'r') as f:
             self.schema = json.load(f)
         self.hw_agent = HardwareResourceAgent(DecisionMonitor(), self.schema)
-        self.key = "eos/base/ha/obj"
+        self.key = "cortx/base/ha/obj"
         self.filename = 'io_path_health_c1'
         self.path = 'io'
         self.local = self.schema['nodes']['local']
@@ -80,7 +80,7 @@ class TestHardwareResourceAgent(unittest.TestCase):
         """
         Put data to consul
         Msg:
-                eos/base/ha/obj/node/srvnode-1/nw/mgmt/1589609895
+                cortx/base/ha/obj/node/srvnode-1/nw/mgmt/1589609895
                 '{"decision_id": "node/srvnode-1/nw/mgmt/1589609895",
                     "action": "failed",
                     "alert_time": "2020-05-16T06:18:15.000000+0000"
@@ -93,7 +93,7 @@ class TestHardwareResourceAgent(unittest.TestCase):
     def _remove_data(self, node, recurse=False, key=None):
         """
         Remove data from consul
-        consul kv delete -recurse eos/base/ha/obj/enclosure
+        consul kv delete -recurse cortx/base/ha/obj/enclosure
         """
         if key == None:
             key, alert_id = self._get_key(node)

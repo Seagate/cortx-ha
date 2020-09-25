@@ -255,17 +255,32 @@ net_config_check() {
       die "LNet endpoint $ip2 doesn't appear to be configured at $rnode. $check_msg"
 }
 
+# On both nodes:
+# lvolume is mounted at /var/motr1,
+# rvolume is mounted at /var/motr2.
+prepare_var_motr_dirs() {
+    log "${FUNCNAME[0]}: make sure there are no stale mounts hanging..."
+    mountpoint -q /var/motr1 && sudo umount /var/motr1 || true
+    ssh $rnode 'mountpoint -q /var/motr2 && sudo umount /var/motr2 || true'
+
+    log "${FUNCNAME[0]}: check & upgrade old setups with /var/motr directories..."
+    [ -d /var/motr ] && ! [ -d /var/motr1 ] && mv /var/motr /var/motr1
+    ssh $rnode '[ -d /var/motr ] && ! [ -d /var/motr2 ] && mv /var/motr /var/motr2'
+
+    log "${FUNCNAME[0]}: prepare dirs..."
+    run_on_both 'mkdir -p /var/motr{1,2}'
+    ln -sf /var/motr1 /var/motr
+    ssh $rnode 'ln -sf /var/motr2 /var/motr'
+
+    sudo mount $lvolume /var/motr1 || true
+    ssh $rnode "sudo mount $rvolume /var/motr2 || true"
+}
+
 bootstrap() {
     if ! $skip_mkfs; then
         sudo mkfs.ext4 -q $lvolume >/dev/null <<< y
         sudo mkfs.ext4 -q $rvolume >/dev/null <<< y
     fi
-
-    # Mount /var/motr (if not mounted).
-    mkdir -p /var/motr &&
-      ! mountpoint -q /var/motr && sudo mount $lvolume /var/motr || true
-    ssh $rnode "mkdir -p /var/motr &&
-      ! mountpoint -q /var/motr && sudo mount $rvolume /var/motr || true"
 
     log "${FUNCNAME[0]}: Preparing Hare configuration files..."
 
@@ -305,19 +320,11 @@ bootstrap() {
     run_on_both 'sudo systemctl reset-failed hare\* m0d\*'
     hctl bootstrap --conf-dir $hare_dir
     hctl shutdown
-
-# Create /var/motr dirs for the foreign data-stacks:
-    sudo mkdir -p /var/motr2
-    ssh $rnode 'sudo mkdir -p /var/motr1'
 }
 
 # Runs hctl bootstrap to update hare configuration changes.
 # Note: This modifies consul kv which needs to be explicitly restored.
 bootstrap_update_only() {
-    mkdir -p /var/motr &&
-      ! mountpoint -q /var/motr && sudo mount $lvolume /var/motr || true
-    ssh $rnode "mkdir -p /var/motr &&
-      ! mountpoint -q /var/motr && sudo mount $rvolume /var/motr || true"
     hctl bootstrap --conf-dir $hare_dir
     hctl shutdown
 }
@@ -475,8 +482,8 @@ consul_conf_prepare() {
 
 # Required in case of node replacement.
 node_backup() {
-    to=$1
-    from=$2
+    from=$1
+    to=$2
 
     ssh $to "sudo mkdir -p /var/lib/hare/$from"
     ssh $to "sudo mkdir -p /etc/sysconfig/$from"
@@ -495,25 +502,26 @@ conf_backup() {
 
 # Required in case of node replacement.
 node_restore() {
-    to=$1
-    from=$2
+    from=$1
+    to=$2
 
-    if ssh $to "[ -d /var/lib/hare/$from ]"; then
+    if ssh $from "[ -d /var/lib/hare/$to ]"; then
+        ssh $to "sudo mkdir -p /var/lib/hare"
         # Restore files on lnode from rnode
-        sudo scp -r "$to:/var/lib/hare/$from/consul-*" $from:/var/lib/hare
-        sudo scp "$to:/var/lib/hare/$from/node-name" $from:/var/lib/hare
-        sudo scp "$to:/var/lib/hare/$from/hax-env-*" $from:/var/lib/hare
-        sudo scp "$to:/etc/sysconfig/$from/m0d-*" $from:/etc/sysconfig
-        sudo scp "$to:/etc/sysconfig/$from/s3server-*" $from:/etc/sysconfig
+        sudo scp -r "$from:/var/lib/hare/$to/consul-*" $to:/var/lib/hare/
+        sudo scp "$from:/var/lib/hare/$to/node-name" $to:/var/lib/hare/
+        sudo scp "$from:/var/lib/hare/$to/hax-env-*" $to:/var/lib/hare/
+        sudo scp "$from:/etc/sysconfig/$to/m0d-*" $to:/etc/sysconfig/
+        sudo scp "$from:/etc/sysconfig/$to/s3server-*" $to:/etc/sysconfig/
     fi
-
-   # Backup from each node on each node again.
-   conf_backup
 }
 
 conf_restore() {
     node_restore $lnode $rnode
     node_restore $rnode $lnode
+
+   # Backup from each node on each node again.
+   conf_backup
 }
 
 consul_rsc_add() {
@@ -542,6 +550,16 @@ motr_kernel_rsc_add() {
                                            kind=Optional symmetrical=false
 }
 
+var_motr_rsc_add() {
+    log "${FUNCNAME[0]}: Adding var-motr mounts to Pacemaker..."
+    sudo pcs -f $cib_file resource create var-motr1 ocf:heartbeat:Filesystem \
+        device=$lvolume directory=/var/motr1 \
+        fstype=ext4 --group c1 op stop timeout=30
+    sudo pcs -f $cib_file resource create var-motr2 ocf:heartbeat:Filesystem \
+        device=$rvolume directory=/var/motr2 \
+        fstype=ext4 --group c2 op stop timeout=30
+}
+
 hax_systemd_prepare() {
     log "${FUNCNAME[0]}: Installing hax systemd units..."
     sudo cp -f /usr/lib/systemd/system/hare-hax.service \
@@ -553,14 +571,12 @@ hax_systemd_prepare() {
 hax_systemd_update() {
     log "${FUNCNAME[0]}: Updating hax systemd units..."
     sudo sed -e 's/hare-consul-agent.service/hare-consul-agent-c1.service/' \
-             -e "/ExecStart=/iExecStartPre=/bin/sh -c 'mountpoint /var/motr || /bin/mount $lvolume /var/motr'" \
-             -e "/ExecStart=/aExecStopPost=/bin/sh -c '! mountpoint /var/motr || while ! /bin/umount /var/motr; do lsof +D /var/motr; sleep 1; done'" \
+             -e "/ExecStart=/aTimeoutStopSec=5sec" \
              -i /usr/lib/systemd/system/hare-hax-c1.service
     sudo sed -e 's/hare-consul-agent.service/hare-consul-agent-c2.service/' \
              -e 's;ExecStart.*cd /var/motr;&2;' \
              -e "/ExecStart/iEnvironmentFile=$hare_dir/hax-env-c2" \
-             -e "/ExecStart=/iExecStartPre=/bin/sh -c 'mountpoint /var/motr2 || /bin/mount $rvolume /var/motr2'" \
-             -e "/ExecStart=/aExecStopPost=/bin/sh -c '! mountpoint /var/motr2 || while ! /bin/umount /var/motr2; do lsof +D /var/motr2; sleep 1; done'" \
+             -e "/ExecStart=/aTimeoutStopSec=5sec" \
              -i /usr/lib/systemd/system/hare-hax-c2.service
     echo "HARE_HAX_NODE_NAME=$rnode" | sudo tee $hare_dir/hax-env-c2 > /dev/null
 
@@ -570,14 +586,12 @@ hax_systemd_update() {
     sudo sed -e 's/hare-consul-agent.service/hare-consul-agent-c1.service/'
              -e 's;ExecStart.*cd /var/motr;&1;' \
              -e '/ExecStart/iEnvironmentFile=$hare_dir/hax-env-c1'
-             -e \"/ExecStart=/iExecStartPre=/bin/sh -c 'mountpoint /var/motr1 || /bin/mount $lvolume /var/motr1'\"
-             -e \"/ExecStart=/aExecStopPost=/bin/sh -c '! mountpoint /var/motr1 || while ! /bin/umount /var/motr1; do lsof +D /var/motr1; sleep 1; done'\"
+             -e \"/ExecStart=/aTimeoutStopSec=5sec\"
              -i /usr/lib/systemd/system/hare-hax-c1.service &&
     sudo cp -f /usr/lib/systemd/system/hare-hax.service
             /usr/lib/systemd/system/hare-hax-c2.service &&
     sudo sed -e 's/hare-consul-agent.service/hare-consul-agent-c2.service/'
-             -e \"/ExecStart=/iExecStartPre=/bin/sh -c 'mountpoint /var/motr || /bin/mount $rvolume /var/motr'\"
-             -e \"/ExecStart=/aExecStopPost=/bin/sh -c '! mountpoint /var/motr || while ! /bin/umount /var/motr; do lsof +D /var/motr; sleep 1; done'\"
+             -e \"/ExecStart=/aTimeoutStopSec=5sec\"
              -i /usr/lib/systemd/system/hare-hax-c2.service &&
     echo 'HARE_HAX_NODE_NAME=$lnode' | sudo tee $hare_dir/hax-env-c1 > /dev/null"
     ssh $rnode $cmd
@@ -585,8 +599,8 @@ hax_systemd_update() {
 
 hax_rsc_add() {
     log "${FUNCNAME[0]}: Adding hax to Pacemaker..."
-    sudo pcs -f $cib_file resource create hax-c1 systemd:hare-hax-c1 op stop timeout=30
-    sudo pcs -f $cib_file resource create hax-c2 systemd:hare-hax-c2 op stop timeout=30
+    sudo pcs -f $cib_file resource create hax-c1 systemd:hare-hax-c1
+    sudo pcs -f $cib_file resource create hax-c2 systemd:hare-hax-c2
     sudo pcs -f $cib_file resource group add c1 hax-c1
     sudo pcs -f $cib_file resource group add c2 hax-c2
     sudo pcs -f $cib_file constraint order motr-kernel-clone then hax-c1
@@ -825,10 +839,13 @@ cib_commit() {
 }
 
 # HA operations table.
+# The order of the functions is important here - it defines the
+# order of the resources added into the Pacemaker's groups.
 ha_ops=(
     ip_addr_rsc_add
     lnet_rsc_add
     net_config_check
+    prepare_var_motr_dirs
     bootstrap
     bootstrap_update_only
     motr_config
@@ -838,6 +855,7 @@ ha_ops=(
     consul_conf_prepare
     consul_rsc_add
     motr_kernel_rsc_add
+    var_motr_rsc_add
     hax_systemd_prepare
     hax_systemd_update
     hax_rsc_add
@@ -868,6 +886,7 @@ declare -A ha_ops_type=(
     [ip_addr_rsc_add]='bootstrap_update'
     [lnet_rsc_add]='bootstrap_update'
     [net_config_check]='bootstrap'
+    [prepare_var_motr_dirs]='bootstrap_update_restore'
     [bootstrap]='bootstrap'
     [bootstrap_update_only]='update-only'
     [motr_config]='bootstrap'
@@ -877,6 +896,7 @@ declare -A ha_ops_type=(
     [consul_conf_prepare]='bootstrap'
     [consul_rsc_add]='bootstrap_update'
     [motr_kernel_rsc_add]='bootstrap_update'
+    [var_motr_rsc_add]='bootstrap_update'
     [hax_systemd_prepare]='bootstrap_update_restore'
     [hax_systemd_update]='bootstrap_update_restore'
     [hax_rsc_add]='bootstrap_update'

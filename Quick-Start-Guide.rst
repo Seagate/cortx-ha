@@ -31,7 +31,7 @@ The following prerequisites must be met to install the HA component.
 
  - **$ yum group install "Development Tools"**
  
-- The **eos-py-utils** rpm must be installed. To install the same, run the following command:
+- The **cortx-py-utils** rpm must be installed. To install the same, run the following command:
 
  - **$ git clone --recursive git@github.com:Seagate/cortx-py-utils.git**
 
@@ -39,7 +39,7 @@ The following prerequisites must be met to install the HA component.
 
  - **$ python3 setup.py bdist_rpm**
 
- - **$ yum install dist/eos-py-utils-1.0.0-1.noarch.rpm**
+ - **$ yum install dist/cortx-py-utils-1.0.0-1.noarch.rpm**
  
 
 Corosync and Pacemaker
@@ -105,7 +105,7 @@ Perform the remaining steps on the primary node.
 
 7. Setup the cluster, by defining the name and servers that would be part of the cluster. Run the below command.
 
- - **$ pcs cluster setup --name EOS_cluster node1 node2**
+ - **$ pcs cluster setup --name CORTX_cluster node1 node2**
 
 8. Start the cluster services and enable them. Run the following commands.
 
@@ -128,7 +128,7 @@ Perform the remaining steps on the primary node.
    [root@ssc-vm-c-0208 534380]# pcs property list
    Cluster Properties:
    cluster-infrastructure: corosync
-   cluster-name: EOS_cluster
+   cluster-name: CORTX_cluster
    dc-version: 1.1.21-4.el7-f14e36fd43
    have-watchdog: false
    no-quorum-policy: ignore

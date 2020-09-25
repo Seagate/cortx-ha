@@ -15,37 +15,53 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-
-"""
- ****************************************************************************
- Description:       Entry point for cortxha CLI
- ****************************************************************************
-"""
-
 import os
 import sys
 import traceback
 import argparse
 import pathlib
 
-from eos.utils.schema.conf import Conf
-from eos.utils.log import Log
-from eos.utils.schema.payload import *
+from cortx.utils.schema.conf import Conf
+from cortx.utils.log import Log
+from cortx.utils.schema.payload import *
+
+class Output:
+    def __init__(self):
+        """
+        Provide output for cluster command
+        """
+        self._output = "Success"
+        self._rc = 0
+
+    def output(self, output):
+        self._output = output
+
+    def rc(self, rc):
+        self._rc = rc
+
+    def get_output(self):
+        return self._output
+
+    def get_rc(self):
+        return self._rc
 
 #TODO - Move the cli to cortxcli framework once cortxcli is created as a separate module.
 class HACli:
-
+    """
+    HACLI
+    """
     def __init__(self):
         """
-        Initialize HACLI
+        Initialization of HA CLI.
         """
-        self._provider = {
-            "cleanup": ""
-        }
+        # TODO Check product env and load specific conf
         Conf.init()
         Conf.load(const.RESOURCE_GLOBAL_INDEX, Json(const.RESOURCE_SCHEMA))
-        log_level = Conf.get(const.RESOURCE_GLOBAL_INDEX, "log", "INFO")
-        Log.init(service_name='cortxha', log_path=const.RA_LOG_DIR, level=log_level)
+        Conf.load(const.RULE_GLOBAL_INDEX, Json(const.RULE_ENGINE_SCHAMA))
+        Conf.load(const.HA_GLOBAL_INDEX, Yaml(const.HA_CONFIG_FILE))
+        log_path = Conf.get(const.HA_GLOBAL_INDEX, "LOG.path")
+        log_level = Conf.get(const.HA_GLOBAL_INDEX, "LOG.level")
+        Log.init(service_name='cortxha', log_path=log_path, level=log_level)
 
     @staticmethod
     def _usage():
@@ -64,49 +80,35 @@ class HACli:
                 formatter_class = argparse.RawDescriptionHelpFormatter)
 
             component_parser = argParser.add_subparsers(
-                help = "Select one of given component.")
+                help = "Select one of given component.",
+                dest = "cortxha_action")
 
-            # Cleanup
-            cleanup_parser = component_parser.add_parser("cleanup",
-                                help = "Cleanup db and resource")
-            cleanup_parser.add_argument("cleanup",
-                help = "Select singlenode or multinode.",
-                choices = ["db"])
-
-            cleanup_parser.add_argument("-n", "--node",
-                help="Cleanup data for node")
-
-            # Cluster
-            cluster_parser =  component_parser.add_parser("cluster",
-                                help = "Manage cluster")
-            cluster_parser.add_argument("cluster",
-                help = "Cluster add remove node",
-                choices = ["add_node", "remove_node"])
-            cluster_parser.add_argument("node",
-                help="Node name", action="store")
-
+            CommandFactory.get_command(component_parser)
             args = argParser.parse_args()
 
+            # TODO: Load cluster from config
+            Log.info(f"Executing: {' '.join(sys.argv)}")
             if len(sys.argv) <= 1:
                 argParser.print_help(sys.stderr)
-            elif sys.argv[1] == "cluster":
-                cluster = PcsCluster()
-                if args.cluster == "add_node":
-                    cluster.add_node(args.node)
-                elif args.cluster == "remove_node":
-                    cluster.remove_node(args.node)
-            elif sys.argv[1] == "cleanup":
-                Cleanup(args).cleanup_db()
             else:
-                argParser.print_help(sys.stderr)
+                output = Output()
+                cluster = CortxClusterManager()
+                cluster.process_request(args.cortxha_action, args, output)
+                sys.stdout.write(f"{output.get_output()}\n")
+                sys.exit(output.get_rc())
+            # argParser.print_help(sys.stderr)
         except Exception as e:
+            sys.stderr.write(f"{e}\n")
             Log.error(f"{traceback.format_exc()}, {e}")
             sys.exit(1)
 
 if __name__ == '__main__':
+    """
+    Entry point for cortxha CLI
+    """
     sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..'))
     from ha import const
-    from ha.core.cleanup import Cleanup
-    from ha.core.cluster import PcsCluster
+    from ha.cli.command_factory import CommandFactory
+    from ha.core.cluster.cluster_manager import CortxClusterManager
     ha_cli = HACli()
     ha_cli.command()

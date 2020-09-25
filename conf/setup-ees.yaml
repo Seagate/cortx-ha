@@ -41,7 +41,7 @@ ees-ha:
       - /etc/sysconfig/motr-kernel
       - /etc/motr/confd.xc
   post_update:
-    script: /opt/seagate/cortx/ha/conf/script/build-ees-ha-update
+    script: /opt/seagate/cortx/ha/conf/script/build-ha-update
     args:
       - /var/lib/hare/cluster.yaml
       - /opt/seagate/cortx/ha/conf/build-ees-ha-args.yaml

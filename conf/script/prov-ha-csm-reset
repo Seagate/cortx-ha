@@ -24,7 +24,10 @@ resources=(
     csm-web
     kibana
     kibana-vip
+    uds
+    mgmt_path_health-c1
 )
 for r in ${resources[@]}; do
     pcs resource delete $r || true
 done
+pcs resource cleanup
