@@ -1,0 +1,9 @@
+{
+    "watches": [
+          {
+            "type": "keyprefix",
+            "prefix": "cortx/base/ha/",
+            "args": ["/usr/bin/cortxha", "node", "refresh", "--soft"]
+          }
+    ]
+}
