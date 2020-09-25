@@ -457,8 +457,8 @@ consul_conf_prepare() {
 
 # Required in case of node replacement.
 node_backup() {
-    to=$1
-    from=$2
+    from=$1
+    to=$2
 
     ssh $to "sudo mkdir -p /var/lib/hare/$from"
     ssh $to "sudo mkdir -p /etc/sysconfig/$from"
@@ -477,25 +477,26 @@ conf_backup() {
 
 # Required in case of node replacement.
 node_restore() {
-    to=$1
-    from=$2
+    from=$1
+    to=$2
 
-    if ssh $to "[ -d /var/lib/hare/$from ]"; then
+    if ssh $from "[ -d /var/lib/hare/$to ]"; then
+        ssh $to "sudo mkdir -p /var/lib/hare"
         # Restore files on lnode from rnode
-        sudo scp -r "$to:/var/lib/hare/$from/consul-*" $from:/var/lib/hare
-        sudo scp "$to:/var/lib/hare/$from/node-name" $from:/var/lib/hare
-        sudo scp "$to:/var/lib/hare/$from/hax-env-*" $from:/var/lib/hare
-        sudo scp "$to:/etc/sysconfig/$from/m0d-*" $from:/etc/sysconfig
-        sudo scp "$to:/etc/sysconfig/$from/s3server-*" $from:/etc/sysconfig
+        sudo scp -r "$from:/var/lib/hare/$to/consul-*" $to:/var/lib/hare/
+        sudo scp "$from:/var/lib/hare/$to/node-name" $to:/var/lib/hare/
+        sudo scp "$from:/var/lib/hare/$to/hax-env-*" $to:/var/lib/hare/
+        sudo scp "$from:/etc/sysconfig/$to/m0d-*" $to:/etc/sysconfig/
+        sudo scp "$from:/etc/sysconfig/$to/s3server-*" $to:/etc/sysconfig/
     fi
-
-   # Backup from each node on each node again.
-   conf_backup
 }
 
 conf_restore() {
     node_restore $lnode $rnode
     node_restore $rnode $lnode
+
+   # Backup from each node on each node again.
+   conf_backup
 }
 
 consul_rsc_add() {
