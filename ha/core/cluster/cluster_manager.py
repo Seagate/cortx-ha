@@ -25,31 +25,19 @@
 import time
 
 from cortx.utils.log import Log
-from cortx.utils.process import SimpleProcess
+from cortx.utils.ha.dm.decision_monitor import DecisionMonitor
 
-class Cluster:
+from ha.core.error import HAUnimplemented
+from ha.core.node.replacement.refresh_context import PcsRefreshContex
+from ha.execute import SimpleCommand
+from ha import const
+
+class ClusterManager:
     def __init__(self):
         """
         Manage cluster operation
         """
         pass
-
-    def _run_cmd(self, cmd):
-        """
-        Run command and throw error if cmd failed
-        """
-        try:
-            _err = ""
-            _proc = SimpleProcess(cmd)
-            _output, _err, _rc = _proc.run(universal_newlines=True)
-            Log.debug(f"cmd: {cmd}, output: {_output}, err: {_err}, rc: {_rc}")
-            if _rc != 0:
-                Log.error(f"cmd: {cmd}, output: {_output}, err: {_err}, rc: {_rc}")
-                raise Exception(f"Failed to execute {cmd}")
-            return _output, _err, _rc
-        except Exception as e:
-            Log.error("Failed to execute  %s Error: %s %s" %(cmd,e,_err))
-            raise Exception("Failed to execute %s Error: %s %s" %(cmd,e,_err))
 
     def node_status(self, node):
         pass
@@ -60,13 +48,37 @@ class Cluster:
     def add_node(self, node):
         pass
 
-class PcsCluster(Cluster):
+class PcsClusterManager(ClusterManager):
     def __init__(self):
         """
         PcsCluster manage pacemaker/corosync cluster
         """
-        super(PcsCluster, self).__init__()
+        super(PcsClusterManager, self).__init__()
+        self._execute = SimpleCommand()
+        self._decision_monitor = DecisionMonitor()
+        # TODO: add node_manager class to handle query
+        self._refresh_contex = PcsRefreshContex(self._decision_monitor)
+        # TODO move node logic to node manager class
         self._node_status = [ 'Online', 'Standby', 'Maintenance', 'Offline', 'Disconnected']
+
+    def process_request(self, action, args, output):
+        """
+        Generic method to handle process request
+
+        Args:
+            action ([string]): Take cluster action for each request.
+            args ([dict]): Parameter pass to request to process.
+        """
+        # TODO Add validater
+        if action == const.CLUSTER_COMMAND:
+            if args.cluster_action in ["add_node", "remove_node"]:
+                getattr(self, args.cluster_action)(args.node)
+            else:
+                getattr(self, args.cluster_action)()
+        elif action == const.NODE_COMMAND:
+            self._refresh_contex.process_request(action, args)
+        else:
+            raise HAUnimplemented("This feature is not supported...")
 
     def node_status(self, node):
         """
@@ -80,7 +92,8 @@ class PcsCluster(Cluster):
         """
         Log.debug(f"Check {node} node status")
         # TODO: check is node is valid
-        _output, _err, _rc = self._run_cmd("pcs status nodes")
+        # TODO move node logic to node manager class
+        _output, _err, _rc = self._execute.run_cmd("pcs status nodes")
         for status in _output.split("\n"):
             if node in status.split():
                 node_rc = 0
@@ -96,9 +109,11 @@ class PcsCluster(Cluster):
         """
         # TODO: Limitation for node remove (in cluster node cannot remove it self)
         # Check if node already removed
+        _output, _err, _rc = self._execute.run_cmd(const.PCS_STATUS)
+        Log.info(f"Cluster status output before remove node: {_output}, {_err}, {_rc}")
         _rc, status = self.node_status(node)
         if _rc != 1:
-            self._run_cmd(f"pcs cluster node remove {node} --force")
+            self._execute.run_cmd(f"pcs cluster node remove {node} --force")
             _rc, status = self.node_status(node)
             Log.debug(f"For node {node} status: {status}, rc: {_rc}")
             if _rc != 1:
@@ -108,11 +123,15 @@ class PcsCluster(Cluster):
                 Log.info(f"Node {node} removed from cluster")
         else:
             Log.info(f"Node {node} already removed from cluster")
+        _output, _err, _rc = self._execute.run_cmd(const.PCS_STATUS)
+        Log.info(f"Cluster status output after remove node: {_output}, {_err}, {_rc}")
 
     def add_node(self, node):
         """
         Add new node to pcs cluster
         """
+        _output, _err, _rc = self._execute.run_cmd(const.PCS_STATUS)
+        Log.info(f"Cluster status output before add node: {_output}, {_err}, {_rc}")
         # TODO: Limitation for node add (in cluster node cannot add it self)
         commands = [f"pcs cluster node add {node}",
                 "pcs resource cleanup --all",
@@ -121,7 +140,7 @@ class PcsCluster(Cluster):
         _rc, status = self.node_status(node)
         if _rc != 0:
             for command in commands:
-                self._run_cmd(command)
+                self._execute.run_cmd(command)
             time.sleep(20)
             _rc, status = self.node_status(node)
             Log.debug(f"{node} status rc: {_rc}, status: {status}")
@@ -132,3 +151,20 @@ class PcsCluster(Cluster):
                 Log.info(f"Node {node} added to cluster")
         else:
             Log.info(f"Node {node} already added to cluster")
+        _output, _err, _rc = self._execute.run_cmd(const.PCS_STATUS)
+        Log.info(f"Cluster status output after add node: {_output}, {_err}, {_rc}")
+
+    def start(self):
+        # TODO Add wrapper to hctl pcswrap
+        raise HAUnimplemented("This feature is not supported...")
+
+    def stop(self):
+        # TODO Add wrapper to hctl pcswrap
+        raise HAUnimplemented("This feature is not supported...")
+
+    def status(self):
+        # TODO Add wrapper to hctl pcswrap
+        raise HAUnimplemented("This feature is not supported...")
+
+    def shutdown(self):
+        raise HAUnimplemented("This feature is not supported...")

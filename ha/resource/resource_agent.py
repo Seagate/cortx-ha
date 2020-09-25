@@ -29,6 +29,8 @@ import os
 import json
 import traceback
 
+from cortx.utils.schema.conf import Conf
+from cortx.utils.schema.payload import *
 from cortx.utils.log import Log
 from cortx.utils.process import SimpleProcess
 from cortx.utils.ha.dm.decision_monitor import DecisionMonitor
@@ -132,6 +134,7 @@ class ResourceAgent:
                      f" node {args[const.CURRENT_NODE]}")
             return callback_ack(args[const.PATH_KEY]+'_'+args[const.CURRENT_NODE])
         elif args[const.CURRENT_NODE_STATUS] == Action.RESTART:
+            Log.info(f"Restart action taken for {args[const.FILENAME_KEY]} on {args[const.CURRENT_NODE]}")
             if state == const.STATE_START:
                 return const.OCF_SUCCESS
             elif state == const.STATE_RUNNING:
@@ -368,11 +371,13 @@ class IEMResourceAgent(ResourceAgent):
 
 def main(resource, action=''):
     try:
+        Conf.load(const.HA_GLOBAL_INDEX, Yaml(const.HA_CONFIG_FILE))
+        log_path = Conf.get(const.HA_GLOBAL_INDEX, "LOG.path")
+        log_level = Conf.get(const.HA_GLOBAL_INDEX, "LOG.level")
+        Log.init(service_name='resource_agent', log_path=log_path, level=log_level)
         with open(const.RESOURCE_SCHEMA, 'r') as f:
             resource_schema = json.load(f)
-        log_level = 'INFO' if 'log' not in resource_schema else resource_schema['log']
         os.makedirs(const.RA_LOG_DIR, exist_ok=True)
-        Log.init(service_name='resource_agent', log_path=const.RA_LOG_DIR, level=log_level)
         resource_agent = resource(DecisionMonitor(), resource_schema)
         Log.debug(f"{resource_agent} initialized for action {action}")
         if action == 'monitor':
