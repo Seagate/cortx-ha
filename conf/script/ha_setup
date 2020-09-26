@@ -58,7 +58,7 @@ config() {
 init() {
     echo "init"
     # Add consul watcher
-    consul_watcher_failback
+    #consul_watcher_failback
 }
 
 test() {
