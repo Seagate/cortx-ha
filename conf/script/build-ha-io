@@ -144,8 +144,8 @@ if [[ -f $argsfile ]]; then
            ip1)          ip1=$value     ;;
            ip2)          ip2=$value     ;;
            interface)    iface=$value   ;;
-           left_iface)   left_iface=$value   ;;
-           right_iface)  right_iface=$value   ;;
+           left-iface)   left_iface=$value   ;;
+           right-iface)  right_iface=$value   ;;
            left-node)    lnode=$value   ;;
            right-node)   rnode=$value   ;;
            left-volume)  lvolume=$value ;;
