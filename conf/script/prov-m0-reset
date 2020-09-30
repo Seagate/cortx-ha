@@ -336,6 +336,27 @@ cleanup() {
     run_cmd $node2 "mountpoint -q /var/motr2 && sudo umount /var/motr2 || true"
 }
 
+has_m0d_started() {
+    fid=$1
+    node=$2
+    
+    while [[ $(run_cmd $node "systemctl is-active m0d@$fid") != 'active' ]]; do
+       sleep 5
+    done
+
+    while [[ $(get_proc_state $fid) != M0_CONF_HA_PROCESS_STARTED ]]; do
+        sleep 1
+    done
+}
+
+has_m0d_stopped() {
+    fid=$1
+
+    while [[ $(get_proc_state $fid) != M0_CONF_HA_PROCESS_STOPPED ]]; do
+        sleep 1
+    done
+}
+
 m0_mkfs() {
     local confd_fid_c1=$(get_fid 'confd' $lnode)
     local ios_fid_c1=$(get_fid 'ios' $lnode)
@@ -350,44 +371,40 @@ m0_mkfs() {
         die 'Active m0d instances found, please stop all the m0d instances'
 
     run_cmd $node1 "sudo systemctl start motr-mkfs@$confd_fid_c1"
-    while [[ $(get_proc_state $confd_fid_c1) != M0_CONF_HA_PROCESS_STOPPED ]]; do
-        sleep 1
-    done
+    has_m0d_stopped $confd_fid_c1
 
     run_cmd $node1 "sudo systemctl start m0d@$confd_fid_c1"
-    while [[ $(run_cmd $node1 "systemctl is-active m0d@$confd_fid_c1") != 'active' ]]; do
-       sleep 5
-    done
+    has_m0d_started $confd_fid_c1 $node1
 
     run_cmd $node2 "sudo systemctl start motr-mkfs@$confd_fid_c2"
-    while [[ $(get_proc_state $confd_fid_c2) != M0_CONF_HA_PROCESS_STOPPED ]]; do
-        sleep 1
-    done
+    has_m0d_stopped $confd_fid_c2
 
     run_cmd $node2 "sudo systemctl start m0d@$confd_fid_c2"
-    while [[ $(run_cmd $node2 "systemctl is-active m0d@$confd_fid_c2") != 'active' ]]; do
-       sleep 5
-    done
+    has_m0d_started $confd_fid_c2 $node2
 
     run_cmd $node1 "sudo systemctl start motr-mkfs@$ios_fid_c1"
-    while [[ $(get_proc_state $ios_fid_c1) != M0_CONF_HA_PROCESS_STOPPED ]]; do
-        sleep 1
-    done
+    has_m0d_stopped $ios_fid_c1
 
     run_cmd $node2 "sudo systemctl start motr-mkfs@$ios_fid_c2"
-    while [[ $(get_proc_state $ios_fid_c2) != M0_CONF_HA_PROCESS_STOPPED ]]; do
-        sleep 1
-    done
+    has_m0d_stopped $ios_fid_c2
 
+    # We start Motr ioservices as cob domain is not created during motr-mkfs operation
+    # and observed to be created only when m0d ioservices are started.
+    # So we start and stop ioservices to facilitate cob domain creation.
+    # XXX avoid starting ioservices once https://jts.seagate.com/browse/EOS-13778 is
+    # fixed.
     run_cmd $node1 "sudo systemctl start m0d@$ios_fid_c1"
-    while [[ $(get_proc_state $ios_fid_c1) != M0_CONF_HA_PROCESS_STARTED ]]; do
-        sleep 1
-    done
+    has_m0d_started $ios_fid_c1 $node1
 
     run_cmd $node2 "sudo systemctl start m0d@$ios_fid_c2"
-    while [[ $(get_proc_state $ios_fid_c1) != M0_CONF_HA_PROCESS_STARTED ]]; do
-        sleep 1
-    done
+    has_m0d_started $ios_fid_c2 $node2
+
+    # XXX Remove this sleep once https://jts.seagate.com/browse/EOS-13778 is fixed
+    # Created https://jts.seagate.com/browse/EOS-13779 to track this issue.
+    # This sleep is needed as it is observed that Motr COB domain is still not available
+    # even after m0d process reported M0_CONF_HA_PROCESS_STARTED. Looks like this needs
+    # a proper fix in Motr.
+    sleep 15
 
     run_cmd $node2 "sudo systemctl stop m0d@$ios_fid_c2"
     run_cmd $node1 "sudo systemctl stop m0d@$ios_fid_c1"
@@ -401,6 +418,9 @@ m0_mkfs() {
 }
 
 mkfs() {
+    log "${FUNCNAME[0]}: Cleaning any existing state.."
+    cleanup
+
     log "${FUNCNAME[0]}: Waiting for Consul agents to stop.."
     while true; do
         if [[ ! $(ssh $lnode 'pgrep -a consul | grep "consul agent"') &&
@@ -409,9 +429,6 @@ mkfs() {
         fi
         sleep 5
     done
-
-    log "${FUNCNAME[0]}: Cleaning any existing state.."
-    cleanup
 
     log "${FUNCNAME[0]}: Adding ip addresses.."
     run_cmd $node1 "sudo ifconfig $left_iface:c1 $ip1"
@@ -466,10 +483,6 @@ mkfs() {
     while [[ ($(get_leader) != $lnode) && ($(get_leader) != $rnode) ]]; do
         sleep 1
     done
-
-    # An issue is observed if we try to fetch data from Consul immediately
-    # after stating Consul services. So, let's wait for 5 more secs.
-    sleep 5
 
     log "${FUNCNAME[0]}: Starting Hax.."
     run_cmd $node1 "sudo systemctl start hare-hax-c1"
