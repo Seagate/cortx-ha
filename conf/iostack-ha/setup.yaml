@@ -52,9 +52,3 @@ iostack-ha:
       - --restore-conf
       - /var/lib/hare/cluster.yaml
       - /opt/seagate/cortx/iostack-ha/conf/build-ha-args.yaml
-  remove_node:
-    script: /opt/seagate/cortx/ha/conf/script/cluster_update
-    args: remove_node
-  add_node:
-    script: /opt/seagate/cortx/ha/conf/script/cluster_update
-    args: add_node
