@@ -18,8 +18,13 @@
 HA_PATH="<HA_PATH>"
 SOURCE_HA_CONF="<HA_PATH>/conf/etc"
 HA_CONF="/etc/cortx/ha"
-LOGROTATE_CONF="/etc/logrotate.d"
 HA_LOG="/var/log/seagate/cortx/ha"
+
+LOGROTATE_DIR_DEST="/etc/cortx-ha/logrotate"
+CRON_DIR_HOURLY="/etc/cron.hourly"
+SOURCE_CRON_DIR_LOGROTATE="<HA_PATH>/conf/$CRON_DIR_HOURLY"
+SOURCE_CRON_PATH_LOGROTATE="$SOURCE_CRON_DIR_LOGROTATE/ha_logrotate"
+DEST_CRON_PATH_LOGROTATE="$CRON_DIR_HOURLY/ha_logrotate"
 
 LOCAL_NODE_MINION_ID=$(salt-call grains.get id --output=json | jq '.["local"]' | sed s/\"//g)
 SYSTEM_CROSS_CONNECT_FILE="/opt/seagate/cortx/provisioner/generated_configs/$LOCAL_NODE_MINION_ID.cc"
@@ -35,8 +40,20 @@ exec &> >(stdbuf -oL gawk '{ print strftime("%Y-%m-%d %H:%M:%S"), $0 }')
 
 post_install() {
     echo "post_install"
-    mkdir -p ${LOGROTATE_CONF}
-    cp -rf ${HA_PATH}/conf/logrotate/cortx_ha_log.conf ${LOGROTATE_CONF}
+
+    # Trigger logotate hourly basis
+    if [ ! -d "${LOGROTATE_DIR_DEST}" ]; then
+        mkdir -p ${LOGROTATE_DIR_DEST}
+    fi
+
+    if [ -d "${LOGROTATE_DIR_DEST}" ]; then
+        cp -f  ${SOURCE_CRON_DIR_LOGROTATE}/cortx_ha_log.conf ${LOGROTATE_DIR_DEST}
+        chmod 644 ${LOGROTATE_DIR_DEST}/cortx_ha_log.conf
+    fi
+
+    if [ -d "${CRON_DIR_HOURLY}" ]; then
+        cp -f ${SOURCE_CRON_PATH_LOGROTATE} ${DEST_CRON_PATH_LOGROTATE}
+    fi
 }
 
 config() {
@@ -68,8 +85,9 @@ test() {
 reset() {
     echo "reset log"
     rm -rf ${HA_LOG}
-    rm -rf ${LOGROTATE_CONF}/cortx_ha_log.conf
     rm -rf ${HA_CONF}
+    rm -rf ${LOGROTATE_DIR_DEST}/cortx_ha_log.conf
+    rm -rf ${DEST_CRON_PATH_LOGROTATE}
 }
 
 replace_node() {
