@@ -53,6 +53,8 @@ post_install() {
 
     if [ -d "${CRON_DIR_HOURLY}" ]; then
         cp -f ${SOURCE_CRON_PATH_LOGROTATE} ${DEST_CRON_PATH_LOGROTATE}
+    else
+        echo "CRON_DIR_HOURLY is not present"
     fi
 }
 
