@@ -141,7 +141,7 @@ stateful_demote() {
 }
 
 stateful_promote() {
-    sleep 5
+    sleep 8
     sspl_pid=`/sbin/pidof -s /usr/bin/sspl_ll_d`
     if [ -z $sspl_pid ]; then
         return $(stateful_monitor)
