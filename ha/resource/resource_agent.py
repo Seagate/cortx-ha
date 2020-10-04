@@ -192,14 +192,8 @@ class HardwareResourceAgent(ResourceAgent):
         Log.debug(f"In stop for {filename}")
         if os.path.exists(const.HA_INIT_DIR + filename):
             os.remove(const.HA_INIT_DIR + filename)
-        while True:
-            if self.monitor() == const.OCF_NOT_RUNNING:
-                time.sleep(2)
-                break
-        if self.monitor(state=const.STATE_STOP) == Action.RESTART:
-            Log.debug(f"Restarting {filename} resource")
-            time.sleep(2)
-            return const.OCF_SUCCESS
+            Log.debug(f"Stopping {filename} resource")
+        Log.debug(f"Stopped {filename} resource return success")
         return const.OCF_SUCCESS
 
     def metadata(self):
@@ -298,14 +292,8 @@ class IEMResourceAgent(ResourceAgent):
         Log.debug(f"In stop for {filename}")
         if os.path.exists(const.HA_INIT_DIR + filename):
             os.remove(const.HA_INIT_DIR + filename)
-        while True:
-            if self.monitor() == const.OCF_NOT_RUNNING:
-                time.sleep(2)
-                break
-        if self.monitor(state=const.STATE_STOP) == Action.RESTART:
-            Log.debug(f"Restarting {filename} resource")
-            time.sleep(2)
-            return const.OCF_SUCCESS
+            Log.debug(f"Stopping {filename} resource")
+        Log.debug(f"Stopped {filename} resource return success")
         return const.OCF_SUCCESS
 
     def metadata(self):
