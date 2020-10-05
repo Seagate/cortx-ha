@@ -58,3 +58,6 @@ SERVICE_COMMAND="service"
 PCS_CLEANUP="pcs resource cleanup"
 PCS_FAILCOUNT_STATUS="pcs resource failcount show"
 PCS_STATUS="pcs status"
+
+NODE_DISCONNECTED="Disconnected"
+NODE_ONLINE="Online"
