@@ -101,7 +101,7 @@ class PcsClusterManager(ClusterManager):
                 Log.debug(f"For {node} node rc: {node_rc}, status: {node_status}")
                 return node_rc, node_status
         Log.debug(f"{node} is not detected in cluster, treating as disconnected node")
-        return 1, "Disconnected"
+        return 1, const.NODE_DISCONNECTED
 
     def remove_node(self, node):
         """
@@ -134,21 +134,35 @@ class PcsClusterManager(ClusterManager):
         Log.info(f"Cluster status output before add node: {_output}, {_err}, {_rc}")
         # TODO: Limitation for node add (in cluster node cannot add it self)
         commands = [f"pcs cluster node add {node}",
-                "pcs resource cleanup --all",
                 f"pcs cluster enable {node}",
-                f"pcs cluster start {node}"]
+                f"pcs cluster start {node}",
+                "pcs resource cleanup --all"]
         _rc, status = self.node_status(node)
         if _rc != 0:
             for command in commands:
-                self._execute.run_cmd(command)
-            time.sleep(20)
-            _rc, status = self.node_status(node)
-            Log.debug(f"{node} status rc: {_rc}, status: {status}")
-            if status != 'Online':
-                Log.error(f"Failed to add {node}")
-                raise Exception(f"Failed to add {node}")
+                _output, _err, _rc = self._execute.run_cmd(command)
+                Log.info(f"{command} : {_output}, {_err}, {_rc}")
+                time.sleep(5)
+            retries = 0
+            add_node_flag = -1
+            while retries < 12:
+                _rc, status = self.node_status(node)
+                Log.info(f"{node} status rc: {_rc}, status: {status}")
+                if status == const.NODE_ONLINE:
+                    Log.info(f"Node {node} added to cluster")
+                    add_node_flag = 0
+                    break
+                elif status != const.NODE_DISCONNECTED:
+                    add_node_flag = 1
+                    Log.info(f"Node {node} added to cluster but not Online check status again.")
+                retries += 1
+                time.sleep(10)
+            if add_node_flag == 1:
+                Log.info(f"Node {node} added to cluster but not in Online state.")
+            elif add_node_flag == 0:
+                Log.info(f"Node {node} Successfully added to cluster and in Online state")
             else:
-                Log.info(f"Node {node} added to cluster")
+                raise Exception(f"Failed to add {node} to cluster")
         else:
             Log.info(f"Node {node} already added to cluster")
         _output, _err, _rc = self._execute.run_cmd(const.PCS_STATUS)
