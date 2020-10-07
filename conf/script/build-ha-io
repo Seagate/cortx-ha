@@ -758,8 +758,14 @@ _s3server_rsc_add() {
 
    local count=1
    for i in ${s3server_fids[@]}; do
+      # [KN] According to S3 team, 15 seconds is sufficient for shutting down
+      # Moreover, in s3server systemd the timeout is 7sec so 15sec at Pacemaker should suffice.
+      #
+      # As a side effect, this will force Pacemaker to poll status (while stopping) more often.
+      # According to Pacemaker sources, systemd resources started/stopped and then monitored during 'timeout' 
+      # period until the desired status is reported. Delay between those 'monitor' actions is min(2000, timeout / 10).
       sudo pcs -f $cib_file resource create s3server-$suffix-$count systemd:$i op \
-          stop timeout=600
+          stop timeout=15
       sudo pcs -f $cib_file constraint location s3server-$suffix-$count \
           prefers $node_local=INFINITY
       sudo pcs -f $cib_file constraint location s3server-$suffix-$count \
