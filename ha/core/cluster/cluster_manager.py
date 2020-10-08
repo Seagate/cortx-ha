@@ -30,6 +30,7 @@ from cortx.utils.ha.dm.decision_monitor import DecisionMonitor
 from ha.core.error import HAUnimplemented
 from ha.core.node.replacement.refresh_context import PcsRefreshContex
 from ha.execute import SimpleCommand
+from ha.core.support_bundle.ha_bundle import HABundle
 from ha import const
 
 class ClusterManager:
@@ -77,6 +78,8 @@ class PcsClusterManager(ClusterManager):
                 getattr(self, args.cluster_action)()
         elif action == const.NODE_COMMAND:
             self._refresh_contex.process_request(action, args)
+        elif action == const.BUNDLE_COMMAND:
+            HABundle().process_request(action, args, output)
         else:
             raise HAUnimplemented("This feature is not supported...")
 
