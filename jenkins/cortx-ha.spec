@@ -53,8 +53,8 @@ HA_DIR=<HA_PATH>/ha
 RES_AGENT="/usr/lib/ocf/resource.d/seagate"
 mkdir -p ${RES_AGENT} $HA_DIR/bin /etc/cortx/ha/ /usr/bin
 
-# move setup.yaml to iostack_ha path
-IOSTACK_HA=<HA_PATH>/iostack_ha/conf
+# move setup.yaml to iostack-ha path
+IOSTACK_HA=<HA_PATH>/iostack-ha/conf
 mkdir  -p $IOSTACK_HA
 mv $HA_DIR/conf/iostack-ha/setup.yaml $IOSTACK_HA/
 
@@ -75,7 +75,7 @@ exit 0
 [ $1 -eq 1 ] && exit 0
 HA_DIR=<HA_PATH>/ha
 RES_AGENT="/usr/lib/ocf/resource.d/seagate"
-IOSTACK_HA=<HA_PATH>/iostack_ha
+IOSTACK_HA=<HA_PATH>/iostack-ha
 rm -f $HA_DIR/bin/hw_comp_ra 2> /dev/null;
 rm -f ${RES_AGENT}/hw_comp_ra 2> /dev/null;
 rm -f $HA_DIR/bin/iem_comp_ra 2> /dev/null;
