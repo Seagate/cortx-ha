@@ -1,0 +1,38 @@
+From 5c86fdd5aca9ec3f0324d996205abad9ca9e4add Mon Sep 17 00:00:00 2001
+From: Archana Limaye <archana.limaye@seagate.com>
+Date: Thu, 8 Oct 2020 11:17:59 -0600
+Subject: [PATCH]  Changes for EOS-12885 HA: Replace contentious terms :
+ provisioner dependencies  corrected typo iostack_ha to iostack-ha
+
+Signed-off-by: Archana Limaye <archana.limaye@seagate.com>
+---
+ jenkins/cortx-ha.spec | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/jenkins/cortx-ha.spec b/jenkins/cortx-ha.spec
+index 241a8a2..a203f4f 100644
+--- a/jenkins/cortx-ha.spec
++++ b/jenkins/cortx-ha.spec
+@@ -53,8 +53,8 @@ HA_DIR=<HA_PATH>/ha
+ RES_AGENT="/usr/lib/ocf/resource.d/seagate"
+ mkdir -p ${RES_AGENT} $HA_DIR/bin /etc/cortx/ha/ /usr/bin
+ 
+-# move setup.yaml to iostack_ha path
+-IOSTACK_HA=<HA_PATH>/iostack_ha/conf
++# move setup.yaml to iostack-ha path
++IOSTACK_HA=<HA_PATH>/iostack-ha/conf
+ mkdir  -p $IOSTACK_HA
+ mv $HA_DIR/conf/iostack-ha/setup.yaml $IOSTACK_HA/
+ 
+@@ -75,7 +75,7 @@ exit 0
+ [ $1 -eq 1 ] && exit 0
+ HA_DIR=<HA_PATH>/ha
+ RES_AGENT="/usr/lib/ocf/resource.d/seagate"
+-IOSTACK_HA=<HA_PATH>/iostack_ha
++IOSTACK_HA=<HA_PATH>/iostack-ha
+ rm -f $HA_DIR/bin/hw_comp_ra 2> /dev/null;
+ rm -f ${RES_AGENT}/hw_comp_ra 2> /dev/null;
+ rm -f $HA_DIR/bin/iem_comp_ra 2> /dev/null;
+-- 
+2.24.1
+
