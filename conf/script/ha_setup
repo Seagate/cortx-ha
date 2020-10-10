@@ -34,12 +34,14 @@ HA_CROSS_CONNECT_RULE_FILE='rules_engine_schema_with_crossconnect.json'
 HA_CONF_RULE_FILE='rules_engine_schema.json'
 
 # Add Log
-mkdir -p /var/log/seagate/cortx/ha/
-exec &>> /var/log/seagate/cortx/ha/${0##*/}.log
+mkdir -p "${HA_LOG}"/
+exec &>> "${HA_LOG}"/${0##*/}.log
 exec &> >(stdbuf -oL gawk '{ print strftime("%Y-%m-%d %H:%M:%S"), $0 }')
 
 post_install() {
     echo "post_install"
+    # Add permisson to hacluster
+    add_permission
 
     # Trigger logotate hourly basis
     if [ ! -d "${LOGROTATE_DIR_DEST}" ]; then
@@ -121,6 +123,15 @@ replace_node() {
 }
 
 # Helping function
+
+add_permission() {
+    id hacluster && {
+        setfacl -R -m u:hacluster:rwx ${HA_LOG}
+    } || {
+        echo "hacluster user is not available"
+        exit 1
+    }
+}
 
 config_rule_engine(){
     rule_file=${HA_CROSS_CONNECT_RULE_FILE}
