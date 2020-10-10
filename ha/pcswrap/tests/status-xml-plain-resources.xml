@@ -80,10 +80,6 @@
     <tickets>
     </tickets>
     <bans>
-<!--
-# TODO: Replace with non-offensive terms when
-# https://bugs.clusterlabs.org/show_bug.cgi?id=5437 is resolved
--->
         <ban id="location-c-259.stonith-ssc-vm-c-259.colo.seagate.com--INFINITY" resource="c-259.stonith" node="ssc-vm-c-259.colo.seagate.com" weight="-1000000" master_only="false" />
         <ban id="location-c-260.stonith-ssc-vm-c-260.colo.seagate.com--INFINITY" resource="c-260.stonith" node="ssc-vm-c-260.colo.seagate.com" weight="-1000000" master_only="false" />
     </bans>

@@ -22,7 +22,6 @@
  ****************************************************************************
 """
 
-import time
 import sys
 import re
 import os
@@ -63,7 +62,8 @@ class ResourceAgent:
         """
         return const.OCF_ERR_UNIMPLEMENTED
 
-    def metadata(self):
+    @staticmethod
+    def metadata():
         pass
 
     def get_env(self):
@@ -134,6 +134,7 @@ class ResourceAgent:
                      f" node {args[const.CURRENT_NODE]}")
             return callback_ack(args[const.PATH_KEY]+'_'+args[const.CURRENT_NODE])
         elif args[const.CURRENT_NODE_STATUS] == Action.RESTART:
+            Log.info(f"Restart action taken for {args[const.FILENAME_KEY]} on {args[const.CURRENT_NODE]}")
             if state == const.STATE_START:
                 return const.OCF_SUCCESS
             elif state == const.STATE_RUNNING:
@@ -191,51 +192,46 @@ class HardwareResourceAgent(ResourceAgent):
         Log.debug(f"In stop for {filename}")
         if os.path.exists(const.HA_INIT_DIR + filename):
             os.remove(const.HA_INIT_DIR + filename)
-        while True:
-            if self.monitor() == const.OCF_NOT_RUNNING:
-                time.sleep(2)
-                break
-        if self.monitor(state=const.STATE_STOP) == Action.RESTART:
-            Log.debug(f"Restarting {filename} resource")
-            time.sleep(2)
-            return const.OCF_SUCCESS
+            Log.debug(f"Stopping {filename} resource")
+        Log.debug(f"Stopped {filename} resource return success")
         return const.OCF_SUCCESS
 
-    def metadata(self):
+    @staticmethod
+    def metadata():
         """
         Provide meta data for resource agent and parameter
         """
-        env=r'''
-        <?xml version="1.0"?>
-        <!DOCTYPE resource-agent SYSTEM "ra-api-1.dtd">
-        <resource-agent name="hw_comp_ra">
-        <version>1.0</version>
+        env=r"""<?xml version="1.0"?>
+<!DOCTYPE resource-agent SYSTEM "ra-api-1.dtd">
+<resource-agent name="hw_comp_ra">
+<version>1.0</version>
 
-        <longdesc lang="en">
-        Hardware Resource agent
-        </longdesc>
-        <shortdesc lang="en">Hardware Resource agent</shortdesc>
-        <parameters>
-        <parameter name="path">
-        <longdesc lang="en"> Path to check status </longdesc>
-        <shortdesc lang="en"> Check io or management path </shortdesc>
-        <content type="string"/>
-        </parameter>
-        <parameter name="filename">
-        <longdesc lang="en"> Node_id for resource </longdesc>
-        <shortdesc lang="en"> Node id for resource </shortdesc>
-        <content type="string"/>
-        </parameter>
-        </parameters>
-        <actions>
-        <action name="start"        timeout="20s" />
-        <action name="stop"         timeout="20s" />
-        <action name="monitor"      timeout="20s" interval="10s" depth="0" />
-        <action name="meta-data"    timeout="5s" />
-        </actions>
-        </resource-agent>
-        '''
-        print(env)
+<longdesc lang="en">
+Hardware Resource agent
+</longdesc>
+<shortdesc lang="en">Hardware Resource agent</shortdesc>
+<parameters>
+<parameter name="path" required="0">
+<longdesc lang="en"> Path to check status </longdesc>
+<shortdesc lang="en"> Check io or management path </shortdesc>
+<content type="string"/>
+</parameter>
+<parameter name="filename" required="0">
+<longdesc lang="en"> Node_id for resource </longdesc>
+<shortdesc lang="en"> Node id for resource </shortdesc>
+<content type="string"/>
+</parameter>
+</parameters>
+<actions>
+<action name="start"        timeout="20s" />
+<action name="stop"         timeout="20s" />
+<action name="monitor"      timeout="20s" interval="10s" depth="0" />
+<action name="meta-data"    timeout="5s" />
+</actions>
+</resource-agent>
+"""
+        sys.stdout.write(env)
+        return const.OCF_SUCCESS
 
     def _get_params(self):
         """
@@ -295,63 +291,60 @@ class IEMResourceAgent(ResourceAgent):
         """
         filename, path, service, node = self._get_params()
         Log.debug(f"In stop for {filename}")
+        if self.monitor(state=const.STATE_STOP) == Action.RESTART:
+            Log.info(f"Restarting {filename} resource")
         if os.path.exists(const.HA_INIT_DIR + filename):
             os.remove(const.HA_INIT_DIR + filename)
-        while True:
-            if self.monitor() == const.OCF_NOT_RUNNING:
-                time.sleep(2)
-                break
-        if self.monitor(state=const.STATE_STOP) == Action.RESTART:
-            Log.debug(f"Restarting {filename} resource")
-            time.sleep(2)
-            return const.OCF_SUCCESS
+            Log.debug(f"Stopping {filename} resource")
+        Log.debug(f"Stopped {filename} resource return success")
         return const.OCF_SUCCESS
 
-    def metadata(self):
+    @staticmethod
+    def metadata():
         """
         Provide meta data for resource agent and parameter
         """
-        env=r'''
-        <?xml version="1.0"?>
-        <!DOCTYPE resource-agent SYSTEM "ra-api-1.dtd">
-        <resource-agent name="iem_comp_ra">
-        <version>1.0</version>
+        env=r"""<?xml version="1.0"?>
+<!DOCTYPE resource-agent SYSTEM "ra-api-1.dtd">
+<resource-agent name="iem_comp_ra">
+<version>1.0</version>
 
-        <longdesc lang="en">
-        IEM Resource agent
-        </longdesc>
-        <shortdesc lang="en">Hardware Resource agent</shortdesc>
-        <parameters>
-        <parameter name="path">
-        <longdesc lang="en"> Path to check status </longdesc>
-        <shortdesc lang="en"> Check io or management path </shortdesc>
-        <content type="string"/>
-        </parameter>
-        <parameter name="filename">
-        <longdesc lang="en"> Node_id for resource </longdesc>
-        <shortdesc lang="en"> Node id for resource </shortdesc>
-        <content type="string"/>
-        </parameter>
-        <parameter name="service">
-        <longdesc lang="en"> Enter service name to handle </longdesc>
-        <shortdesc lang="en"> Handle service for IEM </shortdesc>
-        <content type="string" default="-"/>
-        </parameter>
-        <parameter name="node">
-        <longdesc lang="en"> Node id </longdesc>
-        <shortdesc lang="en"> Node id to identify resource on same node </shortdesc>
-        <content type="string" default="-"/>
-        </parameter>
-        </parameters>
-        <actions>
-        <action name="start"        timeout="20s" />
-        <action name="stop"         timeout="20s" />
-        <action name="monitor"      timeout="20s" interval="10s" depth="0" />
-        <action name="meta-data"    timeout="5s" />
-        </actions>
-        </resource-agent>
-        '''
-        print(env)
+<longdesc lang="en">
+IEM Resource agent
+</longdesc>
+<shortdesc lang="en">Hardware Resource agent</shortdesc>
+<parameters>
+<parameter name="path" required="0">
+<longdesc lang="en"> Path to check status </longdesc>
+<shortdesc lang="en"> Check io or management path </shortdesc>
+<content type="string"/>
+</parameter>
+<parameter name="filename" required="0">
+<longdesc lang="en"> Node_id for resource </longdesc>
+<shortdesc lang="en"> Node id for resource </shortdesc>
+<content type="string"/>
+</parameter>
+<parameter name="service" required="1">
+<longdesc lang="en"> Enter service name to handle </longdesc>
+<shortdesc lang="en"> Handle service for IEM </shortdesc>
+<content type="string" default="-"/>
+</parameter>
+<parameter name="node">
+<longdesc lang="en"> Node id </longdesc>
+<shortdesc lang="en"> Node id to identify resource on same node </shortdesc>
+<content type="string" default="-"/>
+</parameter>
+</parameters>
+<actions>
+<action name="start"        timeout="20s" />
+<action name="stop"         timeout="20s" />
+<action name="monitor"      timeout="20s" interval="10s" depth="0" />
+<action name="meta-data"    timeout="5s" />
+</actions>
+</resource-agent>
+"""
+        sys.stdout.write(env)
+        return const.OCF_SUCCESS
 
     def _get_params(self):
         """
@@ -370,12 +363,15 @@ class IEMResourceAgent(ResourceAgent):
 
 def main(resource, action=''):
     try:
+        if action == 'meta-data':
+            return resource.metadata()
         Conf.load(const.HA_GLOBAL_INDEX, Yaml(const.HA_CONFIG_FILE))
         log_path = Conf.get(const.HA_GLOBAL_INDEX, "LOG.path")
         log_level = Conf.get(const.HA_GLOBAL_INDEX, "LOG.level")
         Log.init(service_name='resource_agent', log_path=log_path, level=log_level)
         with open(const.RESOURCE_SCHEMA, 'r') as f:
             resource_schema = json.load(f)
+        os.makedirs(const.RA_LOG_DIR, exist_ok=True)
         resource_agent = resource(DecisionMonitor(), resource_schema)
         Log.debug(f"{resource_agent} initialized for action {action}")
         if action == 'monitor':
@@ -384,8 +380,6 @@ def main(resource, action=''):
             return resource_agent.start()
         elif action == 'stop':
             return resource_agent.stop()
-        elif action == 'meta-data':
-            resource_agent.metadata()
         else:
             print('Usage %s [monitor] [start] [stop] [meta-data]' % sys.argv[0])
             exit()
