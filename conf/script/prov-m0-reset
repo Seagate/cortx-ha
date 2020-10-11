@@ -485,6 +485,8 @@ mkfs() {
     done
 
     log "${FUNCNAME[0]}: Starting Hax.."
+    run_cmd $node1 "sudo mkdir -p /var/motr1/hax"
+    run_cmd $node2 "sudo mkdir -p /var/motr2/hax"
     run_cmd $node1 "sudo systemctl start hare-hax-c1"
     run_cmd $node2 "sudo systemctl start hare-hax-c2"
 
