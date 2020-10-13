@@ -49,7 +49,7 @@ config() {
     mkdir -p ${HA_CONF}
 
     # TODO Add generation for rule engine to make rule engine schama
-    rule_engine_config
+    cp -rf ${SOURCE_HA_CONF}/rules_engine_schema_jbod.json ${HA_CONF}/${HA_CONF_RULE_FILE}
 
     # ha conf
     cp -rf ${SOURCE_HA_CONF}/ha.conf ${HA_CONF}/
