@@ -290,6 +290,8 @@ class IEMResourceAgent(ResourceAgent):
         """
         filename, path, service, node = self._get_params()
         Log.debug(f"In stop for {filename}")
+        if self.monitor(state=const.STATE_STOP) == Action.RESTART:
+            Log.info(f"Restarting {filename} resource")
         if os.path.exists(const.HA_INIT_DIR + filename):
             os.remove(const.HA_INIT_DIR + filename)
             Log.debug(f"Stopping {filename} resource")
