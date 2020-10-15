@@ -719,8 +719,7 @@ s3auth_rsc_add() {
     sudo pcs -f $cib_file resource create s3auth systemd:s3authserver clone op \
         monitor interval=30
     sudo pcs -f $cib_file constraint order ldap-clone then s3auth-clone
-    sudo pcs -f $cib_file constraint order motr-ios-c1 then s3auth-clone
-    sudo pcs -f $cib_file constraint order motr-ios-c2 then s3auth-clone
+
     # Make s3auth resource to run only on nodes where motr and hax are present.
     # All s3server resources shall follow s3auth due to colocation constraint.
     sudo pcs -f $cib_file constraint location s3auth-clone rule score=-INFINITY '#uname' \
@@ -831,6 +830,10 @@ _s3server_rsc_add() {
       # Order constraint adds the startup dependency of s3server on s3authserver
       sudo pcs -f $cib_file constraint \
            order s3auth-clone then s3server-$suffix-$count
+
+      # s3server-c1-* will run only after motr-ios-c1, s3server-c2-* -- only after motr-ios-c2
+      sudo pcs -f $cib_file constraint order motr-ios-$suffix then s3server-$suffix-$count
+
       # Colocation constraint will add a s3server's liveness dependency
       # on the local s3authserver
       sudo pcs -f $cib_file constraint colocation add s3server-$suffix-$count \
