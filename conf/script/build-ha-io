@@ -621,8 +621,10 @@ motr_systemd_update() {
     log "${FUNCNAME[0]}: Adding Motr to Pacemaker..."
 
     cmd='
-    sudo sed "s/TimeoutStopSec=.*/TimeoutStopSec=5sec/"
-        -i /usr/lib/systemd/system/m0d@.service &&
+    sudo sed -e "s/TimeoutStopSec=.*/TimeoutStopSec=5sec/"
+             -e "/ExecStart=/aExecStop=/bin/kill -9 $MAIN_PID" \
+             -e "/ExecStart=/aExecStop=/usr/bin/echo 'shutting down process : ${MAINPID}'" \
+             -i /usr/lib/systemd/system/m0d@.service &&
     sudo systemctl daemon-reload'
     run_on_both $cmd
 }
