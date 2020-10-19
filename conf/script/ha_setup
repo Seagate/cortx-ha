@@ -18,7 +18,7 @@
 HA_PATH="<HA_PATH>"
 SOURCE_HA_CONF="<HA_PATH>/conf/etc"
 HA_CONF="/etc/cortx/ha"
-LOGROTATE_CONF="/etc/logrotate.d"
+LOGROTATE_CONF_DIR="/etc/logrotate_hourly.d"
 HA_LOG="/var/log/seagate/cortx/ha"
 
 LOCAL_NODE_MINION_ID=$(salt-call grains.get id --output=json | jq '.["local"]' | sed s/\"//g)
@@ -39,8 +39,11 @@ post_install() {
     mkdir -p /var/log/seagate/cortx/ha/
     chown -R csm /var/log/seagate/cortx/ha/
 
-    mkdir -p ${LOGROTATE_CONF}
-    cp -rf ${HA_PATH}/conf/logrotate/cortx_ha_log.conf ${LOGROTATE_CONF}
+    if [ ! -d "${LOGROTATE_CONF_DIR}" ]; then
+        mkdir -p ${LOGROTATE_CONF_DIR}
+    fi
+
+    cp -rf ${HA_PATH}/conf/logrotate/cortx_ha_log.conf ${LOGROTATE_CONF_DIR}
 }
 
 config() {
@@ -77,7 +80,7 @@ test() {
 reset() {
     echo "reset log"
     rm -rf ${HA_LOG}
-    rm -rf ${LOGROTATE_CONF}/cortx_ha_log.conf
+    rm -rf ${LOGROTATE_CONF_DIR}/cortx_ha_log.conf
     rm -rf ${HA_CONF}
 }
 
