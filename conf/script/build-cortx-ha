@@ -74,18 +74,6 @@ init() {
     pcs -f hw_cfg constraint location sspl_primary_hw prefers $host1=INFINITY
     pcs -f hw_cfg constraint location sspl_primary_hw prefers $host2=INFINITY
     pcs cluster cib-push hw_cfg
-
-    pcs cluster cib iem_cfg
-    pcs -f iem_cfg resource create node_iem_s3 ocf:seagate:iem_comp_ra \
-        path='node_iem_s3' filename='node_iem_s3' service="slapd" \
-        op start timeout=30s interval=0s \
-        op monitor timeout=30s interval=30s \
-        op stop timeout=30s interval=0s
-    pcs -f iem_cfg resource clone node_iem_s3 clone-max=2 clone-node-max=1
-    pcs -f iem_cfg constraint location node_iem_s3-clone prefers ${host1}=INFINITY
-    pcs -f iem_cfg constraint location node_iem_s3-clone prefers ${host2}=INFINITY
-    pcs -f iem_cfg constraint order node_iem_s3-clone then ldap-clone
-    pcs cluster cib-push iem_cfg
 }
 
 cleanup() {
@@ -94,7 +82,6 @@ cleanup() {
         io_path_health-c1
         io_path_health-c2
         mgmt_path_health-c1
-        node_iem_s3
         sspl_primary_hw
     )
     for r in ${resources[@]}; do

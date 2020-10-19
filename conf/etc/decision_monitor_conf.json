@@ -88,18 +88,6 @@
       "component": "cable",
       "component_id": "mgmt"
     },
-    "node_iem_s3_<HOST1>": {
-      "entity": "node",
-      "entity_id": "<HOST1>",
-      "component": "iem",
-      "component_id": "auth"
-    },
-    "node_iem_s3_<HOST2>": {
-      "entity": "node",
-      "entity_id": "<HOST2>",
-      "component": "iem",
-      "component_id": "auth"
-    },
     "node_sas_<HOST1>": {
       "entity": "node",
       "entity_id": "<HOST1>",
