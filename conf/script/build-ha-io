@@ -620,10 +620,11 @@ hax_rsc_add() {
 motr_systemd_update() {
     log "${FUNCNAME[0]}: Adding Motr to Pacemaker..."
 
-    cmd='
-    sudo sed "s/TimeoutStopSec=.*/TimeoutStopSec=5sec/"
-        -i /usr/lib/systemd/system/m0d@.service &&
-    sudo systemctl daemon-reload'
+    cmd="
+    sudo sed -e "s/TimeoutStopSec=.*/TimeoutStopSec=5sec/"
+             -e \"/ExecStart=/aExecStartPost=/bin/sh -c 'while [[ \$\(/opt/seagate/cortx/hare/libexec/get-process-state %i\) != M0_CONF_HA_PROCESS_STARTED ]]\; do sleep 1\; done'\"
+             -i /usr/lib/systemd/system/m0d@.service &&
+    sudo systemctl daemon-reload"
     run_on_both $cmd
 }
 
