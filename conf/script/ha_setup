@@ -36,7 +36,7 @@ exec &> >(stdbuf -oL gawk '{ print strftime("%Y-%m-%d %H:%M:%S"), $0 }')
 post_install() {
     echo "post_install"
     # Add permisson to hacluster
-#    add_permission
+    add_permission
 
     if [ ! -d "${LOGROTATE_CONF}" ]; then
         mkdir -p ${LOGROTATE_CONF}
