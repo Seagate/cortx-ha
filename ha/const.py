@@ -13,9 +13,17 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-HA_INIT_DIR="/var/cortx/ha/"
+#LOGS
 RA_LOG_DIR="/var/log/seagate/cortx/ha"
+PACEMAKER_LOG="/var/log/pacemaker.log"
+PCSD_LOG="/var/log/pcsd/pcsd.log"
+HA_CMDS_OUTPUT="{}/ha_cmds_output".format(RA_LOG_DIR)
+COROSYNC_LOG="/var/log/cluster/corosync.log"
+SUPPORT_BUNDLE_ERR="{}/support_bundle.err".format(RA_LOG_DIR)
+SUPPORT_BUNDLE_LOGS=[RA_LOG_DIR, PCSD_LOG, PACEMAKER_LOG, COROSYNC_LOG]
+CORTX_SUPPORT_BUNDLE_LOGS=[RA_LOG_DIR]
 
+HA_INIT_DIR="/var/cortx/ha/"
 CONFIG_DIR="/etc/cortx/ha"
 RESOURCE_SCHEMA="{}/decision_monitor_conf.json".format(CONFIG_DIR)
 RESOURCE_GLOBAL_INDEX="decision_monitor"
@@ -54,10 +62,14 @@ OCF_NOT_RUNNING=7
 CLUSTER_COMMAND="cluster"
 NODE_COMMAND="node"
 SERVICE_COMMAND="service"
+BUNDLE_COMMAND="support_bundle"
 
 PCS_CLEANUP="pcs resource cleanup"
 PCS_FAILCOUNT_STATUS="pcs resource failcount show"
 PCS_STATUS="pcs status"
+
+NODE_DISCONNECTED="Disconnected"
+NODE_ONLINE="Online"
 
 HCTL_START="hctl start"
 HCTL_STOP="hctl shutdown"

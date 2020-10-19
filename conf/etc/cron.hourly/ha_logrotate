@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
 # This program is free software: you can redistribute it and/or modify it under the
@@ -13,38 +15,9 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-ha:
-    post_install:
-        script: /opt/seagate/cortx/ha/conf/script/ha_setup
-        args: post_install
-
-    init:
-        script: /opt/seagate/cortx/ha/conf/script/ha_setup
-        args: init
-
-    config:
-        script: /opt/seagate/cortx/ha/conf/script/ha_setup
-        args: config
-
-    test:
-        script: /opt/seagate/cortx/ha/conf/script/ha_setup
-        args: test
-
-    reset:
-        script: /opt/seagate/cortx/ha/conf/script/ha_setup
-        args: reset
-
-    refresh_config:
-        script: /opt/seagate/cortx/ha/conf/script/ha_setup
-        args: replace_node
-
-    ha:
-        script: /opt/seagate/cortx/ha/conf/script/build-cortx-ha
-        args: init
-
-    ha-cleanup:
-        script: /opt/seagate/cortx/ha/conf/script/build-cortx-ha
-        args: cleanup
-
-support_bundle:
-    - cortxha support_bundle create
+/usr/sbin/logrotate -s /var/lib/logrotate/logrotate.status /etc/cortx-ha/logrotate/cortx_ha_log.conf
+EXITVALUE=$?
+if [ $EXITVALUE != 0 ]; then
+    /usr/bin/logger -t logrotate "ALERT exited abnormally with [$EXITVALUE]"
+fi
+exit 0

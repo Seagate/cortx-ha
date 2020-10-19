@@ -152,7 +152,7 @@ stateful_demote() {
 }
 
 stateful_promote() {
-    sleep 5
+    sleep 8
     sspl_pid=`/sbin/pidof -s /usr/bin/sspl_ll_d`
     sspl_state=`systemctl is-active sspl-ll`
     log "PROMOTE: pid=$sspl_pid curr_state=$sspl_state"
