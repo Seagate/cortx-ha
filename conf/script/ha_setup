@@ -220,7 +220,7 @@ config_ha_iem_event() {
     setfacl -R -m u:hacluster:rwx ${HA_LOG}
     setfacl -R -m g:haclient:rwx ${HA_LOG}
     pcs alert show | grep ha_iem_event || pcs alert create id=ha_iem_event \
-        description="Log events for iem." path=${HA_PATH}/bin/alert_generator
+        description="Log events for iem." path=${HA_PATH}/bin/pcs_iem
     pcs alert show | grep ha_iem_recipient || pcs alert recipient add ha_iem_event \
         id=ha_iem_recipient value=${HA_LOG}/
     pcs alert show | grep ha_iem_event && pcs alert show | grep ha_iem_recipient && \
