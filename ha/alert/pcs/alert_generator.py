@@ -25,10 +25,6 @@ from cortx.utils.log import Log
 from cortx.utils.schema.payload import *
 
 #TODO
-#class AlertGenerator:
-#    pass
-
-#TODO
 #class Event:
 #    pass
 #    #generate IEM

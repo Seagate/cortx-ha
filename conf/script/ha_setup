@@ -217,8 +217,6 @@ config_ha_iem_event() {
         -e "s|<UUID2>|$4|g" ${HA_CONF}/iem_ha.csv
 
     # Configure alert for HA IEM
-    install --mode=0755 ${HA_PATH}/third_party/iem/alert_file.sh \
-        /var/lib/pacemaker/alert_file.sh​
     setfacl -R -m u:hacluster:rwx ${HA_LOG}
     setfacl -R -m g:haclient:rwx ${HA_LOG}
     pcs alert show | grep ha_iem_event || pcs alert create id=ha_iem_event \
