@@ -1,5 +1,5 @@
 {
-    "srvnode-1": {
+    "<HOST1>": {
         "lost": {
             "event": "NodeFailure",
             "IEM": "IEC:WS0080010001:The cluster has lost <UUID1> server; System is running in degraded mode."
@@ -11,7 +11,7 @@
         "fencing": {},
         "resource": {}
     },
-    "srvnode-2":{
+    "<HOST2>":{
         "lost": {
             "event": "NodeFailure",
             "IEM": "IEC:WS0080010002:The cluster has lost <UUID2> server; System is running in degraded mode."
