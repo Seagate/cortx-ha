@@ -24,6 +24,9 @@ from cortx.utils.schema.conf import Conf
 from cortx.utils.log import Log
 from cortx.utils.schema.payload import Json
 
+from ha import const
+from ha.alert.alert_generator import AlertGenerator
+
 #TODO
 #class Event:
 #    pass
@@ -108,12 +111,3 @@ class PcsAlertGenerator(AlertGenerator):
         Send fencing level IEM to user
         """
         pass
-
-if __name__ == '__main__':
-    """
-    Entry point for Pacemaker IEM
-    """
-    sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..', '..'))
-    from ha import const
-    from ha.alert.alert_generator import AlertGenerator
-    PcsAlertGenerator().process_event()

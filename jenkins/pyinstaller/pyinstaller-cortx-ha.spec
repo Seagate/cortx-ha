@@ -66,7 +66,7 @@ cortxha =  Analysis([ha_path + '/ha/cli/cortxha.py'],
              cipher=block_cipher,
              noarchive=False)
 
-alert_generator = Analysis([ha_path + '/ha/alert/pcs/alert_generator.py'],
+pcs_iem = Analysis([ha_path + '/ha/alert/pcs/pcs_iem.py'],
              pathex=[ha_path],
              binaries=[],
              datas=[],
@@ -82,7 +82,7 @@ alert_generator = Analysis([ha_path + '/ha/alert/pcs/alert_generator.py'],
 MERGE( (hw_comp_ra, 'hw_comp_ra', 'hw_comp_ra'),
         (iem_comp_ra, 'iem_comp_ra', 'iem_comp_ra'),
         (cortxha, 'cortxha', 'cortxha'),
-        (alert_generator, 'alert_generator', 'alert_generator'))
+        (pcs_iem, 'pcs_iem', 'pcs_iem'))
 
 # hw_comp_ra
 hw_comp_ra_pyz = PYZ(hw_comp_ra.pure, hw_comp_ra.zipped_data,
@@ -129,15 +129,15 @@ cortxha_exe = EXE(cortxha_pyz,
           upx=True,
           console=True )
 
-# alert_generator
-alert_generator_pyz = PYZ(alert_generator.pure, alert_generator.zipped_data,
+# pcs_iem
+pcs_iem_pyz = PYZ(pcs_iem.pure, pcs_iem.zipped_data,
              cipher=block_cipher)
 
-alert_generator_exe = EXE(alert_generator_pyz,
-          alert_generator.scripts,
+pcs_iem_exe = EXE(pcs_iem_pyz,
+          pcs_iem.scripts,
           [],
           exclude_binaries=True,
-          name='alert_generator',
+          name='pcs_iem',
           debug=False,
           bootloader_ignore_signals=False,
           strip=False,
@@ -163,11 +163,11 @@ coll = COLLECT(
                cortxha.zipfiles,
                cortxha.datas,
 
-               # alert_generator
-               alert_generator_exe,
-               alert_generator.binaries,
-               alert_generator.zipfiles,
-               alert_generator.datas,
+               # pcs_iem
+               pcs_iem_exe,
+               pcs_iem.binaries,
+               pcs_iem.zipfiles,
+               pcs_iem.datas,
 
                strip=False,
                upx=True,
