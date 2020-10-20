@@ -83,7 +83,11 @@ reset_all() {
 }
 
 echo 'Exporting Consul KV...'
-$consul_bin/consul kv export > $hare_dir/consul-conf-exported.json
+consul_kv_dump=$hare_dir/consul-kv-dump.json
+if [[ -f $consul_kv_dump ]]; do
+    cat $consul_kv_dump | xz > $consul_kv_dump-$(date -Iseconds).xz
+done
+$consul_bin/consul kv export > $consul_kv_dump
 
 reset_all
 sudo pcs cluster cib $cib_file
@@ -106,4 +110,4 @@ $ha_script/build-cortx-ha init
 sudo pcs resource cleanup
 
 echo 'Importing Consul KV...'
-$consul_bin/consul kv import @$hare_dir/consul-conf-exported.json
+$consul_bin/consul kv import @$consul_kv_dump
