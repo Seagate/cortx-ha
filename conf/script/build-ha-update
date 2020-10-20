@@ -88,6 +88,11 @@ $consul_bin/consul kv export > $hare_dir/consul-conf-exported.json
 reset_all
 sudo pcs cluster cib $cib_file
 
+# motr setup.yaml post_update is not called currently, until then it
+# needs to be called from HA after update is done.
+/usr/sbin/m0provision config
+/usr/sbin/m0provision be_log_resize
+
 echo 'Updating ha resources for IO path, SSPL, CSM and UDS...'
 $ha_script/build-ha-io $cdf $ioargsfile --cib-file $cib_file --update
 $ha_script/build-ha-csm $csmargsfile --cib-file $cib_file --update
