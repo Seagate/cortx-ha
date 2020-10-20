@@ -223,7 +223,7 @@ config_ha_iem_event() {
         description="Log events for iem." path=${HA_PATH}/bin/alert_generator
     pcs alert show | grep ha_iem_recipient || pcs alert recipient add ha_iem_event \
         id=ha_iem_recipient value=${HA_LOG}/
-    pcs alert show | grep alert_py && pcs alert show | grep my-alert_py && \
+    pcs alert show | grep ha_iem_event && pcs alert show | grep ha_iem_recipient && \
         echo "HA IEM configured Successfully" || { echo "Fail to configure iem"; exit 1; }
 }
 
