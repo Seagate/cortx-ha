@@ -22,7 +22,7 @@ import pathlib
 
 from cortx.utils.schema.conf import Conf
 from cortx.utils.log import Log
-from cortx.utils.schema.payload import *
+from cortx.utils.schema.payload import Json
 
 #TODO
 #class Event:
@@ -83,7 +83,7 @@ class PcsAlertGenerator(AlertGenerator):
         # TODO Take log level from ha.conf
         log_path = self._crm_env["CRM_alert_recipient"]
         if not os.path.exists(log_path):
-            syslog.syslog(f"Pacemaker Alert: Invalid path for pacemaker recipient alert")
+            syslog.syslog("Pacemaker Alert: Invalid path for pacemaker recipient alert")
         Log.init(service_name="pcmk_alert", log_path=log_path, level="INFO")
 
     def send_node_iem(self):
