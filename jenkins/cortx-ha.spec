@@ -60,6 +60,7 @@ ln -sf $HA_DIR/lib/iem_comp_ra ${RES_AGENT}/iem_comp_ra
 ln -sf $HA_DIR/lib/iem_comp_ra $HA_DIR/bin/iem_comp_ra
 ln -sf $HA_DIR/lib/cortxha $HA_DIR/bin/cortxha
 ln -sf $HA_DIR/lib/cortxha /usr/bin/cortxha
+ln -sf $HA_DIR/lib/alert_generator $HA_DIR/bin/alert_generator
 exit 0
 
 %preun

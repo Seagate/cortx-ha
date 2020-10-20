@@ -66,10 +66,23 @@ cortxha =  Analysis([ha_path + '/ha/cli/cortxha.py'],
              cipher=block_cipher,
              noarchive=False)
 
+alert_generator = Analysis([ha_path + '/ha/alert/pcs/alert_generator.py'],
+             pathex=[ha_path],
+             binaries=[],
+             datas=[],
+             hiddenimports=[],
+             hookspath=[],
+             runtime_hooks=[],
+             excludes=['numpy', 'matplotlib'],
+             win_no_prefer_redirects=False,
+             win_private_assemblies=False,
+             cipher=block_cipher,
+             noarchive=False)
 
 MERGE( (hw_comp_ra, 'hw_comp_ra', 'hw_comp_ra'),
         (iem_comp_ra, 'iem_comp_ra', 'iem_comp_ra'),
-        (cortxha, 'cortxha', 'cortxha'))
+        (cortxha, 'cortxha', 'cortxha'),
+        (alert_generator, 'alert_generator', 'alert_generator'))
 
 # hw_comp_ra
 hw_comp_ra_pyz = PYZ(hw_comp_ra.pure, hw_comp_ra.zipped_data,
@@ -116,6 +129,21 @@ cortxha_exe = EXE(cortxha_pyz,
           upx=True,
           console=True )
 
+# alert_generator
+alert_generator_pyz = PYZ(alert_generator.pure, alert_generator.zipped_data,
+             cipher=block_cipher)
+
+alert_generator_exe = EXE(alert_generator_pyz,
+          alert_generator.scripts,
+          [],
+          exclude_binaries=True,
+          name='alert_generator',
+          debug=False,
+          bootloader_ignore_signals=False,
+          strip=False,
+          upx=True,
+          console=True )
+
 coll = COLLECT(
                # hw_comp_ra
                hw_comp_ra_exe,
@@ -134,6 +162,12 @@ coll = COLLECT(
                cortxha.binaries,
                cortxha.zipfiles,
                cortxha.datas,
+
+               # alert_generator
+               alert_generator_exe,
+               alert_generator.binaries,
+               alert_generator.zipfiles,
+               alert_generator.datas,
 
                strip=False,
                upx=True,

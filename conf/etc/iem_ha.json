@@ -1,0 +1,26 @@
+{
+    "srvnode-1": {
+        "lost": {
+            "event": "NodeFailure",
+            "IEM": "IEC:WS0080010001:The cluster has lost <UUID1> server; System is running in degraded mode."
+        },
+        "member": {
+            "event": "NodeRecovery",
+            "IEM": "IEC:IS0080020001:Server <UUID1> has joined back the cluster; System is restored."
+        },
+        "fencing": {},
+        "resource": {}
+    },
+    "srvnode-2":{
+        "lost": {
+            "event": "NodeFailure",
+            "IEM": "IEC:WS0080010002:The cluster has lost <UUID2> server; System is running in degraded mode."
+        },
+        "member": {
+            "event": "NodeRecovery",
+            "IEM": "IEC:IS0080020002:Server <UUID2> has joined back the cluster; System is restored."
+        },
+        "fencing": {},
+        "resource": {}
+    }
+}

@@ -221,10 +221,10 @@ config_ha_iem_event() {
         /var/lib/pacemaker/alert_file.sh​
     setfacl -R -m u:hacluster:rwx ${HA_LOG}
     setfacl -R -m g:haclient:rwx ${HA_LOG}
-    pcs alert show | grep alert_iem || pcs alert create id=alert_iem \
-        description="Log events for iem." path=/var/lib/pacemaker/alert_file.sh
-    pcs alert show | grep iem-alert_logfile || pcs alert recipient add alert_iem \
-        id=iem-alert_logfile value=${HA_LOG}/pcmk_alert.log
+    pcs alert show | grep ha_iem_event || pcs alert create id=ha_iem_event \
+        description="Log events for iem." path=${HA_PATH}/bin/alert_generator
+    pcs alert show | grep ha_iem_recipient || pcs alert recipient add ha_iem_event \
+        id=ha_iem_recipient value=${HA_LOG}/
 }
 
 ACTION=$1
