@@ -18,7 +18,7 @@
 HA_PATH="<HA_PATH>"
 SOURCE_HA_CONF="<HA_PATH>/conf/etc"
 HA_CONF="/etc/cortx/ha"
-LOGROTATE_CONF_DIR="/etc/logrotate_hourly.d"
+LOGROTATE_CONF_DIR="/etc/logrotate.d"
 HA_LOG="/var/log/seagate/cortx/ha"
 
 LOCAL_NODE_MINION_ID=$(salt-call grains.get id --output=json | jq '.["local"]' | sed s/\"//g)
