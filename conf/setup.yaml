@@ -46,5 +46,13 @@ ha:
         script: /opt/seagate/cortx/ha/conf/script/build-cortx-ha
         args: cleanup
 
+    remove_node:
+        script: /opt/seagate/cortx/ha/conf/script/cluster_update
+        args: remove_node
+
+    add_node:
+        script: /opt/seagate/cortx/ha/conf/script/cluster_update
+        args: add_node
+
 support_bundle:
     - cortxha support_bundle create
