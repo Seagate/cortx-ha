@@ -18,7 +18,6 @@
 import os
 import sys
 import syslog
-import pathlib
 
 from cortx.utils.schema.conf import Conf
 from cortx.utils.log import Log
