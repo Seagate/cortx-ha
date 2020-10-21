@@ -202,29 +202,22 @@ config_decision_maker() {
     cp -rf /tmp/decision_monitor_conf.json /etc/cortx/ha/decision_monitor_conf.json
     rm -rf /tmp/decision_monitor_conf.json
 
-
     # Configure ha_iem event get info from Decision maker
     config_ha_iem_event ${host1} ${uuid1} ${host2} ${uuid2}
 }
 
 config_ha_iem_event() {
     echo "Configure IEM for ha event"
-    cp -rf ${SOURCE_HA_CONF}/iem_ha.csv ${HA_CONF}
+    cp -rf ${SOURCE_HA_CONF}/iem_ha.json ${HA_CONF}
 
     sed -i -e "s|<HOST1>|$1|g" \
         -e "s|<HOST2>|$3|g" \
         -e "s|<UUID1>|$2|g" \
-        -e "s|<UUID2>|$4|g" ${HA_CONF}/iem_ha.csv
+        -e "s|<UUID2>|$4|g" ${HA_CONF}/iem_ha.json
 
     # Configure alert for HA IEM
     setfacl -R -m u:hacluster:rwx ${HA_LOG}
     setfacl -R -m g:haclient:rwx ${HA_LOG}
-    pcs alert show | grep ha_iem_event || pcs alert create id=ha_iem_event \
-        description="Log events for iem." path=${HA_PATH}/bin/pcs_iem
-    pcs alert show | grep ha_iem_recipient || pcs alert recipient add ha_iem_event \
-        id=ha_iem_recipient value=${HA_LOG}/
-    pcs alert show | grep ha_iem_event && pcs alert show | grep ha_iem_recipient && \
-        echo "HA IEM configured Successfully" || { echo "Fail to configure iem"; exit 1; }
 }
 
 ACTION=$1
