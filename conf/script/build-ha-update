@@ -23,7 +23,7 @@ PROG=${0##*/}
 
 usage() {
     cat <<EOF
-Usage: $PROG [OPTS] <CDF> <params.yaml>
+Usage: $PROG [OPTS] <CDF> <params.yaml> <csm-params.yaml>
 
 Update HA instructions for IO path, SSPL, CSM and UDS
 Caveats:
@@ -42,6 +42,11 @@ Mandatory parameters:
 Note: parameters can be specified either directly via command line options
 or via YAML file, e.g.:
 EOF
+}
+
+die() {
+    echo >&2 "$PROG: $*"
+    exit 1
 }
 
 TEMP=$(getopt --options h: \
@@ -64,20 +69,29 @@ cdf=${1:-}
 ioargsfile=${2:-}
 csmargsfile=${3:-}
 
-if [[ -f $ioargsfile ]]; then
-    while IFS=': ' read name value; do
-       case $name in
-           left-node)    lnode=$value   ;;
-           right-node)   rnode=$value   ;;
-           '')           ;;
-       esac
-    done < $ioargsfile
-fi
-
 [[ $cdf ]] && [[ $ioargsfile ]] && [[ $csmargsfile ]] || {
     usage >&2
     exit 1
 }
+
+for arg in $cdf $ioargsfile $csmargsfile ; do
+    [[ -e $arg ]] ||
+        die "configuration file '$arg' doesn't exist"
+done
+
+while IFS=': ' read name value; do
+    case $name in
+        left-node)    lnode=$value   ;;
+        right-node)   rnode=$value   ;;
+        '')           ;;
+    esac
+done < $ioargsfile
+
+[[ -v lnode ]] ||
+    die "'left-node' is not defined in '$ioargsfile' configuration file"
+
+[[ -v rnode ]] ||
+    die "'right-node' is not defined in '$ioargsfile' configuration file"
 
 hare_dir=/var/lib/hare
 cib_file=/var/lib/hare/cib_cortx_cluster.xml
