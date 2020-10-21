@@ -213,7 +213,7 @@ To install HA perform the following procedure.
 
 3. On the salt primary node, run the following command.
 
- - **$ /opt/seagate/cortx/ha/conf/script/build-cortx-ha init /var/lib/hare/build-ees-ha-args.yaml**
+ - **$ /opt/seagate/cortx/ha/conf/script/build-cortx-ha init **
 
 **Note**: To configure HA, the CORTX stack or salt, pacemaker, and consul must be configured on the development box. Please note that HA is supported only on the hardware.
  
@@ -223,7 +223,7 @@ To reset HA, run the relevant commands mentioned below.
 
 - On the salt primary node, run the following command:
 
- - **$ /opt/seagate/cortx/ha/conf/script/build-cortx-ha cleanup /var/lib/hare/build-ees-ha-args.yaml**
+ - **$ /opt/seagate/cortx/ha/conf/script/build-cortx-ha cleanup **
 
 - Run the following commands on the two nodes.
 
