@@ -19,7 +19,6 @@ import os
 import sys
 import syslog
 import traceback
-import json
 from string import Template
 
 from cortx.utils.schema.conf import Conf
