@@ -1,26 +1,13 @@
 {
-    "<HOST1>": {
-        "lost": {
-            "event": "NodeFailure",
-            "IEM": "IEC:WS0080010001:The cluster has lost <HOST1> server; System is running in degraded mode."
+    "node": {
+        "NodeFailure": {
+            "IEM": "IEC:WS0080010001:The cluster has lost $host server. System is running in degraded mode.",
+            "SearchKey": "lost"
         },
-        "member": {
-            "event": "NodeRecovery",
-            "IEM": "IEC:IS0080020001:Server <HOST1> has joined back the cluster; System is restored."
-        },
-        "fencing": {},
-        "resource": {}
+        "NodeRecovery": {
+            "IEM": "IEC:IS0080020001:Server $host has joined back the cluster. System is restored.",
+            "SearchKey": "member"
+        }
     },
-    "<HOST2>":{
-        "lost": {
-            "event": "NodeFailure",
-            "IEM": "IEC:WS0080010002:The cluster has lost <HOST2> server; System is running in degraded mode."
-        },
-        "member": {
-            "event": "NodeRecovery",
-            "IEM": "IEC:IS0080020002:Server <HOST2> has joined back the cluster; System is restored."
-        },
-        "fencing": {},
-        "resource": {}
-    }
+    "resource": {}
 }

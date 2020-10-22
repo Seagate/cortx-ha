@@ -18,6 +18,9 @@
 import os
 import sys
 import syslog
+import traceback
+import json
+from string import Template
 
 from cortx.utils.schema.conf import Conf
 from cortx.utils.log import Log
@@ -39,6 +42,7 @@ class PcsAlertGenerator(AlertGenerator):
         self._crm_env = self._get_env()
         Conf.init()
         Conf.load(const.IEM_INDEX, Json(const.IEM_SCHAMA))
+        self._known_iem_event = [ "node", "resource", "fencing"]
 
     def _get_env(self):
         """
@@ -54,22 +58,20 @@ class PcsAlertGenerator(AlertGenerator):
             return crm_env
         except Exception as e:
             Log.error(e)
-            return {}
+            return crm_env
 
     def process_event(self, event=""):
         """
         Process event for alert
         """
+        self._validate_pacemaker()
+        self._load_recipient()
         try:
-            event = event if event != "" else self._crm_env["CRM_alert_kind"]
-            self._validate_pacemaker()
-            self._load_recipient()
-            known_iem_event = [ "node", "resource", "fencing"]
-            if event in known_iem_event:
-                # TODO: Add event class for each event
-                getattr(self, "send_"+event+"_iem")()
+            event = self._validate_event(event)
+            # TODO: Add event class for each event
+            getattr(self, "send_"+event+"_iem")()
         except Exception as e:
-            syslog.syslog(str(e))
+            Log.error(f"{traceback.format_exc()}, {e}")
 
     def _validate_pacemaker(self):
         """
@@ -77,6 +79,7 @@ class PcsAlertGenerator(AlertGenerator):
         """
         if "CRM_alert_version" not in self._crm_env.keys():
             syslog.syslog(f"Pacemaker Alert: {sys.argv[0]} must be run by Pacemaker version 1.1.15 or later")
+            sys.exit(1)
 
     def _load_recipient(self):
         """
@@ -88,6 +91,16 @@ class PcsAlertGenerator(AlertGenerator):
             syslog.syslog("Pacemaker Alert: Invalid path for pacemaker recipient alert")
         Log.init(service_name="pcmk_alert", log_path=log_path, level="INFO")
 
+    def _validate_event(self, event):
+        """
+        Validate event
+        """
+        event = event if event != "" else self._crm_env["CRM_alert_kind"]
+        if event in self._known_iem_event:
+            Log.debug(f" Validating event: {str(self._crm_env)}")
+            return event
+        Log.info(f"Identified unknown event: {str(self._crm_env)}")
+
     def send_node_iem(self):
         """
         Send node level IEM to user
@@ -95,9 +108,14 @@ class PcsAlertGenerator(AlertGenerator):
         node = self._crm_env['CRM_alert_node']
         desc = self._crm_env['CRM_alert_desc']
         Log.info(f"Node {node} is now {desc}")
-        iem = Conf.get(const.IEM_INDEX, f"{node}.{desc}.IEM", '')
-        if iem != '':
-            syslog.syslog(iem)
+        node_iems = Conf.get(const.IEM_INDEX, "node")
+        for module in node_iems:
+            if desc == node_iems[module]["SearchKey"]:
+                msg = Template(node_iems[module]["IEM"]).substitute(host=node)
+                Log.info(f"{msg}")
+                syslog.syslog(msg)
+                return
+        Log.warn(f"Invalid module for node level action {str(self._crm_env)}")
 
     def send_resource_iem(self):
         """

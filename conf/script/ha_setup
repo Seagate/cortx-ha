@@ -210,14 +210,13 @@ config_ha_iem_event() {
     echo "Configure IEM for ha event"
     cp -rf ${SOURCE_HA_CONF}/iem_ha.json ${HA_CONF}
 
-    sed -i -e "s|<HOST1>|$1|g" \
-        -e "s|<HOST2>|$3|g" \
-        -e "s|<UUID1>|$2|g" \
-        -e "s|<UUID2>|$4|g" ${HA_CONF}/iem_ha.json
-
     # Configure alert for HA IEM
-    setfacl -R -m u:hacluster:rwx ${HA_LOG}
-    setfacl -R -m g:haclient:rwx ${HA_LOG}
+    setfacl -R -m u:hacluster:rwx ${HA_LOG} || {
+        echo "Failed to add permission for hacluster log"; exit 1;
+    }
+    setfacl -R -m g:haclient:rwx ${HA_LOG} || {
+        echo "Failed to add permission for haclient log"; exit 1;
+    }
 }
 
 ACTION=$1

@@ -31,6 +31,9 @@ configure_alert() {
 }
 
 init() {
+    # Check pacemaker cluster
+    pcs status || { echo "cluster not running"; exit 1;}
+
     # Configure alert
     configure_alert
 
@@ -90,7 +93,9 @@ init() {
 }
 
 cleanup() {
-    echo "Delete alert"
+    # Note: Here ha_iem_recipient is part of ha_iem_event alert.
+    # After removing ha_iem_event, ha_iem_recipient will also get removed.
+    echo "Delete alert and recipient"
     pcs alert show | grep ha_iem_event && pcs alert remove ha_iem_event
 
     echo "Delete resources"
