@@ -150,7 +150,7 @@ consul_watcher_failback() {
         echo "Warning: Consul is not running."
     else
         echo 'Reloading Consul...'
-        /opt/seagate/cortx/hare/bin/consul reload
+        /usr/bin/consul reload
     fi
 }
 
