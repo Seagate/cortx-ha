@@ -109,6 +109,9 @@ mypy:
 # Functions ------------------------------------------- {{{1
 #
 
+# all variations of white and grey colors are invisible on terminals that use
+# Solarized colorscheme, cyan seems to be a good compromise here, it looks
+# decent on the default black/white terminal, as well as on Solarized
 define _info
     if [[ -t 1 ]]; then \
         CYAN=$$(tput bold; tput setaf 6); \

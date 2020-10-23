@@ -18,7 +18,7 @@
 HA_PATH="<HA_PATH>"
 SOURCE_HA_CONF="<HA_PATH>/conf/etc"
 HA_CONF="/etc/cortx/ha"
-LOGROTATE_CONF="/etc/logrotate.d"
+LOGROTATE_CONF_DIR="/etc/logrotate.d"
 HA_LOG="/var/log/seagate/cortx/ha"
 
 LOCAL_NODE_MINION_ID=$(salt-call grains.get id --output=json | jq '.["local"]' | sed s/\"//g)
@@ -29,8 +29,8 @@ HA_CROSS_CONNECT_RULE_FILE='rules_engine_schema_with_crossconnect.json'
 HA_CONF_RULE_FILE='rules_engine_schema.json'
 
 # Add Log
-mkdir -p /var/log/seagate/cortx/ha/
-exec &>> /var/log/seagate/cortx/ha/${0##*/}.log
+mkdir -p "${HA_LOG}"/
+exec &>> "${HA_LOG}"/${0##*/}.log
 exec &> >(stdbuf -oL gawk '{ print strftime("%Y-%m-%d %H:%M:%S"), $0 }')
 
 post_install() {
@@ -39,8 +39,11 @@ post_install() {
     mkdir -p /var/log/seagate/cortx/ha/
     chown -R csm /var/log/seagate/cortx/ha/
 
-    mkdir -p ${LOGROTATE_CONF}
-    cp -rf ${HA_PATH}/conf/logrotate/cortx_ha_log.conf ${LOGROTATE_CONF}
+    if [ ! -d "${LOGROTATE_CONF_DIR}" ]; then
+        mkdir -p ${LOGROTATE_CONF_DIR}
+    fi
+
+    cp -rf ${HA_PATH}/conf/logrotate/cortx_ha_log.conf ${LOGROTATE_CONF_DIR}
 }
 
 config() {
@@ -77,7 +80,7 @@ test() {
 reset() {
     echo "reset log"
     rm -rf ${HA_LOG}
-    rm -rf ${LOGROTATE_CONF}/cortx_ha_log.conf
+    rm -rf ${LOGROTATE_CONF_DIR}/cortx_ha_log.conf
     rm -rf ${HA_CONF}
 }
 
@@ -110,6 +113,15 @@ replace_node() {
 }
 
 # Helping function
+
+add_permission() {
+    id hacluster && {
+        setfacl -R -m u:hacluster:rwx ${HA_LOG}
+    } || {
+        echo "hacluster user is not available"
+        exit 1
+    }
+}
 
 config_database() {
     # Config database.json
@@ -177,22 +189,17 @@ consul_watcher_failback() {
     cp -rf ${SOURCE_HA_CONF}/consul_watcher_failback.json /var/lib/hare/consul-server-c1-conf/
     cp -rf ${SOURCE_HA_CONF}/consul_watcher_failback.json /var/lib/hare/consul-server-c2-conf/
     echo 'Reloading Consul...'
-    /opt/seagate/cortx/hare/bin/consul reload
+    /usr/bin/consul reload
 }
 
 rule_engine_config() {
     rule_file=${HA_CROSS_CONNECT_RULE_FILE}
 
-    # Based on cross-connect check, load appropriate rule_engine
-    # file. If cross-connect - load rules_engine_schema.json
-    # If no cross-connect - load rules_engine_schema_without_crossconnect.json
-    [[ -f ${SYSTEM_CROSS_CONNECT_FILE} ]] && echo "Cross connect File Exists" || {
+    # Note: Cross-connect detection mechanism has been removed now. So, by dafault
+    # cross-connect rule engine file will be installed. Hence removed that check
+    # from here
 
-        echo "Cross connect file does not exist"
-        rule_file=${HA_NON_CROSS_CONNECT_RULE_FILE}
-    }
-
-    # Copy a relevant rule file to HA_CONF directory with name as
+    # Copy a rule file to HA_CONF directory with name as
     # 'rules_engine_schema.json' as HA component search for this specific name
     cp -rf ${SOURCE_HA_CONF}/${rule_file} ${HA_CONF}/${HA_CONF_RULE_FILE}
 }
