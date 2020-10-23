@@ -189,7 +189,7 @@ consul_watcher_failback() {
     cp -rf ${SOURCE_HA_CONF}/consul_watcher_failback.json /var/lib/hare/consul-server-c1-conf/
     cp -rf ${SOURCE_HA_CONF}/consul_watcher_failback.json /var/lib/hare/consul-server-c2-conf/
     echo 'Reloading Consul...'
-    /opt/seagate/cortx/hare/bin/consul reload
+    /usr/bin/consul reload
 }
 
 rule_engine_config() {
