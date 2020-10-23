@@ -159,7 +159,7 @@ consul_config() {
     ssh $rnode $cmd
 
     echo 'Reloading Consul...'
-    /opt/seagate/cortx/hare/bin/consul reload
+    /usr/bin/consul reload
 }
 
 cib_init() {
