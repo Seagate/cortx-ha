@@ -66,10 +66,23 @@ cortxha =  Analysis([ha_path + '/ha/cli/cortxha.py'],
              cipher=block_cipher,
              noarchive=False)
 
+pcs_iem = Analysis([ha_path + '/ha/alert/pcs/pcs_iem.py'],
+             pathex=[ha_path],
+             binaries=[],
+             datas=[],
+             hiddenimports=[],
+             hookspath=[],
+             runtime_hooks=[],
+             excludes=['numpy', 'matplotlib'],
+             win_no_prefer_redirects=False,
+             win_private_assemblies=False,
+             cipher=block_cipher,
+             noarchive=False)
 
 MERGE( (hw_comp_ra, 'hw_comp_ra', 'hw_comp_ra'),
         (iem_comp_ra, 'iem_comp_ra', 'iem_comp_ra'),
-        (cortxha, 'cortxha', 'cortxha'))
+        (cortxha, 'cortxha', 'cortxha'),
+        (pcs_iem, 'pcs_iem', 'pcs_iem'))
 
 # hw_comp_ra
 hw_comp_ra_pyz = PYZ(hw_comp_ra.pure, hw_comp_ra.zipped_data,
@@ -116,6 +129,21 @@ cortxha_exe = EXE(cortxha_pyz,
           upx=True,
           console=True )
 
+# pcs_iem
+pcs_iem_pyz = PYZ(pcs_iem.pure, pcs_iem.zipped_data,
+             cipher=block_cipher)
+
+pcs_iem_exe = EXE(pcs_iem_pyz,
+          pcs_iem.scripts,
+          [],
+          exclude_binaries=True,
+          name='pcs_iem',
+          debug=False,
+          bootloader_ignore_signals=False,
+          strip=False,
+          upx=True,
+          console=True )
+
 coll = COLLECT(
                # hw_comp_ra
                hw_comp_ra_exe,
@@ -134,6 +162,12 @@ coll = COLLECT(
                cortxha.binaries,
                cortxha.zipfiles,
                cortxha.datas,
+
+               # pcs_iem
+               pcs_iem_exe,
+               pcs_iem.binaries,
+               pcs_iem.zipfiles,
+               pcs_iem.datas,
 
                strip=False,
                upx=True,

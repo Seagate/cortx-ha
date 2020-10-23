@@ -66,6 +66,7 @@ ln -sf $HA_DIR/lib/iem_comp_ra ${RES_AGENT}/iem_comp_ra
 ln -sf $HA_DIR/lib/iem_comp_ra $HA_DIR/bin/iem_comp_ra
 ln -sf $HA_DIR/lib/cortxha $HA_DIR/bin/cortxha
 ln -sf $HA_DIR/lib/cortxha /usr/bin/cortxha
+ln -sf $HA_DIR/lib/pcs_iem $HA_DIR/bin/pcs_iem
 exit 0
 
 %preun
