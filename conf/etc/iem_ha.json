@@ -9,5 +9,17 @@
             "SearchKey": "member"
         }
     },
-    "resource": {}
+    "resource": {
+        "resources": ["io_path_health-c1", "io_path_health-c2"],
+        "modules": {
+            "IOStop": {
+                "SearchKey": "stop",
+                "IEM": "IEC:WS0080030002:On $host Detected unhealthy IO services. Stopping IO services on $host server."
+            },
+            "IOStart": {
+                "SearchKey": "start",
+                "IEM": "IEC:IS0080030001:Starting IO services on $host server."
+            }
+        }
+    }
 }

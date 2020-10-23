@@ -120,10 +120,23 @@ class PcsAlertGenerator(AlertGenerator):
         """
         Send Resource level IEM to user
         """
-        pass
+        task = self._crm_env['CRM_alert_task']
+        resource = self._crm_env['CRM_alert_rsc']
+        node = self._crm_env['CRM_alert_node']
+        desc = self._crm_env['CRM_alert_desc']
+        rc = self._crm_env['CRM_alert_target_rc']
+        Log.info(f"Resource operation {task} for {resource} on {node}: Desc: {desc}, rc: {rc}")
+        res_iems = Conf.get(const.IEM_INDEX, "resource")
+        if resource in res_iems["resources"]:
+            for module in res_iems["modules"]:
+                if task == res_iems["modules"][module]["SearchKey"]:
+                    msg = Template(res_iems["modules"][module]["IEM"]).substitute(host=node)
+                    Log.info(f"{msg}")
+                    syslog.syslog(msg)
 
     def send_fencing_iem(self):
         """
         Send fencing level IEM to user
         """
-        pass
+        # Note: no iem need for fencing as it detected by node start/stop.
+        Log.info(f"Fencing {self._crm_env['CRM_alert_desc']}")
