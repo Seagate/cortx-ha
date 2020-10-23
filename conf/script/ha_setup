@@ -35,8 +35,6 @@ exec &> >(stdbuf -oL gawk '{ print strftime("%Y-%m-%d %H:%M:%S"), $0 }')
 
 post_install() {
     echo "post_install"
-    # Add permisson to hacluster
-    add_permission
 
     if [ ! -d "${LOGROTATE_CONF_DIR}" ]; then
         mkdir -p ${LOGROTATE_CONF_DIR}
@@ -65,6 +63,9 @@ init() {
     echo "init"
     # Add consul watcher
     consul_watcher_failback
+
+    # Add permisson to hacluster
+    add_permission
 }
 
 test() {
@@ -200,6 +201,22 @@ config_decision_maker() {
 
     cp -rf /tmp/decision_monitor_conf.json /etc/cortx/ha/decision_monitor_conf.json
     rm -rf /tmp/decision_monitor_conf.json
+
+    # Configure ha_iem event get info from Decision maker
+    config_ha_iem_event ${host1} ${uuid1} ${host2} ${uuid2}
+}
+
+config_ha_iem_event() {
+    echo "Configure IEM for ha event"
+    cp -rf ${SOURCE_HA_CONF}/iem_ha.json ${HA_CONF}
+
+    # Configure alert for HA IEM
+    setfacl -R -m u:hacluster:rwx ${HA_LOG} || {
+        echo "Failed to add permission for hacluster log"; exit 1;
+    }
+    setfacl -R -m g:haclient:rwx ${HA_LOG} || {
+        echo "Failed to add permission for haclient log"; exit 1;
+    }
 }
 
 ACTION=$1

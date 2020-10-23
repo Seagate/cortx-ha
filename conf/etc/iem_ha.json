@@ -1,0 +1,13 @@
+{
+    "node": {
+        "NodeFailure": {
+            "IEM": "IEC:WS0080010001:The cluster has lost $host server. System is running in degraded mode.",
+            "SearchKey": "lost"
+        },
+        "NodeRecovery": {
+            "IEM": "IEC:IS0080020001:Server $host has joined back the cluster. System is restored.",
+            "SearchKey": "member"
+        }
+    },
+    "resource": {}
+}

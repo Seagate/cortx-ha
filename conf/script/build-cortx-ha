@@ -19,8 +19,24 @@
 set -eu -o pipefail
 
 HA_PATH="<HA_PATH>"
+HA_LOG="/var/log/seagate/cortx/ha"
+
+configure_alert() {
+    pcs alert show | grep ha_iem_event || pcs alert create id=ha_iem_event \
+        description="Log events for iem." path=${HA_PATH}/bin/pcs_iem
+    pcs alert show | grep ha_iem_recipient || pcs alert recipient add ha_iem_event \
+        id=ha_iem_recipient value=${HA_LOG}/
+    pcs alert show | grep ha_iem_event && pcs alert show | grep ha_iem_recipient && \
+        echo "HA IEM configured Successfully" || { echo "Fail to configure iem"; exit 1; }
+}
 
 init() {
+    # Check pacemaker cluster
+    pcs status || { echo "cluster not running"; exit 1;}
+
+    # Configure alert
+    configure_alert
+
     # Get node name
     node_list=$(salt-call --local pillar.get cluster:node_list --output=json)
     host1=$(echo $node_list | jq '.["local"][0]' | sed s/\"//g)
@@ -77,6 +93,11 @@ init() {
 }
 
 cleanup() {
+    # Note: Here ha_iem_recipient is part of ha_iem_event alert.
+    # After removing ha_iem_event, ha_iem_recipient will also get removed.
+    echo "Delete alert and recipient"
+    pcs alert show | grep ha_iem_event && pcs alert remove ha_iem_event
+
     echo "Delete resources"
     resources=(
         io_path_health-c1
