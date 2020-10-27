@@ -18,24 +18,24 @@
             "stop": {
                 "searchKey": "stop",
                 "IEM": "IEC:WS0080030002:IO services of <HOST1> are being stopped on $host.",
-                "module": "IOServiceStop"
+                "module": "IOService"
             },
             "start": {
                 "searchKey": "start",
                 "IEM": "IEC:IS0080030001:IO services of <HOST1> are being started on $host.",
-                "module": "IOServiceStart"
+                "module": "IOService"
             }
         },
         "io_path_health-c2": {
             "stop": {
                 "searchKey": "stop",
                 "IEM": "IEC:WS0080030002:IO services of <HOST2> are being stopped on $host.",
-                "module": "IOServiceStop"
+                "module": "IOService"
             },
             "start": {
                 "searchKey": "start",
                 "IEM": "IEC:IS0080030001:IO services of <HOST2> are being started on $host.",
-                "module": "IOServiceStart"
+                "module": "IOService"
             }
         }
     }
