@@ -57,6 +57,9 @@ config() {
 
     # Decision Maker conf
     config_decision_maker
+
+    # Configure ha_iem event get info from Decision maker
+    config_ha_iem_event
 }
 
 init() {
@@ -201,14 +204,19 @@ config_decision_maker() {
 
     cp -rf /tmp/decision_monitor_conf.json /etc/cortx/ha/decision_monitor_conf.json
     rm -rf /tmp/decision_monitor_conf.json
-
-    # Configure ha_iem event get info from Decision maker
-    config_ha_iem_event ${host1} ${uuid1} ${host2} ${uuid2}
 }
 
 config_ha_iem_event() {
+    node_list=$(salt-call --local pillar.get cluster:node_list --output=json)
+    host1=$(echo $node_list | jq '.["local"][0]' | sed s/\"//g)
+    host2=$(echo $node_list | jq '.["local"][1]' | sed s/\"//g)
+
     echo "Configure IEM for ha event"
     cp -rf ${SOURCE_HA_CONF}/iem_ha.json ${HA_CONF}
+
+    # Configure host name
+    sed -i -e "s/<HOST1>/${host1}/g" \
+            -e  "s/<HOST2>/${host2}/g" ${HA_CONF}/iem_ha.json
 
     # Configure alert for HA IEM
     setfacl -R -m u:hacluster:rwx ${HA_LOG} || {
