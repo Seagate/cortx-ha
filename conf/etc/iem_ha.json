@@ -15,21 +15,21 @@
         "io_path_health-c1": {
             "stop": {
                 "IEM": "IEC:WS0080030002:IO services of <HOST1> are being stopped on $host.",
-                "module": "IOStackFailover"
+                "module": "IOServiceStop"
             },
             "start": {
                 "IEM": "IEC:IS0080030001:IO services of <HOST1> are being started on $host.",
-                "module": "IOStackFailback"
+                "module": "IOServiceStart"
             }
         },
         "io_path_health-c2": {
             "stop": {
                 "IEM": "IEC:WS0080030002:IO services of <HOST2> are being stopped on $host.",
-                "module": "IOStackFailover"
+                "module": "IOServiceStop"
             },
             "start": {
                 "IEM": "IEC:IS0080030001:IO services of <HOST2> are being started on $host.",
-                "module": "IOStackFailback"
+                "module": "IOServiceStart"
             }
         }
     }
