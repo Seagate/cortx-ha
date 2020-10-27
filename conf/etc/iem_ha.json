@@ -1,24 +1,35 @@
 {
-    "node": {
-        "NodeFailure": {
-            "IEM": "IEC:WS0080010001:The cluster has lost $host server. System is running in degraded mode.",
-            "SearchKey": "lost"
-        },
-        "NodeRecovery": {
-            "IEM": "IEC:IS0080020001:Server $host has joined back the cluster. System is restored.",
-            "SearchKey": "member"
+    "nodes": {
+        "remote_host": {
+            "lost": {
+                "module": "NodeFailure",
+                "IEM": "IEC:WS0080010001:The cluster has lost $host server. System is running in degraded mode."
+            },
+            "member": {
+                "module": "NodeRecovery",
+                "IEM": "IEC:IS0080020001:Server $host has joined back the cluster. System is restored."
+            }
         }
     },
-    "resource": {
-        "resources": ["io_path_health-c1", "io_path_health-c2"],
-        "modules": {
-            "IOStop": {
-                "SearchKey": "stop",
-                "IEM": "IEC:WS0080030002:On $host Detected unhealthy IO services. Stopping IO services on $host server."
+    "resources": {
+        "io_path_health-c1": {
+            "stop": {
+                "IEM": "IEC:WS0080030002:IO services of <HOST1> are being stopped on $host.",
+                "module": "IOStackFailover"
             },
-            "IOStart": {
-                "SearchKey": "start",
-                "IEM": "IEC:IS0080030001:Starting IO services on $host server."
+            "start": {
+                "IEM": "IEC:IS0080030001:IO services of <HOST1> are being started on $host.",
+                "module": "IOStackFailback"
+            }
+        },
+        "io_path_health-c2": {
+            "stop": {
+                "IEM": "IEC:WS0080030002:IO services of <HOST2> are being stopped on $host.",
+                "module": "IOStackFailover"
+            },
+            "start": {
+                "IEM": "IEC:IS0080030001:IO services of <HOST2> are being started on $host.",
+                "module": "IOStackFailback"
             }
         }
     }

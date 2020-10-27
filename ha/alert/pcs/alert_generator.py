@@ -28,11 +28,6 @@ from cortx.utils.schema.payload import Json
 from ha import const
 from ha.alert.alert_generator import AlertGenerator
 
-#TODO
-#class Event:
-#    pass
-#    #generate IEM
-
 class PcsAlertGenerator(AlertGenerator):
     def __init__(self):
         """
@@ -107,14 +102,13 @@ class PcsAlertGenerator(AlertGenerator):
         node = self._crm_env['CRM_alert_node']
         desc = self._crm_env['CRM_alert_desc']
         Log.info(f"Node {node} is now {desc}")
-        node_iems = Conf.get(const.IEM_INDEX, "node")
-        for module in node_iems:
-            if desc == node_iems[module]["SearchKey"]:
-                msg = Template(node_iems[module]["IEM"]).substitute(host=node)
-                Log.info(f"{msg}")
-                syslog.syslog(msg)
-                return
-        Log.warn(f"Invalid module for node level action {str(self._crm_env)}")
+        node_iems = Conf.get(const.IEM_INDEX, "nodes.remote_host")
+        if desc in node_iems.keys():
+            msg = Template(node_iems[desc]["IEM"]).substitute(host=node)
+            Log.info(f"{msg}")
+            syslog.syslog(msg)
+        else:
+            Log.warn(f"Invalid module for node level action {str(self._crm_env)}")
 
     def send_resource_iem(self):
         """
@@ -126,13 +120,12 @@ class PcsAlertGenerator(AlertGenerator):
         desc = self._crm_env['CRM_alert_desc']
         rc = self._crm_env['CRM_alert_target_rc']
         Log.info(f"Resource operation {task} for {resource} on {node}: Desc: {desc}, rc: {rc}")
-        res_iems = Conf.get(const.IEM_INDEX, "resource")
-        if resource in res_iems["resources"]:
-            for module in res_iems["modules"]:
-                if task == res_iems["modules"][module]["SearchKey"]:
-                    msg = Template(res_iems["modules"][module]["IEM"]).substitute(host=node)
-                    Log.info(f"{msg}")
-                    syslog.syslog(msg)
+        res_iems = Conf.get(const.IEM_INDEX, "resources")
+        if resource in res_iems.keys():
+            if task in res_iems[resource].keys():
+                msg = Template(res_iems[resource][task]["IEM"]).substitute(host=node)
+                Log.info(f"{msg}")
+                syslog.syslog(msg)
 
     def send_fencing_iem(self):
         """
