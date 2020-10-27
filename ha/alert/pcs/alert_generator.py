@@ -63,7 +63,10 @@ class PcsAlertGenerator(AlertGenerator):
         try:
             event = self._validate_event(event)
             # TODO: Add event class for each event
-            getattr(self, "send_"+event+"_iem")()
+            if event == "fencing":
+                self.send_fencing_log()
+            else:
+                getattr(self, "send_"+event+"_iem")()
         except Exception as e:
             Log.error(f"{traceback.format_exc()}, {e}")
 
@@ -102,7 +105,7 @@ class PcsAlertGenerator(AlertGenerator):
         node = self._crm_env['CRM_alert_node']
         desc = self._crm_env['CRM_alert_desc']
         Log.info(f"Node {node} is now {desc}")
-        node_iems = Conf.get(const.IEM_INDEX, "nodes.remote_host")
+        node_iems = Conf.get(const.IEM_INDEX, "nodes.any_host")
         if desc in node_iems.keys():
             msg = Template(node_iems[desc]["IEM"]).substitute(host=node)
             Log.info(f"{msg}")
@@ -127,7 +130,7 @@ class PcsAlertGenerator(AlertGenerator):
                 Log.info(f"{msg}")
                 syslog.syslog(msg)
 
-    def send_fencing_iem(self):
+    def send_fencing_log(self):
         """
         Send fencing level IEM to user
         """
