@@ -23,7 +23,7 @@ from string import Template
 
 from cortx.utils.schema.conf import Conf
 from cortx.utils.log import Log
-from cortx.utils.schema.payload import Json
+from cortx.utils.schema.payload import Json, Yaml
 
 from ha import const
 from ha.alert.alert_generator import AlertGenerator
@@ -36,6 +36,7 @@ class PcsAlertGenerator(AlertGenerator):
         self._crm_env = self._get_env()
         Conf.init()
         Conf.load(const.IEM_INDEX, Json(const.IEM_SCHAMA))
+        Conf.load(const.HA_GLOBAL_INDEX, Yaml(const.HA_CONFIG_FILE))
         self._known_iem_event = [ "node", "resource", "fencing"]
 
     def _get_env(self):
@@ -98,16 +99,26 @@ class PcsAlertGenerator(AlertGenerator):
             return event
         Log.info(f"Identified unknown event: {str(self._crm_env)}")
 
+    def _get_host_name(self, node):
+        """
+        Get host name from minion id.
+
+        Args:
+            node (string): minion id from cluster.
+        """
+        return Conf.get(const.HA_GLOBAL_INDEX, f"CLUSTER.{node}.hostname")
+
     def send_node_iem(self):
         """
         Send node level IEM to user
         """
         node = self._crm_env['CRM_alert_node']
+        host = self._get_host_name(node)
         desc = self._crm_env['CRM_alert_desc']
         Log.info(f"Node {node} is now {desc}")
         node_iems = Conf.get(const.IEM_INDEX, "nodes.any_host")
         if desc in node_iems.keys():
-            msg = Template(node_iems[desc]["IEM"]).substitute(host=node)
+            msg = Template(node_iems[desc]["IEM"]).substitute(host=host)
             Log.info(f"{msg}")
             syslog.syslog(msg)
         else:
@@ -120,13 +131,14 @@ class PcsAlertGenerator(AlertGenerator):
         task = self._crm_env['CRM_alert_task']
         resource = self._crm_env['CRM_alert_rsc']
         node = self._crm_env['CRM_alert_node']
+        host = self._get_host_name(node)
         desc = self._crm_env['CRM_alert_desc']
         rc = self._crm_env['CRM_alert_target_rc']
         Log.info(f"Resource operation {task} for {resource} on {node}: Desc: {desc}, rc: {rc}")
         res_iems = Conf.get(const.IEM_INDEX, "resources")
         if resource in res_iems.keys():
             if task in res_iems[resource].keys():
-                msg = Template(res_iems[resource][task]["IEM"]).substitute(host=node)
+                msg = Template(res_iems[resource][task]["IEM"]).substitute(host=host)
                 Log.info(f"{msg}")
                 syslog.syslog(msg)
 

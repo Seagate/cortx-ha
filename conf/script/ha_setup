@@ -21,6 +21,7 @@ HA_CONF="/etc/cortx/ha"
 LOGROTATE_CONF_DIR="/etc/logrotate.d"
 HA_LOG="/var/log/seagate/cortx/ha"
 
+SALT_CLUSTER_SCHEMA=$(salt-call --local pillar.get cluster --output=json)
 LOCAL_NODE_MINION_ID=$(salt-call grains.get id --output=json | jq '.["local"]' | sed s/\"//g)
 SYSTEM_CROSS_CONNECT_FILE="/opt/seagate/cortx/provisioner/generated_configs/$LOCAL_NODE_MINION_ID.cc"
 
@@ -47,7 +48,8 @@ config() {
     echo "config"
 
     # Move ha conf
-    cp -rf ${SOURCE_HA_CONF}/ha.conf ${HA_CONF}/ha.conf
+    # Note: configuring host minion id map need to call for unboxing
+    config_ha
 
     # Configure rule engine
     config_rule_engine
@@ -59,6 +61,7 @@ config() {
     config_decision_maker
 
     # Configure ha_iem event get info from Decision maker
+    # Note: configuring host minion id map need to call for unboxing
     config_ha_iem_event
 }
 
@@ -80,6 +83,16 @@ reset() {
     rm -rf ${HA_LOG}
     rm -rf ${LOGROTATE_CONF_DIR}/cortx_ha_log.conf
     rm -rf ${HA_CONF}
+}
+
+unboxing() {
+    # Move ha conf
+    # Note: configuring host minion id map need to call for unboxing
+    config_ha
+
+    # Configure ha_iem event get info from Decision maker
+    # Note: configuring host minion id map need to call for unboxing
+    config_ha_iem_event
 }
 
 replace_node() {
@@ -112,6 +125,25 @@ replace_node() {
 
 # Helping function
 
+config_ha() {
+    cp -rf ${SOURCE_HA_CONF}/ha.conf ${HA_CONF}/ha.conf
+
+    minion1=$(echo $SALT_CLUSTER_SCHEMA | jq '.["local"].node_list[0]' | sed s/\"//g)
+    minion2=$(echo $SALT_CLUSTER_SCHEMA | jq '.["local"].node_list[1]' | sed s/\"//g)
+    uuid_list=$(salt '*' grains.get node_id --output=json)
+    uuid1=$(echo $uuid_list | jq '.["'$minion1'"]' | sed -e s/\"//g -e s/null//g -e '/^\s*$/d')
+    uuid2=$(echo $uuid_list | jq '.["'$minion2'"]' | sed -e s/\"//g -e s/null//g -e '/^\s*$/d')
+    host1=$(echo $SALT_CLUSTER_SCHEMA | jq '.["local"]."'$minion1'".hostname' | sed s/\"//g)
+    host2=$(echo $SALT_CLUSTER_SCHEMA | jq '.["local"]."'$minion2'".hostname' | sed s/\"//g)
+
+    sed -i -e "s/<MINION1>/${minion1}/g" \
+        -e "s/<MINION2>/${minion2}/g" \
+        -e "s/<UUID1>/${uuid1}/g" \
+        -e "s/<UUID2>/${uuid2}/g" \
+        -e "s/<HOST1>/${host1}/g" \
+        -e "s/<HOST2>/${host2}/g" ${HA_CONF}/ha.conf
+}
+
 add_permission() {
     id hacluster && {
         setfacl -R -m u:hacluster:rwx ${HA_LOG}
@@ -138,9 +170,9 @@ config_database() {
     cp -rf ${SOURCE_HA_CONF}/database.json ${HA_CONF}
 
     # Update consul vip
-    CONSUL_HOST=$(salt-call pillar.get \
-        cluster:$LOCAL_NODE_MINION_ID:network:data_nw:roaming_ip \
-        --output=json | jq '.["local"]' | sed s/\"//g)
+    CONSUL_HOST=$(echo $SALT_CLUSTER_SCHEMA \
+        | jq '.["local"]."'$LOCAL_NODE_MINION_ID'".network.data_nw.roaming_ip' \
+        | sed s/\"//g)
     sed -i -e "s|<CONSUL_HOST>|${CONSUL_HOST}|g" ${HA_CONF}/database.json
 }
 
@@ -160,56 +192,42 @@ consul_watcher_failback() {
 
 config_decision_maker() {
     echo "Setup Decision maker"
-    node_list=$(salt-call --local pillar.get cluster:node_list --output=json)
-    host1=$(echo $node_list | jq '.["local"][0]' | sed s/\"//g)
-    host2=$(echo $node_list | jq '.["local"][1]' | sed s/\"//g)
+    minion1=$(echo $SALT_CLUSTER_SCHEMA | jq '.["local"].node_list[0]' | sed s/\"//g)
+    minion2=$(echo $SALT_CLUSTER_SCHEMA | jq '.["local"].node_list[1]' | sed s/\"//g)
+    uuid_list=$(salt '*' grains.get node_id --output=json)
+    uuid1=$(echo $uuid_list | jq '.["'$minion1'"]' | sed -e s/\"//g -e s/null//g -e '/^\s*$/d')
+    uuid2=$(echo $uuid_list | jq '.["'$minion2'"]' | sed -e s/\"//g -e s/null//g -e '/^\s*$/d')
 
-    for node in $(echo $host1 $host2); do
-        bool=$(salt-call --local pillar.get cluster:$node:is_primary --output=json | jq '.["local"]')
-        if $bool; then
-           primery=$node
-        fi
-    done
-
-    uuid_list=$(ssh $primery "salt '*' grains.get node_id --output=json")
-    uuid1=$(echo $uuid_list | jq '.["'$host1'"]' | sed -e s/\"//g -e s/null//g -e '/^\s*$/d')
-    uuid2=$(echo $uuid_list | jq '.["'$host2'"]' | sed -e s/\"//g -e s/null//g -e '/^\s*$/d')
-
-    echo "Reading cluster.sls"
-
-    # Data Network
-    node1_clusterip_nw=$(salt-call pillar.get cluster:$host1:network:data_nw:iface:0 --output=newline_values_only)
-    node2_clusterip_nw=$(salt-call pillar.get cluster:$host2:network:data_nw:iface:0 --output=newline_values_only)
-    node1_data_nw="[ \"${node1_clusterip_nw}\" ]"
-    node2_data_nw="[ \"${node2_clusterip_nw}\" ]"
+    # Private Network
+    node1_clusterip_nw=$(echo $SALT_CLUSTER_SCHEMA | jq '.["local"]."'$minion1'".network.data_nw.iface[0]' | sed s/\"//g)
+    node2_clusterip_nw=$(echo $SALT_CLUSTER_SCHEMA | jq '.["local"]."'$minion2'".network.data_nw.iface[0]' | sed s/\"//g)
+    node1_clusterip_nw_li="[ \"${node1_clusterip_nw}\" ]"
+    node2_clusterip_nw_li="[ \"${node2_clusterip_nw}\" ]"
 
     # Managment network
-    cluster=$(salt-call --local pillar.get cluster:$host1 --output=json)
-    node1_mgmt_nw=$(echo $cluster | jq '.["local"].network["mgmt_nw"].iface')
-    node2_mgmt_nw=$(echo $cluster | jq '.["local"].network["mgmt_nw"].iface')
+    node1_mgmt_nw=$(echo $SALT_CLUSTER_SCHEMA | jq '.["local"]."'$minion1'".network["mgmt_nw"].iface[0]' | sed s/\"//g)
+    node2_mgmt_nw=$(echo $SALT_CLUSTER_SCHEMA | jq '.["local"]."'$minion2'".network["mgmt_nw"].iface[0]' | sed s/\"//g)
+    node1_mgmt_nw_li="[ \"${node1_mgmt_nw}\" ]"
+    node2_mgmt_nw_li="[ \"${node2_mgmt_nw}\" ]"
 
-    decision_monitor_conf=${SOURCE_HA_CONF}/decision_monitor_conf.json
-    cp -rf $decision_monitor_conf /tmp/decision_monitor_conf.json
+    cp -rf ${SOURCE_HA_CONF}/decision_monitor_conf.json ${HA_CONF}/decision_monitor_conf.json
 
     sed -i -e "s|<LOCAL>|${LOCAL_NODE_MINION_ID}|g" \
-        -e "s|<HOST1>|${host1}|g" \
-        -e "s|<HOST2>|${host2}|g" \
+        -e "s|<HOST1>|${minion1}|g" \
+        -e "s|<HOST2>|${minion2}|g" \
         -e "s|<UUID1>|${uuid1}|g" \
-        -e "s|<UUID2>|${uuid2}|g" /tmp/decision_monitor_conf.json
-
-    sed -i -e "s|\"<N1_DATA_IFACE>\"|${node1_data_nw//$'\n'/}|g" \
-        -e "s|\"<N1_MGMT_IFACE>\"|${node1_mgmt_nw//$'\n'/}|g" \
-        -e "s|\"<N2_DATA_IFACE>\"|${node2_data_nw//$'\n'/}|g" \
-        -e "s|\"<N2_MGMT_IFACE>\"|${node2_mgmt_nw//$'\n'/}|g" /tmp/decision_monitor_conf.json
-
-    cp -rf /tmp/decision_monitor_conf.json /etc/cortx/ha/decision_monitor_conf.json
-    rm -rf /tmp/decision_monitor_conf.json
+        -e "s|<UUID2>|${uuid2}|g" \
+        -e "s|\"<N1_DATA_IFACE>\"|${node1_clusterip_nw_li//$'\n'/}|g" \
+        -e "s|\"<N1_MGMT_IFACE>\"|${node1_mgmt_nw_li//$'\n'/}|g" \
+        -e "s|\"<N2_DATA_IFACE>\"|${node2_clusterip_nw_li//$'\n'/}|g" \
+        -e "s|\"<N2_MGMT_IFACE>\"|${node2_mgmt_nw_li//$'\n'/}|g" ${HA_CONF}/decision_monitor_conf.json
 }
 
 config_ha_iem_event() {
-    node_list=$(salt-call --local pillar.get cluster:node_list --output=json)
-    host1=$(echo $node_list | jq '.["local"][0]' | sed s/\"//g)
-    host2=$(echo $node_list | jq '.["local"][1]' | sed s/\"//g)
+    minion1=$(echo $SALT_CLUSTER_SCHEMA | jq '.["local"].node_list[0]' | sed s/\"//g)
+    minion2=$(echo $SALT_CLUSTER_SCHEMA | jq '.["local"].node_list[1]' | sed s/\"//g)
+    host1=$(echo $SALT_CLUSTER_SCHEMA | jq '.["local"]."'$minion1'".hostname' | sed s/\"//g)
+    host2=$(echo $SALT_CLUSTER_SCHEMA | jq '.["local"]."'$minion2'".hostname' | sed s/\"//g)
 
     echo "Configure IEM for ha event"
     cp -rf ${SOURCE_HA_CONF}/iem_ha.json ${HA_CONF}
