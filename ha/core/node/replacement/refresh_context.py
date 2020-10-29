@@ -76,15 +76,27 @@ class Cleanup:
                 status_list[resource] = self._decision_monitor.get_resource_status(resource)
             else:
                 pass
-        Log.info(f"Resource status for node {node} is {status_list}")
         if Action.FAILED in status_list.values():
-            Log.debug("Some component are not yet recovered skipping failback")
+            Log.debug(f"Some component are not yet recovered skipping failback. status: {status_list}")
         elif Action.RESOLVED in status_list.values():
-            Log.info("Failback is required as some of alert are resolved.")
+            Log.info(f"Failback is required as some of alert are resolved. status: {status_list}")
+            self._ack_resource(status_list)
             return True
         else:
             Log.debug(f"{node} node already in good state no need for failback")
         return False
+
+    def _ack_resource(self, status_list):
+        """
+        Ack resource which are already resolved
+
+        Args:
+            status_list ([dir]): Resource and its status.
+        """
+        for event in status_list.keys():
+            if status_list[event] == Action.RESOLVED:
+                Log.info(f"Ack of {event} event as this alert is resolved")
+                self._decision_monitor.acknowledge_resource(event)
 
     def reset_failover(self, node=None, soft_cleanup=False):
         """
