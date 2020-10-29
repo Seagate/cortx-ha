@@ -1,0 +1,42 @@
+{
+    "nodes": {
+        "any_host": {
+            "lost": {
+                "searchKey": "lost",
+                "module": "NodeFailure",
+                "IEM": "IEC:WS0080010001:The cluster has lost $host server. System is running in degraded mode."
+            },
+            "member": {
+                "searchKey": "member",
+                "module": "NodeRecovery",
+                "IEM": "IEC:IS0080020001:Server $host has joined back the cluster. System is restored."
+            }
+        }
+    },
+    "resources": {
+        "io_path_health-c1": {
+            "stop": {
+                "searchKey": "stop",
+                "IEM": "IEC:WS0080030002:IO services of <HOST1> are being stopped on $host.",
+                "module": "IOService"
+            },
+            "start": {
+                "searchKey": "start",
+                "IEM": "IEC:IS0080030001:IO services of <HOST1> are being started on $host.",
+                "module": "IOService"
+            }
+        },
+        "io_path_health-c2": {
+            "stop": {
+                "searchKey": "stop",
+                "IEM": "IEC:WS0080030002:IO services of <HOST2> are being stopped on $host.",
+                "module": "IOService"
+            },
+            "start": {
+                "searchKey": "start",
+                "IEM": "IEC:IS0080030001:IO services of <HOST2> are being started on $host.",
+                "module": "IOService"
+            }
+        }
+    }
+}

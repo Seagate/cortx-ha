@@ -1,0 +1,252 @@
+#!/bin/bash
+
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# This program is free software: you can redistribute it and/or modify it under the
+# terms of the GNU Affero General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+# PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License along
+# with this program. If not, see <https://www.gnu.org/licenses/>. For any questions
+# about this software or licensing, please email opensource@seagate.com or
+# cortx-questions@seagate.com.
+
+HA_PATH="<HA_PATH>"
+SOURCE_HA_CONF="<HA_PATH>/conf/etc"
+HA_CONF="/etc/cortx/ha"
+LOGROTATE_CONF_DIR="/etc/logrotate.d"
+HA_LOG="/var/log/seagate/cortx/ha"
+
+SALT_CLUSTER_SCHEMA=$(salt-call --local pillar.get cluster --output=json)
+LOCAL_NODE_MINION_ID=$(salt-call grains.get id --output=json | jq '.["local"]' | sed s/\"//g)
+SYSTEM_CROSS_CONNECT_FILE="/opt/seagate/cortx/provisioner/generated_configs/$LOCAL_NODE_MINION_ID.cc"
+
+HA_NON_CROSS_CONNECT_RULE_FILE='rules_engine_schema_without_crossconnect.json'
+HA_CROSS_CONNECT_RULE_FILE='rules_engine_schema_with_crossconnect.json'
+HA_CONF_RULE_FILE='rules_engine_schema.json'
+
+# Add Log
+mkdir -p "${HA_LOG}"/
+exec &>> "${HA_LOG}"/${0##*/}.log
+exec &> >(stdbuf -oL gawk '{ print strftime("%Y-%m-%d %H:%M:%S"), $0 }')
+
+post_install() {
+    echo "post_install"
+
+    if [ ! -d "${LOGROTATE_CONF_DIR}" ]; then
+        mkdir -p ${LOGROTATE_CONF_DIR}
+    fi
+
+    cp -rf ${HA_PATH}/conf/logrotate/cortx_ha_log.conf ${LOGROTATE_CONF_DIR}
+}
+
+config() {
+    echo "config"
+    mkdir -p ${HA_CONF}/
+
+    # Move ha conf
+    # Note: configuring host minion id map need to call for unboxing
+    config_ha
+
+    # Configure rule engine
+    config_rule_engine
+
+    # Configure database.json
+    config_database
+
+    # Decision Maker conf
+    config_decision_maker
+
+    # Configure ha_iem event get info from Decision maker
+    # Note: configuring host minion id map need to call for unboxing
+    config_ha_iem_event
+}
+
+init() {
+    echo "init"
+    # Add consul watcher
+    consul_watcher_failback
+
+    # Add permisson to hacluster
+    add_permission
+}
+
+test() {
+    echo "test"
+}
+
+reset() {
+    echo "reset log"
+    rm -rf ${HA_LOG}
+    rm -rf ${LOGROTATE_CONF_DIR}/cortx_ha_log.conf
+    rm -rf ${HA_CONF}
+}
+
+unboxing() {
+    # Move ha conf
+    # Note: configuring host minion id map need to call for unboxing
+    config_ha
+
+    # Configure ha_iem event get info from Decision maker
+    # Note: configuring host minion id map need to call for unboxing
+    config_ha_iem_event
+}
+
+replace_node() {
+    # Test consul
+    consul_host=$(cat /etc/cortx/ha/database.json | \
+            jq '.databases.consul_db.config.host' | sed s/\"//g)
+    consul_port=$(cat /etc/cortx/ha/database.json | \
+            jq '.databases.consul_db.config.port' | sed s/\"//g)
+
+    echo "Test consul leader for host: $consul_host port: $consul_port"
+    curl http://$consul_host:$consul_port/v1/status/leader
+    [ $? -eq 0 ] || {
+        echo "Consul is not running"; exit 1
+    }
+
+    node_list=$(salt-call --local pillar.get cluster:node_list --output=json)
+    host1=$(echo $node_list | jq '.["local"][0]' | sed s/\"//g)
+    host2=$(echo $node_list | jq '.["local"][1]' | sed s/\"//g)
+
+    # Get Faluty node name
+    if [ $LOCAL_NODE_MINION_ID == $host1 ]; then
+        faulty_node=$host2
+    else
+        faulty_node=$host1
+    fi
+
+    echo "Detected Faulty node $faulty_node"
+    /usr/bin/cortxha node refresh --hard --data-only --node $faulty_node
+}
+
+# Helping function
+
+config_ha() {
+    cp -rf ${SOURCE_HA_CONF}/ha.conf.deprecated ${HA_CONF}/ha.conf
+
+    minion1=$(echo $SALT_CLUSTER_SCHEMA | jq '.["local"].node_list[0]' | sed s/\"//g)
+    minion2=$(echo $SALT_CLUSTER_SCHEMA | jq '.["local"].node_list[1]' | sed s/\"//g)
+    uuid_list=$(salt '*' grains.get node_id --output=json)
+    uuid1=$(echo $uuid_list | jq '.["'$minion1'"]' | sed -e s/\"//g -e s/null//g -e '/^\s*$/d')
+    uuid2=$(echo $uuid_list | jq '.["'$minion2'"]' | sed -e s/\"//g -e s/null//g -e '/^\s*$/d')
+    host1=$(echo $SALT_CLUSTER_SCHEMA | jq '.["local"]."'$minion1'".hostname' | sed s/\"//g)
+    host2=$(echo $SALT_CLUSTER_SCHEMA | jq '.["local"]."'$minion2'".hostname' | sed s/\"//g)
+
+    sed -i -e "s/<MINION1>/${minion1}/g" \
+        -e "s/<MINION2>/${minion2}/g" \
+        -e "s/<UUID1>/${uuid1}/g" \
+        -e "s/<UUID2>/${uuid2}/g" \
+        -e "s/<HOST1>/${host1}/g" \
+        -e "s/<HOST2>/${host2}/g" ${HA_CONF}/ha.conf
+}
+
+add_permission() {
+    id hacluster && {
+        setfacl -R -m u:hacluster:rwx ${HA_LOG}
+    } || {
+        echo "hacluster user is not available"
+        exit 1
+    }
+}
+
+config_rule_engine(){
+    rule_file=${HA_CROSS_CONNECT_RULE_FILE}
+
+    # NOTE: Cross-connect detection mechanism has been removed now. So, by dafault
+    # cross-connect rule engine file will be installed. Hence removed that check
+    # from here
+
+    # Copy a rule file to HA_CONF directory with name as
+    # 'rules_engine_schema.json' as HA component search for this specific name
+    cp -rf ${SOURCE_HA_CONF}/${rule_file} ${HA_CONF}/${HA_CONF_RULE_FILE}
+}
+
+config_database() {
+    # Config database.json
+    cp -rf ${SOURCE_HA_CONF}/database.json ${HA_CONF}/
+
+    # Update consul vip
+    CONSUL_HOST=$(echo $SALT_CLUSTER_SCHEMA \
+        | jq '.["local"]."'$LOCAL_NODE_MINION_ID'".network.data_nw.roaming_ip' \
+        | sed s/\"//g)
+    sed -i -e "s|<CONSUL_HOST>|${CONSUL_HOST}|g" ${HA_CONF}/database.json
+}
+
+consul_watcher_failback() {
+    echo "Copy consul watcher files..."
+    mkdir -p /var/lib/hare/consul-server-c1-conf/ /var/lib/hare/consul-server-c2-conf/
+    cp -rf ${SOURCE_HA_CONF}/consul_watcher_failback.json /var/lib/hare/consul-server-c1-conf/
+    cp -rf ${SOURCE_HA_CONF}/consul_watcher_failback.json /var/lib/hare/consul-server-c2-conf/
+    cp -rf ${SOURCE_HA_CONF}/consul_watcher_failback.json /var/lib/hare/consul-server-conf/
+    CONSUL_PS=$(ps -aux | grep "consul" | grep -v "grep" || true)
+    if [ -z "$CONSUL_PS" ]; then
+        echo "Warning: Consul is not running."
+    else
+        echo 'Reloading Consul...'
+        /usr/bin/consul reload
+    fi
+}
+
+config_decision_maker() {
+    echo "Setup Decision maker"
+    minion1=$(echo $SALT_CLUSTER_SCHEMA | jq '.["local"].node_list[0]' | sed s/\"//g)
+    minion2=$(echo $SALT_CLUSTER_SCHEMA | jq '.["local"].node_list[1]' | sed s/\"//g)
+    uuid_list=$(salt '*' grains.get node_id --output=json)
+    uuid1=$(echo $uuid_list | jq '.["'$minion1'"]' | sed -e s/\"//g -e s/null//g -e '/^\s*$/d')
+    uuid2=$(echo $uuid_list | jq '.["'$minion2'"]' | sed -e s/\"//g -e s/null//g -e '/^\s*$/d')
+
+    # Private Network
+    node1_clusterip_nw=$(echo $SALT_CLUSTER_SCHEMA | jq '.["local"]."'$minion1'".network.data_nw.iface[0]' | sed s/\"//g)
+    node2_clusterip_nw=$(echo $SALT_CLUSTER_SCHEMA | jq '.["local"]."'$minion2'".network.data_nw.iface[0]' | sed s/\"//g)
+    node1_clusterip_nw_li="[ \"${node1_clusterip_nw}\" ]"
+    node2_clusterip_nw_li="[ \"${node2_clusterip_nw}\" ]"
+
+    # Managment network
+    node1_mgmt_nw=$(echo $SALT_CLUSTER_SCHEMA | jq '.["local"]."'$minion1'".network["mgmt_nw"].iface[0]' | sed s/\"//g)
+    node2_mgmt_nw=$(echo $SALT_CLUSTER_SCHEMA | jq '.["local"]."'$minion2'".network["mgmt_nw"].iface[0]' | sed s/\"//g)
+    node1_mgmt_nw_li="[ \"${node1_mgmt_nw}\" ]"
+    node2_mgmt_nw_li="[ \"${node2_mgmt_nw}\" ]"
+
+    cp -rf ${SOURCE_HA_CONF}/decision_monitor_conf.json ${HA_CONF}/decision_monitor_conf.json
+
+    sed -i -e "s|<LOCAL>|${LOCAL_NODE_MINION_ID}|g" \
+        -e "s|<HOST1>|${minion1}|g" \
+        -e "s|<HOST2>|${minion2}|g" \
+        -e "s|<UUID1>|${uuid1}|g" \
+        -e "s|<UUID2>|${uuid2}|g" \
+        -e "s|\"<N1_DATA_IFACE>\"|${node1_clusterip_nw_li//$'\n'/}|g" \
+        -e "s|\"<N1_MGMT_IFACE>\"|${node1_mgmt_nw_li//$'\n'/}|g" \
+        -e "s|\"<N2_DATA_IFACE>\"|${node2_clusterip_nw_li//$'\n'/}|g" \
+        -e "s|\"<N2_MGMT_IFACE>\"|${node2_mgmt_nw_li//$'\n'/}|g" ${HA_CONF}/decision_monitor_conf.json
+}
+
+config_ha_iem_event() {
+    minion1=$(echo $SALT_CLUSTER_SCHEMA | jq '.["local"].node_list[0]' | sed s/\"//g)
+    minion2=$(echo $SALT_CLUSTER_SCHEMA | jq '.["local"].node_list[1]' | sed s/\"//g)
+    host1=$(echo $SALT_CLUSTER_SCHEMA | jq '.["local"]."'$minion1'".hostname' | sed s/\"//g)
+    host2=$(echo $SALT_CLUSTER_SCHEMA | jq '.["local"]."'$minion2'".hostname' | sed s/\"//g)
+
+    echo "Configure IEM for ha event"
+    cp -rf ${SOURCE_HA_CONF}/iem_ha.json ${HA_CONF}/
+
+    # Configure host name
+    sed -i -e "s/<HOST1>/${host1}/g" \
+            -e  "s/<HOST2>/${host2}/g" ${HA_CONF}/iem_ha.json
+
+    # Configure alert for HA IEM
+    setfacl -R -m u:hacluster:rwx ${HA_LOG} || {
+        echo "Failed to add permission for hacluster log"; exit 1;
+    }
+    setfacl -R -m g:haclient:rwx ${HA_LOG} || {
+        echo "Failed to add permission for haclient log"; exit 1;
+    }
+}
+
+ACTION=$1
+# Call action
+$ACTION

@@ -31,6 +31,8 @@ RULE_ENGINE_SCHAMA="{}/rules_engine_schema.json".format(CONFIG_DIR)
 RULE_GLOBAL_INDEX="rules_engine"
 HA_CONFIG_FILE="{}/ha.conf".format(CONFIG_DIR)
 HA_GLOBAL_INDEX="ha_conf"
+IEM_INDEX="iem"
+IEM_SCHAMA="{}/iem_ha.json".format(CONFIG_DIR)
 
 CURRENT_NODE_STATUS="self_node_status"
 OTHER_NODE_STATUS="other_node_status"

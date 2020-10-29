@@ -1,0 +1,12 @@
+LOG:
+    path: /var/log/seagate/cortx/ha
+    level: INFO
+
+CLUSTER:
+    node_list: [ "<MINION1>", "<MINION2>"]
+    <MINION1>:
+        hostname: "<HOST1>"
+        uuid: "<UUID1>"
+    <MINION2>:
+        hostname: "<HOST2>"
+        uuid: "<UUID2>"
