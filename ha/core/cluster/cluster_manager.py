@@ -22,6 +22,7 @@ from cortx.utils.ha.dm.decision_monitor import DecisionMonitor
 
 from ha.core.error import HAUnimplemented
 from ha.core.node.replacement.refresh_context import PcsRefreshContex
+from ha.core.node.node_manager import CortxNodeManager
 from ha.execute import SimpleCommand
 from ha.core.support_bundle.ha_bundle import HABundle, CortxHABundle
 from ha import const
@@ -201,6 +202,7 @@ class CortxClusterManager:
         Manage cluster operation
         """
         self._execute = SimpleCommand()
+        self._node = CortxNodeManager()
 
     def process_request(self, action, args, output):
         """
@@ -220,6 +222,8 @@ class CortxClusterManager:
             getattr(self, args.cluster_action)()
         elif action == const.BUNDLE_COMMAND:
             CortxHABundle().process_request(action, args, output)
+        elif action == const.NODE_COMMAND or action == const.SERVICE_COMMAND:
+            self._node.process_request(action, args, output)
         else:
             raise HAUnimplemented("This feature is not supported...")
 
