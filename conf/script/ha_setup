@@ -137,7 +137,9 @@ config_ha() {
     host1=$(echo $SALT_CLUSTER_SCHEMA | jq '.["local"]."'$minion1'".hostname' | sed s/\"//g)
     host2=$(echo $SALT_CLUSTER_SCHEMA | jq '.["local"]."'$minion2'".hostname' | sed s/\"//g)
 
-    echo $minion1 $minion2 $uuid_list $uuid1 $uuid2 $host1 $host2
+    echo "minion1: $minion1, minion2: $minion2"
+    echo "uuid_list: $uuid_list, uuid1: $uuid1, uuid2: $uuid2"
+    echo "host1: $host1 host2: $host2"
 
     sed -i -e "s/<MINION1>/${minion1}/g" \
         -e "s/<MINION2>/${minion2}/g" \
@@ -202,7 +204,8 @@ config_decision_maker() {
     uuid1=$(echo $uuid_list | jq '.["'$minion1'"]' | sed -e s/\"//g -e s/null//g -e '/^\s*$/d')
     uuid2=$(echo $uuid_list | jq '.["'$minion2'"]' | sed -e s/\"//g -e s/null//g -e '/^\s*$/d')
 
-    echo $minion1 $minion2 $uuid_list $uuid1 $uuid2
+    echo "minion1: $minion1, minion2: $minion2"
+    echo "uuid_list: $uuid_list, uuid1: $uuid1, uuid2: $uuid2"
 
     # Private Network
     node1_clusterip_nw=$(echo $SALT_CLUSTER_SCHEMA | jq '.["local"]."'$minion1'".network.data_nw.iface[0]' | sed s/\"//g)
@@ -216,7 +219,8 @@ config_decision_maker() {
     node1_mgmt_nw_li="[ \"${node1_mgmt_nw}\" ]"
     node2_mgmt_nw_li="[ \"${node2_mgmt_nw}\" ]"
 
-    echo $node1_clusterip_nw_li $node2_clusterip_nw_li $node1_mgmt_nw_li $node2_mgmt_nw_li
+    echo "clusterip_nw1: $node1_clusterip_nw_li clusterip_nw2: $node2_clusterip_nw_li"
+    echo "mgmt_nw1: $node1_mgmt_nw_li mgmt_nw2: $node2_mgmt_nw_li"
 
     cp -rf ${SOURCE_HA_CONF}/decision_monitor_conf.json ${HA_CONF}/decision_monitor_conf.json
 
@@ -237,7 +241,8 @@ config_ha_iem_event() {
     host1=$(echo $SALT_CLUSTER_SCHEMA | jq '.["local"]."'$minion1'".hostname' | sed s/\"//g)
     host2=$(echo $SALT_CLUSTER_SCHEMA | jq '.["local"]."'$minion2'".hostname' | sed s/\"//g)
 
-    echo $minion1 $minion2 $host1 $host2
+    echo "minion1: $minion1, minion2: $minion2"
+    echo "host1: $host1 host2: $host2"
 
     echo "Configure IEM for ha event"
     cp -rf ${SOURCE_HA_CONF}/iem_ha.json ${HA_CONF}/
