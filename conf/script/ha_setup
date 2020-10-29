@@ -46,6 +46,7 @@ post_install() {
 
 config() {
     echo "config"
+    mkdir -p ${HA_CONF}/
 
     # Move ha conf
     # Note: configuring host minion id map need to call for unboxing
@@ -167,7 +168,7 @@ config_rule_engine(){
 
 config_database() {
     # Config database.json
-    cp -rf ${SOURCE_HA_CONF}/database.json ${HA_CONF}
+    cp -rf ${SOURCE_HA_CONF}/database.json ${HA_CONF}/
 
     # Update consul vip
     CONSUL_HOST=$(echo $SALT_CLUSTER_SCHEMA \
@@ -181,6 +182,7 @@ consul_watcher_failback() {
     mkdir -p /var/lib/hare/consul-server-c1-conf/ /var/lib/hare/consul-server-c2-conf/
     cp -rf ${SOURCE_HA_CONF}/consul_watcher_failback.json /var/lib/hare/consul-server-c1-conf/
     cp -rf ${SOURCE_HA_CONF}/consul_watcher_failback.json /var/lib/hare/consul-server-c2-conf/
+    cp -rf ${SOURCE_HA_CONF}/consul_watcher_failback.json /var/lib/hare/consul-server-conf/
     CONSUL_PS=$(ps -aux | grep "consul" | grep -v "grep" || true)
     if [ -z "$CONSUL_PS" ]; then
         echo "Warning: Consul is not running."
@@ -230,7 +232,7 @@ config_ha_iem_event() {
     host2=$(echo $SALT_CLUSTER_SCHEMA | jq '.["local"]."'$minion2'".hostname' | sed s/\"//g)
 
     echo "Configure IEM for ha event"
-    cp -rf ${SOURCE_HA_CONF}/iem_ha.json ${HA_CONF}
+    cp -rf ${SOURCE_HA_CONF}/iem_ha.json ${HA_CONF}/
 
     # Configure host name
     sed -i -e "s/<HOST1>/${host1}/g" \
