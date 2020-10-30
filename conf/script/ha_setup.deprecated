@@ -188,7 +188,7 @@ consul_watcher_failback() {
     mkdir -p /var/lib/hare/consul-server-c1-conf/ /var/lib/hare/consul-server-c2-conf/
     cp -rf ${SOURCE_HA_CONF}/consul_watcher_failback.json /var/lib/hare/consul-server-c1-conf/
     cp -rf ${SOURCE_HA_CONF}/consul_watcher_failback.json /var/lib/hare/consul-server-c2-conf/
-    cp -rf ${SOURCE_HA_CONF}/consul_watcher_failback.json /var/lib/hare/consul-server-conf/
+
     CONSUL_PS=$(ps -aux | grep "consul" | grep -v "grep" || true)
     if [ -z "$CONSUL_PS" ]; then
         echo "Warning: Consul is not running."
