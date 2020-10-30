@@ -689,6 +689,10 @@ clusterip_rsc_add() {
             score=-INFINITY '#uname' eq $lnode and hax-running eq 0
         sudo pcs -f $cib_file constraint location ClusterIP-clone rule \
             score=-INFINITY '#uname' eq $rnode and hax-running eq 0
+        sudo pcs -f $cib_file constraint location ClusterIP-clone rule \
+            score=-INFINITY '#uname' eq $lnode and haproxy-running eq 0
+        sudo pcs -f $cib_file constraint location ClusterIP-clone rule \
+            score=-INFINITY '#uname' eq $rnode and haproxy-running eq 0
         # Make ClusterIP to retry to start on original node after specified
         # timeout since last failure. This is supposed to recover resource in
         # case of sporadic failures, but will clean errors in 'pcs status'
@@ -753,6 +757,19 @@ haproxy_rsc_add() {
     sudo pcs -f $cib_file constraint location haproxy-c1 avoids $rnode=INFINITY
     sudo pcs -f $cib_file constraint location haproxy-c2 prefers $rnode=INFINITY
     sudo pcs -f $cib_file constraint location haproxy-c2 avoids $lnode=INFINITY
+
+    # Update haproxy.service config to toggle 'haproxy-running' pacemaker
+    # attribute on service start/stop.
+    #
+    # NOTE: formatting using tabs is essential
+    sudo mkdir -p /etc/systemd/system/haproxy.service.d/
+    cat <<-EOF_HAPROXY | sudo tee /etc/systemd/system/haproxy.service.d/override.conf >/dev/null
+	[Service]
+	ExecStopPost=/usr/sbin/attrd_updater -U 0 -n haproxy-running
+	ExecStartPost=/usr/sbin/attrd_updater -U 1 -n haproxy-running
+	EOF_HAPROXY
+
+    sudo systemctl daemon-reload
 }
 
 get_s3_svc() {
