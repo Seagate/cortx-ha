@@ -34,6 +34,7 @@ DEV=$1
 if [ "$DEV" == false ]; then
     set -x
     yum erase eos-py-utils -y #&& yum install cortx-py-utils -y
+    pip freeze | xargs pip uninstall -y
     yum install -y http://cortx-storage.colo.seagate.com/releases/cortx/components/github/custom-ci/release/centos-7.8.2003/dev/cortx-py-utils/13/cortx-py-utils-1.0.0-1_git5eb79ce.el7.x86_64.rpm
     req_file=${BASE_DIR}/jenkins/pyinstaller/requirements.txt
     python3 -m pip install -r $req_file > /dev/null || {
