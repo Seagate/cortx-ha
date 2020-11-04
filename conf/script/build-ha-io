@@ -535,19 +535,7 @@ consul_rsc_add() {
 motr_kernel_rsc_add() {
     log "${FUNCNAME[0]}: Adding Motr kernel module to Pacemaker..."
     sudo pcs -f $cib_file resource create motr-kernel systemd:motr-kernel clone
-    sudo pcs -f $cib_file constraint order lnet-c1 then motr-kernel-clone
-    sudo pcs -f $cib_file constraint order lnet-c2 then motr-kernel-clone
-
-    # Make sure motr-kernel is always stopped before lnet-c1/2
-    # is started. Otherwise, some transition abort in between may
-    # prevent motr-kernel restart. This is a workaround suggested
-    # at https://bugs.clusterlabs.org/show_bug.cgi?id=5428#c5.
-    sudo pcs -f $cib_file constraint order stop motr-kernel-clone then \
-                                           start lnet-c1 \
-                                           kind=Optional symmetrical=false
-    sudo pcs -f $cib_file constraint order stop motr-kernel-clone then \
-                                           start lnet-c2 \
-                                           kind=Optional symmetrical=false
+    sudo pcs -f $cib_file constraint order lnet-clone then motr-kernel-clone
 }
 
 var_motr_rsc_add() {
@@ -570,16 +558,19 @@ hax_systemd_prepare() {
 
 hax_systemd_update() {
     log "${FUNCNAME[0]}: Updating hax systemd units..."
+    # hax-c[12]-running attributes used in location constraints, to make sure
+    # that resources like ClusterIP and s3auth run only on a cluster node where
+    # at least one Hax service is running.
     sudo sed -e 's/hare-consul-agent.service/hare-consul-agent-c1.service/' \
-             -e "/ExecStart=/aExecStopPost=/usr/sbin/attrd_updater -U 0 -n hax-running" \
-             -e "/ExecStart=/aExecStartPost=/usr/sbin/attrd_updater -U 1 -n hax-running" \
+             -e "/ExecStart=/aExecStopPost=/usr/sbin/attrd_updater -U 0 -n hax-c1-running" \
+             -e "/ExecStart=/aExecStartPost=/usr/sbin/attrd_updater -U 1 -n hax-c1-running" \
              -e "/ExecStart=/aTimeoutStopSec=5sec" \
              -i /usr/lib/systemd/system/hare-hax-c1.service
     sudo sed -e 's/hare-consul-agent.service/hare-consul-agent-c2.service/' \
              -e 's;ExecStart.*cd /var/motr;&2;' \
              -e "/ExecStart/iEnvironmentFile=$hare_dir/hax-env-c2" \
-             -e "/ExecStart=/aExecStopPost=/usr/sbin/attrd_updater -U 0 -n hax-running" \
-             -e "/ExecStart=/aExecStartPost=/usr/sbin/attrd_updater -U 1 -n hax-running" \
+             -e "/ExecStart=/aExecStopPost=/usr/sbin/attrd_updater -U 0 -n hax-c2-running" \
+             -e "/ExecStart=/aExecStartPost=/usr/sbin/attrd_updater -U 1 -n hax-c2-running" \
              -e "/ExecStart=/aTimeoutStopSec=5sec" \
              -i /usr/lib/systemd/system/hare-hax-c2.service
     echo "HARE_HAX_NODE_NAME=$rnode" | sudo tee $hare_dir/hax-env-c2 > /dev/null
@@ -590,15 +581,15 @@ hax_systemd_update() {
     sudo sed -e 's/hare-consul-agent.service/hare-consul-agent-c1.service/'
              -e 's;ExecStart.*cd /var/motr;&1;' \
              -e '/ExecStart/iEnvironmentFile=$hare_dir/hax-env-c1'
-             -e \"/ExecStart=/aExecStopPost=/usr/sbin/attrd_updater -U 0 -n hax-running\"
-             -e \"/ExecStart=/aExecStartPost=/usr/sbin/attrd_updater -U 1 -n hax-running\"
+             -e \"/ExecStart=/aExecStopPost=/usr/sbin/attrd_updater -U 0 -n hax-c1-running\"
+             -e \"/ExecStart=/aExecStartPost=/usr/sbin/attrd_updater -U 1 -n hax-c1-running\"
              -e \"/ExecStart=/aTimeoutStopSec=5sec\"
              -i /usr/lib/systemd/system/hare-hax-c1.service &&
     sudo cp -f /usr/lib/systemd/system/hare-hax.service
             /usr/lib/systemd/system/hare-hax-c2.service &&
     sudo sed -e 's/hare-consul-agent.service/hare-consul-agent-c2.service/'
-             -e \"/ExecStart=/aExecStopPost=/usr/sbin/attrd_updater -U 0 -n hax-running\"
-             -e \"/ExecStart=/aExecStartPost=/usr/sbin/attrd_updater -U 1 -n hax-running\"
+             -e \"/ExecStart=/aExecStopPost=/usr/sbin/attrd_updater -U 0 -n hax-c2-running\"
+             -e \"/ExecStart=/aExecStartPost=/usr/sbin/attrd_updater -U 1 -n hax-c2-running\"
              -e \"/ExecStart=/aTimeoutStopSec=5sec\"
              -i /usr/lib/systemd/system/hare-hax-c2.service &&
     echo 'HARE_HAX_NODE_NAME=$lnode' | sudo tee $hare_dir/hax-env-c1 > /dev/null"
@@ -613,8 +604,8 @@ hax_rsc_add() {
     sudo pcs -f $cib_file resource group add c2 hax-c2
     sudo pcs -f $cib_file constraint order motr-kernel-clone then hax-c1
     sudo pcs -f $cib_file constraint order motr-kernel-clone then hax-c2
-    sudo pcs -f $cib_file constraint order consul-c2 then hax-c1
-    sudo pcs -f $cib_file constraint order consul-c1 then hax-c2
+    sudo pcs -f $cib_file constraint order consul-c2 then hax-c1 kind=Optional
+    sudo pcs -f $cib_file constraint order consul-c1 then hax-c2 kind=Optional
 }
 
 motr_systemd_update() {
@@ -660,13 +651,13 @@ motr_rsc_add() {
          timeout=600
     sudo pcs -f $cib_file resource group add c2 motr-confd-c2
     sudo pcs -f $cib_file resource group add c2 motr-ios-c2
-    sudo pcs -f $cib_file constraint order motr-confd-c1 then motr-ios-c2
-    sudo pcs -f $cib_file constraint order motr-confd-c2 then motr-ios-c1
+    sudo pcs -f $cib_file constraint order motr-confd-c1 then motr-ios-c2 kind=Optional
+    sudo pcs -f $cib_file constraint order motr-confd-c2 then motr-ios-c1 kind=Optional
 
     sudo pcs -f $cib_file resource create motr-free-space-mon systemd:motr-free-space-monitor \
          op monitor interval=30s meta failure-timeout=300s
-    sudo pcs -f $cib_file constraint order motr-ios-c1 then motr-free-space-mon
-    sudo pcs -f $cib_file constraint order motr-ios-c2 then motr-free-space-mon
+    sudo pcs -f $cib_file constraint order motr-ios-c1 then motr-free-space-mon kind=Optional
+    sudo pcs -f $cib_file constraint order motr-ios-c2 then motr-free-space-mon kind=Optional
     sudo pcs -f $cib_file constraint colocation add motr-free-space-mon with motr-ios-c1 \
          score=1000
     sudo pcs -f $cib_file constraint colocation add motr-free-space-mon with motr-ios-c2 \
@@ -686,9 +677,11 @@ clusterip_rsc_add() {
         # Make ClusterIP to run only on nodes where motr and S3 stack are
         # present. S3 stack shall follow the same constraint.
         sudo pcs -f $cib_file constraint location ClusterIP-clone rule \
-            score=-INFINITY '#uname' eq $lnode and hax-running eq 0
+            score=-INFINITY '#uname' eq $lnode and hax-c1-running eq 0 \
+            and hax-c2-running eq 0
         sudo pcs -f $cib_file constraint location ClusterIP-clone rule \
-            score=-INFINITY '#uname' eq $rnode and hax-running eq 0
+            score=-INFINITY '#uname' eq $rnode and hax-c1-running eq 0 \
+            and hax-c2-running eq 0
         # Make ClusterIP to retry to start on original node after specified
         # timeout since last failure. This is supposed to recover resource in
         # case of sporadic failures, but will clean errors in 'pcs status'
@@ -723,14 +716,14 @@ s3auth_rsc_add() {
     sudo pcs -f $cib_file resource create s3auth systemd:s3authserver clone op \
         monitor interval=30
     sudo pcs -f $cib_file constraint order ldap-clone then s3auth-clone
-    sudo pcs -f $cib_file constraint order motr-ios-c1 then s3auth-clone
-    sudo pcs -f $cib_file constraint order motr-ios-c2 then s3auth-clone
+    sudo pcs -f $cib_file constraint order motr-ios-c1 then s3auth-clone kind=Optional
+    sudo pcs -f $cib_file constraint order motr-ios-c2 then s3auth-clone kind=Optional
     # Make s3auth resource to run only on nodes where motr and hax are present.
     # All s3server resources shall follow s3auth due to colocation constraint.
     sudo pcs -f $cib_file constraint location s3auth-clone rule score=-INFINITY '#uname' \
-        eq $lnode and hax-running eq 0
+        eq $lnode and hax-c1-running eq 0 and hax-c2-running eq 0
     sudo pcs -f $cib_file constraint location s3auth-clone rule score=-INFINITY '#uname' \
-        eq $rnode and hax-running eq 0
+        eq $rnode and hax-c1-running eq 0 and hax-c2-running eq 0
 }
 
 elastic_search_rsc_add() {
@@ -834,7 +827,7 @@ _s3server_rsc_add() {
           avoids $node_remote=INFINITY
       # Order constraint adds the startup dependency of s3server on s3authserver
       sudo pcs -f $cib_file constraint \
-           order s3auth-clone then s3server-$suffix-$count
+           order s3auth-clone then s3server-$suffix-$count kind=Optional
       # Colocation constraint will add a s3server's liveness dependency
       # on the local s3authserver
       sudo pcs -f $cib_file constraint colocation add s3server-$suffix-$count \
