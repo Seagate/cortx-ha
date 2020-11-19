@@ -747,8 +747,8 @@ statsd_rsc_add() {
 
 haproxy_rsc_add() {
     log "${FUNCNAME[0]}: Adding haproxy to pacemaker..."
-    sudo pcs -f $cib_file resource create haproxy-c1 systemd:haproxy op monitor interval=30s
-    sudo pcs -f $cib_file resource create haproxy-c2 systemd:haproxy op monitor interval=30s
+    sudo pcs -f $cib_file resource create haproxy-c1 systemd:haproxy op monitor interval=30s meta failure-timeout=60s
+    sudo pcs -f $cib_file resource create haproxy-c2 systemd:haproxy op monitor interval=30s meta failure-timeout=60s
     sudo pcs -f $cib_file constraint location haproxy-c1 prefers $lnode=INFINITY
     sudo pcs -f $cib_file constraint location haproxy-c1 avoids $rnode=INFINITY
     sudo pcs -f $cib_file constraint location haproxy-c2 prefers $rnode=INFINITY
