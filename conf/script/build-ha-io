@@ -709,16 +709,10 @@ systemd_units_disable() {
     done
 }
 
-ldap_rsc_add() {
-    log "${FUNCNAME[0]}: Adding ldap to Pacemaker..."
-    sudo pcs -f $cib_file resource create ldap systemd:slapd clone op monitor interval=30s
-}
-
 s3auth_rsc_add() {
     log "${FUNCNAME[0]}: Adding s3authserver to Pacemaker..."
     sudo pcs -f $cib_file resource create s3auth systemd:s3authserver clone op \
         monitor interval=30
-    sudo pcs -f $cib_file constraint order ldap-clone then s3auth-clone
     sudo pcs -f $cib_file constraint order motr-ios-c1 then s3auth-clone
     sudo pcs -f $cib_file constraint order motr-ios-c2 then s3auth-clone
     # Make s3auth resource to run only on nodes where motr and hax are present.
@@ -888,7 +882,6 @@ ha_ops=(
     motr_rsc_add
     clusterip_rsc_add
     systemd_units_disable
-    ldap_rsc_add
     s3auth_rsc_add
     elastic_search_rsc_add
     statsd_rsc_add
@@ -929,7 +922,6 @@ declare -A ha_ops_type=(
     [motr_rsc_add]='bootstrap_update'
     [clusterip_rsc_add]='bootstrap_update'
     [systemd_units_disable]='bootstrap_update'
-    [ldap_rsc_add]='bootstrap_update'
     [s3auth_rsc_add]='bootstrap_update'
     [elastic_search_rsc_add]='bootstrap_update'
     [statsd_rsc_add]='bootstrap_update'
