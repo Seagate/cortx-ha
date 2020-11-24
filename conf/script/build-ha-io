@@ -698,7 +698,6 @@ systemd_units_disable() {
     units_to_disable=(
         elasticsearch
         haproxy
-        rabbitmq-server
         statsd
         slapd
         s3authserver
@@ -752,12 +751,6 @@ get_s3_svc() {
         awk "/$svc.s3server@/ {print \$2}"
 }
 
-rabbitmq_rsc_add() {
-    log "${FUNCNAME[0]}: Adding rabbit-mq resources and constraints..."
-    sudo pcs -f $cib_file resource create rabbitmq systemd:rabbitmq-server clone op \
-        monitor interval=30s meta failure-timeout=20s
-}
-
 s3_systemd_update() {
 # Add and update node attribute for s3backgroundconsumer resource on both the
 # nodes. This will be used to define constraints for the resources depending
@@ -785,11 +778,8 @@ s3back_rsc_add() {
                           systemd:s3backgroundconsumer meta failure-timeout=300s
     sudo pcs -f $cib_file constraint location s3backcons-c1 avoids $rnode=INFINITY
     sudo pcs -f $cib_file constraint location s3backcons-c2 avoids $lnode=INFINITY
-    sudo pcs -f $cib_file constraint order rabbitmq-clone then s3backcons-c1
-    sudo pcs -f $cib_file constraint order rabbitmq-clone then s3backcons-c2
     sudo pcs -f $cib_file resource create s3backprod systemd:s3backgroundproducer op \
         monitor interval=30s
-    sudo pcs -f $cib_file constraint order rabbitmq-clone then s3backprod
     sudo pcs -f $cib_file constraint location s3backprod rule score=-INFINITY '#uname' \
         eq $lnode and s3backcons-running eq 0
     sudo pcs -f $cib_file constraint location s3backprod rule score=-INFINITY '#uname' \
@@ -886,7 +876,6 @@ ha_ops=(
     elastic_search_rsc_add
     statsd_rsc_add
     haproxy_rsc_add
-    rabbitmq_rsc_add
     s3_systemd_update
     s3back_rsc_add
     s3server_rsc_add
@@ -926,7 +915,6 @@ declare -A ha_ops_type=(
     [elastic_search_rsc_add]='bootstrap_update'
     [statsd_rsc_add]='bootstrap_update'
     [haproxy_rsc_add]='bootstrap_update'
-    [rabbitmq_rsc_add]='bootstrap_update'
     [s3_systemd_update]='bootstrap_update'
     [s3back_rsc_add]='bootstrap_update'
     [s3server_rsc_add]='bootstrap_update'

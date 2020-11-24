@@ -190,8 +190,6 @@ csm_rsc_add() {
 
     sudo pcs -f $cib_file constraint colocation add csm-kibana with els-search-clone \
         score=INFINITY
-    sudo pcs -f $cib_file constraint colocation add csm-kibana with rabbitmq-clone \
-        score=INFINITY
 }
 
 cib_init() {
