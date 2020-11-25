@@ -146,6 +146,18 @@ precheck() {
         die 'No active rabbitmq instance found'
     ssh $rnode "systemctl is-active --quiet rabbitmq-server" ||
         die 'No active rabbitmq instance found'
+
+    local iface_cidr_lnode=
+    local iface_cidr_rnode=
+    local cmd="ip addr show $iface | grep -m 1 \"inet\b\" | awk '{print \$2}' | cut -d '/' -f2"
+
+    iface_cidr_lnode=$(eval $cmd)
+    [[ $iface_cidr_lnode == $cidr ]] ||
+        die "Input cidr:$cidr does not match existing cidr:$iface_cidr_lnode on interface:$iface on node: $lnode"
+
+    iface_cidr_rnode=$(ssh $rnode $cmd)
+    [[ $iface_cidr_rnode == $cidr ]] ||
+        die "Input cidr:$cidr does not match existing cidr:$iface_cidr_rnode on interface:$iface on node: $rnode"
 }
 
 systemd_disable() {
