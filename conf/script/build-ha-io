@@ -696,7 +696,6 @@ clusterip_rsc_add() {
 systemd_units_disable() {
     log "${FUNCNAME[0]}: Disabling systemd units..."
     units_to_disable=(
-        elasticsearch
         haproxy
         statsd
         slapd
@@ -720,12 +719,6 @@ s3auth_rsc_add() {
         eq $lnode and hax-running eq 0
     sudo pcs -f $cib_file constraint location s3auth-clone rule score=-INFINITY '#uname' \
         eq $rnode and hax-running eq 0
-}
-
-elastic_search_rsc_add() {
-    log "${FUNCNAME[0]}: Adding elastic search to Pacemaker.."
-    sudo pcs -f $cib_file resource create els-search systemd:elasticsearch clone op \
-        monitor interval=30s
 }
 
 statsd_rsc_add() {
@@ -873,7 +866,6 @@ ha_ops=(
     clusterip_rsc_add
     systemd_units_disable
     s3auth_rsc_add
-    elastic_search_rsc_add
     statsd_rsc_add
     haproxy_rsc_add
     s3_systemd_update
@@ -912,7 +904,6 @@ declare -A ha_ops_type=(
     [clusterip_rsc_add]='bootstrap_update'
     [systemd_units_disable]='bootstrap_update'
     [s3auth_rsc_add]='bootstrap_update'
-    [elastic_search_rsc_add]='bootstrap_update'
     [statsd_rsc_add]='bootstrap_update'
     [haproxy_rsc_add]='bootstrap_update'
     [s3_systemd_update]='bootstrap_update'
