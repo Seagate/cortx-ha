@@ -18,7 +18,7 @@ RA_LOG_DIR="/var/log/seagate/cortx/ha"
 PACEMAKER_LOG="/var/log/pacemaker.log"
 PCSD_LOG="/var/log/pcsd/pcsd.log"
 HA_CMDS_OUTPUT="{}/ha_cmds_output".format(RA_LOG_DIR)
-COROSYNC_LOG="/var/log/cluster/corosync.log"
+COROSYNC_LOG="/var/log/cluster"
 SUPPORT_BUNDLE_ERR="{}/support_bundle.err".format(RA_LOG_DIR)
 SUPPORT_BUNDLE_LOGS=[RA_LOG_DIR, PCSD_LOG, PACEMAKER_LOG, COROSYNC_LOG]
 
