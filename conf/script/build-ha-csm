@@ -98,12 +98,13 @@ done
 argsfile=${1:-}
 
 if [[ -f $argsfile ]]; then
-    while IFS=': ' read name value; do
+    while IFS=': ' read name value || [[ $name =~ [a-zA-Z0-9] ]]; do
        case $name in
            vip)          vip=$value     ;;
            interface)    iface=$value   ;;
            left-node)    lnode=$value   ;;
            right-node)   rnode=$value   ;;
+           '')                          ;;
            *) echo "Invalid parameter '$name' in $argsfile" >&2
               usage >&2; exit 1 ;;
        esac
