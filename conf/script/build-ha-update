@@ -14,10 +14,16 @@
 # with this program. If not, see <https://www.gnu.org/licenses/>. For any questions
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
+HA_LOG="/var/log/seagate/cortx/ha"
 
 set -eu -o pipefail
 export PS4='+ [${BASH_SOURCE[0]##*/}:${LINENO}${FUNCNAME[0]:+:${FUNCNAME[0]}}] '
 # set -x
+
+# Add Log
+mkdir -p "${HA_LOG}"/
+exec &>> "${HA_LOG}"/${0##*/}.log
+exec &> >(stdbuf -oL gawk '{ print strftime("%Y-%m-%d %H:%M:%S"), $0 }')
 
 PROG=${0##*/}
 
@@ -122,6 +128,8 @@ while ! $(consul kv export > $consul_kv_dump); do
     sleep 1
 done
 
+sudo pcs cluster standby --all
+
 reset_all
 sudo pcs cluster cib $cib_file
 
@@ -133,10 +141,6 @@ $ha_script/build-ha-uds --cib-file $cib_file --update
 echo 'Updating Pacemaker CIB...'
 sudo pcs cluster cib-push $cib_file --config
 
-wait4consul
-echo 'Importing Consul KV...'
-consul kv import @$consul_kv_dump
-
 $ha_script/build-ha-sspl $ioargsfile --cib-file $cib_file --update
 
 #XXX Presently replacing the cib xml file does not work if in new versions
@@ -147,5 +151,13 @@ echo 'Updating Pacemaker CIB...'
 sudo pcs cluster cib-push $cib_file --config
 
 $ha_script/build-cortx-ha init
+
+sudo pcs cluster unstandby --all
+sleep 2
+sudo pcs resource cleanup
+
+wait4consul
+echo 'Importing Consul KV...'
+consul kv import @$consul_kv_dump
 
 sudo pcs resource cleanup
