@@ -14,10 +14,16 @@
 # with this program. If not, see <https://www.gnu.org/licenses/>. For any questions
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
+HA_LOG="/var/log/seagate/cortx/ha"
 
 set -eu -o pipefail
 export PS4='+ [${BASH_SOURCE[0]##*/}:${LINENO}${FUNCNAME[0]:+:${FUNCNAME[0]}}] '
 # set -x
+
+# Add Log
+mkdir -p "${HA_LOG}"/
+exec &>> "${HA_LOG}"/${0##*/}.log
+exec &> >(stdbuf -oL gawk '{ print strftime("%Y-%m-%d %H:%M:%S"), $0 }')
 
 PROG=${0##*/}
 
@@ -102,6 +108,8 @@ if [[ -f $consul_kv_dump ]]; then
 fi
 $consul_bin/consul kv export > $consul_kv_dump
 
+sudo pcs cluster standby --all
+
 reset_all
 sudo pcs cluster cib $cib_file
 
@@ -122,6 +130,10 @@ sudo pcs cluster cib-push $cib_file --config
 
 $ha_script/build-cortx-ha init
 
+sudo pcs resource cleanup
+
+sudo pcs cluster unstandby --all
+sleep 2
 sudo pcs resource cleanup
 
 echo 'Importing Consul KV...'
