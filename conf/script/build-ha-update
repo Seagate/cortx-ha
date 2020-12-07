@@ -111,6 +111,11 @@ $consul_bin/consul kv export > $consul_kv_dump
 sudo pcs cluster standby --all
 
 reset_all
+
+sudo pcs cluster unstandby --all
+sleep 2
+sudo pcs resource cleanup
+
 sudo pcs cluster cib $cib_file
 
 echo 'Updating ha resources for IO path, SSPL, CSM and UDS...'
@@ -130,10 +135,6 @@ sudo pcs cluster cib-push $cib_file --config
 
 $ha_script/build-cortx-ha init
 
-sudo pcs resource cleanup
-
-sudo pcs cluster unstandby --all
-sleep 2
 sudo pcs resource cleanup
 
 echo 'Importing Consul KV...'
