@@ -131,6 +131,11 @@ done
 sudo pcs cluster standby --all
 
 reset_all
+
+sudo pcs cluster unstandby --all
+sleep 2
+sudo pcs resource cleanup
+
 sudo pcs cluster cib $cib_file
 
 echo 'Updating ha resources for IO path, SSPL, CSM and UDS...'
@@ -140,6 +145,10 @@ $ha_script/build-ha-uds --cib-file $cib_file --update
 
 echo 'Updating Pacemaker CIB...'
 sudo pcs cluster cib-push $cib_file --config
+
+wait4consul
+echo 'Importing Consul KV...'
+consul kv import @$consul_kv_dump
 
 $ha_script/build-ha-sspl $ioargsfile --cib-file $cib_file --update
 
@@ -151,13 +160,5 @@ echo 'Updating Pacemaker CIB...'
 sudo pcs cluster cib-push $cib_file --config
 
 $ha_script/build-cortx-ha init
-
-sudo pcs cluster unstandby --all
-sleep 2
-sudo pcs resource cleanup
-
-wait4consul
-echo 'Importing Consul KV...'
-consul kv import @$consul_kv_dump
 
 sudo pcs resource cleanup
