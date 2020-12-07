@@ -3,7 +3,7 @@
         "consul_db": {
             "import_path": "ConsulDB",
             "config": {
-                "host": "<CONSUL_HOST>",
+                "hosts": ["<CONSUL_HOST>"],
                 "port": 8500,
                 "login": "",
                 "password": ""
