@@ -136,7 +136,6 @@ cdf=${1:-}
 argsfile=${2:-}
 
 hare_dir=/var/lib/hare
-#log_file=${LOG_FILE:-/var/log/build-ha.log}
 
 die() {
     echo "$PROG: ERROR: $*" >&2

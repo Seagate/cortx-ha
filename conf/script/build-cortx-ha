@@ -96,6 +96,7 @@ cleanup() {
         sspl_primary_hw
     )
     for r in ${resources[@]}; do
+        log "${FUNCNAME[0]}: Deleting resource: $r"
         pcs resource delete $r || true
     done
 }
