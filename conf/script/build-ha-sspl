@@ -21,7 +21,7 @@ export PS4='+ [${BASH_SOURCE[0]##*/}:${LINENO}${FUNCNAME[0]:+:${FUNCNAME[0]}}] '
 
 PROG=${0##*/}
 
-log_file=${BUILD_HA_SSPL_LOG_FILE:-/var/log/build-ha-sspl.log}
+log_file=${BUILD_HA_SSPL_LOG_FILE:-/var/log/cortx-ha-sspl.log}
 exec &>> $log_file
 exec &> >(stdbuf -oL gawk '{ print strftime("%Y-%m-%d %H:%M:%S"), $0 }')
 
@@ -64,6 +64,10 @@ EOF
 log() {
     logger --stderr --tag build-ha-sspl "$*"
 }
+log "****************************************************************"
+log "${0##*/}"
+log "****************************************************************"
+
 
 
 TEMP=$(getopt --options h: \

@@ -20,13 +20,17 @@ set -eu -o pipefail
 
 HA_PATH="<HA_PATH>"
 
-log_file=${BUILD_CORTX_HA_LOG_FILE:-/var/log/build-cortx-ha.log}
+log_file=${BUILD_CORTX_HA_LOG_FILE:-/var/log/cortx-ha.log}
 exec &>> $log_file
 exec &> >(stdbuf -oL gawk '{ print strftime("%Y-%m-%d %H:%M:%S"), $0 }')
 
 log() {
     logger --stderr --tag build-cortx-ha "$*"
 }
+log "****************************************************************"
+log "${0##*/}"
+log "****************************************************************"
+
 
 
 init() {

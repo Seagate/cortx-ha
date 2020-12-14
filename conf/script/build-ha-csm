@@ -22,7 +22,7 @@ export PS4='+ [${BASH_SOURCE[0]##*/}:${LINENO}${FUNCNAME[0]:+:${FUNCNAME[0]}}] '
 PROG=${0##*/}
 
 
-log_file=${BUILD_HA_CSM_LOG_FILE:-/var/log/build-ha-csm.log}
+log_file=${BUILD_HA_CSM_LOG_FILE:-/var/log/cortx-ha.log}
 exec &>> $log_file
 exec &> >(stdbuf -oL gawk '{ print strftime("%Y-%m-%d %H:%M:%S"), $0 }')
 
@@ -74,6 +74,10 @@ EOF
 log() {
     logger --stderr --tag build-ha-csm "$*"
 }
+log "****************************************************************"
+log "${0##*/}"
+log "****************************************************************"
+
 
 
 TEMP=$(getopt --options h,i: \
