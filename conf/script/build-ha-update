@@ -14,16 +14,10 @@
 # with this program. If not, see <https://www.gnu.org/licenses/>. For any questions
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
-HA_LOG="/var/log/seagate/cortx/ha"
 
 set -eu -o pipefail
 export PS4='+ [${BASH_SOURCE[0]##*/}:${LINENO}${FUNCNAME[0]:+:${FUNCNAME[0]}}] '
 # set -x
-
-# Add Log
-mkdir -p "${HA_LOG}"/
-exec &>> "${HA_LOG}"/${0##*/}.log
-exec &> >(stdbuf -oL gawk '{ print strftime("%Y-%m-%d %H:%M:%S"), $0 }')
 
 PROG=${0##*/}
 
