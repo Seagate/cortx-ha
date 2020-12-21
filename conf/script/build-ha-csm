@@ -21,6 +21,12 @@ export PS4='+ [${BASH_SOURCE[0]##*/}:${LINENO}${FUNCNAME[0]:+:${FUNCNAME[0]}}] '
 
 PROG=${0##*/}
 
+
+log_file=${BUILD_HA_CSM_LOG_FILE:-/var/log/cortx-ha.log}
+exec &>> $log_file
+exec &> >(stdbuf -oL gawk '{ print strftime("%Y-%m-%d %H:%M:%S"), $0 }')
+
+
 usage() {
     cat <<EOF
 Usage: $PROG [OPTS] [<params.yaml>]
@@ -64,6 +70,15 @@ or via YAML file, e.g.:
   right-node: <rnode>
 EOF
 }
+
+log() {
+    logger --stderr --tag build-ha-csm "$*"
+}
+log "****************************************************************"
+log "${0##*/}"
+log "****************************************************************"
+
+
 
 TEMP=$(getopt --options h,i: \
               --longoptions help,vip:,interface:,left-node:,right-node: \
@@ -128,6 +143,7 @@ run_on_both() {
 }
 
 precheck() {
+    log "${FUNCNAME[0]}: Running precheck"
     systemctl is-active --quiet hare-consul-agent-c1 ||
         die 'No active Consul instance found'
     ssh $rnode "systemctl is-active --quiet hare-consul-agent-c2" ||
@@ -146,6 +162,7 @@ precheck() {
 
 systemd_disable() {
     echo 'Disabling csm and kibana systemd units...'
+    log "${FUNCNAME[0]}: Disabling csm and kibana systemd units"
     units_to_disable=(
         kibana
         csm_web
@@ -159,6 +176,7 @@ systemd_disable() {
 
 kibana_rsc_add() {
     echo 'Adding kibana resources...'
+    log "${FUNCNAME[0]}: Adding kibana resources"
     sudo pcs -f $cib_file resource create kibana-vip ocf:heartbeat:IPaddr2 \
         ip=$vip cidr_netmask=24 nic=$iface iflabel=v1 \
         op start   interval=0s timeout=60s \
@@ -169,6 +187,7 @@ kibana_rsc_add() {
 
 csm_rsc_add() {
     echo 'Adding csm resources and constraints...'
+    log "${FUNCNAME[0]}: Adding csm resources and constraints"
 
     sudo pcs -f $cib_file resource create csm-agent systemd:csm_agent op \
         monitor interval=30s
@@ -211,6 +230,7 @@ ha_ops=(
     csm_rsc_add
 )
 
+
 # Maps ha operation from the ha_ops table to its respective type.
 # HA operations are classified and described as follows,
 # bootstrap:   executes during clean installation of the software only
@@ -233,4 +253,5 @@ for op in ${ha_ops[@]}; do
         # CIB, we ignore them.
         $op || true
     fi
+    log "CSM resource addition done"
 done
