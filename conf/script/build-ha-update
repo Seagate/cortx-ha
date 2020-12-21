@@ -107,7 +107,6 @@ sudo pcs cluster standby --all
 reset_all
 
 sudo pcs cluster unstandby --all
-sleep 2
 sudo pcs resource cleanup
 
 sudo pcs cluster cib $cib_file
