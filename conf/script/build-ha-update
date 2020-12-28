@@ -112,7 +112,7 @@ sudo pcs cluster unstandby --all
 
 while ! sudo pcs status | grep "Online: \[ srvnode-1 srvnode-2 ]"
 do
-    echo 'Waiting for cluster becomes online'
+    echo 'Waiting till cluster becomes online'
     sleep 1
 done
 
