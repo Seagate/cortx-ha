@@ -110,6 +110,12 @@ reset_all
 
 sudo pcs cluster unstandby --all
 
+while ! sudo pcs status | grep "Online: \[ srvnode-1 srvnode-2 ]"
+do
+    echo 'Waiting for cluster becomes online'
+    sleep 1
+done
+
 sudo pcs cluster cib $cib_file
 
 echo 'Updating ha resources for IO path, SSPL, CSM and UDS...'
