@@ -103,7 +103,8 @@ fi
 $consul_bin/consul kv export > $consul_kv_dump
 
 # Move cluster into standby mode before deleting the resources
-sudo pcs cluster standby --all
+pcs_status=$(sudo pcs status)
+echo $pcs_status | grep "Node srvnode-1: standby" && echo $pcs_status | grep "Node srvnode-2: standby" || sudo pcs cluster standby --all
 
 reset_all
 
