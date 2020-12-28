@@ -102,12 +102,12 @@ if [[ -f $consul_kv_dump ]]; then
 fi
 $consul_bin/consul kv export > $consul_kv_dump
 
+# Move cluster into standby mode before deleting the resources
 sudo pcs cluster standby --all
 
 reset_all
 
 sudo pcs cluster unstandby --all
-sudo pcs resource cleanup
 
 sudo pcs cluster cib $cib_file
 
