@@ -260,10 +260,24 @@ class CliConnector(PcsConnector):
             raise RuntimeError(
                 f'No stonith resource is found for node {node_name}.')
 
-    def get_eligible_resource_count(self) -> int:
+    def _get_resources_configured_tag(self) -> Any:
         xml_str = self.executor.get_full_status_xml()
         xml = self._parse_xml(xml_str)
-        tag = xml.find('./summary/resources_configured')
+        return xml.find('./summary/resources_configured')
+
+    def get_stopped_resource_count(self) -> int:
+        tag = self._get_resources_configured_tag()
+        # Note that the tag has the structure as follows:
+        # <resources_configured number="71" disabled="0" blocked="0" />
+        #
+        # In other words, there is 'number' (presumably - total number
+        # of resources in the cluster), 'disabled' and 'blocked'.
+        disabled = int(tag.attrib['disabled'])
+        blocked = int(tag.attrib['blocked'])
+        return disabled + blocked
+
+    def get_eligible_resource_count(self) -> int:
+        tag = self._get_resources_configured_tag()
         total = int(tag.attrib['number'])
         disabled = int(tag.attrib['disabled'])
         blocked = int(tag.attrib['blocked'])
