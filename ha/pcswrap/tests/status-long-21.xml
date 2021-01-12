@@ -1,0 +1,534 @@
+<crm_mon version="1.1.21">
+    <summary>
+        <stack type="corosync" />
+        <current_dc present="true" version="1.1.21-4.el7-f14e36fd43" name="srvnode-1" id="1" with_quorum="true" />
+        <last_update time="Thu Dec 24 11:49:08 2020" />
+        <last_change time="Thu Dec 24 10:21:25 2020" user="root" client="cibadmin" origin="srvnode-1" />
+        <nodes_configured number="2" expected_votes="unknown" />
+        <resources_configured number="71" disabled="26" blocked="0" />
+        <cluster_options stonith-enabled="true" symmetric-cluster="true" no-quorum-policy="ignore" maintenance-mode="false" />
+    </summary>
+    <nodes>
+        <node name="srvnode-1" id="1" online="true" standby="false" standby_onfail="false" maintenance="false" pending="false" unclean="false" shutdown="false" expected_up="true" is_dc="true" resources_running="21" type="member" />
+        <node name="srvnode-2" id="2" online="true" standby="false" standby_onfail="false" maintenance="false" pending="false" unclean="false" shutdown="false" expected_up="true" is_dc="false" resources_running="14" type="member" />
+    </nodes>
+    <resources>
+        <clone id="ClusterIP-clone" multi_state="false" unique="true" managed="true" failed="false" failure_ignored="false" >
+            <resource id="ClusterIP:0" resource_agent="ocf::heartbeat:IPaddr2" role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+            <resource id="ClusterIP:1" resource_agent="ocf::heartbeat:IPaddr2" role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+        </clone>
+        <clone id="lnet-clone" multi_state="false" unique="false" managed="true" failed="false" failure_ignored="false" >
+            <resource id="lnet" resource_agent="systemd:lnet" role="Started" active="true" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="1" >
+                <node name="srvnode-1" id="1" cached="false"/>
+            </resource>
+            <resource id="lnet" resource_agent="systemd:lnet" role="Started" active="true" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="1" >
+                <node name="srvnode-2" id="2" cached="false"/>
+            </resource>
+        </clone>
+        <group id="c1" number_resources="8" >
+             <resource id="ip-c1" resource_agent="ocf::heartbeat:IPaddr2" role="Started" active="true" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="1" >
+                 <node name="srvnode-1" id="1" cached="false"/>
+             </resource>
+             <resource id="consul-c1" resource_agent="systemd:hare-consul-agent-c1" role="Started" active="true" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="1" >
+                 <node name="srvnode-1" id="1" cached="false"/>
+             </resource>
+             <resource id="lnet-c1" resource_agent="ocf::cortx:lnet" role="Started" active="true" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="1" >
+                 <node name="srvnode-1" id="1" cached="false"/>
+             </resource>
+             <resource id="var-motr1" resource_agent="ocf::heartbeat:Filesystem" role="Started" active="true" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="1" >
+                 <node name="srvnode-1" id="1" cached="false"/>
+             </resource>
+             <resource id="hax-c1" resource_agent="systemd:hare-hax-c1" role="Started" active="true" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="1" >
+                 <node name="srvnode-1" id="1" cached="false"/>
+             </resource>
+             <resource id="motr-confd-c1" resource_agent="systemd:m0d@0x7200000000000001:0x9" role="Started" active="true" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="1" >
+                 <node name="srvnode-1" id="1" cached="false"/>
+             </resource>
+             <resource id="motr-ios-c1" resource_agent="systemd:m0d@0x7200000000000001:0xc" role="Stopped" target_role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+             <resource id="io_path_health-c1" resource_agent="ocf::seagate:hw_comp_ra" role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+        </group>
+        <group id="c2" number_resources="8" >
+             <resource id="ip-c2" resource_agent="ocf::heartbeat:IPaddr2" role="Started" active="true" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="1" >
+                 <node name="srvnode-2" id="2" cached="false"/>
+             </resource>
+             <resource id="consul-c2" resource_agent="systemd:hare-consul-agent-c2" role="Started" active="true" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="1" >
+                 <node name="srvnode-2" id="2" cached="false"/>
+             </resource>
+             <resource id="lnet-c2" resource_agent="ocf::cortx:lnet" role="Started" active="true" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="1" >
+                 <node name="srvnode-2" id="2" cached="false"/>
+             </resource>
+             <resource id="var-motr2" resource_agent="ocf::heartbeat:Filesystem" role="Started" active="true" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="1" >
+                 <node name="srvnode-2" id="2" cached="false"/>
+             </resource>
+             <resource id="hax-c2" resource_agent="systemd:hare-hax-c2" role="Started" active="true" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="1" >
+                 <node name="srvnode-2" id="2" cached="false"/>
+             </resource>
+             <resource id="motr-confd-c2" resource_agent="systemd:m0d@0x7200000000000001:0x52" role="Started" active="true" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="1" >
+                 <node name="srvnode-2" id="2" cached="false"/>
+             </resource>
+             <resource id="motr-ios-c2" resource_agent="systemd:m0d@0x7200000000000001:0x55" role="Stopped" target_role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+             <resource id="io_path_health-c2" resource_agent="ocf::seagate:hw_comp_ra" role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+        </group>
+        <clone id="motr-kernel-clone" multi_state="false" unique="false" managed="true" failed="false" failure_ignored="false" >
+            <resource id="motr-kernel" resource_agent="systemd:motr-kernel" role="Started" active="true" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="1" >
+                <node name="srvnode-1" id="1" cached="false"/>
+            </resource>
+            <resource id="motr-kernel" resource_agent="systemd:motr-kernel" role="Started" active="true" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="1" >
+                <node name="srvnode-2" id="2" cached="false"/>
+            </resource>
+        </clone>
+        <resource id="motr-free-space-mon" resource_agent="systemd:motr-free-space-monitor" role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+        <clone id="ldap-clone" multi_state="false" unique="false" managed="true" failed="false" failure_ignored="false" >
+            <resource id="ldap" resource_agent="systemd:slapd" role="Started" active="true" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="1" >
+                <node name="srvnode-1" id="1" cached="false"/>
+            </resource>
+            <resource id="ldap" resource_agent="systemd:slapd" role="Started" active="true" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="1" >
+                <node name="srvnode-2" id="2" cached="false"/>
+            </resource>
+        </clone>
+        <clone id="s3auth-clone" multi_state="false" unique="false" managed="true" failed="false" failure_ignored="false" >
+            <resource id="s3auth" resource_agent="systemd:s3authserver" role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+            <resource id="s3auth" resource_agent="systemd:s3authserver" role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+        </clone>
+        <clone id="els-search-clone" multi_state="false" unique="false" managed="true" failed="false" failure_ignored="false" >
+            <resource id="els-search" resource_agent="systemd:elasticsearch" role="Started" active="true" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="1" >
+                <node name="srvnode-1" id="1" cached="false"/>
+            </resource>
+            <resource id="els-search" resource_agent="systemd:elasticsearch" role="Started" active="true" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="1" >
+                <node name="srvnode-2" id="2" cached="false"/>
+            </resource>
+        </clone>
+        <clone id="statsd-clone" multi_state="false" unique="false" managed="true" failed="false" failure_ignored="false" >
+            <resource id="statsd" resource_agent="systemd:statsd" role="Started" active="true" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="1" >
+                <node name="srvnode-1" id="1" cached="false"/>
+            </resource>
+            <resource id="statsd" resource_agent="systemd:statsd" role="Started" active="true" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="1" >
+                <node name="srvnode-2" id="2" cached="false"/>
+            </resource>
+        </clone>
+        <resource id="haproxy-c1" resource_agent="systemd:haproxy" role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+        <resource id="haproxy-c2" resource_agent="systemd:haproxy" role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+        <clone id="rabbitmq-clone" multi_state="false" unique="false" managed="true" failed="false" failure_ignored="false" >
+            <resource id="rabbitmq" resource_agent="systemd:rabbitmq-server" role="Started" active="true" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="1" >
+                <node name="srvnode-1" id="1" cached="false"/>
+            </resource>
+            <resource id="rabbitmq" resource_agent="systemd:rabbitmq-server" role="Started" active="true" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="1" >
+                <node name="srvnode-2" id="2" cached="false"/>
+            </resource>
+        </clone>
+        <resource id="s3backcons-c1" resource_agent="systemd:s3backgroundconsumer" role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+        <resource id="s3backcons-c2" resource_agent="systemd:s3backgroundconsumer" role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+        <resource id="s3backprod" resource_agent="systemd:s3backgroundproducer" role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+        <resource id="s3server-c1-1" resource_agent="systemd:s3server@0x7200000000000001:0x22" role="Stopped" target_role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+        <resource id="s3server-c1-2" resource_agent="systemd:s3server@0x7200000000000001:0x25" role="Stopped" target_role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+        <resource id="s3server-c1-3" resource_agent="systemd:s3server@0x7200000000000001:0x28" role="Stopped" target_role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+        <resource id="s3server-c1-4" resource_agent="systemd:s3server@0x7200000000000001:0x2b" role="Stopped" target_role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+        <resource id="s3server-c1-5" resource_agent="systemd:s3server@0x7200000000000001:0x2e" role="Stopped" target_role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+        <resource id="s3server-c1-6" resource_agent="systemd:s3server@0x7200000000000001:0x31" role="Stopped" target_role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+        <resource id="s3server-c1-7" resource_agent="systemd:s3server@0x7200000000000001:0x34" role="Stopped" target_role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+        <resource id="s3server-c1-8" resource_agent="systemd:s3server@0x7200000000000001:0x37" role="Stopped" target_role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+        <resource id="s3server-c1-9" resource_agent="systemd:s3server@0x7200000000000001:0x3a" role="Stopped" target_role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+        <resource id="s3server-c1-10" resource_agent="systemd:s3server@0x7200000000000001:0x3d" role="Stopped" target_role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+        <resource id="s3server-c1-11" resource_agent="systemd:s3server@0x7200000000000001:0x40" role="Stopped" target_role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+        <resource id="s3server-c2-1" resource_agent="systemd:s3server@0x7200000000000001:0x6b" role="Stopped" target_role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+        <resource id="s3server-c2-2" resource_agent="systemd:s3server@0x7200000000000001:0x6e" role="Stopped" target_role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+        <resource id="s3server-c2-3" resource_agent="systemd:s3server@0x7200000000000001:0x71" role="Stopped" target_role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+        <resource id="s3server-c2-4" resource_agent="systemd:s3server@0x7200000000000001:0x74" role="Stopped" target_role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+        <resource id="s3server-c2-5" resource_agent="systemd:s3server@0x7200000000000001:0x77" role="Stopped" target_role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+        <resource id="s3server-c2-6" resource_agent="systemd:s3server@0x7200000000000001:0x7a" role="Stopped" target_role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+        <resource id="s3server-c2-7" resource_agent="systemd:s3server@0x7200000000000001:0x7d" role="Stopped" target_role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+        <resource id="s3server-c2-8" resource_agent="systemd:s3server@0x7200000000000001:0x80" role="Stopped" target_role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+        <resource id="s3server-c2-9" resource_agent="systemd:s3server@0x7200000000000001:0x83" role="Stopped" target_role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+        <resource id="s3server-c2-10" resource_agent="systemd:s3server@0x7200000000000001:0x86" role="Stopped" target_role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+        <resource id="s3server-c2-11" resource_agent="systemd:s3server@0x7200000000000001:0x89" role="Stopped" target_role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+        <clone id="sspl-master" multi_state="true" unique="false" managed="true" failed="false" failure_ignored="false" >
+            <resource id="sspl" resource_agent="ocf::cortx:sspl" role="Master" active="true" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="1" >
+                <node name="srvnode-1" id="1" cached="false"/>
+            </resource>
+            <resource id="sspl" resource_agent="ocf::cortx:sspl" role="Slave" active="true" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="1" >
+                <node name="srvnode-2" id="2" cached="false"/>
+            </resource>
+        </clone>
+        <group id="csm-kibana" number_resources="5" >
+             <resource id="kibana-vip" resource_agent="ocf::heartbeat:IPaddr2" role="Started" active="true" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="1" >
+                 <node name="srvnode-1" id="1" cached="false"/>
+             </resource>
+             <resource id="kibana" resource_agent="systemd:kibana" role="Started" active="true" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="1" >
+                 <node name="srvnode-1" id="1" cached="false"/>
+             </resource>
+             <resource id="csm-web" resource_agent="systemd:csm_web" role="Started" active="true" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="1" >
+                 <node name="srvnode-1" id="1" cached="false"/>
+             </resource>
+             <resource id="csm-agent" resource_agent="systemd:csm_agent" role="Started" active="true" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="1" >
+                 <node name="srvnode-1" id="1" cached="false"/>
+             </resource>
+             <resource id="mgmt_path_health-c1" resource_agent="ocf::seagate:hw_comp_ra" role="Started" active="true" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="1" >
+                 <node name="srvnode-1" id="1" cached="false"/>
+             </resource>
+        </group>
+        <resource id="uds" resource_agent="systemd:uds" role="Started" active="true" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="1" >
+            <node name="srvnode-1" id="1" cached="false"/>
+        </resource>
+        <resource id="sspl_primary_hw" resource_agent="ocf::seagate:hw_comp_ra" role="Started" active="true" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="1" >
+            <node name="srvnode-1" id="1" cached="false"/>
+        </resource>
+        <resource id="stonith-c1" resource_agent="stonith:fence_ipmilan" role="Started" active="true" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="1" >
+            <node name="srvnode-2" id="2" cached="false"/>
+        </resource>
+        <resource id="stonith-c2" resource_agent="stonith:fence_ipmilan" role="Started" active="true" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="1" >
+            <node name="srvnode-1" id="1" cached="false"/>
+        </resource>
+    </resources>
+    <node_attributes>
+        <node name="srvnode-1">
+            <attribute name="consul-c1-running" value="1" />
+            <attribute name="hax-running" value="1" />
+            <attribute name="master-sspl" value="1" />
+            <attribute name="s3backcons-running" value="0" />
+        </node>
+        <node name="srvnode-2">
+            <attribute name="consul-c2-running" value="1" />
+            <attribute name="hax-running" value="1" />
+            <attribute name="master-sspl" value="1" />
+            <attribute name="s3backcons-running" value="0" />
+        </node>
+    </node_attributes>
+    <node_history>
+        <node name="srvnode-1">
+            <resource_history id="lnet" orphan="false" migration-threshold="1000000">
+                <operation_history call="264" task="start" last-rc-change="Fri Nov 27 03:57:49 2020" last-run="Fri Nov 27 03:57:49 2020" exec-time="2132ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="278" task="monitor" interval="60000ms" last-rc-change="Fri Nov 27 03:58:00 2020" exec-time="2ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="ip-c1" orphan="false" migration-threshold="1000000">
+                <operation_history call="262" task="start" last-rc-change="Fri Nov 27 03:57:49 2020" last-run="Fri Nov 27 03:57:49 2020" exec-time="129ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="consul-c1" orphan="false" migration-threshold="1000000">
+                <operation_history call="269" task="start" last-rc-change="Fri Nov 27 03:57:49 2020" last-run="Fri Nov 27 03:57:49 2020" exec-time="6457ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="279" task="monitor" interval="60000ms" last-rc-change="Fri Nov 27 03:58:00 2020" exec-time="2ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="lnet-c1" orphan="false" migration-threshold="1000000">
+                <operation_history call="280" task="start" last-rc-change="Fri Nov 27 03:58:00 2020" last-run="Fri Nov 27 03:58:00 2020" exec-time="119ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="296" task="monitor" interval="30000ms" last-rc-change="Fri Nov 27 03:58:03 2020" exec-time="131ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="var-motr1" orphan="false" migration-threshold="1000000">
+                <operation_history call="297" task="start" last-rc-change="Fri Nov 27 03:58:03 2020" last-run="Fri Nov 27 03:58:03 2020" exec-time="165ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="308" task="monitor" interval="20000ms" last-rc-change="Fri Nov 27 03:58:03 2020" exec-time="64ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="hax-c1" orphan="false" migration-threshold="1000000">
+                <operation_history call="319" task="start" last-rc-change="Fri Nov 27 03:58:05 2020" last-run="Fri Nov 27 03:58:05 2020" exec-time="2121ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="324" task="monitor" interval="60000ms" last-rc-change="Fri Nov 27 03:58:11 2020" exec-time="3ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="motr-confd-c1" orphan="false" migration-threshold="1000000">
+                <operation_history call="325" task="start" last-rc-change="Fri Nov 27 03:58:11 2020" last-run="Fri Nov 27 03:58:11 2020" exec-time="36165ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="344" task="monitor" interval="60000ms" last-rc-change="Fri Nov 27 03:58:47 2020" exec-time="2ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="motr-ios-c1" orphan="false" migration-threshold="1000000">
+                <operation_history call="25760" task="monitor" interval="60000ms" last-rc-change="Thu Dec 24 10:00:38 2020" exec-time="4ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="25926" task="stop" last-rc-change="Thu Dec 24 10:21:38 2020" last-run="Thu Dec 24 10:21:38 2020" exec-time="2143ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="io_path_health-c1" orphan="false" migration-threshold="1000000">
+                <operation_history call="25766" task="monitor" interval="30000ms" last-rc-change="Thu Dec 24 10:00:39 2020" exec-time="761ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="25871" task="stop" last-rc-change="Thu Dec 24 10:21:25 2020" last-run="Thu Dec 24 10:21:25 2020" exec-time="575ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="motr-kernel" orphan="false" migration-threshold="1000000">
+                <operation_history call="303" task="start" last-rc-change="Fri Nov 27 03:58:03 2020" last-run="Fri Nov 27 03:58:03 2020" exec-time="2264ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="318" task="monitor" interval="60000ms" last-rc-change="Fri Nov 27 03:58:05 2020" exec-time="2ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="motr-free-space-mon" orphan="false" migration-threshold="1000000">
+                <operation_history call="25855" task="monitor" interval="30000ms" last-rc-change="Thu Dec 24 10:17:25 2020" exec-time="1ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="25858" task="stop" last-rc-change="Thu Dec 24 10:21:24 2020" last-run="Thu Dec 24 10:21:24 2020" exec-time="2135ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="ldap" orphan="false" migration-threshold="1000000">
+                <operation_history call="265" task="start" last-rc-change="Fri Nov 27 03:57:49 2020" last-run="Fri Nov 27 03:57:49 2020" exec-time="4239ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="281" task="monitor" interval="30000ms" last-rc-change="Fri Nov 27 03:58:00 2020" exec-time="3ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="s3auth" orphan="false" migration-threshold="1000000">
+                <operation_history call="25776" task="monitor" interval="30000ms" last-rc-change="Thu Dec 24 10:00:40 2020" exec-time="1ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="25922" task="stop" last-rc-change="Thu Dec 24 10:21:36 2020" last-run="Thu Dec 24 10:21:36 2020" exec-time="2145ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="els-search" orphan="false" migration-threshold="1000000">
+                <operation_history call="266" task="start" last-rc-change="Fri Nov 27 03:57:49 2020" last-run="Fri Nov 27 03:57:49 2020" exec-time="2358ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="282" task="monitor" interval="30000ms" last-rc-change="Fri Nov 27 03:58:00 2020" exec-time="4ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="statsd" orphan="false" migration-threshold="1000000">
+                <operation_history call="290" task="start" last-rc-change="Fri Nov 27 03:58:00 2020" last-run="Fri Nov 27 03:58:00 2020" exec-time="2093ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="298" task="monitor" interval="30000ms" last-rc-change="Fri Nov 27 03:58:03 2020" exec-time="3ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="rabbitmq" orphan="false" migration-threshold="1000000">
+                <operation_history call="267" task="start" last-rc-change="Fri Nov 27 03:57:49 2020" last-run="Fri Nov 27 03:57:49 2020" exec-time="10480ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="283" task="monitor" interval="30000ms" last-rc-change="Fri Nov 27 03:58:00 2020" exec-time="5ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="s3backcons-c1" orphan="false" migration-threshold="1000000">
+                <operation_history call="25827" task="monitor" interval="60000ms" last-rc-change="Thu Dec 24 10:00:46 2020" exec-time="3ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="25862" task="stop" last-rc-change="Thu Dec 24 10:21:24 2020" last-run="Thu Dec 24 10:21:24 2020" exec-time="2428ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="s3backprod" orphan="false" migration-threshold="1000000">
+                <operation_history call="24771" task="monitor" interval="30000ms" last-rc-change="Tue Dec 22 14:19:39 2020" exec-time="2ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="24780" task="stop" last-rc-change="Tue Dec 22 14:20:58 2020" last-run="Tue Dec 22 14:20:58 2020" exec-time="2507ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="s3server-c1-1" orphan="false" migration-threshold="1000000">
+                <operation_history call="25790" task="monitor" interval="60000ms" last-rc-change="Thu Dec 24 10:00:42 2020" exec-time="2ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="25878" task="stop" last-rc-change="Thu Dec 24 10:21:27 2020" last-run="Thu Dec 24 10:21:27 2020" exec-time="8159ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="s3server-c1-2" orphan="false" migration-threshold="1000000">
+                <operation_history call="25793" task="monitor" interval="60000ms" last-rc-change="Thu Dec 24 10:00:43 2020" exec-time="1ms" queue-time="1ms" rc="0" rc_text="ok" />
+                <operation_history call="25880" task="stop" last-rc-change="Thu Dec 24 10:21:27 2020" last-run="Thu Dec 24 10:21:27 2020" exec-time="8308ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="s3server-c1-3" orphan="false" migration-threshold="1000000">
+                <operation_history call="25796" task="monitor" interval="60000ms" last-rc-change="Thu Dec 24 10:00:43 2020" exec-time="1ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="25882" task="stop" last-rc-change="Thu Dec 24 10:21:27 2020" last-run="Thu Dec 24 10:21:27 2020" exec-time="6416ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="s3server-c1-4" orphan="false" migration-threshold="1000000">
+                <operation_history call="25799" task="monitor" interval="60000ms" last-rc-change="Thu Dec 24 10:00:43 2020" exec-time="2ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="25884" task="stop" last-rc-change="Thu Dec 24 10:21:27 2020" last-run="Thu Dec 24 10:21:27 2020" exec-time="8533ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="s3server-c1-5" orphan="false" migration-threshold="1000000">
+                <operation_history call="25802" task="monitor" interval="60000ms" last-rc-change="Thu Dec 24 10:00:43 2020" exec-time="1ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="25886" task="stop" last-rc-change="Thu Dec 24 10:21:27 2020" last-run="Thu Dec 24 10:21:27 2020" exec-time="6674ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="s3server-c1-6" orphan="false" migration-threshold="1000000">
+                <operation_history call="25805" task="monitor" interval="60000ms" last-rc-change="Thu Dec 24 10:00:43 2020" exec-time="1ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="25888" task="stop" last-rc-change="Thu Dec 24 10:21:27 2020" last-run="Thu Dec 24 10:21:27 2020" exec-time="8812ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="s3server-c1-7" orphan="false" migration-threshold="1000000">
+                <operation_history call="25808" task="monitor" interval="60000ms" last-rc-change="Thu Dec 24 10:00:43 2020" exec-time="1ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="25890" task="stop" last-rc-change="Thu Dec 24 10:21:27 2020" last-run="Thu Dec 24 10:21:27 2020" exec-time="8978ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="s3server-c1-8" orphan="false" migration-threshold="1000000">
+                <operation_history call="25811" task="monitor" interval="60000ms" last-rc-change="Thu Dec 24 10:00:43 2020" exec-time="2ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="25892" task="stop" last-rc-change="Thu Dec 24 10:21:27 2020" last-run="Thu Dec 24 10:21:27 2020" exec-time="7112ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="s3server-c1-9" orphan="false" migration-threshold="1000000">
+                <operation_history call="25814" task="monitor" interval="60000ms" last-rc-change="Thu Dec 24 10:00:44 2020" exec-time="1ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="25894" task="stop" last-rc-change="Thu Dec 24 10:21:27 2020" last-run="Thu Dec 24 10:21:27 2020" exec-time="7272ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="s3server-c1-10" orphan="false" migration-threshold="1000000">
+                <operation_history call="25817" task="monitor" interval="60000ms" last-rc-change="Thu Dec 24 10:00:44 2020" exec-time="1ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="25896" task="stop" last-rc-change="Thu Dec 24 10:21:27 2020" last-run="Thu Dec 24 10:21:27 2020" exec-time="7409ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="s3server-c1-11" orphan="false" migration-threshold="1000000">
+                <operation_history call="25820" task="monitor" interval="60000ms" last-rc-change="Thu Dec 24 10:00:44 2020" exec-time="1ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="25898" task="stop" last-rc-change="Thu Dec 24 10:21:27 2020" last-run="Thu Dec 24 10:21:27 2020" exec-time="7572ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="sspl" orphan="false" migration-threshold="10">
+                <operation_history call="304" task="promote" last-rc-change="Fri Nov 27 03:58:03 2020" last-run="Fri Nov 27 03:58:03 2020" exec-time="8143ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="326" task="monitor" interval="10000ms" last-rc-change="Fri Nov 27 03:58:11 2020" exec-time="117ms" queue-time="0ms" rc="8" rc_text="master" />
+            </resource_history>
+            <resource_history id="sspl_primary_hw" orphan="false" migration-threshold="1">
+                <operation_history call="301" task="start" last-rc-change="Fri Nov 27 03:58:03 2020" last-run="Fri Nov 27 03:58:03 2020" exec-time="1040ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="311" task="monitor" interval="30000ms" last-rc-change="Fri Nov 27 03:58:04 2020" exec-time="770ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="ClusterIP:0" orphan="false" migration-threshold="1000000">
+                <operation_history call="25769" task="monitor" interval="30000ms" last-rc-change="Thu Dec 24 10:00:39 2020" exec-time="95ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="25867" task="stop" last-rc-change="Thu Dec 24 10:21:24 2020" last-run="Thu Dec 24 10:21:24 2020" exec-time="178ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="stonith-c2" orphan="false" migration-threshold="1000000">
+                <operation_history call="447" task="start" last-rc-change="Fri Nov 27 04:02:31 2020" last-run="Fri Nov 27 04:02:31 2020" exec-time="159ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="449" task="monitor" interval="10000ms" last-rc-change="Fri Nov 27 04:02:32 2020" exec-time="148ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="kibana-vip" orphan="false" migration-threshold="1000000">
+                <operation_history call="469" task="probe" last-rc-change="Fri Nov 27 04:02:38 2020" last-run="Fri Nov 27 04:02:38 2020" exec-time="92ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="469" task="probe" last-rc-change="Fri Nov 27 04:02:38 2020" last-run="Fri Nov 27 04:02:38 2020" exec-time="92ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="491" task="monitor" interval="5000ms" last-rc-change="Fri Nov 27 04:02:39 2020" exec-time="65ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="kibana" orphan="false" migration-threshold="1000000">
+                <operation_history call="473" task="probe" last-rc-change="Fri Nov 27 04:02:38 2020" last-run="Fri Nov 27 04:02:38 2020" exec-time="2ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="473" task="probe" last-rc-change="Fri Nov 27 04:02:38 2020" last-run="Fri Nov 27 04:02:38 2020" exec-time="2ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="492" task="monitor" interval="30000ms" last-rc-change="Fri Nov 27 04:02:39 2020" exec-time="1ms" queue-time="1ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="csm-web" orphan="false" migration-threshold="1000000">
+                <operation_history call="477" task="probe" last-rc-change="Fri Nov 27 04:02:38 2020" last-run="Fri Nov 27 04:02:38 2020" exec-time="2ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="477" task="probe" last-rc-change="Fri Nov 27 04:02:38 2020" last-run="Fri Nov 27 04:02:38 2020" exec-time="2ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="493" task="monitor" interval="30000ms" last-rc-change="Fri Nov 27 04:02:39 2020" exec-time="2ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="csm-agent" orphan="false" migration-threshold="1000000">
+                <operation_history call="561" task="start" last-rc-change="Fri Nov 27 06:46:15 2020" last-run="Fri Nov 27 06:46:15 2020" exec-time="2112ms" queue-time="1ms" rc="0" rc_text="ok" />
+                <operation_history call="563" task="monitor" interval="30000ms" last-rc-change="Fri Nov 27 06:46:17 2020" exec-time="2ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="mgmt_path_health-c1" orphan="false" migration-threshold="1000000">
+                <operation_history call="485" task="probe" last-rc-change="Fri Nov 27 04:02:38 2020" last-run="Fri Nov 27 04:02:38 2020" exec-time="694ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="564" task="start" last-rc-change="Fri Nov 27 06:46:17 2020" last-run="Fri Nov 27 06:46:17 2020" exec-time="731ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="568" task="monitor" interval="30000ms" last-rc-change="Fri Nov 27 06:46:18 2020" exec-time="451ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="uds" orphan="false" migration-threshold="1000000">
+                <operation_history call="507" task="probe" last-rc-change="Fri Nov 27 04:02:44 2020" last-run="Fri Nov 27 04:02:44 2020" exec-time="1ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="565" task="start" last-rc-change="Fri Nov 27 06:46:17 2020" last-run="Fri Nov 27 06:46:17 2020" exec-time="2149ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="571" task="monitor" interval="30000ms" last-rc-change="Fri Nov 27 06:46:19 2020" exec-time="2ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="haproxy-c1" orphan="false" migration-threshold="1000000">
+                <operation_history call="25826" task="monitor" interval="30000ms" last-rc-change="Thu Dec 24 10:00:46 2020" exec-time="2ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="25860" task="stop" last-rc-change="Thu Dec 24 10:21:24 2020" last-run="Thu Dec 24 10:21:24 2020" exec-time="2272ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+        </node>
+        <node name="srvnode-2">
+            <resource_history id="lnet" orphan="false" migration-threshold="1000000">
+                <operation_history call="265" task="start" last-rc-change="Fri Nov 27 03:57:49 2020" last-run="Fri Nov 27 03:57:49 2020" exec-time="2141ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="280" task="monitor" interval="60000ms" last-rc-change="Fri Nov 27 03:58:00 2020" exec-time="1ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="ip-c2" orphan="false" migration-threshold="1000000">
+                <operation_history call="263" task="start" last-rc-change="Fri Nov 27 03:57:49 2020" last-run="Fri Nov 27 03:57:49 2020" exec-time="148ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="consul-c2" orphan="false" migration-threshold="1000000">
+                <operation_history call="270" task="start" last-rc-change="Fri Nov 27 03:57:49 2020" last-run="Fri Nov 27 03:57:49 2020" exec-time="6567ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="281" task="monitor" interval="60000ms" last-rc-change="Fri Nov 27 03:58:00 2020" exec-time="4ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="lnet-c2" orphan="false" migration-threshold="1000000">
+                <operation_history call="282" task="start" last-rc-change="Fri Nov 27 03:58:00 2020" last-run="Fri Nov 27 03:58:00 2020" exec-time="148ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="296" task="monitor" interval="30000ms" last-rc-change="Fri Nov 27 03:58:03 2020" exec-time="145ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="var-motr2" orphan="false" migration-threshold="1000000">
+                <operation_history call="297" task="start" last-rc-change="Fri Nov 27 03:58:03 2020" last-run="Fri Nov 27 03:58:03 2020" exec-time="157ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="305" task="monitor" interval="20000ms" last-rc-change="Fri Nov 27 03:58:03 2020" exec-time="61ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="hax-c2" orphan="false" migration-threshold="1000000">
+                <operation_history call="310" task="start" last-rc-change="Fri Nov 27 03:58:05 2020" last-run="Fri Nov 27 03:58:05 2020" exec-time="2128ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="312" task="monitor" interval="60000ms" last-rc-change="Fri Nov 27 03:58:11 2020" exec-time="2ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="motr-confd-c2" orphan="false" migration-threshold="1000000">
+                <operation_history call="313" task="start" last-rc-change="Fri Nov 27 03:58:11 2020" last-run="Fri Nov 27 03:58:11 2020" exec-time="36192ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="316" task="monitor" interval="60000ms" last-rc-change="Fri Nov 27 03:58:47 2020" exec-time="3ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="motr-ios-c2" orphan="false" migration-threshold="1000000">
+                <operation_history call="9613" task="monitor" interval="60000ms" last-rc-change="Thu Dec 24 10:00:38 2020" exec-time="3ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="9752" task="stop" last-rc-change="Thu Dec 24 10:21:38 2020" last-run="Thu Dec 24 10:21:38 2020" exec-time="2120ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="io_path_health-c2" orphan="false" migration-threshold="1000000">
+                <operation_history call="9618" task="monitor" interval="30000ms" last-rc-change="Thu Dec 24 10:00:39 2020" exec-time="699ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="9697" task="stop" last-rc-change="Thu Dec 24 10:21:25 2020" last-run="Thu Dec 24 10:21:25 2020" exec-time="569ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="motr-kernel" orphan="false" migration-threshold="1000000">
+                <operation_history call="301" task="start" last-rc-change="Fri Nov 27 03:58:03 2020" last-run="Fri Nov 27 03:58:03 2020" exec-time="2136ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="308" task="monitor" interval="60000ms" last-rc-change="Fri Nov 27 03:58:05 2020" exec-time="1ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="ldap" orphan="false" migration-threshold="1000000">
+                <operation_history call="266" task="start" last-rc-change="Fri Nov 27 03:57:49 2020" last-run="Fri Nov 27 03:57:49 2020" exec-time="2275ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="284" task="monitor" interval="30000ms" last-rc-change="Fri Nov 27 03:58:00 2020" exec-time="1ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="s3auth" orphan="false" migration-threshold="1000000">
+                <operation_history call="9625" task="monitor" interval="30000ms" last-rc-change="Thu Dec 24 10:00:40 2020" exec-time="1ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="9748" task="stop" last-rc-change="Thu Dec 24 10:21:36 2020" last-run="Thu Dec 24 10:21:36 2020" exec-time="2137ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="els-search" orphan="false" migration-threshold="1000000">
+                <operation_history call="267" task="start" last-rc-change="Fri Nov 27 03:57:49 2020" last-run="Fri Nov 27 03:57:49 2020" exec-time="2421ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="287" task="monitor" interval="30000ms" last-rc-change="Fri Nov 27 03:58:00 2020" exec-time="2ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="statsd" orphan="false" migration-threshold="1000000">
+                <operation_history call="289" task="start" last-rc-change="Fri Nov 27 03:58:00 2020" last-run="Fri Nov 27 03:58:00 2020" exec-time="2135ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="298" task="monitor" interval="30000ms" last-rc-change="Fri Nov 27 03:58:03 2020" exec-time="3ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="rabbitmq" orphan="false" migration-threshold="1000000">
+                <operation_history call="268" task="start" last-rc-change="Fri Nov 27 03:57:49 2020" last-run="Fri Nov 27 03:57:49 2020" exec-time="10570ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="288" task="monitor" interval="30000ms" last-rc-change="Fri Nov 27 03:58:00 2020" exec-time="1ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="s3backcons-c2" orphan="false" migration-threshold="1000000">
+                <operation_history call="9676" task="monitor" interval="60000ms" last-rc-change="Thu Dec 24 10:00:46 2020" exec-time="3ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="9687" task="stop" last-rc-change="Thu Dec 24 10:21:24 2020" last-run="Thu Dec 24 10:21:24 2020" exec-time="2258ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="s3backprod" orphan="false" migration-threshold="1000000">
+                <operation_history call="9681" task="monitor" interval="30000ms" last-rc-change="Thu Dec 24 10:00:48 2020" exec-time="2ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="9690" task="stop" last-rc-change="Thu Dec 24 10:21:24 2020" last-run="Thu Dec 24 10:21:24 2020" exec-time="2361ms" queue-time="1ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="s3server-c2-1" orphan="false" migration-threshold="1000000">
+                <operation_history call="9639" task="monitor" interval="60000ms" last-rc-change="Thu Dec 24 10:00:42 2020" exec-time="2ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="9704" task="stop" last-rc-change="Thu Dec 24 10:21:27 2020" last-run="Thu Dec 24 10:21:27 2020" exec-time="4156ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="s3server-c2-2" orphan="false" migration-threshold="1000000">
+                <operation_history call="9642" task="monitor" interval="60000ms" last-rc-change="Thu Dec 24 10:00:43 2020" exec-time="1ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="9707" task="stop" last-rc-change="Thu Dec 24 10:21:27 2020" last-run="Thu Dec 24 10:21:27 2020" exec-time="6281ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="s3server-c2-3" orphan="false" migration-threshold="1000000">
+                <operation_history call="9645" task="monitor" interval="60000ms" last-rc-change="Thu Dec 24 10:00:43 2020" exec-time="1ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="9710" task="stop" last-rc-change="Thu Dec 24 10:21:27 2020" last-run="Thu Dec 24 10:21:27 2020" exec-time="8407ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="s3server-c2-4" orphan="false" migration-threshold="1000000">
+                <operation_history call="9648" task="monitor" interval="60000ms" last-rc-change="Thu Dec 24 10:00:43 2020" exec-time="1ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="9713" task="stop" last-rc-change="Thu Dec 24 10:21:27 2020" last-run="Thu Dec 24 10:21:27 2020" exec-time="8543ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="s3server-c2-5" orphan="false" migration-threshold="1000000">
+                <operation_history call="9651" task="monitor" interval="60000ms" last-rc-change="Thu Dec 24 10:00:43 2020" exec-time="1ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="9716" task="stop" last-rc-change="Thu Dec 24 10:21:27 2020" last-run="Thu Dec 24 10:21:27 2020" exec-time="6696ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="s3server-c2-6" orphan="false" migration-threshold="1000000">
+                <operation_history call="9654" task="monitor" interval="60000ms" last-rc-change="Thu Dec 24 10:00:43 2020" exec-time="1ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="9719" task="stop" last-rc-change="Thu Dec 24 10:21:27 2020" last-run="Thu Dec 24 10:21:27 2020" exec-time="6825ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="s3server-c2-7" orphan="false" migration-threshold="1000000">
+                <operation_history call="9657" task="monitor" interval="60000ms" last-rc-change="Thu Dec 24 10:00:43 2020" exec-time="1ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="9722" task="stop" last-rc-change="Thu Dec 24 10:21:27 2020" last-run="Thu Dec 24 10:21:27 2020" exec-time="6991ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="s3server-c2-8" orphan="false" migration-threshold="1000000">
+                <operation_history call="9660" task="monitor" interval="60000ms" last-rc-change="Thu Dec 24 10:00:43 2020" exec-time="0ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="9725" task="stop" last-rc-change="Thu Dec 24 10:21:27 2020" last-run="Thu Dec 24 10:21:27 2020" exec-time="7124ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="s3server-c2-9" orphan="false" migration-threshold="1000000">
+                <operation_history call="9663" task="monitor" interval="60000ms" last-rc-change="Thu Dec 24 10:00:44 2020" exec-time="1ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="9728" task="stop" last-rc-change="Thu Dec 24 10:21:27 2020" last-run="Thu Dec 24 10:21:27 2020" exec-time="5260ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="s3server-c2-10" orphan="false" migration-threshold="1000000">
+                <operation_history call="9666" task="monitor" interval="60000ms" last-rc-change="Thu Dec 24 10:00:44 2020" exec-time="1ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="9731" task="stop" last-rc-change="Thu Dec 24 10:21:27 2020" last-run="Thu Dec 24 10:21:27 2020" exec-time="7396ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="s3server-c2-11" orphan="false" migration-threshold="1000000">
+                <operation_history call="9669" task="monitor" interval="60000ms" last-rc-change="Thu Dec 24 10:00:44 2020" exec-time="1ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="9734" task="stop" last-rc-change="Thu Dec 24 10:21:27 2020" last-run="Thu Dec 24 10:21:27 2020" exec-time="7539ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="sspl" orphan="false" migration-threshold="10">
+                <operation_history call="292" task="start" last-rc-change="Fri Nov 27 03:58:00 2020" last-run="Fri Nov 27 03:58:00 2020" exec-time="2921ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="299" task="monitor" interval="11000ms" last-rc-change="Fri Nov 27 03:58:03 2020" exec-time="143ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="ClusterIP:1" orphan="false" migration-threshold="1000000">
+                <operation_history call="9621" task="monitor" interval="30000ms" last-rc-change="Thu Dec 24 10:00:39 2020" exec-time="81ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="9693" task="stop" last-rc-change="Thu Dec 24 10:21:24 2020" last-run="Thu Dec 24 10:21:24 2020" exec-time="158ms" queue-time="1ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="stonith-c1" orphan="false" migration-threshold="1000000">
+                <operation_history call="419" task="start" last-rc-change="Fri Nov 27 04:02:31 2020" last-run="Fri Nov 27 04:02:31 2020" exec-time="162ms" queue-time="1ms" rc="0" rc_text="ok" />
+                <operation_history call="421" task="monitor" interval="10000ms" last-rc-change="Fri Nov 27 04:02:32 2020" exec-time="147ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="haproxy-c1" orphan="false" migration-threshold="1000000">
+                <operation_history call="460" task="probe" last-rc-change="Fri Nov 27 04:02:49 2020" last-run="Fri Nov 27 04:02:49 2020" exec-time="2ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="462" task="stop" last-rc-change="Fri Nov 27 04:02:50 2020" last-run="Fri Nov 27 04:02:50 2020" exec-time="2143ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+            <resource_history id="haproxy-c2" orphan="false" migration-threshold="1000000">
+                <operation_history call="478" task="probe" last-rc-change="Fri Nov 27 04:02:55 2020" last-run="Fri Nov 27 04:02:55 2020" exec-time="3ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="9675" task="monitor" interval="30000ms" last-rc-change="Thu Dec 24 10:00:46 2020" exec-time="1ms" queue-time="0ms" rc="0" rc_text="ok" />
+                <operation_history call="9684" task="stop" last-rc-change="Thu Dec 24 10:21:24 2020" last-run="Thu Dec 24 10:21:24 2020" exec-time="2138ms" queue-time="0ms" rc="0" rc_text="ok" />
+            </resource_history>
+        </node>
+    </node_history>
+    <fence_history>
+    </fence_history>
+    <tickets>
+    </tickets>
+    <bans>
+        <ban id="location-stonith-c2-srvnode-2--INFINITY" resource="stonith-c2" node="srvnode-2" weight="-1000000" master_only="false" />
+        <ban id="location-stonith-c1-srvnode-1--INFINITY" resource="stonith-c1" node="srvnode-1" weight="-1000000" master_only="false" />
+        <ban id="location-s3server-c2-11-srvnode-1--INFINITY" resource="s3server-c2-11" node="srvnode-1" weight="-1000000" master_only="false" />
+        <ban id="location-s3server-c2-10-srvnode-1--INFINITY" resource="s3server-c2-10" node="srvnode-1" weight="-1000000" master_only="false" />
+        <ban id="location-s3server-c2-9-srvnode-1--INFINITY" resource="s3server-c2-9" node="srvnode-1" weight="-1000000" master_only="false" />
+        <ban id="location-s3server-c2-8-srvnode-1--INFINITY" resource="s3server-c2-8" node="srvnode-1" weight="-1000000" master_only="false" />
+        <ban id="location-s3server-c2-7-srvnode-1--INFINITY" resource="s3server-c2-7" node="srvnode-1" weight="-1000000" master_only="false" />
+        <ban id="location-s3server-c2-6-srvnode-1--INFINITY" resource="s3server-c2-6" node="srvnode-1" weight="-1000000" master_only="false" />
+        <ban id="location-s3server-c2-5-srvnode-1--INFINITY" resource="s3server-c2-5" node="srvnode-1" weight="-1000000" master_only="false" />
+        <ban id="location-s3server-c2-4-srvnode-1--INFINITY" resource="s3server-c2-4" node="srvnode-1" weight="-1000000" master_only="false" />
+        <ban id="location-s3server-c2-3-srvnode-1--INFINITY" resource="s3server-c2-3" node="srvnode-1" weight="-1000000" master_only="false" />
+        <ban id="location-s3server-c2-2-srvnode-1--INFINITY" resource="s3server-c2-2" node="srvnode-1" weight="-1000000" master_only="false" />
+        <ban id="location-s3server-c2-1-srvnode-1--INFINITY" resource="s3server-c2-1" node="srvnode-1" weight="-1000000" master_only="false" />
+        <ban id="location-s3server-c1-11-srvnode-2--INFINITY" resource="s3server-c1-11" node="srvnode-2" weight="-1000000" master_only="false" />
+        <ban id="location-s3server-c1-10-srvnode-2--INFINITY" resource="s3server-c1-10" node="srvnode-2" weight="-1000000" master_only="false" />
+        <ban id="location-s3server-c1-9-srvnode-2--INFINITY" resource="s3server-c1-9" node="srvnode-2" weight="-1000000" master_only="false" />
+        <ban id="location-s3server-c1-8-srvnode-2--INFINITY" resource="s3server-c1-8" node="srvnode-2" weight="-1000000" master_only="false" />
+        <ban id="location-s3server-c1-7-srvnode-2--INFINITY" resource="s3server-c1-7" node="srvnode-2" weight="-1000000" master_only="false" />
+        <ban id="location-s3server-c1-6-srvnode-2--INFINITY" resource="s3server-c1-6" node="srvnode-2" weight="-1000000" master_only="false" />
+        <ban id="location-s3server-c1-5-srvnode-2--INFINITY" resource="s3server-c1-5" node="srvnode-2" weight="-1000000" master_only="false" />
+        <ban id="location-s3server-c1-4-srvnode-2--INFINITY" resource="s3server-c1-4" node="srvnode-2" weight="-1000000" master_only="false" />
+        <ban id="location-s3server-c1-3-srvnode-2--INFINITY" resource="s3server-c1-3" node="srvnode-2" weight="-1000000" master_only="false" />
+        <ban id="location-s3server-c1-2-srvnode-2--INFINITY" resource="s3server-c1-2" node="srvnode-2" weight="-1000000" master_only="false" />
+        <ban id="location-s3server-c1-1-srvnode-2--INFINITY" resource="s3server-c1-1" node="srvnode-2" weight="-1000000" master_only="false" />
+        <ban id="location-s3backprod-1-rule" resource="s3backprod" node="srvnode-2" weight="-1000000" master_only="false" />
+        <ban id="location-s3backprod-rule" resource="s3backprod" node="srvnode-1" weight="-1000000" master_only="false" />
+        <ban id="location-s3backcons-c2-srvnode-1--INFINITY" resource="s3backcons-c2" node="srvnode-1" weight="-1000000" master_only="false" />
+        <ban id="location-s3backcons-c1-srvnode-2--INFINITY" resource="s3backcons-c1" node="srvnode-2" weight="-1000000" master_only="false" />
+        <ban id="location-haproxy-c2-srvnode-1--INFINITY" resource="haproxy-c2" node="srvnode-1" weight="-1000000" master_only="false" />
+        <ban id="location-haproxy-c1-srvnode-2--INFINITY" resource="haproxy-c1" node="srvnode-2" weight="-1000000" master_only="false" />
+    </bans>
+</crm_mon>

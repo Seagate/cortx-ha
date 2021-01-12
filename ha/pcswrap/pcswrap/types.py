@@ -112,3 +112,12 @@ class PcsConnector(ABC):
         and blocked resources.
         '''
         pass
+
+    @abstractmethod
+    def get_stopped_resource_count(self) -> int:
+        '''
+        Looks into "summary" information provided by Pacemaker and extracts the
+        number of resources that are stopped for sure in the cluster (i.e. it
+        is equal to blocked + disabled).
+        '''
+        pass
