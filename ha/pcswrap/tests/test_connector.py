@@ -15,7 +15,7 @@
 
 # flake8: noqa
 import sys
-sys.path.insert(0, '..')
+import json
 from unittest.mock import Mock, MagicMock
 from pcswrap.client import Client
 from pcswrap.exception import PcsNoStatusException, TimeoutException
@@ -36,6 +36,11 @@ def contents(filename: str) -> str:
 
 
 GOOD_XML = contents('status-xml-w-clones.xml')
+
+REAL_XML_21 = contents('status-long-21.xml')
+
+REAL_XML_23 = contents('status-long-23.xml')
+
 XML_PLAIN_RESOURCES = contents('status-xml-plain-resources.xml')
 
 GOOD_STATUS_TEXT = '''Cluster name: mycluster
@@ -101,7 +106,7 @@ class PcsExecutorTest(unittest.TestCase):
 
     def test_get_eligible_resource_count_works(self):
         stub_executor = CliExecutor()
-        stub_executor.get_full_status_xml = MagicMock(return_value = GOOD_XML)
+        stub_executor.get_full_status_xml = MagicMock(return_value=GOOD_XML)
         connector = CliConnector(executor=stub_executor)
         self.assertEqual(4, connector.get_eligible_resource_count())
 
@@ -130,6 +135,74 @@ class PcsExecutorTest(unittest.TestCase):
         resources = connector.get_stonith_resources()
         self.assertEqual(['c-259.stonith', 'c-260.stonith'],
                          [x.id for x in resources])
+
+
+class RealXmlParseTestV21(unittest.TestCase):
+    def test_get_nodes_works(self):
+        stub_executor = CliExecutor()
+        stub_executor.get_full_status_xml = MagicMock()
+        stub_executor.get_full_status_xml.return_value = REAL_XML_21
+
+        connector = CliConnector(executor=stub_executor)
+        nodes = connector.get_nodes()
+        self.assertEqual(2, len(nodes))
+        self.assertEqual(['srvnode-1', 'srvnode-2'], [x.name for x in nodes])
+        self.assertEqual([21, 14], [x.resources_running for x in nodes])
+
+    def test_get_eligible_resource_count_works(self):
+        stub_executor = CliExecutor()
+        stub_executor.get_full_status_xml = MagicMock(return_value=REAL_XML_21)
+        connector = CliConnector(executor=stub_executor)
+        self.assertEqual(45, connector.get_eligible_resource_count())
+
+    def test_status_json_has_correct_figures(self):
+        stub_executor = CliExecutor()
+        stub_executor.get_full_status_xml = MagicMock()
+        stub_executor.get_full_status_xml.return_value = REAL_XML_21
+
+        connector = CliConnector(executor=stub_executor)
+        client = Client(connector=connector)
+
+        status_text: str = client.get_status(is_full=True)
+        status_obj = json.loads(status_text)
+        rsrc_obj = status_obj['resources']['statistics']
+        self.assertEqual(35, rsrc_obj['started'])
+        self.assertEqual(26, rsrc_obj['stopped'])
+        self.assertEqual(10, rsrc_obj['starting'])
+
+
+class RealXmlParseTestV23(unittest.TestCase):
+    def test_get_nodes_works(self):
+        stub_executor = CliExecutor()
+        stub_executor.get_full_status_xml = MagicMock()
+        stub_executor.get_full_status_xml.return_value = REAL_XML_23
+
+        connector = CliConnector(executor=stub_executor)
+        nodes = connector.get_nodes()
+        self.assertEqual(2, len(nodes))
+        self.assertEqual(['srvnode-1', 'srvnode-2'], [x.name for x in nodes])
+        self.assertEqual([39, 32], [x.resources_running for x in nodes])
+
+    def test_get_eligible_resource_count_works(self):
+        stub_executor = CliExecutor()
+        stub_executor.get_full_status_xml = MagicMock(return_value=REAL_XML_23)
+        connector = CliConnector(executor=stub_executor)
+        self.assertEqual(71, connector.get_eligible_resource_count())
+
+    def test_status_json_has_correct_figures(self):
+        stub_executor = CliExecutor()
+        stub_executor.get_full_status_xml = MagicMock()
+        stub_executor.get_full_status_xml.return_value = REAL_XML_23
+
+        connector = CliConnector(executor=stub_executor)
+        client = Client(connector=connector)
+
+        status_text: str = client.get_status(is_full=True)
+        status_obj = json.loads(status_text)
+        rsrc_obj = status_obj['resources']['statistics']
+        self.assertEqual(71, rsrc_obj['started'])
+        self.assertEqual(0, rsrc_obj['stopped'])
+        self.assertEqual(0, rsrc_obj['starting'])
 
 
 class ClientTest(unittest.TestCase):
@@ -181,20 +254,20 @@ class ClientTest(unittest.TestCase):
                      unclean=False,
                      resources_running=2)
             ],
-                         [
-                             Node(name='test',
-                                  online=True,
-                                  standby=False,
-                                  unclean=False,
-                                  resources_running=2)
-                         ],
-                         [
-                             Node(name='test',
-                                  online=True,
-                                  standby=False,
-                                  unclean=False,
-                                  resources_running=0)
-                         ]])
+                [
+                Node(name='test',
+                     online=True,
+                     standby=False,
+                     unclean=False,
+                     resources_running=2)
+            ],
+                [
+                Node(name='test',
+                     online=True,
+                     standby=False,
+                     unclean=False,
+                     resources_running=0)
+            ]])
 
         connector.standby_node = MagicMock()
 

@@ -21,6 +21,11 @@ export PS4='+ [${BASH_SOURCE[0]##*/}:${LINENO}${FUNCNAME[0]:+:${FUNCNAME[0]}}] '
 
 PROG=${0##*/}
 
+log_file=${BUILD_HA_UPDATE_LOG_FILE:-/var/log/cortx-ha.log}
+exec &>> $log_file
+exec &> >(stdbuf -oL gawk '{ print strftime("%Y-%m-%d %H:%M:%S"), $0 }')
+
+
 usage() {
     cat <<EOF
 Usage: $PROG [OPTS] <CDF> <params.yaml>
@@ -43,6 +48,14 @@ Note: parameters can be specified either directly via command line options
 or via YAML file, e.g.:
 EOF
 }
+
+log() {
+    logger --stderr --tag build-ha-update "$*"
+}
+log "****************************************************************"
+log "${0##*/}"
+log "****************************************************************"
+
 
 TEMP=$(getopt --options h: \
               --longoptions help \
@@ -89,10 +102,24 @@ if [[ -f $consul_kv_dump ]]; then
 fi
 $consul_bin/consul kv export > $consul_kv_dump
 
+# Move cluster into standby mode before deleting the resources
+pcs_status=$(sudo pcs status)
+echo $pcs_status | grep "Node srvnode-1: standby" && echo $pcs_status | grep "Node srvnode-2: standby" || sudo pcs cluster standby --all
+
 reset_all
+
+sudo pcs cluster unstandby --all
+
+while ! sudo pcs status | grep "Online: \[ srvnode-1 srvnode-2 ]"
+do
+    echo 'Waiting till cluster becomes online'
+    sleep 1
+done
+
 sudo pcs cluster cib $cib_file
 
 echo 'Updating ha resources for IO path, SSPL, CSM and UDS...'
+log "Updating ha resources for IO path, SSPL, CSM and UDS"
 $ha_script/build-ha-io $cdf $ioargsfile --cib-file $cib_file --update
 $ha_script/build-ha-csm $csmargsfile --cib-file $cib_file --update
 $ha_script/build-ha-sspl $ioargsfile --cib-file $cib_file --update
@@ -103,6 +130,7 @@ $ha_script/build-ha-uds --cib-file $cib_file --update
 # Revisit this to avoid deleting of resources from pacemaker.
 #cibadmin --replace --xml-file $cib_file
 echo 'Updating Pacemaker CIB...'
+log "Updating Pacemaker CIB"
 sudo pcs cluster cib-push $cib_file --config
 
 $ha_script/build-cortx-ha init

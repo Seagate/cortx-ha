@@ -20,7 +20,21 @@ set -eu -o pipefail
 
 HA_PATH="<HA_PATH>"
 
+log_file=${BUILD_CORTX_HA_LOG_FILE:-/var/log/cortx-ha.log}
+exec &>> $log_file
+exec &> >(stdbuf -oL gawk '{ print strftime("%Y-%m-%d %H:%M:%S"), $0 }')
+
+log() {
+    logger --stderr --tag build-cortx-ha "$*"
+}
+log "****************************************************************"
+log "${0##*/}"
+log "****************************************************************"
+
+
+
 init() {
+    log "${FUNCNAME[0]}: Init cluster"
     # Get node name
     node_list=$(salt-call --local pillar.get cluster:node_list --output=json)
     host1=$(echo $node_list | jq '.["local"][0]' | sed s/\"//g)
@@ -78,6 +92,7 @@ init() {
 
 cleanup() {
     echo "Delete resources"
+    log "${FUNCNAME[0]}: Delete resources"
     resources=(
         io_path_health-c1
         io_path_health-c2
@@ -85,6 +100,7 @@ cleanup() {
         sspl_primary_hw
     )
     for r in ${resources[@]}; do
+        log "${FUNCNAME[0]}: Deleting resource: $r"
         pcs resource delete $r || true
     done
 }

@@ -19,6 +19,19 @@ set -eu -o pipefail
 export PS4='+ [${BASH_SOURCE[0]##*/}:${LINENO}${FUNCNAME[0]:+:${FUNCNAME[0]}}] '
 # set -x
 
+log_file=${PROV_HA_CSM_RESET_LOG_FILE:-/var/log/cortx-ha.log}
+exec &>> $log_file
+exec &> >(stdbuf -oL gawk '{ print strftime("%Y-%m-%d %H:%M:%S"), $0 }')
+
+log() {
+    logger --stderr --tag prov-ha-csm-reset "$*"
+}
+log "****************************************************************"
+log "${0##*/}"
+log "****************************************************************"
+
+
+
 resources=(
     csm-agent
     csm-web
@@ -27,6 +40,7 @@ resources=(
     uds
     mgmt_path_health-c1
 )
+log "Deleting pcs resources for csm "
 for r in ${resources[@]}; do
     pcs resource delete $r || true
 done
