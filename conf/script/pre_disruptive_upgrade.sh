@@ -46,7 +46,7 @@ cluster_standby_mode(){
 
     standby_mode=$(crm_standby -G  | awk '{print $3}' | cut -d '=' -f 2)
 
-    if [ $standby_mode == 'on' ]
+    if [ $standby_mode == "on" ]
     then
         echo "cluster is already in a standby mode"
     else
@@ -65,7 +65,9 @@ delete_resources(){
     echo "deleting the resources from the cluster"
 
     # Get only the name of the resource
-    resource_list=( `/usr/sbin/crm_resource --list-raw` )
+    resource_list=$(/usr/sbin/crm_resource --list-raw)
+
+    resource_list=( $resource_list )
 
     # Remove each one by one
     for resource in "${resource_list[@]}"
