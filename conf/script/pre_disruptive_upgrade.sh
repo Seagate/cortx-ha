@@ -46,7 +46,7 @@ cluster_standby_mode(){
 
     standby_mode=$(crm_standby -G  | awk '{print $3}' | cut -d '=' -f 2)
 
-    if [ $standby_mode == "on" ]
+    if [ "$standby_mode" == "on" ]
     then
         echo "cluster is already in a standby mode"
     else
