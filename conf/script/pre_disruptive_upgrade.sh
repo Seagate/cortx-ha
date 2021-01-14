@@ -20,22 +20,67 @@ set -eu -o pipefail
 BACKUP_SOURCE_DIR=/etc/cortx/ha
 BACKUP_DEST_DIR=/opt/seagate/cortx/ha_conf_backup
 
-# Take the backup of configuration files
-cp -r $BACKUP_SOURCE_DIR $BACKUP_DEST_DIR
 
-# Keep cluster in maintainence mode
-pcs property set maintenance-mode=true
+backup_consul(){
 
-# Remove all the resources from the cluster
+    echo "Taking the backup of consul"
+    # TODO: consul backup
+}
 
-# Get only the name of the resource
-resource_list=( `crm_resource --list-raw` )
+backup_conf(){
 
-# Remove each one by one
-for resource in "${resource_list[@]}"
-do
-    echo Deleteing the resource: "${resource}"
-    pcs resource delete "${resource}" --force
+    echo "Taking the backup of ha conf directory"
+
+    [ -d $BACKUP_DEST_DIR ]  && {
+        rm -rf $BACKUP_DEST_DIR
+    } || mkdir -p $BACKUP_DEST_DIR
+
+    # Take the backup of configuration files
+    cp -r $BACKUP_SOURCE_DIR $BACKUP_DEST_DIR
+}
+
+cluster_standby_mode(){
+
+    echo "standby mode ON"
+
+    # Keep cluster (nodes and resources) on standby mode
+    /usr/sbin/pcs node standby --all --wait=10
+    [ $? == 0 ] || {
+
+        echo "some problem occured to keep cluster in standby mode, Hence exiting"
+        exit 1
+    }
+}
+
+delete_resources(){
+
+    echo "deleting the resources from the cluster"
+
+    # Get only the name of the resource
+    resource_list=( `/usr/sbin/crm_resource --list-raw` )
+
+    # Remove each one by one
+    for resource in "${resource_list[@]}"
+    do
+        echo Deleteing the resource: "${resource}"
+        /usr/sbin/pcs resource delete "${resource}" --force
+    done
+}
+
+
+while [ $# -gt 0 ]; do
+    case $1 in
+        -cb )
+            backup_consul
+            ;;
+        * )
+            ;;
+    esac
+    shift 1
 done
 
+backup_conf
 
+cluster_standby_mode
+
+delete_resources
