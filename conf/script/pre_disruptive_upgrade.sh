@@ -33,7 +33,8 @@ backup_conf(){
 
     [ -d $BACKUP_DEST_DIR ]  && {
         rm -rf $BACKUP_DEST_DIR
-    } || mkdir -p $BACKUP_DEST_DIR
+        mkdir -p $BACKUP_DEST_DIR
+    }
 
     # Take the backup of configuration files
     cp -r $BACKUP_SOURCE_DIR $BACKUP_DEST_DIR
@@ -43,13 +44,20 @@ cluster_standby_mode(){
 
     echo "standby mode ON"
 
-    # Keep cluster (nodes and resources) on standby mode
-    /usr/sbin/pcs node standby --all --wait=10
-    [ $? == 0 ] || {
+    standby_mode=$(crm_standby -G  | awk '{print $3}' | cut -d '=' -f 2)
 
-        echo "some problem occured to keep cluster in standby mode, Hence exiting"
-        exit 1
-    }
+    if [ $standby_mode == 'on' ]
+    then
+        echo "cluster is already in a standby mode"
+    else
+        # Keep cluster (nodes and resources) on standby mode
+        /usr/sbin/pcs node standby --all --wait=10
+        [ $? == 0 ] || {
+
+            echo "some problem occured to keep cluster in standby mode, Hence exiting"
+            exit 1
+        }
+    fi
 }
 
 delete_resources(){
