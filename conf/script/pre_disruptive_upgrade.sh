@@ -19,12 +19,18 @@ set -eu -o pipefail
 
 BACKUP_SOURCE_DIR=/etc/cortx/ha
 BACKUP_DEST_DIR=/opt/seagate/cortx/ha_conf_backup
-
+consul=/usr/bin/consul
+HARE_DIR=/var/lib/hare
 
 backup_consul(){
 
     echo "Taking the backup of consul"
-    # TODO: consul backup
+    consul_kv_dump=$HARE_DIR/consul-kv-dump.json
+    if [[ -f $consul_kv_dump ]]; then
+        cat $consul_kv_dump | xz > ${consul_kv_dump%.json}-$(date '+%Y%m%d%H%M%S').json.xz
+    fi
+    $consul kv export > $consul_kv_dump
+
 }
 
 backup_conf(){
@@ -33,8 +39,9 @@ backup_conf(){
 
     [ -d $BACKUP_DEST_DIR ]  && {
         rm -rf $BACKUP_DEST_DIR
-        mkdir -p $BACKUP_DEST_DIR
     }
+
+    mkdir -p $BACKUP_DEST_DIR
 
     # Take the backup of configuration files
     cp -r $BACKUP_SOURCE_DIR $BACKUP_DEST_DIR
@@ -64,17 +71,23 @@ delete_resources(){
 
     echo "deleting the resources from the cluster"
 
-    # Get only the name of the resource
-    resource_list=$(/usr/sbin/crm_resource --list-raw)
+    resources=$(/usr/sbin/pcs resource show)
+    if [ "$resources" == "NO resources configured" ];
+    then
+        echo "No resources are configured. Hence, skipping this"
+    else
+        # Get only the name of the resource
+        resource_list=$(/usr/sbin/crm_resource --list-raw)
 
-    resource_list=( $resource_list )
+        resource_list=( $resource_list )
 
-    # Remove each one by one
-    for resource in "${resource_list[@]}"
-    do
-        echo Deleteing the resource: "${resource}"
-        /usr/sbin/pcs resource delete "${resource}" --force
-    done
+        # Remove each one by one
+        for resource in "${resource_list[@]}"
+        do
+            echo "Deleteing the resource: ${resource}"
+            /usr/sbin/pcs resource delete "${resource}" --force
+        done
+    fi
 }
 
 
