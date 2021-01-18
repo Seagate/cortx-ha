@@ -27,7 +27,7 @@ backup_consul(){
     echo "Taking the backup of consul"
     consul_kv_dump=$HARE_DIR/consul-kv-dump.json
     if [[ -f $consul_kv_dump ]]; then
-        cat $consul_kv_dump | xz > ${consul_kv_dump%.json}-$(date '+%Y%m%d%H%M%S').json.xz
+        cmd < $consul_kv_dump | xz > ${consul_kv_dump%.json}-$(date '+%Y%m%d%H%M%S').json.xz
     fi
     $consul kv export > $consul_kv_dump
 
