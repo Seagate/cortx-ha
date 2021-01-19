@@ -43,10 +43,17 @@ backup_consul(){
     echo "Taking the backup of consul"
     consul_kv_dump=$HARE_DIR/consul-kv-dump.json
     if [[ -f $consul_kv_dump ]]; then
-        cat $consul_kv_dump | xz > ${consul_kv_dump%.json}-$(date '+%Y%m%d%H%M%S').json.xz
+        # Facing one codacy issue with below line. Hence, compressing the file in a
+        # different way
+        #cat $consul_kv_dump | xz > ${consul_kv_dump%.json}-$(date '+%Y%m%d%H%M%S').json.xz
+
+        tar -czf ${consul_kv_dump%.json}-$(date '+%Y%m%d%H%M%S').json.tar.gz $consul_kv_dump
     fi
     $consul kv export > $consul_kv_dump
-
+    [ $? != 0 ] && {
+        echo "Consul backup failed"
+        exit 1
+    }
 }
 
 backup_conf(){
@@ -110,7 +117,6 @@ delete_resources(){
         done
     fi
 }
-
 
 while [ $# -gt 0 ]; do
     case $1 in
