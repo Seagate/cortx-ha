@@ -21,6 +21,22 @@ BACKUP_SOURCE_DIR=/etc/cortx/ha
 BACKUP_DEST_DIR=/opt/seagate/cortx/ha_conf_backup
 consul=/usr/bin/consul
 HARE_DIR=/var/lib/hare
+pcs=/usr/sbin/pcs
+crm_resource=/usr/sbin/crm_resource
+crm_standby=/usr/sbin/crm_standby
+
+PROG=${0##*/}
+
+usage() {
+    cat <<EOF
+Usage: $PROG
+
+* The script expects existing Pacemaker cluster to be running.
+
+Optional parameters:
+    <-cb>         Take consul backup
+EOF
+}
 
 backup_consul(){
 
@@ -49,20 +65,25 @@ backup_conf(){
 
 cluster_standby_mode(){
 
-    echo "standby mode ON"
-
-    standby_mode=$(crm_standby -G  | awk '{print $3}' | cut -d '=' -f 2)
+    final_count=3
+    standby_mode=$($crm_standby -G  | awk '{print $3}' | cut -d '=' -f 2)
 
     if [ "$standby_mode" == "on" ]
     then
         echo "cluster is already in a standby mode"
     else
         # Keep cluster (nodes and resources) on standby mode
-        /usr/sbin/pcs node standby --all --wait=10
+        $pcs node standby --all --wait=30
         [ $? == 0 ] || {
-
-            echo "some problem occured to keep cluster in standby mode, Hence exiting"
-            exit 1
+            retry_count=$(( $1 + 1 ))
+            if [ $retry_count -le $final_count ];
+            then
+                echo "Some problem occured to keep the cluster in standby mode, Retrying.."
+                cluster_standby_mode $retry_count
+            else
+                echo "Retry count exceeded for cluster standby mode. Hence, exiting.."
+                exit 1
+            fi
         }
     fi
 }
@@ -71,13 +92,13 @@ delete_resources(){
 
     echo "deleting the resources from the cluster"
 
-    resources=$(/usr/sbin/pcs resource show)
+    resources=$($pcs resource show)
     if [ "$resources" == "NO resources configured" ];
     then
         echo "No resources are configured. Hence, skipping this"
     else
         # Get only the name of the resource
-        resource_list=$(/usr/sbin/crm_resource --list-raw)
+        resource_list=$($crm_resource --list-raw)
 
         resource_list=( $resource_list )
 
@@ -85,7 +106,7 @@ delete_resources(){
         for resource in "${resource_list[@]}"
         do
             echo "Deleteing the resource: ${resource}"
-            /usr/sbin/pcs resource delete "${resource}" --force
+            $pcs resource delete "${resource}" --force
         done
     fi
 }
@@ -96,6 +117,10 @@ while [ $# -gt 0 ]; do
         -cb )
             backup_consul
             ;;
+        -h )
+            usage
+            exit 0
+            ;;
         * )
             ;;
     esac
@@ -104,6 +129,8 @@ done
 
 backup_conf
 
-cluster_standby_mode
+retry_count=0
+echo "Putting the cluster in standby mode"
+cluster_standby_mode $retry_count
 
 delete_resources
