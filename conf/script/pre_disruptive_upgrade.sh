@@ -117,12 +117,12 @@ delete_resources(){
             # In case of clone or master-slave resource, resource gets
             # displayed as rabbitmq:0, sspl:1 etc. So, remove :0 in such
             # case and perform delete operation only once.
-	        resource="${resource%:*}"
+            resource="${resource%:*}"
 
             # If same resource is in the list, that means it is already deleted.
             if [ "$prev_resource" != "$resource" ]; then
                 echo -e "\e[1;32mDeleting the resource: ${resource}\e[0m"
-            	$pcs resource delete "${resource}" --force
+                $pcs resource delete "${resource}" --force
             fi
 
             # For clone resources, in order to avoid repeatative delete,
