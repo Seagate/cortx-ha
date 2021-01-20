@@ -104,6 +104,8 @@ delete_resources(){
     then
         echo "No resources are configured. Hence, skipping this"
     else
+	    prev_resource=""
+
         # Get only the name of the resource
         resource_list=$($crm_resource --list-raw)
 
@@ -112,8 +114,20 @@ delete_resources(){
         # Remove each one by one
         for resource in "${resource_list[@]}"
         do
-            echo "Deleteing the resource: ${resource}"
-            $pcs resource delete "${resource}" --force
+            # In case of clone or master-slave resource, resource gets
+            # displayed as rabbitmq:0, sspl:1 etc. So, remove :0 in such
+            # case and perform delete operation only once.
+	        resource="${resource%:*}"
+
+            # If same resource is in the list, that means it is already deleted.
+            if [ "$prev_resource" != "$resource" ]; then
+                echo -e "\e[1;32mDeleting the resource: ${resource}\e[0m"
+            	$pcs resource delete "${resource}" --force
+            fi
+
+            # For clone resources, in order to avoid repeatative delete,
+            # it is required to store previous resource
+            prev_resource=$resource
         done
     fi
 }
