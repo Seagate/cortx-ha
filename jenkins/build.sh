@@ -23,10 +23,12 @@ DIST=$(realpath $BASE_DIR/dist)
 RPM_NAME="cortx-ha"
 CORTX="cortx"
 HA_PATH="/opt/seagate/${CORTX}"
+HA1="1.0.0"
+HA2="2.0.0"
 
 usage() {
     echo """
-usage: $PROG_NAME [-v <coretx-ha version>] [-d]
+usage: $PROG_NAME [-v <cortx-ha version>] [-d]
                             [-b <build no>] [-k <key>]
 
 Options:
@@ -75,14 +77,14 @@ fi
 cd $BASE_DIR
 [ -z $"$BUILD" ] && BUILD="$(git rev-parse --short HEAD)" \
         || BUILD="${BUILD}_$(git rev-parse --short HEAD)"
-[ -z "$VER" ] && VER=$(cat $BASE_DIR/VERSION)
+[ -z "$VER" ] && VER="${HA2}"
 [ -z "$KEY" ] && KEY="cortx-ha@pr0duct"
 
 echo "Using VERSION=${VER} BUILD=${BUILD}"
 
 ################### COPY FRESH DIR ##############################
-
 # Create fresh one to accomodate all packages.
+
 COPY_START_TIME=$(date +%s)
 DIST="$BASE_DIR/dist"
 HA_DIR="${DIST}/${CORTX}/ha"
@@ -93,7 +95,13 @@ TMPHA="${TMPDIR}/${CORTX}/ha"
     rm -rf ${DIST}
 }
 mkdir -p ${HA_DIR} ${TMPDIR} ${TMPHA}
-cp $BASE_DIR/jenkins/cortx-ha.spec ${TMPDIR}
+if [ "$VER" == "${HA1}" ]
+then
+  cp $BASE_DIR/jenkins/v1/cortx-ha.spec ${TMPDIR}
+else
+  cp $BASE_DIR/jenkins/v2/cortx-ha.spec ${TMPDIR}
+fi
+cp $BASE_DIR/VERSION ${TMPDIR}
 
 ######################### Backend ##############################
 
@@ -102,8 +110,10 @@ cd $TMPDIR
 
 sed -i -e "s/<RPM_NAME>/${RPM_NAME}/g" \
     -e "s|<HA_PATH>|${HA_PATH}|g" $TMPDIR/cortx-ha.spec
+sed -i -e "s/<VERSION>/${VER}/g" $TMPDIR/VERSION
 
 # Copy Backend files
+
 cp -rs $HA_SRC_PATH/* ${TMPHA}
 
 PYINSTALLER_FILE=$TMPDIR/pyinstaller-cortx-ha.spec
@@ -111,12 +121,27 @@ cp $BASE_DIR/jenkins/pyinstaller/pyinstaller-cortx-ha.spec ${PYINSTALLER_FILE}
 sed -i -e "s|<HA_PATH>|${TMPDIR}/cortx|g" ${PYINSTALLER_FILE}
 python3 -m PyInstaller --clean -y --distpath ${HA_DIR} --key ${KEY} ${PYINSTALLER_FILE}
 
-cp -rf $BASE_DIR/conf $HA_DIR/
-
-# Update HA path in setup
-sed -i -e "s|<HA_PATH>|${HA_PATH}/ha|g" ${HA_DIR}/conf/script/ha_setup
-sed -i -e "s|<HA_PATH>|${HA_PATH}/ha|g" ${HA_DIR}/conf/script/build-cortx-ha
-sed -i -e "s|<HA_PATH>|${HA_PATH}/ha|g" ${HA_DIR}/conf/script/cluster_update
+mkdir -p $HA_DIR/conf/etc/ $HA_DIR/conf/script/
+cp -rf $BASE_DIR/conf/etc/common/* $HA_DIR/conf/etc/
+cp -rf $BASE_DIR/conf/script/common/* $HA_DIR/conf/script/
+cp -rf $BASE_DIR/conf/logrotate/ $HA_DIR/conf/
+if [ "$VER" == "${HA1}" ]
+then
+   cp -rf $BASE_DIR/conf/etc/v1/* $HA_DIR/conf/etc/
+   cp -rf $BASE_DIR/conf/script/v1/* $HA_DIR/conf/script/
+   cp -rf $BASE_DIR/conf/iostack-ha/ $HA_DIR/conf/
+   # Update HA path in setup
+   sed -i -e "s|<HA_PATH>|${HA_PATH}/ha|g" ${HA_DIR}/conf/script/ha_setup
+   sed -i -e "s|<HA_PATH>|${HA_PATH}/ha|g" ${HA_DIR}/conf/script/build-cortx-ha
+   sed -i -e "s|<HA_PATH>|${HA_PATH}/ha|g" ${HA_DIR}/conf/script/cluster_update
+else
+   cp -rf $BASE_DIR/conf/etc/v2/* $HA_DIR/conf/etc/
+   cp -rf $BASE_DIR/conf/script/v2/* $HA_DIR/conf/script/
+   # Update version in conf file
+   sed -i -e "s|<VERSION>|${VER}|g" ${HA_DIR}/conf/etc/ha.conf
+   # pcswrap will only present in v1, hence removing it from v2
+   rm -rf ${TMPHA}/pcswrap
+fi
 
 ################## TAR & RPM BUILD ##############################
 
@@ -126,7 +151,12 @@ rm -rf ${DIST}/rpmbuild
 mkdir -p ${DIST}/rpmbuild/SOURCES
 
 cd $HA_SRC_PATH
-git ls-files pcswrap resource | cpio -pd $DIST/$CORTX
+if [ "$VER" == "${HA1}" ]
+then
+  git ls-files pcswrap resource | cpio -pd $DIST/$CORTX
+else
+  git ls-files resource | cpio -pd $DIST/$CORTX
+fi
 
 cd $DIST
 echo "Creating tar for HA build"
