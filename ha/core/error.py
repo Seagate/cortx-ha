@@ -26,6 +26,7 @@ HA_INVALID_NODE_ERROR           = 0x0002
 HA_COMMAND_TERMINATION_ERROR    = 0x0003
 HA_TEST_FAILED                  = 0x0004
 HA_SUPPORT_BUNDLE_FAILED        = 0x0005
+HA_RESOURCE_FAILED              = 0x0006
 
 class HAError(BaseError):
     def __init__(self, rc=1, desc=None, message_id=HA_BASIC_ERROR, message_args=None):

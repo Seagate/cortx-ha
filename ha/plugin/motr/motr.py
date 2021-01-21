@@ -15,59 +15,48 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-
 """
  ****************************************************************************
- Description:       resource_agent resource agent
+ Description:       Motr plugin to provide motr utility and interfaces.
  ****************************************************************************
 """
 
 import os
-import sys
+import json
+
 from cortx.utils.log import Log
 from ha import const
 
-class ResourceAgent:
-    """
-    Base class resource agent to monitor services
-    """
+class Motr:
     def __init__(self):
         pass
 
-    def monitor(self):
+    @staticmethod
+    def getFid(service_name: str, node_id: str, instance_id: int) -> str:
         """
-        Monitor service
-        """
-        return const.OCF_ERR_UNIMPLEMENTED
+        Get Fid from hare mapping file for motr services.
 
-    def start(self):
-        """
-        Start service
-        """
-        return const.OCF_ERR_UNIMPLEMENTED
+        Args:
+            service_name ([str]): Service name.
+            node_id ([str]): Node name for fid instance.
+            instance_id ([int]): Instance id for service.
 
-    def stop(self):
-        """
-        Stop service
-        """
-        return const.OCF_ERR_UNIMPLEMENTED
-
-    def metadata(self):
-        pass
-
-    def get_env(self) -> dict:
-        """
-        Get env variable and parameter provided by pacemaker
+        Returns:
+            str: Return fid for motr
         """
         try:
-            key = None
-            ocf_env = {}
-            resource_name = None
-            env = os.environ
-            for key in env.keys():
-                if key.startswith("OCF_"):
-                    ocf_env[key] = env[key]
-            return ocf_env
+            with open(const.FID_MAPPING_FILE) as fi:
+                fid_service_mapping = json.load(fi)
+            motr_mapping: dict = {}
+            count: int = 0
+            for service in fid_service_mapping["services"]:
+                if service["name"] == service_name:
+                    count += 1
+                    motr_mapping[count] = service["checks"][0]["args"][2]
+            fid: str = motr_mapping[instance_id]
+            Log.debug(f"Map ({service_name}, {node_id}, {instance_id}) to {fid}")
+            return fid
         except Exception as e:
-            Log.error(e)
-            return {}
+            Log.error(f"Failed to get fid for ({service_name}, {node_id}, \
+                {instance_id}). Error: {e}")
+            return None
