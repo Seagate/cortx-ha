@@ -17,6 +17,7 @@
 
 set -eu -o pipefail
 
+log_file=/var/log/cortx-ha.log
 BACKUP_SOURCE_DIR=/etc/cortx/ha
 BACKUP_DEST_DIR=/opt/seagate/cortx/ha_conf_backup
 consul=/usr/bin/consul
@@ -24,6 +25,17 @@ HARE_DIR=/var/lib/hare
 pcs=/usr/sbin/pcs
 crm_resource=/usr/sbin/crm_resource
 crm_standby=/usr/sbin/crm_standby
+
+exec &>> $log_file
+exec &> >(stdbuf -oL gawk '{ print strftime("%Y-%m-%d %H:%M:%S"), $0 }')
+
+log() {
+    logger --stderr --tag pre_disruptive_upgrade "$*"
+}
+
+log "****************************************************************"
+log "${0##*/}"
+log "****************************************************************"
 
 PROG=${0##*/}
 
@@ -41,6 +53,8 @@ EOF
 backup_consul(){
 
     echo "Taking the backup of consul"
+    log "${FUNCNAME[0]}: Exporting the Consul KV"
+
     consul_kv_dump=$HARE_DIR/consul-kv-dump.json
     if [[ -f $consul_kv_dump ]]; then
         # Facing one codacy issue with below line. Hence, compressing the file in a
@@ -51,14 +65,16 @@ backup_consul(){
     fi
     $consul kv export > $consul_kv_dump
     [ $? != 0 ] && {
-        echo "Consul backup failed"
+        log "${FUNCNAME[0]}: Consul KV export failed. Hence, exiting"
         exit 1
     }
+    log "Backup is taken successfully"
 }
 
 backup_conf(){
 
     echo "Taking the backup of ha conf directory"
+    log "${FUNCNAME[0]}: Taking the backup of HA configuration"
 
     [ -d $BACKUP_DEST_DIR ]  && {
         rm -rf $BACKUP_DEST_DIR
@@ -68,6 +84,11 @@ backup_conf(){
 
     # Take the backup of configuration files
     cp -r $BACKUP_SOURCE_DIR $BACKUP_DEST_DIR
+    [ $? != 0 ] && {
+        log "${FUNCNAME[0]}: Failed to create backup of HA config. Hence, exiting"
+        exit 1
+    }
+
 }
 
 cluster_standby_mode(){
@@ -77,7 +98,7 @@ cluster_standby_mode(){
 
     if [ "$standby_mode" == "on" ]
     then
-        echo "cluster is already in a standby mode"
+        log "${FUNCNAME[0]}: Cluster is already in a standby mode"
     else
         # Keep cluster (nodes and resources) on standby mode
         $pcs node standby --all --wait=30
@@ -85,10 +106,10 @@ cluster_standby_mode(){
             retry_count=$(( $1 + 1 ))
             if [ $retry_count -le $final_count ];
             then
-                echo "Some problem occured to keep the cluster in standby mode, Retrying.."
+                log "${FUNCNAME[0]}: Some problem occured to keep the cluster in standby mode, Retrying.."
                 cluster_standby_mode $retry_count
             else
-                echo "Retry count exceeded for cluster standby mode. Hence, exiting.."
+                log "${FUNCNAME[0]}: Retry count exceeded for cluster standby mode. Hence, exiting.."
                 exit 1
             fi
         }
@@ -97,12 +118,13 @@ cluster_standby_mode(){
 
 delete_resources(){
 
-    echo "deleting the resources from the cluster"
+    echo "Deleting the resources from the cluster"
+    log "${FUNCNAME[0]}: Deleting the resources from the cluster"
 
     resources=$($pcs resource show)
     if [ "$resources" == "NO resources configured" ];
     then
-        echo "No resources are configured. Hence, skipping this"
+        log "${FUNCNAME[0]}: No resources are configured. Hence, skipping this"
     else
 	    prev_resource=""
 
@@ -121,7 +143,7 @@ delete_resources(){
 
             # If same resource is in the list, that means it is already deleted.
             if [ "$prev_resource" != "$resource" ]; then
-                echo -e "\e[1;32mDeleting the resource: ${resource}\e[0m"
+                log "${FUNCNAME[0]}: Deleting the resource: ${resource}"
                 $pcs resource delete "${resource}" --force
             fi
 
@@ -150,6 +172,7 @@ done
 backup_conf
 
 retry_count=0
+log "Putting the cluster in standby mode"
 echo "Putting the cluster in standby mode"
 cluster_standby_mode $retry_count
 
