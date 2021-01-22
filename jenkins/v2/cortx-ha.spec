@@ -13,10 +13,6 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-# build number
-%define build_num %( test -n "$build_number" && echo "$build_number" || echo 1 )
-
-
 Name: <RPM_NAME>
 Version: %{version}
 Release:  %{build_num}_git%{git_rev}%{?dist}
@@ -38,11 +34,8 @@ HA Tools
 
 %install
 rm -rf ${RPM_BUILD_ROOT}
-mkdir -p ${RPM_BUILD_ROOT}<HA_PATH>
+mkdir -p ${RPM_BUILD_ROOT}<HA_PATH> ${RPM_BUILD_ROOT}<HA_PATH>/ha/bin
 cp -rp . ${RPM_BUILD_ROOT}<HA_PATH>
-
-# Compile pcswrap
-sed -i -e 's@^#!.*\.py3venv@#!/usr@' ${RPM_BUILD_ROOT}<HA_PATH>/ha/bin/*
 
 mkdir -p ${RPM_BUILD_ROOT}/usr/lib/ocf/resource.d/cortx/
 mv resource/{dispatch,lnet,sspl} \
@@ -55,20 +48,6 @@ HA_DIR=<HA_PATH>/ha
 
 RES_AGENT="/usr/lib/ocf/resource.d/seagate"
 mkdir -p ${RES_AGENT} $HA_DIR/bin /etc/cortx/ha/ /usr/bin
-
-# move setup.yaml to iostack-ha path
-IOSTACK_HA=<HA_PATH>/iostack-ha/conf
-mkdir  -p $IOSTACK_HA
-mv $HA_DIR/conf/iostack-ha/setup.yaml $IOSTACK_HA/
-
-
-# Move binary file
-ln -sf $HA_DIR/lib/hw_comp_ra ${RES_AGENT}/hw_comp_ra
-ln -sf $HA_DIR/lib/hw_comp_ra $HA_DIR/bin/hw_comp_ra
-ln -sf $HA_DIR/lib/iem_comp_ra ${RES_AGENT}/iem_comp_ra
-ln -sf $HA_DIR/lib/iem_comp_ra $HA_DIR/bin/iem_comp_ra
-ln -sf $HA_DIR/lib/cortxha $HA_DIR/bin/cortxha
-ln -sf $HA_DIR/lib/cortxha /usr/bin/cortxha
 exit 0
 
 %preun
@@ -78,14 +57,12 @@ exit 0
 [ $1 -eq 1 ] && exit 0
 HA_DIR=<HA_PATH>/ha
 RES_AGENT="/usr/lib/ocf/resource.d/seagate"
-IOSTACK_HA=<HA_PATH>/iostack-ha
 rm -f $HA_DIR/bin/hw_comp_ra 2> /dev/null;
 rm -f ${RES_AGENT}/hw_comp_ra 2> /dev/null;
 rm -f $HA_DIR/bin/iem_comp_ra 2> /dev/null;
 rm -f ${RES_AGENT}/iem_comp_ra 2> /dev/null;
 rm -f /usr/bin/cortxha 2> /dev/null;
 rm -f $HA_DIR/bin/cortxha 2> /dev/null;
-rm -rf $IOSTACK_HA
 exit 0
 
 %clean
@@ -97,5 +74,5 @@ exit 0
 /usr/lib/ocf/resource.d/cortx/*
 
 %changelog
-* Mon Jul 29 2019 Ajay Paratmandali <ajay.paratmandali@seagate.com> - 1.0.0
-- Initial spec file
+* Mon Jul 29 2019 Amol Shinde <amol.shinde@seagate.com> - 1.0.0
+- Initial spec file for HA2
