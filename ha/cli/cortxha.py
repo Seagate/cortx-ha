@@ -87,7 +87,7 @@ class HACli:
                 argParser.print_help(sys.stderr)
             else:
                 output = Output()
-                cluster = CortxClusterManager()
+                cluster = PcsClusterManager()
                 cluster.process_request(args.cortxha_action, args, output)
                 sys.stdout.write(f"{output.get_output()}\n")
                 sys.exit(output.get_rc())
@@ -104,6 +104,6 @@ if __name__ == '__main__':
     sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..'))
     from ha import const
     from ha.cli.command_factory import CommandFactory
-    from ha.core.cluster.cluster_manager import CortxClusterManager
+    from ha.core.cluster.cluster_manager import PcsClusterManager
     ha_cli = HACli()
     ha_cli.command()

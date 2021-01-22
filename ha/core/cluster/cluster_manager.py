@@ -21,7 +21,6 @@ from cortx.utils.log import Log
 from cortx.utils.ha.dm.decision_monitor import DecisionMonitor
 
 from ha.core.error import HAUnimplemented
-from ha.core.node.replacement.refresh_context import PcsRefreshContex
 from ha.execute import SimpleCommand
 from ha.core.support_bundle.ha_bundle import HABundle, CortxHABundle
 from ha import const
@@ -58,18 +57,13 @@ class ClusterManager:
     def shutdown(self):
         raise HAUnimplemented()
 
-class PcsClusterManager(ClusterManager):
+class PcsClusterManager:
     def __init__(self):
         """
         PcsCluster manage pacemaker/corosync cluster
         """
         super(PcsClusterManager, self).__init__()
         self._execute = SimpleCommand()
-        self._decision_monitor = DecisionMonitor()
-        # TODO: add node_manager class to handle query
-        self._refresh_contex = PcsRefreshContex(self._decision_monitor)
-        # TODO move node logic to node manager class
-        self._node_status = [ 'Online', 'Standby', 'Maintenance', 'Offline', 'Disconnected']
 
     def process_request(self, action, args, output):
         """
@@ -85,8 +79,6 @@ class PcsClusterManager(ClusterManager):
                 getattr(self, args.cluster_action)(args.node)
             else:
                 getattr(self, args.cluster_action)()
-        elif action == const.NODE_COMMAND:
-            self._refresh_contex.process_request(action, args)
         elif action == const.BUNDLE_COMMAND:
             HABundle().process_request(action, args, output)
         else:
@@ -180,9 +172,81 @@ class PcsClusterManager(ClusterManager):
         _output, _err, _rc = self._execute.run_cmd(const.PCS_STATUS)
         Log.info(f"Cluster status output after add node: {_output}, {_err}, {_rc}")
 
+    def get_nodes_status(self):
+        _output, _err, _rc = self._execute.run_cmd(const.PCS_STATUS_NODES, check_error=False)
+
+        self.active_nodes = self.standby_nodes = self.offline_nodes = "false"
+        for status in _output.split("\n"):
+            nodes = status.split()
+            if len(nodes) > 0:
+                if nodes[0] == "Online:" and len(nodes) > 1:
+                    self.active_nodes = "true"
+
+                if nodes[0] == "Standby" and nodes[1] == "with" and nodes[2] == "resource(s)" and nodes[3] == "running:" and len(nodes) > 4:
+                    self.active_nodes = "true"
+ 
+                if((nodes[0] == "Maintenance:") and (len(nodes) > 1)):
+                    self.active_nodes = "true"
+
+                if((nodes[0] == "Standby:") and (len(nodes) > 1)):
+                    self.standby_nodes = "true"
+
+                if((nodes[0] == "Offline:") and (len(nodes) > 1)):
+                    self.offline_nodes = "true"
+
+
     def start(self):
-        # TODO Add wrapper to hctl pcswrap
-        raise HAUnimplemented("This feature is not supported...")
+
+        Log.debug("Executing cortxha cluster start")
+
+        _output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_STATUS, check_error=False)
+        if _rc != 0:
+            if(_err.find("No such file or directory: 'pcs'") != -1):
+                Log.error("Cluster failed to start; pcs not installed ")
+                raise Exception(f"Cluster failed to start; pcs not installed")
+            # if cluster is not running; start cluster
+            elif(_err.find("cluster is not currently running on this node") != -1):
+                output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_START, check_error=False)
+                Log.info(f"cluster started ; waiting for nodes to come online ")
+                # It takes nodes 30 seconds to come to their original state after cluster is started
+                # observation on a 2 node cluster
+                time.sleep(30)
+
+        """
+        If cluster is running, but all nodes are either Offline or in Standby mode;
+        start the nodes
+        """
+
+        self.get_nodes_status()
+        if self.active_nodes is "false":
+            if self.standby_nodes is "true":
+                # issue pcs cluster unstandby
+                _output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_UNSTANDBY, check_error=False)
+
+            if self.offline_nodes is "true":
+                # issue pcs cluster start
+                _output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_START, check_error=False)
+
+        # check cluster and node status
+        output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_STATUS, check_error=False)
+        if _rc != 0:
+            # cluster could not be started.
+            Log.error("Cluster failed to start")
+            self._output.output("Cluster failed to start")
+            self._output.rc(1)
+            raise Exception(f"Cluster failed to start")
+        else:
+            # confirm that at least one node is active
+            self.get_nodes_status()
+            if self.active_nodes is "false":
+                # wait for 5 seconds and retry
+                time.sleep(5)
+                self.get_nodes_status()
+                if self.active_nodes is "false":
+                    raise Exception(f"Cluster started; nodes not online")
+
+        Log.info(f"Cluster started successfully")
+
 
     def stop(self):
         # TODO Add wrapper to hctl pcswrap
