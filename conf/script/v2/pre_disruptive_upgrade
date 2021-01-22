@@ -68,7 +68,7 @@ backup_consul(){
         log "${FUNCNAME[0]}: Consul KV export failed. Hence, exiting"
         exit 1
     }
-    log "Backup is taken successfully"
+    log "Consul Backup is taken successfully"
 }
 
 backup_conf(){
@@ -88,7 +88,7 @@ backup_conf(){
         log "${FUNCNAME[0]}: Failed to create backup of HA config. Hence, exiting"
         exit 1
     }
-
+    log "HA config backup is taken successfully"
 }
 
 cluster_standby_mode(){
