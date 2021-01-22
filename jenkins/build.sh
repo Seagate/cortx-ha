@@ -15,7 +15,6 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-
 set -ex
 BASE_DIR=$(realpath "$(dirname $0)/..")
 PROG_NAME=$(basename $0)
@@ -23,16 +22,20 @@ DIST=$(realpath $BASE_DIR/dist)
 RPM_NAME="cortx-ha"
 CORTX="cortx"
 HA_PATH="/opt/seagate/${CORTX}"
-HA1="1.0.0"
-HA2="2.0.0"
+HA1="1"
+HA2="2"
+BUILD_VERSION="1"
+MINOR_VERSION="0.0"
 
 usage() {
     echo """
-usage: $PROG_NAME [-v <cortx-ha version>] [-d]
-                            [-b <build no>] [-k <key>]
+usage: $PROG_NAME [-g <cortx-ha git version>] [-v <cortx-ha major version>] [-m <cortx-ha minor version>]
+                  [-d] [-b <build no>] [-k <key>]
 
 Options:
-    -v : Build rpm with version
+    -g : Build rpm with git revision
+    -v : Build rpm with major version
+    -m : Build rpm with minor version
     -b : Build rpm with build number
     -k : Provide key for encryption of code
         """ 1>&2;
@@ -41,8 +44,14 @@ Options:
 
 while getopts ":g:v:b:p:k" o; do
     case "${o}" in
+        g)
+            GIT_VER=${OPTARG}
+            ;;
         v)
-            VER=${OPTARG}
+            MAJ_VER=${OPTARG}
+            ;;
+        m)
+            MIN_VER=${OPTARG}
             ;;
         b)
             BUILD=${OPTARG}
@@ -75,12 +84,13 @@ if [[ $BASE_DIR =~ jenkins/workspace ]] ; then
 fi
 
 cd $BASE_DIR
-[ -z $"$BUILD" ] && BUILD="$(git rev-parse --short HEAD)" \
-        || BUILD="${BUILD}_$(git rev-parse --short HEAD)"
-[ -z "$VER" ] && VER="${HA2}"
+[ -z "$GIT_VER" ] && GIT_VER=$(git rev-parse --short HEAD)
+[ -z "$BUILD" ] && BUILD="${BUILD_VERSION}"
+[ -z "$MAJ_VER" ] && MAJ_VER="${HA2}"
+[ -z "$MIN_VER" ] && MIN_VER="${MINOR_VERSION}"
 [ -z "$KEY" ] && KEY="cortx-ha@pr0duct"
 
-echo "Using VERSION=${VER} BUILD=${BUILD}"
+echo "Using MAJOR_VERSION=${MAJ_VER} MINOR_VERSION=${MIN_VER} REVISION=${GIT_VER} BUILD=${BUILD}"
 
 ################### COPY FRESH DIR ##############################
 # Create fresh one to accomodate all packages.
@@ -95,7 +105,7 @@ TMPHA="${TMPDIR}/${CORTX}/ha"
     rm -rf ${DIST}
 }
 mkdir -p ${HA_DIR} ${TMPDIR} ${TMPHA}
-if [ "$VER" == "${HA1}" ]
+if [ "$MAJ_VER" == "${HA1}" ]
 then
   cp $BASE_DIR/jenkins/v1/cortx-ha.spec ${TMPDIR}
 else
@@ -110,7 +120,7 @@ cd $TMPDIR
 
 sed -i -e "s/<RPM_NAME>/${RPM_NAME}/g" \
     -e "s|<HA_PATH>|${HA_PATH}|g" $TMPDIR/cortx-ha.spec
-sed -i -e "s/<VERSION>/${VER}/g" $TMPDIR/VERSION
+sed -i -e "s/<MAJ_VERSION>/${MAJ_VER}/g" $TMPDIR/VERSION
 
 # Copy Backend files
 
@@ -125,7 +135,7 @@ mkdir -p $HA_DIR/conf/etc/ $HA_DIR/conf/script/
 cp -rf $BASE_DIR/conf/etc/common/* $HA_DIR/conf/etc/
 cp -rf $BASE_DIR/conf/script/common/* $HA_DIR/conf/script/
 cp -rf $BASE_DIR/conf/logrotate/ $HA_DIR/conf/
-if [ "$VER" == "${HA1}" ]
+if [ "$MAJ_VER" == "${HA1}" ]
 then
    cp -rf $BASE_DIR/conf/etc/v1/* $HA_DIR/conf/etc/
    cp -rf $BASE_DIR/conf/script/v1/* $HA_DIR/conf/script/
@@ -138,7 +148,7 @@ else
    cp -rf $BASE_DIR/conf/etc/v2/* $HA_DIR/conf/etc/
    cp -rf $BASE_DIR/conf/script/v2/* $HA_DIR/conf/script/
    # Update version in conf file
-   sed -i -e "s|<VERSION>|${VER}|g" ${HA_DIR}/conf/etc/ha.conf
+   sed -i -e "s|<VERSION>|${MAJ_VER}|g" ${HA_DIR}/conf/etc/ha.conf
    # pcswrap will only present in v1, hence removing it from v2
    rm -rf ${TMPHA}/pcswrap
 fi
@@ -151,7 +161,7 @@ rm -rf ${DIST}/rpmbuild
 mkdir -p ${DIST}/rpmbuild/SOURCES
 
 cd $HA_SRC_PATH
-if [ "$VER" == "${HA1}" ]
+if [ "$MAJ_VER" == "${HA1}" ]
 then
   git ls-files pcswrap resource | cpio -pd $DIST/$CORTX
 else
@@ -160,15 +170,16 @@ fi
 
 cd $DIST
 echo "Creating tar for HA build"
-tar -czf ${DIST}/rpmbuild/SOURCES/${RPM_NAME}-${VER}.tar.gz ${CORTX}
+tar -czf ${DIST}/rpmbuild/SOURCES/${RPM_NAME}-${MAJ_VER}.${MIN_VER}.tar.gz ${CORTX}
 
 # Generate RPMs
 TOPDIR=$(realpath ${DIST}/rpmbuild)
 
 # HA RPM
-echo rpmbuild --define "version $VER" --define "dist $BUILD" --define "_topdir $TOPDIR" \
-            -bb $BASE_DIR/jenkins/cortx-ha.spec
-rpmbuild --define "version $VER" --define "dist $BUILD" --define "_topdir $TOPDIR" -bb $TMPDIR/cortx-ha.spec
+echo rpmbuild --define "version $MAJ_VER.$MIN_VER" --define "git_rev $GIT_VER" --define "build_num $BUILD" --define \
+            "_topdir $TOPDIR" -bb $TMPDIR/cortx-ha.spec
+rpmbuild --define "version $MAJ_VER.$MIN_VER" --define "git_rev $GIT_VER" --define "build_num $BUILD" --define \
+            "_topdir $TOPDIR" -bb $TMPDIR/cortx-ha.spec
 
 # Remove temporary directory
 rm -rf ${DIST}/tmp

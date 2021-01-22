@@ -13,9 +13,13 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
+# build number
+%define build_num %( test -n "$build_number" && echo "$build_number" || echo 1 )
+
+
 Name: <RPM_NAME>
 Version: %{version}
-Release: %{dist}
+Release:  %{build_num}_git%{git_rev}%{?dist}
 Summary: HA Tools
 License: Seagate Proprietary
 URL: https://github.com/Seagate/cortx-ha
@@ -38,7 +42,6 @@ mkdir -p ${RPM_BUILD_ROOT}<HA_PATH>
 cp -rp . ${RPM_BUILD_ROOT}<HA_PATH>
 
 # Compile pcswrap
-make -C pcswrap install DESTDIR=${RPM_BUILD_ROOT}<HA_PATH>/ha
 sed -i -e 's@^#!.*\.py3venv@#!/usr@' ${RPM_BUILD_ROOT}<HA_PATH>/ha/bin/*
 
 mkdir -p ${RPM_BUILD_ROOT}/usr/lib/ocf/resource.d/cortx/
