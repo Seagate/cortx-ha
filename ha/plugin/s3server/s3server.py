@@ -43,14 +43,14 @@ class S3server:
         try:
             with open(const.FID_MAPPING_FILE) as fi:
                 fid_service_mapping = json.load(fi)
-            s3server_mapping: dict = {}
-            count: int = 0
+            clone_id: int = 0
+            fid: str = ""
             for service in fid_service_mapping["services"]:
-                if service["name"] == service_name:
-                    count += 1
+                clone_id = int(service["port"])
+                if service["name"] == service_name and clone_id == instance_id:
                     service_fid = service["checks"][0]["args"][2]
-                    s3server_mapping[count] = service_fid.split("@")[1]
-            fid: str = s3server_mapping[instance_id]
+                    fid = service_fid.split("@")[1]
+                    break
             Log.debug(f"Map ({service_name}, {node_id}, {instance_id}) to {fid}")
             return fid
         except Exception as e:
