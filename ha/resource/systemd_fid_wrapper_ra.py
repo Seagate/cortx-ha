@@ -23,14 +23,13 @@
 
 import os
 import sys
-import json
 import time
 import pathlib
 import traceback
 
 from cortx.utils.log import Log
-from cortx.utils.conf_store.conf_store import Conf
 
+sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..'))
 from ha.core.config.config_ha import ConfigHA
 from ha.resource.resource_agent import ResourceAgent
 from ha.execute import SimpleCommand
@@ -70,10 +69,6 @@ class SystemdFidWrapperRA(ResourceAgent):
             str: Service name with fid mapping like service@fid
         """
         res_param = self.get_env()
-        res_param = {'OCF_RESKEY_service': 's3server',
-                    'OCF_RESOURCE_INSTANCE': 's3server-1',
-                    'OCF_RESKEY_fid_service_name': "s3service"}
-
         service: str = res_param['OCF_RESKEY_service']
         fid_service_name: str = res_param['OCF_RESKEY_fid_service_name']
         # TODO: Get local node name from configuration
@@ -192,7 +187,7 @@ class SystemdFidWrapperRA(ResourceAgent):
         Log.info(f"Stop: Stopped {service} service")
         return const.OCF_SUCCESS
 
-    def monitor(self, service_name: str = None) -> int:
+    def monitor(self) -> int:
         """
         It monitor service with help of pacemaker and return result.
 
@@ -206,7 +201,7 @@ class SystemdFidWrapperRA(ResourceAgent):
                 const.OCF_SUCCESS: Service is running.
                 Monitor timeout will cause restart.
         """
-        service: str = self._get_systemd_service() if service_name is None else service_name
+        service: str = self._get_systemd_service()
         Log.debug(f"Monitor: Monitoring of service: {service}")
         while True:
             status: str = self._get_service_status(service).strip()
@@ -249,13 +244,11 @@ def main(resource: SystemdFidWrapperRA, action: str ='') -> int:
         else:
             print('Usage %s [monitor] [start] [stop] [meta-data]' % sys.argv[0])
             exit(0)
-    except Exception as e:
-        print(traceback.format_exc())
+    except:
         Log.error(f"{traceback.format_exc()}")
         return const.OCF_ERR_GENERIC
 
 if __name__ == '__main__':
-    sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..'))
     action = sys.argv[1] if len(sys.argv) > 1 else ""
     resource_agent = SystemdFidWrapperRA()
     sys.exit(main(resource_agent, action))

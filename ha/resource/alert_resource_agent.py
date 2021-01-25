@@ -23,7 +23,6 @@
 """
 
 import sys
-import re
 import os
 import json
 import traceback
@@ -31,7 +30,6 @@ import traceback
 from cortx.utils.schema.conf import Conf
 from cortx.utils.schema.payload import *
 from cortx.utils.log import Log
-from cortx.utils.process import SimpleProcess
 from cortx.utils.ha.dm.decision_monitor import DecisionMonitor
 from cortx.utils.ha.dm.actions import Action
 from ha.resource.resource_agent import ResourceAgent
@@ -67,23 +65,6 @@ class AlertResourceAgent(ResourceAgent):
     @staticmethod
     def metadata():
         pass
-
-    def get_env(self):
-        """
-        Get env variable and parameter provided by pacemaker
-        """
-        try:
-            key = None
-            ocf_env = {}
-            resource_name = None
-            env = os.environ
-            for key in env.keys():
-                if key.startswith("OCF_"):
-                    ocf_env[key] = env[key]
-            return ocf_env
-        except Exception as e:
-            Log.error(e)
-            return {}
 
     def _acknowledge_event_group(self, key):
         """

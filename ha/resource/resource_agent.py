@@ -23,7 +23,6 @@
 """
 
 import os
-import sys
 from cortx.utils.log import Log
 from ha import const
 
@@ -31,9 +30,6 @@ class ResourceAgent:
     """
     Base class resource agent to monitor services
     """
-    def __init__(self):
-        pass
-
     def monitor(self):
         """
         Monitor service
@@ -62,7 +58,6 @@ class ResourceAgent:
         try:
             key = None
             ocf_env = {}
-            resource_name = None
             env = os.environ
             for key in env.keys():
                 if key.startswith("OCF_"):

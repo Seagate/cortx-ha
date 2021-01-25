@@ -21,15 +21,12 @@
  ****************************************************************************
 """
 
-import os
 import json
 
 from cortx.utils.log import Log
 from ha import const
 
 class Motr:
-    def __init__(self):
-        pass
 
     @staticmethod
     def getFid(service_name: str, node_id: str, instance_id: int) -> str:

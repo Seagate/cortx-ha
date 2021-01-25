@@ -26,8 +26,6 @@ from cortx.utils.log import Log
 from ha import const
 
 class S3server:
-    def __init__(self):
-        pass
 
     @staticmethod
     def getFid(service_name: str, node_id: str, instance_id: int) -> str:
