@@ -25,7 +25,6 @@ import os
 import sys
 import time
 import pathlib
-import traceback
 
 from cortx.utils.log import Log
 
@@ -33,8 +32,7 @@ sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..'
 from ha.core.config.config_ha import ConfigHA
 from ha.resource.resource_agent import ResourceAgent
 from ha.execute import SimpleCommand
-from ha.plugin.motr.motr import Motr
-from ha.plugin.s3server.s3server import S3server
+from ha.plugin.hare.hare import Hare
 from ha import const
 
 class FidManager:
@@ -55,14 +53,9 @@ class FidManager:
         Returns:
             str: Return fid of given service.
         """
-        services: dict = {
-            "confd": Motr,
-            "ios": Motr,
-            "s3service": S3server
-        }
-        return getattr(services[service], "getFid")(service, node_id, instance_id)
+        return Hare.get_fid(service, node_id, instance_id)
 
-class SystemdFidWrapperRA(ResourceAgent):
+class DynamicFidServiceRA(CortxServiceRA):
     """
     This class is used to provide wrapper around systemd resource agent.
     This class manage fid mapping to (serviceName, NodeId, InstanceId).
@@ -76,9 +69,9 @@ class SystemdFidWrapperRA(ResourceAgent):
     """
     def __init__(self):
         """
-        Initialize SystemdFidWrapperRA class.
+        Initialize DynamicFidServiceRA class.
         """
-        super(SystemdFidWrapperRA, self).__init__()
+        super(DynamicFidServiceRA, self).__init__()
         self._execute = SimpleCommand()
         self._status_list: list = ["failed", "active", "unknown"]
 
@@ -124,7 +117,7 @@ class SystemdFidWrapperRA(ResourceAgent):
         """
         env: str =r"""<?xml version="1.0"?>
         <!DOCTYPE resource-agent SYSTEM "ra-api-1.dtd">
-        <resource-agent name="systemd_fid_wrapper_ra">
+        <resource-agent name="dynamic_fid_service_ra">
         <version>1.0</version>
 
         <longdesc lang="en">
@@ -239,12 +232,12 @@ class SystemdFidWrapperRA(ResourceAgent):
                 continue
         return const.OCF_SUCCESS
 
-def main(resource: SystemdFidWrapperRA, action: str ='') -> int:
+def main(resource: DynamicFidServiceRA, action: str ='') -> int:
     """
-    Main function acts as switch case for SystemdFidWrapperRA resource agent.
+    Main function acts as switch case for DynamicFidServiceRA resource agent.
 
     Args:
-        resource (SystemdFidWrapperRA): Resource agent
+        resource (DynamicFidServiceRA): Resource agent
         action (str): Resource agent action called by Pacemaker. Defaults to ''.
 
     Returns:
@@ -270,5 +263,5 @@ def main(resource: SystemdFidWrapperRA, action: str ='') -> int:
 
 if __name__ == '__main__':
     action = sys.argv[1] if len(sys.argv) > 1 else ""
-    resource_agent = SystemdFidWrapperRA()
+    resource_agent = DynamicFidServiceRA()
     sys.exit(main(resource_agent, action))

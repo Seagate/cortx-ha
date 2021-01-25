@@ -66,3 +66,13 @@ class ResourceAgent:
         except Exception as e:
             Log.error(e)
             return {}
+
+class CortxServiceRA(ResourceAgent):
+    """
+    Cortx Service RA
+    """
+    def __init__(self):
+        """
+        Initialize CortxServiceRA class.
+        """
+        super(CortxServiceRA, self).__init__()

@@ -35,12 +35,12 @@ from cortx.utils.ha.dm.actions import Action
 from ha.resource.resource_agent import ResourceAgent
 from ha import const
 
-class AlertResourceAgent(ResourceAgent):
+class AlertMonitorResourceAgent(ResourceAgent):
     """
     Base class of resource agent to monitor hw/iem alert.
     """
     def __init__(self, decision_monitor, resource_schema):
-        super(AlertResourceAgent, self).__init__()
+        super(AlertMonitorResourceAgent, self).__init__()
         self.decision_monitor = decision_monitor
         self.nodes = resource_schema[const.NODE_LIST]
 
@@ -132,7 +132,7 @@ class AlertResourceAgent(ResourceAgent):
             Log.error(f"Unimplemented value for status {args[const.CURRENT_NODE_STATUS]}")
             return const.OCF_ERR_UNIMPLEMENTED
 
-class HardwareResourceAgent(AlertResourceAgent):
+class HardwareResourceAgent(AlertMonitorResourceAgent):
     """
     Resource agent to monitor hardware service
     """
@@ -229,7 +229,7 @@ Hardware Resource agent
             Log.error(e)
             return const.OCF_ERR_CONFIGURED
 
-class IEMResourceAgent(AlertResourceAgent):
+class IEMResourceAgent(AlertMonitorResourceAgent):
     """
     Resource agent to monitor software iem
     """
