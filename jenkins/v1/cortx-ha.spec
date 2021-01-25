@@ -15,7 +15,7 @@
 
 Name: <RPM_NAME>
 Version: %{version}
-Release:  %{build_num}_git%{git_rev}%{?dist}
+Release: %{dist}
 Summary: HA Tools
 License: Seagate Proprietary
 URL: https://github.com/Seagate/cortx-ha
