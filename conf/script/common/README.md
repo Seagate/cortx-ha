@@ -1,1 +1,1 @@
-## README for common modules
+## Placeholder for common configuration files in v1 and v2.

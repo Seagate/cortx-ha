@@ -24,34 +24,34 @@ CORTX="cortx"
 HA_PATH="/opt/seagate/${CORTX}"
 HA1="1"
 HA2="2"
-BUILD_VERSION="1"
-MINOR_VERSION="0.0"
+MINOR_VERSION="0"
+REVISION_VERSION="0"
 
 usage() {
     echo """
-usage: $PROG_NAME [-g <cortx-ha git version>] [-v <cortx-ha major version>] [-m <cortx-ha minor version>]
-                  [-d] [-b <build no>] [-k <key>]
+usage: $PROG_NAME [-v <cortx-ha major version>] [-m <cortx-ha minor version>]
+                  [-r <cortx-ha revision version>] [-b <build no>] [-k <key>]
 
 Options:
-    -g : Build rpm with git revision
     -v : Build rpm with major version
     -m : Build rpm with minor version
+    -r : Build rpm with revision version
     -b : Build rpm with build number
     -k : Provide key for encryption of code
         """ 1>&2;
     exit 1;
 }
 
-while getopts ":g:v:b:p:k" o; do
+while getopts ":v:m:r:b:k" o; do
     case "${o}" in
-        g)
-            GIT_VER=${OPTARG}
-            ;;
         v)
             MAJ_VER=${OPTARG}
             ;;
         m)
             MIN_VER=${OPTARG}
+            ;;
+        r)
+            PATCH_VER=${OPTARG}
             ;;
         b)
             BUILD=${OPTARG}
@@ -84,13 +84,14 @@ if [[ $BASE_DIR =~ jenkins/workspace ]] ; then
 fi
 
 cd $BASE_DIR
-[ -z "$GIT_VER" ] && GIT_VER=$(git rev-parse --short HEAD)
-[ -z "$BUILD" ] && BUILD="${BUILD_VERSION}"
+[ -z $"$BUILD" ] && BUILD="$(git rev-parse --short HEAD)" \
+        || BUILD="${BUILD}_$(git rev-parse --short HEAD)"
 [ -z "$MAJ_VER" ] && MAJ_VER="${HA2}"
 [ -z "$MIN_VER" ] && MIN_VER="${MINOR_VERSION}"
+[ -z "$PATCH_VER" ] && PATCH_VER="${REVISION_VERSION}"
 [ -z "$KEY" ] && KEY="cortx-ha@pr0duct"
 
-echo "Using MAJOR_VERSION=${MAJ_VER} MINOR_VERSION=${MIN_VER} REVISION=${GIT_VER} BUILD=${BUILD}"
+echo "Using MAJOR_VERSION=${MAJ_VER} MINOR_VERSION=${MIN_VER} REVISION=${PATCH_VER} BUILD=${BUILD}"
 
 ################### COPY FRESH DIR ##############################
 # Create fresh one to accomodate all packages.
@@ -107,9 +108,9 @@ TMPHA="${TMPDIR}/${CORTX}/ha"
 mkdir -p ${HA_DIR} ${TMPDIR} ${TMPHA}
 if [ "$MAJ_VER" == "${HA1}" ]
 then
-  cp $BASE_DIR/jenkins/v1/cortx-ha.spec ${TMPDIR}
+    cp $BASE_DIR/jenkins/v1/cortx-ha.spec ${TMPDIR}
 else
-  cp $BASE_DIR/jenkins/v2/cortx-ha.spec ${TMPDIR}
+    cp $BASE_DIR/jenkins/v2/cortx-ha.spec ${TMPDIR}
 fi
 cp $BASE_DIR/VERSION ${TMPDIR}
 
@@ -120,14 +121,19 @@ cd $TMPDIR
 
 sed -i -e "s/<RPM_NAME>/${RPM_NAME}/g" \
     -e "s|<HA_PATH>|${HA_PATH}|g" $TMPDIR/cortx-ha.spec
-sed -i -e "s/<VERSION>/${MAJ_VER}.${MIN_VER}/g" $TMPDIR/VERSION
+sed -i -e "s/<VERSION>/${MAJ_VER}.${MIN_VER}.${PATCH_VER}/g" $TMPDIR/VERSION
 
 # Copy Backend files
-
 cp -rs $HA_SRC_PATH/* ${TMPHA}
 
 PYINSTALLER_FILE=$TMPDIR/pyinstaller-cortx-ha.spec
-cp $BASE_DIR/jenkins/pyinstaller/pyinstaller-cortx-ha.spec ${PYINSTALLER_FILE}
+if [ "$MAJ_VER" == "${HA1}" ]
+then
+    cp $BASE_DIR/jenkins/pyinstaller/v1/pyinstaller-cortx-ha.spec ${PYINSTALLER_FILE}
+else
+    cp $BASE_DIR/jenkins/pyinstaller/v2/pyinstaller-cortx-ha.spec ${PYINSTALLER_FILE}
+fi
+
 sed -i -e "s|<HA_PATH>|${TMPDIR}/cortx|g" ${PYINSTALLER_FILE}
 python3 -m PyInstaller --clean -y --distpath ${HA_DIR} --key ${KEY} ${PYINSTALLER_FILE}
 
@@ -137,22 +143,22 @@ cp -rf $BASE_DIR/conf/script/common/* $HA_DIR/conf/script/
 cp -rf $BASE_DIR/conf/logrotate/ $HA_DIR/conf/
 if [ "$MAJ_VER" == "${HA1}" ]
 then
-   cp -rf $BASE_DIR/conf/etc/v1/* $HA_DIR/conf/etc/
-   cp -rf $BASE_DIR/conf/script/v1/* $HA_DIR/conf/script/
-   cp -rf $BASE_DIR/conf/iostack-ha/ $HA_DIR/conf/
-   # Update HA path in setup
-   sed -i -e "s|<HA_PATH>|${HA_PATH}/ha|g" ${HA_DIR}/conf/script/ha_setup
-   sed -i -e "s|<HA_PATH>|${HA_PATH}/ha|g" ${HA_DIR}/conf/script/build-cortx-ha
-   sed -i -e "s|<HA_PATH>|${HA_PATH}/ha|g" ${HA_DIR}/conf/script/cluster_update
+     cp -rf $BASE_DIR/conf/etc/v1/* $HA_DIR/conf/etc/
+     cp -rf $BASE_DIR/conf/script/v1/* $HA_DIR/conf/script/
+     cp -rf $BASE_DIR/conf/iostack-ha/ $HA_DIR/conf/
+     # Update HA path in setup
+     sed -i -e "s|<HA_PATH>|${HA_PATH}/ha|g" ${HA_DIR}/conf/script/ha_setup
+     sed -i -e "s|<HA_PATH>|${HA_PATH}/ha|g" ${HA_DIR}/conf/script/build-cortx-ha
+     sed -i -e "s|<HA_PATH>|${HA_PATH}/ha|g" ${HA_DIR}/conf/script/cluster_update
 else
-   cp -rf $BASE_DIR/conf/etc/v2/* $HA_DIR/conf/etc/
-   cp -rf $BASE_DIR/conf/script/v2/* $HA_DIR/conf/script/
-   # pcswrap will only present in v1, hence removing it from v2
-   rm -rf ${TMPHA}/pcswrap
+     cp -rf $BASE_DIR/conf/etc/v2/* $HA_DIR/conf/etc/
+     cp -rf $BASE_DIR/conf/script/v2/* $HA_DIR/conf/script/
+     # pcswrap will only present in v1, hence removing it from v2
+     rm -rf ${TMPHA}/pcswrap
 fi
 
 # Update version in conf file
-sed -i -e "s|<VERSION>|${MAJ_VER}.${MIN_VER}|g" ${HA_DIR}/conf/etc/ha.conf
+sed -i -e "s|<VERSION>|${MAJ_VER}.${MIN_VER}.${PATCH_VER}|g" ${HA_DIR}/conf/etc/ha.conf
 
 ################## TAR & RPM BUILD ##############################
 
@@ -164,22 +170,22 @@ mkdir -p ${DIST}/rpmbuild/SOURCES
 cd $HA_SRC_PATH
 if [ "$MAJ_VER" == "${HA1}" ]
 then
-  git ls-files pcswrap resource | cpio -pd $DIST/$CORTX
+    git ls-files pcswrap resource | cpio -pd $DIST/$CORTX
 else
-  git ls-files resource | cpio -pd $DIST/$CORTX
+    git ls-files resource | cpio -pd $DIST/$CORTX
 fi
 
 cd $DIST
 echo "Creating tar for HA build"
-tar -czf ${DIST}/rpmbuild/SOURCES/${RPM_NAME}-${MAJ_VER}.${MIN_VER}.tar.gz ${CORTX}
+tar -czf ${DIST}/rpmbuild/SOURCES/${RPM_NAME}-${MAJ_VER}.${MIN_VER}.${PATCH_VER}.tar.gz ${CORTX}
 
 # Generate RPMs
 TOPDIR=$(realpath ${DIST}/rpmbuild)
 
 # HA RPM
-echo rpmbuild --define "version $MAJ_VER.$MIN_VER" --define "git_rev $GIT_VER" --define "build_num $BUILD" --define \
+echo rpmbuild --define "version $MAJ_VER.$MIN_VER.$PATCH_VER" --define "dist $BUILD" --define \
             "_topdir $TOPDIR" -bb $TMPDIR/cortx-ha.spec
-rpmbuild --define "version $MAJ_VER.$MIN_VER" --define "git_rev $GIT_VER" --define "build_num $BUILD" --define \
+rpmbuild --define "version $MAJ_VER.$MIN_VER.$PATCH_VER" --define "dist $BUILD" --define \
             "_topdir $TOPDIR" -bb $TMPDIR/cortx-ha.spec
 
 # Remove temporary directory
