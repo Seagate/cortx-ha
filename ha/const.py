@@ -78,4 +78,4 @@ HCTL_STARTED_STATUS="Online"
 HCTL_STOPPED_STATUS="Offline"
 
 # Systemd wrapper resource agent
-FID_MAPPING_FILE="/var/lib/hare/consul-server-conf/consul-server-conf.json"
+HARE_FID_MAPPING_FILE="/var/lib/hare/consul-server-conf/consul-server-conf.json"

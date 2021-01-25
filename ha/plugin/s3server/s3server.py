@@ -41,7 +41,7 @@ class S3server:
             str: Return fid for s3service
         """
         try:
-            with open(const.FID_MAPPING_FILE) as fi:
+            with open(const.HARE_FID_MAPPING_FILE) as fi:
                 fid_service_mapping = json.load(fi)
             clone_id: int = 0
             fid: str = ""

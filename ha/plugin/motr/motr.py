@@ -42,7 +42,7 @@ class Motr:
             str: Return fid for motr
         """
         try:
-            with open(const.FID_MAPPING_FILE) as fi:
+            with open(const.HARE_FID_MAPPING_FILE) as fi:
                 fid_service_mapping = json.load(fi)
             motr_mapping: dict = {}
             count: int = 0

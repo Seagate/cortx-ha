@@ -37,6 +37,31 @@ from ha.plugin.motr.motr import Motr
 from ha.plugin.s3server.s3server import S3server
 from ha import const
 
+class FidManager:
+    """
+    Manage Fid for different services.
+    """
+
+    @staticmethod
+    def get_fid(service: str, node_id: str, instance_id: int) -> str:
+        """
+        Get Fid from hare mapping file for given services.
+
+        Args:
+            service ([str]): Service name.
+            node_id ([str]): Node name for fid instance.
+            instance_id ([int]): Instance id for service.
+
+        Returns:
+            str: Return fid of given service.
+        """
+        services: dict = {
+            "confd": Motr,
+            "ios": Motr,
+            "s3service": S3server
+        }
+        return getattr(services[service], "getFid")(service, node_id, instance_id)
+
 class SystemdFidWrapperRA(ResourceAgent):
     """
     This class is used to provide wrapper around systemd resource agent.
@@ -56,10 +81,6 @@ class SystemdFidWrapperRA(ResourceAgent):
         super(SystemdFidWrapperRA, self).__init__()
         self._execute = SimpleCommand()
         self._status_list: list = ["failed", "active", "unknown"]
-        self._plugin_services: dict = {
-            "m0d": Motr,
-            "s3server": S3server
-        }
 
     def _get_systemd_service(self) -> str:
         """
@@ -75,8 +96,7 @@ class SystemdFidWrapperRA(ResourceAgent):
         local_node: str = "srvnode-1"
         resource: str = res_param['OCF_RESOURCE_INSTANCE']
         instance_id: int = int(resource.split('-')[-1])
-        fid = getattr(self._plugin_services[service], \
-            "getFid")(fid_service_name, local_node, instance_id)
+        fid = FidManager.get_fid(fid_service_name, local_node, instance_id)
         if fid is None:
             Log.error(f"Invalid config for fid for resource {resource}")
             sys.exit(const.OCF_ERR_CONFIGURED)
@@ -244,8 +264,8 @@ def main(resource: SystemdFidWrapperRA, action: str ='') -> int:
         else:
             print('Usage %s [monitor] [start] [stop] [meta-data]' % sys.argv[0])
             exit(0)
-    except:
-        Log.error(f"{traceback.format_exc()}")
+    except Exception as e:
+        Log.error(f"systemd_fid_wrapper_ra failed to perform {action}. Error: {e}")
         return const.OCF_ERR_GENERIC
 
 if __name__ == '__main__':
