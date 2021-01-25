@@ -120,7 +120,7 @@ cd $TMPDIR
 
 sed -i -e "s/<RPM_NAME>/${RPM_NAME}/g" \
     -e "s|<HA_PATH>|${HA_PATH}|g" $TMPDIR/cortx-ha.spec
-sed -i -e "s/<MAJ_VERSION>/${MAJ_VER}/g" $TMPDIR/VERSION
+sed -i -e "s/<VERSION>/${MAJ_VER}.${MIN_VER}/g" $TMPDIR/VERSION
 
 # Copy Backend files
 
@@ -147,11 +147,12 @@ then
 else
    cp -rf $BASE_DIR/conf/etc/v2/* $HA_DIR/conf/etc/
    cp -rf $BASE_DIR/conf/script/v2/* $HA_DIR/conf/script/
-   # Update version in conf file
-   sed -i -e "s|<VERSION>|${MAJ_VER}|g" ${HA_DIR}/conf/etc/ha.conf
    # pcswrap will only present in v1, hence removing it from v2
    rm -rf ${TMPHA}/pcswrap
 fi
+
+# Update version in conf file
+sed -i -e "s|<VERSION>|${MAJ_VER}.${MIN_VER}|g" ${HA_DIR}/conf/etc/ha.conf
 
 ################## TAR & RPM BUILD ##############################
 
