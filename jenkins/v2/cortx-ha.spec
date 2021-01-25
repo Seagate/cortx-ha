@@ -39,6 +39,9 @@ cp -rp . ${RPM_BUILD_ROOT}<HA_PATH>
 exit 0
 
 %post
+HA_DIR=<HA_PATH>/ha
+mkdir -p $HA_DIR/bin /usr/bin
+
 # Move binary file
 ln -sf $HA_DIR/lib/hw_comp_ra $HA_DIR/bin/hw_comp_ra
 ln -sf $HA_DIR/lib/iem_comp_ra $HA_DIR/bin/iem_comp_ra
