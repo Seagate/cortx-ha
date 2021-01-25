@@ -37,7 +37,7 @@ Options:
     -m : Build rpm with minor version
     -r : Build rpm with revision version
     -b : Build rpm with build number
-    -k : Provide key for encryption of code
+    -k : Provide key for encryption of code, going to be used by pyinstaller.
         """ 1>&2;
     exit 1;
 }
@@ -108,9 +108,9 @@ TMPHA="${TMPDIR}/${CORTX}/ha"
 mkdir -p ${HA_DIR} ${TMPDIR} ${TMPHA}
 if [ "$MAJ_VER" == "${HA1}" ]
 then
-    cp $BASE_DIR/jenkins/v1/cortx-ha.spec ${TMPDIR}
+    cp $BASE_DIR/jenkins/rpm/v1/cortx-ha.spec ${TMPDIR}
 else
-    cp $BASE_DIR/jenkins/v2/cortx-ha.spec ${TMPDIR}
+    cp $BASE_DIR/jenkins/rpm/v2/cortx-ha.spec ${TMPDIR}
 fi
 cp $BASE_DIR/VERSION ${TMPDIR}
 
