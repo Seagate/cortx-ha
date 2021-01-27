@@ -15,28 +15,39 @@
 
 ha:
     post_install:
-        script: /opt/seagate/cortx/ha/conf/script/ha_setup.py
-        args: post_install
-
-    init:
-        script: /opt/seagate/cortx/ha/conf/script/ha_setup.py
-        args: init
+        cmd: ha_setup post_install
+        args: --config <URL>
 
     config:
-        script: /opt/seagate/cortx/ha/conf/script/ha_setup.py
-        args: config
+        cmd: ha_setup config
+        args: --config <URL>
+
+    init:
+        cmd: ha_setup init
+        args: --config <URL>
 
     test:
-        script: /opt/seagate/cortx/ha/conf/script/ha_setup.py
-        args: test
+        cmd: ha_setup test
+        args: --config <URL> [--plan <TYPE>]
+
+    upgrade:
+        cmd: ha_setup upgrade
+        args: --config <URL>
 
     reset:
-        script: /opt/seagate/cortx/ha/conf/script/ha_setup.py
-        args: reset
+        cmd: ha_setup reset
+        args: --config <URL>
 
-    refresh_config:
-        script: /opt/seagate/cortx/ha/conf/script/ha_setup.py
-        args: replace_node
+    cleanup:
+        cmd: ha_setup cleanup
+        args: --config <URL>
 
-support_bundle:
-    - cortxha support_bundle create
+    backup:
+        cmd: ha_setup backup
+        args: --location <URL>
+
+    restore:
+        cmd: ha_setup restore
+        args: --location <URL>
+
+    support_bundle:

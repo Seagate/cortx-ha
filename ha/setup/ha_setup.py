@@ -26,17 +26,19 @@ from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
 from cortx.utils.validator.v_pkg import PkgV
 from cortx.utils.security.cipher import Cipher
-sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..', '..'))
 from ha.execute import SimpleCommand
 from ha import const
 
 class Cmd:
-
-    """Setup Command"""
+    """
+    Setup Command
+    """
     _index = "conf"
 
     def __init__(self, args: dict):
-        """Init method."""
+        """
+        Init method.
+        """
         self._url = args.config
         Conf.load(self._index, self._url)
         self._args = args.args
@@ -52,7 +54,9 @@ class Cmd:
 
     @staticmethod
     def usage(prog: str):
-        """Print usage instructions"""
+        """
+        Print usage instructions
+        """
         sys.stderr.write(
             f"usage: {prog} [-h] <cmd> <--config url> [--plan <TYPE>] <args>...\n"
             f"where:\n"
@@ -62,7 +66,9 @@ class Cmd:
 
     @staticmethod
     def get_command(desc: str, argv: dict):
-        """Return the Command after parsing the command line."""
+        """
+        Return the Command after parsing the command line.
+        """
         parser = argparse.ArgumentParser(desc)
 
         subparsers = parser.add_subparsers()
@@ -76,7 +82,9 @@ class Cmd:
 
     @staticmethod
     def add_args(parser: str, cls: str, name: str):
-        """Add Command args for parsing."""
+        """
+        Add Command args for parsing.
+        """
         parser1 = parser.add_parser(cls.name, help='setup %s' % name)
         parser1.add_argument('--config', help='Config URL')
         parser1.add_argument('--plan', nargs="?", default=[], help='Test plan')
@@ -84,36 +92,48 @@ class Cmd:
         parser1.set_defaults(command=cls)
 
 class PostInstallCmd(Cmd):
-
-    """PostInstall Setup Cmd"""
+    """
+    PostInstall Setup Cmd
+    """
     name = "post_install"
     packages = ["pacemaker", "corosync", "pcs"]
 
     def __init__(self, args: dict):
-        """Init method."""
+        """
+        Init method.
+        """
         super().__init__(args)
 
     def process(self):
+        """
+        Process post_install command.
+        """
         # Pre-requisite checks are done here.
         # Make sure the pacemaker, corosync and pcs packages have been installed
         PkgV().validate('rpms', self.packages)
 
 class ConfigCmd(Cmd):
-
-    """Setup Config Cmd"""
+    """
+    Setup Config Cmd
+    """
     name = "config"
 
     def __init__(self, args):
-        """Init method."""
+        """
+        Init method.
+        """
         super().__init__(args)
 
     def process(self):
-        # Read machine-id and using machine-id read node name from confstore
-        # This node name will be used for adding the node to the cluster.
+        """
+        Process config command.
+        """
+        # Read machine-id and using machine-id read minion name from confstore
+        # This minion name will be used for adding the node to the cluster.
         command = "cat /etc/machine-id"
         machine_id, err, rc = self._execute.run_cmd(command, check_error=True)
         Log.info(f"Read machine-id. Output: {machine_id}, Err: {err}, RC: {rc}")
-        node_name = Conf.get(self._index, f"cluster.server_nodes.{machine_id.strip()}")
+        minion_name = Conf.get(self._index, f"cluster.server_nodes.{machine_id.strip()}")
 
         # Read cluster name and cluster user
         cluster_name = Conf.get(self._index, 'corosync-pacemaker.cluster_name')
@@ -125,91 +145,137 @@ class ConfigCmd(Cmd):
         key = Cipher.generate_key(cluster_id, cluster_user)
         cluster_secret = Cipher.decrypt(key, cluster_secret.encode('ascii')).decode()
 
+        Log.info(f"Creating cluster: {cluster_name} with node: {minion_name}")
         # TBD: Call script for creating and configuring the cluster
-        # TBD: Check if the cluster exists already
+
+        # TBD: For multi-node, check if the cluster exists already.
+        # Also, the config step will be called from primary node alwasys,
+        # see how to get and use the node name then.
 
 class InitCmd(Cmd):
-
-    """Init Setup Cmd"""
+    """
+    Init Setup Cmd
+    """
     name = "init"
 
     def __init__(self, args):
-        """Init method."""
+        """
+        Init method.
+        """
         super().__init__(args)
 
     def process(self):
+        """
+        Process init command.
+        """
         pass # TBD
 
 class TestCmd(Cmd):
-
-    """Test Cmd"""
+    """
+    Test Cmd
+    """
     name = "test"
 
     def __init__(self, args):
-        """Init method."""
+        """
+        Init method.
+        """
         super().__init__(args)
 
     def process(self):
+        """
+        Process test command.
+        """
         pass # TBD: Call script to check that all resources have been configured
 
 class UpgradeCmd(Cmd):
-
-    """Upgrade Cmd"""
+    """
+    Upgrade Cmd
+    """
     name = "upgrade"
 
     def __init__(self, args):
-        """Init method."""
+        """
+        Init method.
+        """
         super().__init__(args)
 
     def process(self):
+        """
+        Process upgrade command.
+        """
         pass # TBD
 
 class ResetCmd(Cmd):
-
-    """Reset Cmd"""
+    """
+    Reset Cmd
+    """
     name = "reset"
 
     def __init__(self, args):
-        """Init method."""
+        """
+        Init method.
+        """
         super().__init__(args)
 
     def process(self):
+        """
+        Process reset command.
+        """
         pass # TBD
 
 class CleanupCmd(Cmd):
-
-    """Cleanup Cmd"""
+    """
+    Cleanup Cmd
+    """
     name = "cleanup"
 
     def __init__(self, args):
-        """Init method."""
+        """
+        Init method.
+        """
         super().__init__(args)
 
     def process(self):
+        """
+        Process cleanup command.
+        """
         pass # TBD: Call cluster destroy script here
 
 class BackupCmd(Cmd):
-
-    """Backup Cmd"""
+    """
+    Backup Cmd
+    """
     name = "backup"
 
     def __init__(self, args):
-        """Init method."""
+        """
+        Init method.
+        """
         super().__init__(args)
 
     def process(self):
+        """
+        Process backup command.
+        """
         pass # TBD
 
 class RestoreCmd(Cmd):
-
-    """Restore Cmd"""
+    """
+    Restore Cmd
+    """
     name = "restore"
 
     def __init__(self, args):
-        """Init method."""
+        """
+        Init method.
+        """
         super().__init__(args)
 
     def process(self):
+        """
+        Process restore command.
+        """
         pass # TBD
 
 def main(argv: dict):

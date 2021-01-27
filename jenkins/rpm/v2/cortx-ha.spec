@@ -47,6 +47,8 @@ ln -sf $HA_DIR/lib/hw_comp_ra $HA_DIR/bin/hw_comp_ra
 ln -sf $HA_DIR/lib/iem_comp_ra $HA_DIR/bin/iem_comp_ra
 ln -sf $HA_DIR/lib/cortxha $HA_DIR/bin/cortxha
 ln -sf $HA_DIR/lib/cortxha /usr/bin/cortxha
+ln -sf $HA_DIR/lib/ha_setup $HA_DIR/bin/ha_setup
+ln -sf $HA_DIR/lib/ha_setup /usr/bin/ha_setup
 exit 0
 
 %preun
@@ -59,6 +61,8 @@ rm -f $HA_DIR/bin/hw_comp_ra 2> /dev/null;
 rm -f $HA_DIR/bin/iem_comp_ra 2> /dev/null;
 rm -f /usr/bin/cortxha 2> /dev/null;
 rm -f $HA_DIR/bin/cortxha 2> /dev/null;
+rm -f /usr/bin/ha_setup 2> /dev/null;
+rm -f $HA_DIR/bin/ha_setup 2> /dev/null;
 exit 0
 
 %clean
