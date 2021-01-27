@@ -107,7 +107,7 @@ class DynamicFidServiceRA(CortxServiceRA):
             str: Return service status.
                 Service status are one of failed, active, unknown, activating
         """
-        output, _, rc = self._execute.run_cmd(f"systemctl is-active {service}",
+        output, _, _ = self._execute.run_cmd(f"systemctl is-active {service}",
                                                 check_error=False)
         return output
 
