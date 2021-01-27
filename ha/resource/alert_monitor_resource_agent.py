@@ -40,6 +40,13 @@ class AlertMonitorResourceAgent(ResourceAgent):
     Base class of resource agent to monitor hw/iem alert.
     """
     def __init__(self, decision_monitor, resource_schema):
+        """
+        Initialize alert monitoring resources.
+
+        Args:
+            decision_monitor ([Object]): Instance of DecisionMonitor
+            resource_schema ([type]): Schema for hw/sw component which need to monitor.
+        """
         super(AlertMonitorResourceAgent, self).__init__()
         self.decision_monitor = decision_monitor
         self.nodes = resource_schema[const.NODE_LIST]
@@ -85,7 +92,7 @@ class AlertMonitorResourceAgent(ResourceAgent):
             self.decision_monitor.acknowledge_resource(key)
             return const.OCF_SUCCESS
         except Exception as e:
-            Log.error(f"Failed to delete key: {key}")
+            Log.error(f"Failed to delete key: {key}. Error: {e}")
             return const.OCF_ERR_GENERIC
 
     def _get_status(self, callback_status, path):

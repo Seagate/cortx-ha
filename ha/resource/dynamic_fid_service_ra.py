@@ -30,7 +30,7 @@ from cortx.utils.log import Log
 
 sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..'))
 from ha.core.config.config_ha import ConfigHA
-from ha.resource.resource_agent import ResourceAgent
+from ha.resource.resource_agent import CortxServiceRA
 from ha.execute import SimpleCommand
 from ha.plugin.hare.hare import Hare
 from ha import const
@@ -107,7 +107,7 @@ class DynamicFidServiceRA(CortxServiceRA):
             str: Return service status.
                 Service status are one of failed, active, unknown, activating
         """
-        output, err, rc = self._execute.run_cmd(f"systemctl is-active {service}",
+        output, _, rc = self._execute.run_cmd(f"systemctl is-active {service}",
                                                 check_error=False)
         return output
 

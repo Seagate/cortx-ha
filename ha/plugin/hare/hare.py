@@ -21,7 +21,6 @@
  ****************************************************************************
 """
 
-
 import json
 from cortx.utils.log import Log
 from ha import const
@@ -48,7 +47,7 @@ class Hare:
             if service_name == "s3service":
                 fid = Hare._get_s3server_fid(fid_schema, service_name, node_id, instance_id)
             else:
-                fid = Hare._get_motr_fid(service_name, node_id, instance_id)
+                fid = Hare._get_motr_fid(fid_schema, service_name, node_id, instance_id)
             Log.debug(f"Map ({service_name}, {node_id}, {instance_id}) to {fid}")
             return fid
         except Exception as e:
