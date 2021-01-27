@@ -17,24 +17,48 @@
 
 
 BASE_DIR=$(realpath "$(dirname $0)/../../")
+HA1="1"
+HA2="2"
 
 usage() {
     echo """
 For Developer to create venv
-    $ ./cortx-ha-dep.sh dev <github-token>
+    $ ./cortx-ha-dep.sh [-v <cortx-ha major version>] [-e dev] [-t <github-token>]
 For Production
-    $ ./cortx-ha-dep.sh
+    $ ./cortx-ha-dep.sh [-v <cortx-ha major version>]
 """
 }
 
-# Check Dev
-DEV=$1
-[ -z "$DEV" ] && DEV=false
+while getopts ":v:e:t" o; do
+    case "${o}" in
+        v)
+            VERSION=${OPTARG}
+            ;;
+        e)
+            DEV=${OPTARG}
+            ;;
+        t)
+            TOKEN=${OPTARG}
+            ;;
+        *)
+            usage
+            ;;
+    esac
+done
 
-if [ "$DEV" == false ]; then
+# Check Dev
+[ -z "$DEV" ] && DEV="false"
+[ -z "$VERSION" ] && VERSION="${HA2}"
+
+if [ "$DEV" == "false" ]; then
     set -x
     yum erase eos-py-utils -y && yum install cortx-py-utils -y
-    req_file=${BASE_DIR}/jenkins/pyinstaller/requirements.txt
+    if [ "$VERSION" == "${HA1}" ]
+    then
+        req_file=${BASE_DIR}/jenkins/pyinstaller/v1/requirements.txt
+    else
+        req_file=${BASE_DIR}/jenkins/pyinstaller/v2/requirements.txt
+    fi
     python3 -m pip install -r $req_file > /dev/null || {
         echo "Unable to install package from $req_file"; exit 1;
     };
@@ -58,7 +82,12 @@ else
     echo "Installing python packages..."
     python3 -m pip install --upgrade pip
     python3 -m pip install git+https://"${TOKEN}"@github.com/Seagate/cortx-utils.git#subdirectory=py-utils
-    req_file=${BASE_DIR}/jenkins/pyinstaller/requirements.txt
+    if [ "$VERSION" == "${HA1}" ]
+    then
+        req_file=${BASE_DIR}/jenkins/pyinstaller/v1/requirements.txt
+    else
+        req_file=${BASE_DIR}/jenkins/pyinstaller/v2/requirements.txt
+    fi
     python3 -m pip install -r "$req_file" || {
         echo "Unable to install package from $req_file"; exit 1;
     };
