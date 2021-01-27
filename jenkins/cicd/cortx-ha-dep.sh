@@ -29,8 +29,11 @@ For Production
 """
 }
 
-while getopts ":v:e:t" o; do
+while getopts ":h:v:e:t" o; do
     case "${o}" in
+        h)
+            usage
+            ;;
         v)
             VERSION=${OPTARG}
             ;;
