@@ -19,17 +19,27 @@
 set -x
 
 BASE_DIR=$(realpath "$(dirname $0)/../../")
+HA1="1.0.0"
 
 # Copy Backend files
 TMPHA="${BASE_DIR}"/dist/tmp/cortx/ha
-rm -rf "${TMPHA}"
-mkdir -p "${TMPHA}"
-cp -rs "$BASE_DIR"/ha/* "${TMPHA}"
+CORTXHA="${BASE_DIR}"/dist/cortx/ha
+# take version from ha.conf file
+VERSION=$( tail -n 1 $CORTXHA/conf/etc/ha.conf | cut -d: -f2)
+if [ "$VERSION" == "${HA1}" ]
+then
+    rm -rf "${TMPHA}"
+    mkdir -p "${TMPHA}"
+    cp -rs "$BASE_DIR"/ha/* "${TMPHA}"
 
-mkdir -p /etc/cortx/ha/ /var/log/seagate/cortx/ha
-cp -rf "${BASE_DIR}"/jenkins/cicd/etc/* /etc/cortx/ha/
+    mkdir -p /etc/cortx/ha/ /var/log/seagate/cortx/ha
+    cp -rf "${BASE_DIR}"/jenkins/cicd/etc/* /etc/cortx/ha/
 
-# Perform unit test
-python3 "${TMPHA}"/test/main.py "${TMPHA}"/test/unit
+    # Perform unit test
+    python3 "${TMPHA}"/test/main.py "${TMPHA}"/test/unit
 
-/usr/lib/ocf/resource.d/seagate/hw_comp_ra meta-data
+    /usr/lib/ocf/resource.d/seagate/hw_comp_ra meta-data
+else
+    echo "no unit tests added for HA > 2 version yet."
+fi
+
