@@ -83,10 +83,10 @@ class DynamicFidServiceRA(CortxServiceRA):
             str: Service name with fid mapping like service@fid
         """
         res_param = self.get_env()
-        service: str = res_param['OCF_RESKEY_service']
-        fid_service_name: str = res_param['OCF_RESKEY_fid_service_name']
+        service: str = res_param["OCF_RESKEY_service"]
+        fid_service_name: str = res_param["OCF_RESKEY_fid_service_name"]
         local_node: str = res_param["OCF_RESKEY_CRM_meta_on_node"]
-        resource: str = res_param['OCF_RESOURCE_INSTANCE']
+        resource: str = res_param["OCF_RESOURCE_INSTANCE"]
         instance_id: int = int(resource.split('-')[-1])
         fid = FidManager.get_fid(fid_service_name, local_node, instance_id)
         if fid is None:
