@@ -65,7 +65,6 @@ if [ "$DEV" == "false" ]; then
 else
     mkdir -p "${BASE_DIR}"/dist
 
-    TOKEN=$2
     [ -z "$TOKEN" ] && {
         usage; exit 1
     }

@@ -19,13 +19,31 @@
 set -x
 
 BASE_DIR=$(realpath "$(dirname $0)/../../")
-HA1="1.0.0"
+HA1="1"
+HA2="2"
+
+usage() {
+    echo """
+    $ ./cortx-ha-cicd.sh [-v <cortx-ha major version>]
+"""
+}
+
+while getopts ":v" o; do
+    case "${o}" in
+        v)
+            VERSION=${OPTARG}
+            ;;
+        *)
+            usage
+            ;;
+    esac
+done
+
+[ -z "$VERSION" ] && VERSION="${HA2}"
 
 # Copy Backend files
 TMPHA="${BASE_DIR}"/dist/tmp/cortx/ha
-CORTXHA="${BASE_DIR}"/dist/cortx/ha
-# take version from ha.conf file
-VERSION=$( tail -n 1 "$CORTXHA"/conf/etc/ha.conf | cut -d: -f2 | sed 's/ //g' )
+
 if [ "$VERSION" == "${HA1}" ]
 then
     rm -rf "${TMPHA}"
