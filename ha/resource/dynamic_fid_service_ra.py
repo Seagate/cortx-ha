@@ -29,7 +29,7 @@ import pathlib
 from cortx.utils.log import Log
 
 sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..'))
-from ha.core.config.config_ha import ConfigHA
+from ha.core.config.config_manager import ConfigManager
 from ha.resource.resource_agent import CortxServiceRA
 from ha.execute import SimpleCommand
 from ha.plugin.hare.hare import Hare
@@ -85,8 +85,7 @@ class DynamicFidServiceRA(CortxServiceRA):
         res_param = self.get_env()
         service: str = res_param['OCF_RESKEY_service']
         fid_service_name: str = res_param['OCF_RESKEY_fid_service_name']
-        # TODO: Get local node name from configuration
-        local_node: str = "srvnode-1"
+        local_node: str = res_param["OCF_RESKEY_CRM_meta_on_node"]
         resource: str = res_param['OCF_RESOURCE_INSTANCE']
         instance_id: int = int(resource.split('-')[-1])
         fid = FidManager.get_fid(fid_service_name, local_node, instance_id)
@@ -246,7 +245,7 @@ def main(resource: DynamicFidServiceRA, action: str ='') -> int:
     try:
         if action == 'meta-data':
             return resource.metadata()
-        ConfigHA.init('resource_agent')
+        ConfigManager.init('resource_agent')
         Log.debug(f"{resource} initialized for action {action}")
         if action == 'monitor':
             return resource_agent.monitor()

@@ -26,8 +26,8 @@ from cortx.utils.conf_store.conf_store import Conf
 
 from ha import const
 
-# TODO: redefine class in feature as pre design
-class ConfigHA:
+# TODO: redefine class as per config manager module design
+class ConfigManager:
     """
     HA configuration to provide central ha configuration
     """
@@ -36,7 +36,6 @@ class ConfigHA:
     def init(log_name) -> None:
         """
         Initialize ha conf and log
-
         Args:
             log_name ([str]): service_name for log init.
         """
