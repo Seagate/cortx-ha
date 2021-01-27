@@ -25,7 +25,7 @@ HA1="1.0.0"
 TMPHA="${BASE_DIR}"/dist/tmp/cortx/ha
 CORTXHA="${BASE_DIR}"/dist/cortx/ha
 # take version from ha.conf file
-VERSION=$( tail -n 1 $CORTXHA/conf/etc/ha.conf | cut -d: -f2 | sed 's/ //g' )
+VERSION="$( tail -n 1 $CORTXHA/conf/etc/ha.conf | cut -d: -f2 | sed 's/ //g' )"
 if [ "$VERSION" == "${HA1}" ]
 then
     rm -rf "${TMPHA}"
