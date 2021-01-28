@@ -29,7 +29,7 @@ from unittest.mock import patch
 
 from cortx.utils.log import Log
 from cortx.utils.ha.dm.actions import Action
-from ha.resource.resource_agent import HardwareResourceAgent
+from ha.resource.alert_monitor_resource_agent import HardwareResourceAgent
 from ha import const
 
 class TestHardwareResourceAgent(unittest.TestCase):
@@ -63,13 +63,13 @@ class TestHardwareResourceAgent(unittest.TestCase):
         else:
             return self.status
 
-    @patch('ha.resource.resource_agent.HardwareResourceAgent.get_env')
+    @patch('ha.resource.alert_monitor_resource_agent.HardwareResourceAgent.get_env')
     def test_start(self, patched_get_env):
         """
         Test start for hw resource agent
 
         Arguments:
-            patched_get_env {[resource_agent method]} -- Method for resource agent to get
+            patched_get_env {[alert_monitor_resource_agent method]} -- Method for resource agent to get
                 pacemaker env data.
         """
         patched_get_env.return_value = {
@@ -86,13 +86,13 @@ class TestHardwareResourceAgent(unittest.TestCase):
         status = self.hw_agent.start()
         self.assertEqual(status, const.OCF_SUCCESS)
 
-    @patch('ha.resource.resource_agent.HardwareResourceAgent.get_env')
+    @patch('ha.resource.alert_monitor_resource_agent.HardwareResourceAgent.get_env')
     def test_stop(self, patched_get_env):
         """
         Test stop for hw resource agent
 
         Arguments:
-            patched_get_env {[resource_agent method]} -- Method for resource agent to get
+            patched_get_env {[alert_monitor_resource_agent method]} -- Method for resource agent to get
                 pacemaker env data.
         """
         patched_get_env.return_value = {
@@ -105,13 +105,13 @@ class TestHardwareResourceAgent(unittest.TestCase):
         status = self.hw_agent.stop()
         self.assertEqual(status, const.OCF_SUCCESS)
 
-    @patch('ha.resource.resource_agent.HardwareResourceAgent.get_env')
+    @patch('ha.resource.alert_monitor_resource_agent.HardwareResourceAgent.get_env')
     def test_monitor(self, patched_get_env):
         """
         Test monitor for hw resource agent
 
         Arguments:
-            patched_get_env {[resource_agent method]} -- Method for resource agent to get
+            patched_get_env {[alert_monitor_resource_agent method]} -- Method for resource agent to get
                 pacemaker env data.
         """
         patched_get_env.return_value = {
