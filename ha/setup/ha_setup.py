@@ -108,13 +108,13 @@ class PostInstallCmd(Cmd):
         """
         Process post_install command.
         """
+
         # Create a directory and copy config file
         if os.path.exists(const.HA_CONFIG_FILE):
             os.remove(const.HA_CONFIG_FILE)
         os.makedirs(const.CONFIG_DIR, exist_ok=True)
         shutil.copyfile(const.SOURCE_CONFIG_FILE, const.HA_CONFIG_FILE)
         Log.info("Copied HA config file.")
-
         # Pre-requisite checks are done here.
         # Make sure the pacemaker, corosync and pcs packages have been installed
         PkgV().validate('rpms', const.PCS_CLUSTER_PACKAGES)
