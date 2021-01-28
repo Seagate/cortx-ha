@@ -19,6 +19,8 @@ import errno
 import argparse
 import inspect
 import traceback
+import os
+import shutil
 
 from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
@@ -95,7 +97,6 @@ class PostInstallCmd(Cmd):
     PostInstall Setup Cmd
     """
     name = "post_install"
-    packages = ["pacemaker", "corosync", "pcs"]
 
     def __init__(self, args: dict):
         """
@@ -107,9 +108,16 @@ class PostInstallCmd(Cmd):
         """
         Process post_install command.
         """
+        # Create a directory and copy config file
+        if os.path.exists(const.HA_CONFIG_FILE):
+            os.remove(const.HA_CONFIG_FILE)
+        os.makedirs(const.CONFIG_DIR, exist_ok=True)
+        shutil.copyfile(const.SOURCE_CONFIG_FILE, const.HA_CONFIG_FILE)
+        Log.info("Copied HA config file.")
+
         # Pre-requisite checks are done here.
         # Make sure the pacemaker, corosync and pcs packages have been installed
-        PkgV().validate('rpms', self.packages)
+        PkgV().validate('rpms', const.PCS_CLUSTER_PACKAGES)
 
 class ConfigCmd(Cmd):
     """
@@ -129,10 +137,12 @@ class ConfigCmd(Cmd):
         """
         # Read machine-id and using machine-id read minion name from confstore
         # This minion name will be used for adding the node to the cluster.
+        nodelist = []
         command = "cat /etc/machine-id"
         machine_id, err, rc = self._execute.run_cmd(command, check_error=True)
         Log.info(f"Read machine-id. Output: {machine_id}, Err: {err}, RC: {rc}")
         minion_name = Conf.get(self._index, f"cluster.server_nodes.{machine_id.strip()}")
+        nodelist.append(minion_name)
         # The config step will be called from primary node alwasys,
         # see how to get and use the node name then.
 
@@ -241,8 +251,7 @@ class CleanupCmd(Cmd):
         Process cleanup command.
         """
         # Destroy the cluster
-        command = "pcs cluster destroy"
-        output, err, rc = self._execute.run_cmd(command, check_error=True)
+        output, err, rc = self._execute.run_cmd(const.PCS_CLUSTER_DESTROY, check_error=True)
         Log.info(f"Cluster destroyed. Output: {output}, Err: {err}, RC: {rc}")
 
 class BackupCmd(Cmd):
@@ -296,7 +305,7 @@ def main(argv: dict):
 if __name__ == '__main__':
     # TBD: Import and use config_manager.py
     Conf.init(delim='.')
-    Conf.load(const.HA_GLOBAL_INDEX, f"yaml://{const.HA_CONFIG_FILE}")
+    Conf.load(const.HA_GLOBAL_INDEX, f"yaml://{const.SOURCE_CONFIG_FILE}")
     log_path = Conf.get(const.HA_GLOBAL_INDEX, "LOG.path")
     log_level = Conf.get(const.HA_GLOBAL_INDEX, "LOG.level")
     Log.init(service_name='ha_setup', log_path=log_path, level=log_level)

@@ -1,4 +1,4 @@
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
 #
 # This program is free software: you can redistribute it and/or modify it under the
 # terms of the GNU Affero General Public License as published by the Free Software
@@ -31,6 +31,7 @@ RULE_ENGINE_SCHAMA="{}/rules_engine_schema.json".format(CONFIG_DIR)
 RULE_GLOBAL_INDEX="rules_engine"
 HA_CONFIG_FILE="{}/ha.conf".format(CONFIG_DIR)
 HA_GLOBAL_INDEX="ha_conf"
+SOURCE_CONFIG_FILE="/opt/seagate/cortx/ha/conf/etc/ha.conf"
 
 CURRENT_NODE_STATUS="self_node_status"
 OTHER_NODE_STATUS="other_node_status"
@@ -64,9 +65,11 @@ NODE_COMMAND="node"
 SERVICE_COMMAND="service"
 BUNDLE_COMMAND="support_bundle"
 
+PCS_CLUSTER_PACKAGES=["pacemaker", "corosync", "pcs"]
 PCS_CLEANUP="pcs resource cleanup"
 PCS_FAILCOUNT_STATUS="pcs resource failcount show"
 PCS_STATUS="pcs status"
+PCS_CLUSTER_DESTROY="pcs cluster destroy"
 
 NODE_DISCONNECTED="Disconnected"
 NODE_ONLINE="Online"
