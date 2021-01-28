@@ -1,6 +1,6 @@
 #!/bin/env python3
 
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published
 # by the Free Software Foundation, either version 3 of the License, or
@@ -30,6 +30,7 @@ from ha import const
 class Cmd:
     """
     Setup Command
+    This class provides methods for parsing arguments.
     """
     _index = "conf"
 
@@ -132,6 +133,8 @@ class ConfigCmd(Cmd):
         machine_id, err, rc = self._execute.run_cmd(command, check_error=True)
         Log.info(f"Read machine-id. Output: {machine_id}, Err: {err}, RC: {rc}")
         minion_name = Conf.get(self._index, f"cluster.server_nodes.{machine_id.strip()}")
+        # The config step will be called from primary node alwasys,
+        # see how to get and use the node name then.
 
         # Read cluster name and cluster user
         cluster_name = Conf.get(self._index, 'corosync-pacemaker.cluster_name')
@@ -147,8 +150,7 @@ class ConfigCmd(Cmd):
         # TBD: Call script for creating and configuring the cluster
 
         # TBD: For multi-node, check if the cluster exists already.
-        # Also, the config step will be called from primary node alwasys,
-        # see how to get and use the node name then.
+        # If exists then we need to add new node to the existing cluster
 
 class InitCmd(Cmd):
     """
@@ -184,7 +186,7 @@ class TestCmd(Cmd):
         """
         Process test command.
         """
-        pass # TBD: Call script to check that all resources have been configured
+        pass # TBD: Write code here to check that all resources have been configured.
 
 class UpgradeCmd(Cmd):
     """
@@ -238,7 +240,10 @@ class CleanupCmd(Cmd):
         """
         Process cleanup command.
         """
-        pass # TBD: Call cluster destroy script here
+        # Destroy the cluster
+        command = "pcs cluster destroy"
+        output, err, rc = self._execute.run_cmd(command, check_error=True)
+        Log.info(f"Cluster destroyed. Output: {output}, Err: {err}, RC: {rc}")
 
 class BackupCmd(Cmd):
     """
