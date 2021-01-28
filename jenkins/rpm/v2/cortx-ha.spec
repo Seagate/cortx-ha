@@ -73,5 +73,5 @@ exit 0
 <HA_PATH>/*
 
 %changelog
-* Mon Jul 29 2019 Amol Shinde <amol.shinde@seagate.com> - 2.0.0
+* Mon Jan 25 2021 Amol Shinde <amol.shinde@seagate.com> - 2.0.0
 - Initial spec file for HA2
