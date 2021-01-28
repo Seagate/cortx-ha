@@ -30,10 +30,7 @@ from ha.execute import SimpleCommand
 from ha import const
 
 class Cmd:
-    """
-    Setup Command
-    This class provides methods for parsing arguments.
-    """
+    """Setup Command. This class provides methods for parsing arguments."""
     _index = "conf"
 
     def __init__(self, args: dict):
@@ -114,7 +111,7 @@ class PostInstallCmd(Cmd):
             os.remove(const.HA_CONFIG_FILE)
         os.makedirs(const.CONFIG_DIR, exist_ok=True)
         shutil.copyfile(const.SOURCE_CONFIG_FILE, const.HA_CONFIG_FILE)
-        Log.info("Copied HA config file.")
+        Log.info("{self.name}: Copied HA config file.")
         # Pre-requisite checks are done here.
         # Make sure the pacemaker, corosync and pcs packages have been installed
         PkgV().validate('rpms', const.PCS_CLUSTER_PACKAGES)
