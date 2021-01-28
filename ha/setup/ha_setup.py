@@ -19,8 +19,6 @@ import errno
 import argparse
 import inspect
 import traceback
-import pathlib
-import os
 
 from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
@@ -291,6 +289,7 @@ def main(argv: dict):
         return errno.EINVAL
 
 if __name__ == '__main__':
+    # TBD: Import and use config_manager.py
     Conf.init(delim='.')
     Conf.load(const.HA_GLOBAL_INDEX, f"yaml://{const.HA_CONFIG_FILE}")
     log_path = Conf.get(const.HA_GLOBAL_INDEX, "LOG.path")
