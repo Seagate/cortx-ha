@@ -253,6 +253,9 @@ class CleanupCmd(Cmd):
         # Destroy the cluster
         output, err, rc = self._execute.run_cmd(const.PCS_CLUSTER_DESTROY, check_error=True)
         Log.info(f"Cluster destroyed. Output: {output}, Err: {err}, RC: {rc}")
+        # Delete the config file
+        if os.path.exists(const.HA_CONFIG_FILE):
+            os.remove(const.HA_CONFIG_FILE)
 
 class BackupCmd(Cmd):
     """
