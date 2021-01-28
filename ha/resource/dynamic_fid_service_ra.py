@@ -243,18 +243,18 @@ def main(resource: DynamicFidServiceRA, action: str ='') -> int:
         int: Provide output as int code provided by pacemaker.
     """
     try:
-        if action == 'meta-data':
+        if action == "meta-data":
             return resource.metadata()
-        ConfigManager.init('resource_agent')
+        ConfigManager.init("resource_agent")
         Log.debug(f"{resource} initialized for action {action}")
-        if action == 'monitor':
+        if action == "monitor":
             return resource_agent.monitor()
-        elif action == 'start':
+        elif action == "start":
             return resource_agent.start()
-        elif action == 'stop':
+        elif action == "stop":
             return resource_agent.stop()
         else:
-            print('Usage %s [monitor] [start] [stop] [meta-data]' % sys.argv[0])
+            print(f"Usage {sys.argv[0]} [monitor] [start] [stop] [meta-data]")
             exit(0)
     except Exception as e:
         Log.error(f"systemd_fid_wrapper_ra failed to perform {action}. Error: {e}")

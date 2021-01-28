@@ -70,7 +70,7 @@ exit 0
 <HA_PATH>/*
 
 %changelog
-* Mon Jul 29 2019 Amol Shinde <amol.shinde@seagate.com> - 2.0.0
-- Initial spec file for HA2
-* Wen Jan 27 2021 Ajay Paratmandali <ajay.paratmandali@seagate.com> - 2.0.0
+* Thu Jan 28 2021 Ajay Paratmandali <ajay.paratmandali@seagate.com> - 2.0.0
 - Add new entry for dynamic_fid_service_ra
+* Mon Jan 25 2021 Amol Shinde <amol.shinde@seagate.com> - 2.0.0
+- Initial spec file for HA2
