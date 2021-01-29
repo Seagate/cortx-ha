@@ -19,10 +19,13 @@ import time
 
 from cortx.utils.log import Log
 from cortx.utils.ha.dm.decision_monitor import DecisionMonitor
+from cortx.utils.conf_store.conf_store import Conf
 
 from ha.core.error import HAUnimplemented
+from ha.core.node.replacement.refresh_context import PcsRefreshContex
 from ha.execute import SimpleCommand
 from ha.core.support_bundle.ha_bundle import HABundle, CortxHABundle
+from ha.core.config.config_manager import ConfigManager
 from ha import const
 
 class ClusterManager:
@@ -57,13 +60,25 @@ class ClusterManager:
     def shutdown(self):
         raise HAUnimplemented()
 
-class PcsClusterManager:
+class PcsClusterManager(ClusterManager):
     def __init__(self):
         """
         PcsCluster manage pacemaker/corosync cluster
         """
         super(PcsClusterManager, self).__init__()
         self._execute = SimpleCommand()
+
+        # get version from ha.conf
+        version = Conf.get(const.HA_GLOBAL_INDEX, "VERSION.version")
+        major_version = version.split('.')
+        self._version = major_version[0]
+
+        if self._version == const.CORTX_VERSION_1:
+            self._decision_monitor = DecisionMonitor()
+            # TODO: add node_manager class to handle query
+            self._refresh_contex = PcsRefreshContex(self._decision_monitor)
+            # TODO move node logic to node manager class
+            self._node_status = [ 'Online', 'Standby', 'Maintenance', 'Offline', 'Disconnected']
 
     def process_request(self, action, args, output):
         """
@@ -79,6 +94,8 @@ class PcsClusterManager:
                 getattr(self, args.cluster_action)(args.node)
             else:
                 getattr(self, args.cluster_action)()
+        elif action == const.NODE_COMMAND and self._version == const.CORTX_VERSION_1:
+            self._refresh_contex.process_request(action, args)
         elif action == const.BUNDLE_COMMAND:
             HABundle().process_request(action, args, output)
         else:
@@ -184,7 +201,7 @@ class PcsClusterManager:
 
                 if nodes[0] == "Standby" and nodes[1] == "with" and nodes[2] == "resource(s)" and nodes[3] == "running:" and len(nodes) > 4:
                     self.active_nodes = "true"
- 
+
                 if((nodes[0] == "Maintenance:") and (len(nodes) > 1)):
                     self.active_nodes = "true"
 
@@ -203,29 +220,34 @@ class PcsClusterManager:
         if _rc != 0:
             if(_err.find("No such file or directory: 'pcs'") != -1):
                 Log.error("Cluster failed to start; pcs not installed ")
-                raise Exception(f"Cluster failed to start; pcs not installed")
+                raise Exception("Cluster failed to start; pcs not installed")
             # if cluster is not running; start cluster
             elif(_err.find("cluster is not currently running on this node") != -1):
-                output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_START, check_error=False)
-                Log.info(f"cluster started ; waiting for nodes to come online ")
+                self._execute.run_cmd(const.PCS_CLUSTER_START, check_error=False)
+                Log.info("cluster started ; waiting for nodes to come online ")
                 # It takes nodes 30 seconds to come to their original state after cluster is started
                 # observation on a 2 node cluster
-                time.sleep(30)
+                # wait for upto 100 sec for nodes to come to active states (online / maintenance mode)
+                time.sleep(10)
+                self.get_nodes_status()
+                retries = 18
+                while  self.active_nodes == "false" and retries > 0:
+                    time.sleep(5)
+                    self.get_nodes_status()
+                    retries -= 1
 
-        """
-        If cluster is running, but all nodes are either Offline or in Standby mode;
-        start the nodes
-        """
+        else:
+            #If cluster is running, but all nodes are either Offline or in Standby mode;
+            #start the nodes
+            self.get_nodes_status()
+            if self.active_nodes == "false":
+                if self.standby_nodes == "true":
+                    # issue pcs cluster unstandby
+                    _output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_UNSTANDBY, check_error=False)
 
-        self.get_nodes_status()
-        if self.active_nodes is "false":
-            if self.standby_nodes is "true":
-                # issue pcs cluster unstandby
-                _output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_UNSTANDBY, check_error=False)
-
-            if self.offline_nodes is "true":
-                # issue pcs cluster start
-                _output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_START, check_error=False)
+                if self.offline_nodes == "true":
+                    # issue pcs cluster start
+                    _output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_START, check_error=False)
 
         # check cluster and node status
         output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_STATUS, check_error=False)
@@ -234,7 +256,7 @@ class PcsClusterManager:
             Log.error("Cluster failed to start")
             self._output.output("Cluster failed to start")
             self._output.rc(1)
-            raise Exception(f"Cluster failed to start")
+            raise Exception("Cluster failed to start")
         else:
             # confirm that at least one node is active
             self.get_nodes_status()
@@ -242,10 +264,10 @@ class PcsClusterManager:
                 # wait for 5 seconds and retry
                 time.sleep(5)
                 self.get_nodes_status()
-                if self.active_nodes is "false":
-                    raise Exception(f"Cluster started; nodes not online")
+                if self.active_nodes == "false":
+                    raise Exception("Cluster started; nodes not online")
 
-        Log.info(f"Cluster started successfully")
+        Log.info("Cluster started successfully")
 
 
     def stop(self):

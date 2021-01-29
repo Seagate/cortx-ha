@@ -41,6 +41,7 @@ class ConfigManager:
         """
         Conf.init(delim='.')
         Conf.load(const.HA_GLOBAL_INDEX, f"yaml://{const.HA_CONFIG_FILE}")
+        Conf.load(const.RESOURCE_GLOBAL_INDEX, f"json://{const.RESOURCE_SCHEMA}")
         log_path = Conf.get(const.HA_GLOBAL_INDEX, "LOG.path")
         log_level = Conf.get(const.HA_GLOBAL_INDEX, "LOG.level")
         Log.init(service_name=log_name, log_path=log_path, level=log_level)
