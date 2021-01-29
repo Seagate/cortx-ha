@@ -91,7 +91,6 @@ class Hare:
         s3service_li: list = []
         fid: str = ""
         for service in fid_schema["services"]:
-            clone_id = int(service["port"])
             if service["name"] == service_name:
                 service_fid = service["checks"][0]["args"][2]
                 fid = service_fid.split("@")[1]
