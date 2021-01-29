@@ -19,7 +19,6 @@ import time
 
 from cortx.utils.log import Log
 from cortx.utils.ha.dm.decision_monitor import DecisionMonitor
-from cortx.utils.conf_store.conf_store import Conf
 
 from ha.core.error import HAUnimplemented
 from ha.core.node.replacement.refresh_context import PcsRefreshContex
@@ -265,7 +264,7 @@ class PcsClusterManager(ClusterManager):
                     _output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_UNSTANDBY, check_error=False)
 
         # check cluster and node status
-        output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_STATUS, check_error=False)
+        _output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_STATUS, check_error=False)
         if _rc != 0:
             # cluster could not be started.
             Log.error("Cluster failed to start")

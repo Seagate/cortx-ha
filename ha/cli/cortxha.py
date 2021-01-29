@@ -23,7 +23,6 @@ import pathlib
 
 
 from cortx.utils.log import Log
-from cortx.utils.conf_store.conf_store import Conf
 
 
 class Output:
