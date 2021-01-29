@@ -26,10 +26,7 @@ class ClusterCreateError(Exception):
 
 
 class ClusterAuthError(ClusterCreateError):
-    """
-
-    Exception to indicate that authorization procedure failed.
-    """
+    """ Exception to indicate that authorization procedure failed."""
 
 
 class ClusterSetupError(ClusterCreateError):
