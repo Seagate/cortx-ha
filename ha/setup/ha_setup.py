@@ -20,7 +20,6 @@ import argparse
 import inspect
 import traceback
 import os
-import pathlib
 import shutil
 
 from cortx.utils.conf_store import Conf
@@ -178,7 +177,7 @@ class ConfigCmd(Cmd):
                     Log.info("Creating pacemaker resources")
                     #create_all_resources()
                     Log.info("Created pacemaker resources successfully")
-                except Exception as e:
+                except Exception:
                     Log.error("Cluster creation failed; destroying the cluster")
                     output = self._execute.run_cmd(const.PCS_CLUSTER_DESTROY, check_error=True)
                     Log.info(f"Cluster destroyed. Output: {output}")
