@@ -19,21 +19,21 @@ import argparse
 from ha.execute import SimpleCommand
 from cortx.utils.log import Log
 
-class ClusterCreateError(Exception):
 
+class ClusterCreateError(Exception):
     """Exception to indicate that cluster can't be created due to some error."""
 
-class ClusterAuthError(ClusterCreateError):
 
+class ClusterAuthError(ClusterCreateError):
     """Exception to indicate that authorization procedure failed."""
 
-class ClusterSetupError(ClusterCreateError):
 
+class ClusterSetupError(ClusterCreateError):
     """Exception to indicate that cluster setup procedure failed."""
 
 
 def cluster_auth(username, password, nodelist):
-    """Authorizes cluster nodes.
+    """Authorize cluster nodes.
 
     Parameters:
             username - just a user name to make cluster authorization
@@ -56,7 +56,7 @@ def cluster_auth(username, password, nodelist):
 
 
 def cluster_create(cluster_name, nodelist, enable=True, put_standby=True):
-    """Creates cluster on given nodes. Enables and starts cluster if needed.
+    """Create cluster on given nodes. Enables and starts cluster if needed.
 
     Parameters:
         cluster_name    - name of the cluster to be created
@@ -77,7 +77,7 @@ def cluster_create(cluster_name, nodelist, enable=True, put_standby=True):
     cmd_stonith = "pcs property set stonith-enabled=False"
     cmd_enable = f"pcs cluster enable {nodes}"
 
-    cmdlist = [ cmd_setup ]
+    cmdlist = [cmd_setup]
     if enable:
         cmdlist.append(cmd_enable)
     if put_standby:
@@ -89,10 +89,13 @@ def cluster_create(cluster_name, nodelist, enable=True, put_standby=True):
     except Exception:
         raise ClusterSetupError("Failed to setup the cluster")
 
+
 def _parse_input_args():
-    """Parse and validate input arguments passed by mini-provisioner or CLI.
-    
-    Returns dictonary with context."""
+    """
+    Parse and validate input arguments passed by mini-provisioner or CLI.
+
+    Returns dictonary with context.
+    """
     parser = argparse.ArgumentParser(description="Creates pacemaker cluster")
     parser.add_argument("--cluster", default="cortx-lr2", type=str, help="Cluster name")
     parser.add_argument("--username", required=True, type=str, help="User to be used for cluster auth")
@@ -104,11 +107,13 @@ def _parse_input_args():
     group.add_argument("--nodefile", required=False, type=str, help="File with list of nodes")
     return parser.parse_args()
 
+
 def _read_file_list(filename):
     nodelist = []
     with open(filename, "r") as f:
         nodelist = f.read().splitlines()
     return nodelist
+
 
 def _main():
     # Workaround to make SimpleCommand work, not crash
@@ -121,6 +126,7 @@ def _main():
         raise ValueError("node list shall not be empty")
     cluster_auth(args.username, args.password, nodelist)
     cluster_create(args.cluster, nodelist, put_standby=args.standby)
+
 
 if __name__ == "__main__":
     _main()
