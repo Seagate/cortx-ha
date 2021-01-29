@@ -37,7 +37,9 @@ class ClusterSetupError(ClusterCreateError):
 
 
 def cluster_auth(username, password, nodelist):
-    """Authorize cluster nodes.
+    """
+    Authorize cluster nodes.
+
     Parameters:
             username - just a user name to make cluster authorization
             password - just a password for aforementioned user
