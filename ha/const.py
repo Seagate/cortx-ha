@@ -77,14 +77,11 @@ HCTL_STATUS="hctl status"
 HCTL_STARTED_STATUS="Online"
 HCTL_STOPPED_STATUS="Offline"
 
-<<<<<<< HEAD
 # Systemd wrapper resource agent
 HARE_FID_MAPPING_FILE="/var/lib/hare/consul-server-conf/consul-server-conf.json"
 
-=======
 CORTX_VERSION_1="1"
 CORTX_VERSION_2="2"
->>>>>>> Changes for EOS-16466 ECS-HA : M0 specific implementation of "cortxha cluster start" CLI
 PCS_CLUSTER_START="pcs cluster start --all"
 PCS_CLUSTER_STATUS="pcs cluster status"
 PCS_CLUSTER_UNSTANDBY="pcs cluster unstandby --all"
