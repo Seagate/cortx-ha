@@ -25,7 +25,6 @@ from ha.core.error import HAUnimplemented
 from ha.core.node.replacement.refresh_context import PcsRefreshContex
 from ha.execute import SimpleCommand
 from ha.core.support_bundle.ha_bundle import HABundle, CortxHABundle
-from ha.core.config.config_manager import ConfigManager
 from ha import const
 
 class ClusterManager:
@@ -260,7 +259,7 @@ class PcsClusterManager(ClusterManager):
         else:
             # confirm that at least one node is active
             self.get_nodes_status()
-            if self.active_nodes is "false":
+            if self.active_nodes == "false":
                 # wait for 5 seconds and retry
                 time.sleep(5)
                 self.get_nodes_status()
