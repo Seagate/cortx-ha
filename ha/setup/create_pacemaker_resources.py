@@ -19,14 +19,14 @@ import argparse
 from ha.execute import SimpleCommand
 from cortx.utils.log import Log
 
-class CreateResourceError(Exception):
 
+class CreateResourceError(Exception):
     """Exception to indicate any failure happened during resource creation."""
 
-class CreateResourceConfigError(CreateResourceError):
 
-    """Exception to indicate that given resource configuration is incorrect or
-    incomplete.""" 
+class CreateResourceConfigError(CreateResourceError):
+    """Exception to indicate that given resource configuration is incorrect or incomplete."""
+
 
 def cib_push(cib_xml):
     """Shortcut to avoid boilerplate pushing CIB file."""
@@ -36,7 +36,7 @@ def cib_push(cib_xml):
 
 def cib_get(cib_xml):
     """Generate CIB file using pcs."""
-    cmd= f"pcs cluster cib {cib_xml}"
+    cmd = f"pcs cluster cib {cib_xml}"
     SimpleCommand().run_cmd(cmd)
 
     return cib_xml
@@ -74,7 +74,8 @@ def free_space_monitor(cib_xml, push=False):
 def s3servers(cib_xml, push=False):
     """Create resources that belong to s3server group and clone the group.
 
-    S3 background consumer is ordered after s3server and co-located with it."""
+    S3 background consumer is ordered after s3server and co-located with it.
+    """
     for i in range(1, 12):
         cmd_s3server = f"pcs -f {cib_xml} resource create s3server-{i} ocf:seagate:dynamic_fid_service_ra service=s3server fid_service_name=s3service --group io_group"
         SimpleCommand().run_cmd(cmd_s3server)
@@ -87,10 +88,11 @@ def s3servers(cib_xml, push=False):
 
 
 def s3bp(cib_xml, push=False):
-    """Create S3 background producer
+    """Create S3 background producer.
 
     S3 background producer have to be only 1 per cluster and co-located with
-    s3server."""
+    s3server.
+    """
     cmd_s3bp = f"pcs -f {cib_xml} resource create s3backprod systemd:s3backgroundproducer op monitor interval=30s"
     cmd_order = f"pcs -f {cib_xml} constraint order io_group-clone then s3backprod"
 
@@ -130,8 +132,8 @@ def sspl(cib_xml, push=False):
 
 
 def io_stack(cib_xml, push=False):
-    """Wrapper to create IO stack related resources."""
-    resources = [ motr_hax, s3auth, haproxy, s3servers, s3bp]
+    """Create IO stack related resources."""
+    resources = [motr_hax, s3auth, haproxy, s3servers, s3bp]
     for rcs in resources:
         rcs(cib_xml, push)
 
@@ -141,8 +143,9 @@ def io_stack(cib_xml, push=False):
     if push:
         cib_push(cib_xml)
 
+
 def mgmt_vip(cib_xml, vip, iface, cidr=24, push=False):
-    """Creates mgmt Virtual IP resource."""
+    """Create mgmt Virtual IP resource."""
     cmd = f"pcs -f {cib_xml} resource create mgmt-vip ocf:heartbeat:IPaddr2 \
 ip={vip} cidr_netmask={cidr} nic={iface} iflabel=v1 \
 op start   interval=0s timeout=60s \
@@ -153,8 +156,9 @@ op stop    interval=0s timeout=60s"
     if push:
         cib_push(cib_xml)
 
+
 def mgmt_resources(cib_xml, push=False):
-    """Creates mandatory resources for mgmt stack."""
+    """Create mandatory resources for mgmt stack."""
     kibana = f"pcs -f {cib_xml} resource create kibana systemd:kibana op monitor interval=30s"
     agent = f"pcs -f {cib_xml} resource create csm-agent systemd:csm_agent op monitor interval=30s"
     web = f"pcs -f {cib_xml} resource create csm-web systemd:csm_web op monitor interval=30s"
@@ -164,6 +168,7 @@ def mgmt_resources(cib_xml, push=False):
 
     if push:
         cib_push(cib_xml)
+
 
 def uds(cib_xml, push=False):
     """Create uds resource and constraints."""
@@ -181,10 +186,11 @@ def uds(cib_xml, push=False):
 
 
 def mgmt_stack(cib_xml, mgmt_vip_cfg, with_uds=False, push=False):
-    """Wrapper to create Mgmt stack related resources.
+    """Create Mgmt stack related resources.
 
     It also creates and defines management group to support colocation and
-    ordering requirements."""
+    ordering requirements.
+    """
     mgmt_resources(cib_xml)
 
     if with_uds:
@@ -202,9 +208,9 @@ def mgmt_stack(cib_xml, mgmt_vip_cfg, with_uds=False, push=False):
         cib_push(cib_xml)
 
 
-def create_all_resources(cib_xml = "/var/log/seagate/cortx/ha/cortx-lr2-cib.xml", 
-                         push = True, **kwargs):
-    """Wrapper to populate the cluster.
+def create_all_resources(cib_xml="/var/log/seagate/cortx/ha/cortx-lr2-cib.xml",
+                         push=True, **kwargs):
+    """Populate the cluster with all Cortx resources.
 
     Parameters:
         cib_xml - file where CIB XML shall be stored (optional)
@@ -222,8 +228,8 @@ def create_all_resources(cib_xml = "/var/log/seagate/cortx/ha/cortx-lr2-cib.xml"
         CreateResourceConfigError: exception is generated if set of argument is
         not empty but incomplete.
     """
-    mgmt_vip_cfg = { k: kwargs[k] for k in ("vip", "cidr", "iface")
-                       if k in kwargs and kwargs[k] is not None }
+    mgmt_vip_cfg = {k: kwargs[k] for k in ("vip", "cidr", "iface")
+                    if k in kwargs and kwargs[k] is not None}
     if len(mgmt_vip_cfg) not in (0, 3):
         raise CreateResourceConfigError("Given mgmt VIP configuration is incomplete")
 
@@ -237,7 +243,8 @@ def create_all_resources(cib_xml = "/var/log/seagate/cortx/ha/cortx-lr2-cib.xml"
         if push:
             cib_push(cib_xml)
     except Exception:
-        raise CreateResourceError("Failed to populare cluster with resources")
+        raise CreateResourceError("Failed to populate cluster with resources")
+
 
 def _parse_input_args():
     """Parse and validate input arguments passed by mini-provisioner or CLI."""
@@ -262,8 +269,9 @@ def _main():
     args = _parse_input_args()
 
     create_all_resources(args.cib_xml, vip=args.vip, cidr=args.cidr,
-                         iface=args.iface, push = not args.dry_run,
+                         iface=args.iface, push=not args.dry_run,
                          uds=args.with_uds)
+
 
 if __name__ == "__main__":
     _main()
