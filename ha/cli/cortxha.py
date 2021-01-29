@@ -58,9 +58,7 @@ class HACli:
         ConfigManager.init('cortxha')
 
         # get version from ha.conf
-        version = ConfigManager.get_major_version()
-        major_version = version.split('.')
-        self._version = major_version[0]
+        self._version = ConfigManager.get_major_version()
 
     @staticmethod
     def _usage():

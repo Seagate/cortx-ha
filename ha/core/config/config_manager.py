@@ -49,4 +49,6 @@ class ConfigManager:
 
     @staticmethod
     def get_major_version():
-        return Conf.get(const.HA_GLOBAL_INDEX, "VERSION.version")
+        version = Conf.get(const.HA_GLOBAL_INDEX, "VERSION.version")
+        major_version = version.split('.')
+        return major_version[0]

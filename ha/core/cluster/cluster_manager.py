@@ -68,9 +68,7 @@ class PcsClusterManager(ClusterManager):
         self._execute = SimpleCommand()
 
         # get version from ha.conf
-        version = ConfigManager.get_major_version()
-        major_version = version.split('.')
-        self._version = major_version[0]
+        self._version = ConfigManager.get_major_version()
 
         if self._version == const.CORTX_VERSION_1:
             self._decision_monitor = DecisionMonitor()
