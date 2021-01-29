@@ -72,7 +72,8 @@ def free_space_monitor(cib_xml, push=False):
 
 
 def s3servers(cib_xml, push=False):
-    """Create resources that belong to s3server group and clone the group.
+    """
+    Create resources that belong to s3server group and clone the group.
 
     S3 background consumer is ordered after s3server and co-located with it.
     """
@@ -88,7 +89,8 @@ def s3servers(cib_xml, push=False):
 
 
 def s3bp(cib_xml, push=False):
-    """Create S3 background producer.
+    """
+    Create S3 background producer.
 
     S3 background producer have to be only 1 per cluster and co-located with
     s3server.
@@ -186,7 +188,8 @@ def uds(cib_xml, push=False):
 
 
 def mgmt_stack(cib_xml, mgmt_vip_cfg, with_uds=False, push=False):
-    """Create Mgmt stack related resources.
+    """
+    Create Mgmt stack related resources.
 
     It also creates and defines management group to support colocation and
     ordering requirements.
@@ -210,7 +213,8 @@ def mgmt_stack(cib_xml, mgmt_vip_cfg, with_uds=False, push=False):
 
 def create_all_resources(cib_xml="/var/log/seagate/cortx/ha/cortx-lr2-cib.xml",
                          push=True, **kwargs):
-    """Populate the cluster with all Cortx resources.
+    """
+    Populate the cluster with all Cortx resources.
 
     Parameters:
         cib_xml - file where CIB XML shall be stored (optional)

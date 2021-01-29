@@ -61,7 +61,8 @@ def cluster_auth(username, password, nodelist):
 
 
 def cluster_create(cluster_name, nodelist, enable=True, put_standby=True):
-    """Create cluster on given nodes. Enables and starts cluster if needed.
+    """
+    Create cluster on given nodes. Enables and starts cluster if needed.
 
     Parameters:
         cluster_name    - name of the cluster to be created
