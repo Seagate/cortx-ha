@@ -52,7 +52,7 @@ def cluster_auth(username, password, nodelist):
     try:
         SimpleCommand().run_cmd(cmd_auth)
     except Exception:
-        raise ClusterAuthError("Failed to authorize the node")
+        raise ClusterAuthError(f"Failed to authorize the nodes: {nodes}")
 
 
 def cluster_create(cluster_name, nodelist, enable=True, put_standby=True):
