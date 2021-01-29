@@ -21,12 +21,11 @@ from cortx.utils.log import Log
 
 
 class ClusterCreateError(Exception):
-
     """Exception to indicate that cluster can't be created due to some error."""
 
 
 class ClusterAuthError(ClusterCreateError):
-    """ Exception to indicate that authorization procedure failed."""
+    """Exception to indicate that authorization procedure failed."""
 
 
 class ClusterSetupError(ClusterCreateError):
