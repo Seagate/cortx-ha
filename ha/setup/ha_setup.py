@@ -328,7 +328,7 @@ def main(argv: dict):
         command = Cmd.get_command(desc, argv[1:])
         command.process()
 
-    except Exception as e:
+    except Exception:
         Log.error("%s\n" % traceback.format_exc())
         sys.stderr.write(f"Setup command:{argv[1]} failed for cortx-ha\n")
         return errno.EINVAL
