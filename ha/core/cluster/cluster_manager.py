@@ -207,23 +207,22 @@ class PcsClusterManager(ClusterManager):
         _output, _err, _rc = self._execute.run_cmd(const.PCS_STATUS_NODES, check_error=False)
 
         self.active_nodes = self.standby_nodes = self.offline_nodes = "false"
+
         for status in _output.split("\n"):
-            nodes = status.split()
-            if len(nodes) > 0:
-                if nodes[0] == "Online:" and len(nodes) > 1:
-                    self.active_nodes = "true"
-
-                if nodes[0] == "Standby" and nodes[1] == "with" and nodes[2] == "resource(s)" and nodes[3] == "running:" and len(nodes) > 4:
-                    self.active_nodes = "true"
-
-                if((nodes[0] == "Maintenance:") and (len(nodes) > 1)):
-                    self.active_nodes = "true"
-
-                if((nodes[0] == "Standby:") and (len(nodes) > 1)):
-                    self.standby_nodes = "true"
-
-                if((nodes[0] == "Offline:") and (len(nodes) > 1)):
-                    self.offline_nodes = "true"
+            nodes = status.split(":", 1)
+            # This break should be removed if pacemaker remote is also used in the cluster
+            if nodes[0] == "Pacemaker Remote Nodes":
+                break
+            elif nodes[0] == " Online" and len(nodes[1].split()) > 0:
+                self.active_nodes = "true"
+            elif nodes[0] == " Standby" and len(nodes[1].split()) > 0:
+                self.standby_nodes = "true"
+            elif nodes[0] == " Standby with resource(s) running" and len(nodes[1].split()) > 0:
+                self.active_nodes = "true"
+            elif nodes[0] == " Maintenance" and len(nodes[1].split()) > 0:
+                self.active_nodes = "true"
+            elif nodes[0] == "  Offline" and len(nodes[1].split()) > 0:
+                self.offline_nodes = "true"
 
 
     def start(self):
