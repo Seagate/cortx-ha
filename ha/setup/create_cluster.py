@@ -21,11 +21,13 @@ from cortx.utils.log import Log
 
 
 class ClusterCreateError(Exception):
+
     """Exception to indicate that cluster can't be created due to some error."""
 
 
 class ClusterAuthError(ClusterCreateError):
-    """Exception to indicate that authorization procedure failed."""
+    """
+    Exception to indicate that authorization procedure failed."""
 
 
 class ClusterSetupError(ClusterCreateError):
@@ -97,14 +99,32 @@ def _parse_input_args():
     Returns dictonary with context.
     """
     parser = argparse.ArgumentParser(description="Creates pacemaker cluster")
-    parser.add_argument("--cluster", default="cortx-lr2", type=str, help="Cluster name")
-    parser.add_argument("--username", required=True, type=str, help="User to be used for cluster auth")
-    parser.add_argument("--password", required=True, type=str, help="Password to be used for cluster auth")
-    parser.add_argument("--standby", action='store_true', help="Put nodes into standby on cluster creation")
+    parser.add_argument("--cluster",
+                        default="cortx-lr2",
+                        type=str,
+                        help="Cluster name")
+    parser.add_argument("--username",
+                        required=True,
+                        type=str,
+                        help="User to be used for cluster auth")
+    parser.add_argument("--password",
+                        required=True,
+                        type=str,
+                        help="Password to be used for cluster auth")
+    parser.add_argument("--standby",
+                        action='store_true',
+                        help="Put nodes into standby on cluster creation")
     # Nodes to setup cluster can be entered via file or via parameters
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("nodelist", type=str, nargs="*", default=[], help="List of nodes where cluster can be created")
-    group.add_argument("--nodefile", required=False, type=str, help="File with list of nodes")
+    group.add_argument("nodelist",
+                       type=str,
+                       nargs="*",
+                       default=[],
+                       help="List of nodes where cluster can be created")
+    group.add_argument("--nodefile",
+                       required=False,
+                       type=str,
+                       help="File with list of nodes")
     return parser.parse_args()
 
 
@@ -118,10 +138,12 @@ def _read_file_list(filename):
 def _main():
     # Workaround to make SimpleCommand work, not crash
     Log.init(service_name="create_cluster",
-             log_path="/var/log/seagate/cortx/ha", level="INFO")
+             log_path="/var/log/seagate/cortx/ha",
+             level="INFO")
 
     args = _parse_input_args()
-    nodelist = args.nodelist if args.nodelist else _read_file_list(args.nodefile)
+    nodelist = args.nodelist if args.nodelist else _read_file_list(
+        args.nodefile)
     if not nodelist:
         raise ValueError("node list shall not be empty")
     cluster_auth(args.username, args.password, nodelist)
