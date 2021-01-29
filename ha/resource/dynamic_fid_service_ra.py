@@ -53,7 +53,12 @@ class FidManager:
         Returns:
             str: Return fid of given service.
         """
-        return Hare.get_fid(service, node_id, instance_id)
+        try:
+            return Hare.get_fid(service, node_id, instance_id)
+        except Exception as e:
+            Log.error(f"Failed to get fid for ({service}, {node_id}, \
+                {instance_id}). Error: {e}")
+            return None
 
 class DynamicFidServiceRA(CortxServiceRA):
     """

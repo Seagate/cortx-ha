@@ -40,20 +40,15 @@ class Hare:
         Returns:
             str: Return fid for hare service.
         """
-        try:
-            with open(const.HARE_FID_MAPPING_FILE) as fi:
-                fid_schema = json.load(fi)
-            fid: str = ""
-            if service_name == "s3service":
-                fid = Hare._get_s3server_fid(fid_schema, service_name, node_id, instance_id)
-            else:
-                fid = Hare._get_motr_fid(fid_schema, service_name, node_id, instance_id)
-            Log.debug(f"Map ({service_name}, {node_id}, {instance_id}) to {fid}")
-            return fid
-        except Exception as e:
-            Log.error(f"Failed to get fid for ({service_name}, {node_id}, \
-                {instance_id}). Error: {e}")
-            return None
+        with open(const.HARE_FID_MAPPING_FILE) as fi:
+            fid_schema = json.load(fi)
+        fid: str = ""
+        if service_name == "s3service":
+            fid = Hare._get_s3server_fid(fid_schema, service_name, node_id, instance_id)
+        else:
+            fid = Hare._get_motr_fid(fid_schema, service_name, node_id, instance_id)
+        Log.debug(f"Map ({service_name}, {node_id}, {instance_id}) to {fid}")
+        return fid
 
     @staticmethod
     def _get_motr_fid(fid_schema: dict, service_name: str, node_id: str, instance_id: int) -> str:
