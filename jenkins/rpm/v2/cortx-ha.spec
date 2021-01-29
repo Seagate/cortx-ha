@@ -20,7 +20,6 @@ Summary: HA Tools
 License: Seagate Proprietary
 URL: https://github.com/Seagate/cortx-ha
 Source0: <RPM_NAME>-%{version}.tar.gz
-#TODO: Dependency on Hare rpm
 %define debug_package %{nil}
 
 %description
@@ -40,13 +39,15 @@ exit 0
 
 %post
 HA_DIR=<HA_PATH>/ha
-mkdir -p $HA_DIR/bin /usr/bin
+RES_AGENT="/usr/lib/ocf/resource.d/seagate"
+mkdir -p $HA_DIR/bin /usr/bin $RES_AGENT
 
 # Move binary file
-ln -sf $HA_DIR/lib/hw_comp_ra $HA_DIR/bin/hw_comp_ra
-ln -sf $HA_DIR/lib/iem_comp_ra $HA_DIR/bin/iem_comp_ra
 ln -sf $HA_DIR/lib/cortxha $HA_DIR/bin/cortxha
 ln -sf $HA_DIR/lib/cortxha /usr/bin/cortxha
+ln -sf $HA_DIR/lib/dynamic_fid_service_ra $HA_DIR/bin/dynamic_fid_service_ra
+# TODO: dynamic_fid_service_ra to RESOURCE_AGENT path from setup post_install
+ln -sf $HA_DIR/lib/dynamic_fid_service_ra $RES_AGENT/dynamic_fid_service_ra
 exit 0
 
 %preun
@@ -55,10 +56,10 @@ exit 0
 %postun
 [ $1 -eq 1 ] && exit 0
 HA_DIR=<HA_PATH>/ha
-rm -f $HA_DIR/bin/hw_comp_ra 2> /dev/null;
-rm -f $HA_DIR/bin/iem_comp_ra 2> /dev/null;
 rm -f /usr/bin/cortxha 2> /dev/null;
 rm -f $HA_DIR/bin/cortxha 2> /dev/null;
+rm -f $RES_AGENT/dynamic_fid_service_ra 2> /dev/null;
+rm -f $HA_DIR/bin/dynamic_fid_service_ra 2> /dev/null;
 exit 0
 
 %clean
@@ -69,5 +70,7 @@ exit 0
 <HA_PATH>/*
 
 %changelog
+* Thu Jan 28 2021 Ajay Paratmandali <ajay.paratmandali@seagate.com> - 2.0.0
+- Add new entry for dynamic_fid_service_ra
 * Mon Jan 25 2021 Amol Shinde <amol.shinde@seagate.com> - 2.0.0
 - Initial spec file for HA2

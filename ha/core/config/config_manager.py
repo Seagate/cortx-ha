@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
 #
 # This program is free software: you can redistribute it and/or modify it under the
 # terms of the GNU Affero General Public License as published by the Free Software
@@ -15,19 +15,32 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-
 """
  ****************************************************************************
- Description:       hw_comp_ra resource agent
+ Description:       Provide cental configuration.
  ****************************************************************************
 """
 
-import os
-import sys
-import pathlib
+from cortx.utils.log import Log
+from cortx.utils.conf_store.conf_store import Conf
 
-if __name__ == '__main__':
-    sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..'))
-    from ha.resource import alert_monitor_resource_agent
-    action = sys.argv[1] if len(sys.argv) > 1 else ""
-    sys.exit(alert_monitor_resource_agent.main(alert_monitor_resource_agent.HardwareResourceAgent, action))
+from ha import const
+
+# TODO: redefine class as per config manager module design
+class ConfigManager:
+    """
+    HA configuration to provide central ha configuration
+    """
+    # TODO: create separate function for log and conf file
+    @staticmethod
+    def init(log_name) -> None:
+        """
+        Initialize ha conf and log
+        Args:
+            log_name ([str]): service_name for log init.
+        """
+        Conf.init(delim='.')
+        Conf.load(const.HA_GLOBAL_INDEX, f"yaml://{const.HA_CONFIG_FILE}")
+        log_path = Conf.get(const.HA_GLOBAL_INDEX, "LOG.path")
+        log_level = Conf.get(const.HA_GLOBAL_INDEX, "LOG.level")
+        Log.init(service_name=log_name, log_path=log_path, level=log_level)
