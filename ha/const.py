@@ -68,7 +68,8 @@ BUNDLE_COMMAND="support_bundle"
 PCS_CLUSTER_PACKAGES=["pacemaker", "corosync", "pcs"]
 PCS_CLEANUP="pcs resource cleanup"
 PCS_FAILCOUNT_STATUS="pcs resource failcount show"
-PCS_STATUS="pcs status"
+PCS_STATUS = "pcs status"
+PCS_CLUSTER_STATUS="pcs cluster status"
 PCS_CLUSTER_DESTROY="pcs cluster destroy"
 
 NODE_DISCONNECTED="Disconnected"

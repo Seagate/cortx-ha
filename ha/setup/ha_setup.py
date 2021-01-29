@@ -20,6 +20,7 @@ import argparse
 import inspect
 import traceback
 import os
+import pathlib
 import shutil
 
 from cortx.utils.conf_store import Conf
@@ -28,6 +29,8 @@ from cortx.utils.validator.v_pkg import PkgV
 from cortx.utils.security.cipher import Cipher
 from ha.execute import SimpleCommand
 from ha import const
+#from ha.setup.create_cluster import cluster_auth, cluster_create
+#from ha.setup.create_pacemaker_resources import create_all_resources
 
 class Cmd:
     """
@@ -108,6 +111,7 @@ class PostInstallCmd(Cmd):
         Process post_install command.
         """
 
+        Log.info("Processing post_install command")
         # Create a directory and copy config file
         if os.path.exists(const.HA_CONFIG_FILE):
             os.remove(const.HA_CONFIG_FILE)
@@ -117,6 +121,7 @@ class PostInstallCmd(Cmd):
         # Pre-requisite checks are done here.
         # Make sure the pacemaker, corosync and pcs packages have been installed
         PkgV().validate('rpms', const.PCS_CLUSTER_PACKAGES)
+        Log.info("post_install command is successful")
 
 class ConfigCmd(Cmd):
     """
@@ -134,6 +139,7 @@ class ConfigCmd(Cmd):
         """
         Process config command.
         """
+        Log.info("Processing config command")
         # Read machine-id and using machine-id read minion name from confstore
         # This minion name will be used for adding the node to the cluster.
         nodelist = []
@@ -152,14 +158,37 @@ class ConfigCmd(Cmd):
         # Read cluster user password and decrypt the same
         cluster_id = Conf.get(self._index, 'cluster.cluster_id')
         cluster_secret = Conf.get(self._index, 'corosync-pacemaker.secret')
-        key = Cipher.generate_key(cluster_id, cluster_user)
+        key = Cipher.generate_key(cluster_id, 'corosync-pacemaker')
         cluster_secret = Cipher.decrypt(key, cluster_secret.encode('ascii')).decode()
 
-        Log.info(f"Creating cluster: {cluster_name} with node: {minion_name}")
-        # TBD: Call script for creating and configuring the cluster
-
-        # TBD: For multi-node, check if the cluster exists already.
-        # If exists then we need to add new node to the existing cluster
+        # Check if the cluster exists already, if yes skip creating the cluster.
+        output, err, rc = self._execute.run_cmd(const.PCS_CLUSTER_STATUS, check_error=False)
+        Log.info(f"Cluster status. Output: {output}, Err: {err}, RC: {rc}")
+        if rc != 0:
+            if(err.find("No such file or directory: 'pcs'") != -1):
+                Log.error("Cluster config failed; pcs not installed")
+                raise Exception("Cluster config failed; pcs not installed")
+            # If cluster is not created; create a cluster.
+            elif(err.find("cluster is not currently running on this node") != -1):
+                try:
+                    Log.info(f"Creating cluster: {cluster_name} with node: {minion_name}")
+                    #cluster_auth(cluster_user, cluster_secret, nodelist)
+                    #cluster_create(cluster_name, nodelist)
+                    Log.info(f"Created cluster: {cluster_name} successfully")
+                    Log.info("Creating pacemaker resources")
+                    #create_all_resources()
+                    Log.info("Created pacemaker resources successfully")
+                except Exception as e:
+                    Log.error("Cluster creation failed; destroying the cluster")
+                    output = self._execute.run_cmd(const.PCS_CLUSTER_DESTROY, check_error=True)
+                    Log.info(f"Cluster destroyed. Output: {output}")
+                    raise Exception("Cluster creation failed")
+            else:
+                pass # Nothing to do
+        else:
+            # Cluster exists already, check if it is a new node and add it to the existing cluster.
+             Log.info("The cluster exists already, check and add new node")
+        Log.info("config command is successful")
 
 class InitCmd(Cmd):
     """
@@ -249,12 +278,14 @@ class CleanupCmd(Cmd):
         """
         Process cleanup command.
         """
+        Log.info("Processing cleanup command")
         # Destroy the cluster
-        output, err, rc = self._execute.run_cmd(const.PCS_CLUSTER_DESTROY, check_error=True)
-        Log.info(f"Cluster destroyed. Output: {output}, Err: {err}, RC: {rc}")
+        output = self._execute.run_cmd(const.PCS_CLUSTER_DESTROY, check_error=True)
+        Log.info(f"Cluster destroyed. Output: {output}")
         # Delete the config file
         if os.path.exists(const.HA_CONFIG_FILE):
             os.remove(const.HA_CONFIG_FILE)
+        Log.info("cleanup command is successful")
 
 class BackupCmd(Cmd):
     """
@@ -299,9 +330,8 @@ def main(argv: dict):
         command.process()
 
     except Exception as e:
-        sys.stderr.write("error: %s\n\n" % str(e))
-        sys.stderr.write("%s\n" % traceback.format_exc())
-        Cmd.usage(argv[0])
+        Log.error("%s\n" % traceback.format_exc())
+        sys.stderr.write(f"Setup command:{argv[1]} failed for cortx-ha\n")
         return errno.EINVAL
 
 if __name__ == '__main__':
