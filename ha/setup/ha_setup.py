@@ -30,8 +30,9 @@ from ha.execute import SimpleCommand
 from ha import const
 
 class Cmd:
-    """Setup Command. This class provides methods for parsing arguments."""
-
+    """Setup Command
+    This class provides methods for parsing arguments.
+    """
     _index = "conf"
 
     def __init__(self, args: dict):
