@@ -64,13 +64,14 @@ class Hare:
         Returns:
             str: Return fid for motr
         """
-        motr_mapping: dict = {}
+        motr_mapping: list = []
         count: int = 0
         for service in fid_schema["services"]:
             if service["name"] == service_name:
                 count += 1
-                motr_mapping[count] = service["checks"][0]["args"][2]
-        fid: str = motr_mapping[instance_id]
+                motr_mapping.append(service["checks"][0]["args"][2])
+        motr_mapping.sort()
+        fid: str = motr_mapping[instance_id - 1]
         return fid
 
     @staticmethod
@@ -87,12 +88,13 @@ class Hare:
         Returns:
             str: Return fid for s3service
         """
-        clone_id: int = 0
+        s3service_li: list = []
         fid: str = ""
         for service in fid_schema["services"]:
             clone_id = int(service["port"])
-            if service["name"] == service_name and clone_id == instance_id:
+            if service["name"] == service_name:
                 service_fid = service["checks"][0]["args"][2]
                 fid = service_fid.split("@")[1]
-                break
-        return fid
+                s3service_li.append(fid)
+        s3service_li.sort()
+        return s3service_li[instance_id - 1]
