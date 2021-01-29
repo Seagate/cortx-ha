@@ -26,6 +26,7 @@ from ha.core.node.replacement.refresh_context import PcsRefreshContex
 from ha.execute import SimpleCommand
 from ha.core.support_bundle.ha_bundle import HABundle, CortxHABundle
 from ha import const
+from ha.core.config.config_manager import ConfigManager
 
 class ClusterManager:
     def __init__(self):
@@ -68,7 +69,7 @@ class PcsClusterManager(ClusterManager):
         self._execute = SimpleCommand()
 
         # get version from ha.conf
-        version = Conf.get(const.HA_GLOBAL_INDEX, "VERSION.version")
+        version = ConfigManager.get_major_version()
         major_version = version.split('.')
         self._version = major_version[0]
 
@@ -87,6 +88,7 @@ class PcsClusterManager(ClusterManager):
             action ([string]): Take cluster action for each request.
             args ([dict]): Parameter pass to request to process.
         """
+        self._output = output
         # TODO Add validater
         if action == const.CLUSTER_COMMAND:
             if args.cluster_action in ["add_node", "remove_node"]:
@@ -189,6 +191,22 @@ class PcsClusterManager(ClusterManager):
         Log.info(f"Cluster status output after add node: {_output}, {_err}, {_rc}")
 
     def get_nodes_status(self):
+        """
+        Sample output of the const.PCS_STATUS_NODES command
+
+        Pacemaker Nodes:
+         Online: node1 node2
+         Standby:
+         Standby with resource(s) running:
+         Maintenance:
+         Offline:
+        Pacemaker Remote Nodes:
+         Online:
+         Standby:
+         Standby with resource(s) running:
+         Maintenance:
+         Offline:
+        """
         _output, _err, _rc = self._execute.run_cmd(const.PCS_STATUS_NODES, check_error=False)
 
         self.active_nodes = self.standby_nodes = self.offline_nodes = "false"
@@ -218,7 +236,9 @@ class PcsClusterManager(ClusterManager):
         _output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_STATUS, check_error=False)
         if _rc != 0:
             if(_err.find("No such file or directory: 'pcs'") != -1):
-                Log.error("Cluster failed to start; pcs not installed ")
+                Log.error("Cluster failed to start; pcs not installed")
+                self._output.output("Cluster failed to start; pcs not installed")
+                self._output.rc(1)
                 raise Exception("Cluster failed to start; pcs not installed")
             # if cluster is not running; start cluster
             elif(_err.find("cluster is not currently running on this node") != -1):
@@ -236,17 +256,13 @@ class PcsClusterManager(ClusterManager):
                     retries -= 1
 
         else:
-            #If cluster is running, but all nodes are either Offline or in Standby mode;
+            #If cluster is running, but all nodes are  in Standby mode;
             #start the nodes
             self.get_nodes_status()
             if self.active_nodes == "false":
                 if self.standby_nodes == "true":
                     # issue pcs cluster unstandby
                     _output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_UNSTANDBY, check_error=False)
-
-                if self.offline_nodes == "true":
-                    # issue pcs cluster start
-                    _output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_START, check_error=False)
 
         # check cluster and node status
         output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_STATUS, check_error=False)
@@ -264,6 +280,8 @@ class PcsClusterManager(ClusterManager):
                 time.sleep(5)
                 self.get_nodes_status()
                 if self.active_nodes == "false":
+                    self._output.output("Cluster started; nodes not online")
+                    self._output.rc(1)
                     raise Exception("Cluster started; nodes not online")
 
         Log.info("Cluster started successfully")

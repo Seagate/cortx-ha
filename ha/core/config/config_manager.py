@@ -46,3 +46,7 @@ class ConfigManager:
         log_path = Conf.get(const.HA_GLOBAL_INDEX, "LOG.path")
         log_level = Conf.get(const.HA_GLOBAL_INDEX, "LOG.level")
         Log.init(service_name=log_name, log_path=log_path, level=log_level)
+
+    @staticmethod
+    def get_major_version():
+        return Conf.get(const.HA_GLOBAL_INDEX, "VERSION.version")
