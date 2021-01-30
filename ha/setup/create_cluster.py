@@ -21,19 +21,29 @@ from cortx.utils.log import Log
 
 
 class ClusterCreateError(Exception):
-    """Exception to indicate that cluster can't be created due to some error."""
+    """
+    Exception to indicate that cluster can't be created due to some error.
+    """
+    pass
 
 
 class ClusterAuthError(ClusterCreateError):
-    """Exception to indicate that authorization procedure failed."""
+    """
+    Exception to indicate that authorization procedure failed.
+    """
+    pass
 
 
 class ClusterSetupError(ClusterCreateError):
-    """Exception to indicate that cluster setup procedure failed."""
+    """
+    Exception to indicate that cluster setup procedure failed.
+    """
+    pass
 
 
 def cluster_auth(username, password, nodelist):
-    """Authorize cluster nodes.
+    """
+    Authorize cluster nodes.
 
     Parameters:
             username - just a user name to make cluster authorization
@@ -56,7 +66,8 @@ def cluster_auth(username, password, nodelist):
 
 
 def cluster_create(cluster_name, nodelist, enable=True, put_standby=True):
-    """Create cluster on given nodes. Enables and starts cluster if needed.
+    """
+    Create cluster on given nodes. Enables and starts cluster if needed.
 
     Parameters:
         cluster_name    - name of the cluster to be created
