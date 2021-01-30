@@ -20,10 +20,8 @@ import argparse
 import inspect
 import traceback
 import os
-import pathlib
 import shutil
 
-sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..'))
 from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
 from cortx.utils.validator.v_pkg import PkgV
