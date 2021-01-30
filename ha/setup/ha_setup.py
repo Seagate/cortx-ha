@@ -37,15 +37,15 @@ class HaPrerequisiteException(Exception):
     """
     pass
 
-class HaConfigError(Exception):
-    """
-    Exception to indicate that config command failed due to some checks.
-    """
-    pass
-
 class HaConfigException(Exception):
     """
     Exception to indicate that config command failed during cluster config.
+    """
+    pass
+
+class HaCleanupException(Exception):
+    """
+    Exception to indicate that cleanup command failed due to some error.
     """
     pass
 
@@ -189,7 +189,7 @@ class ConfigCmd(Cmd):
         if rc != 0:
             if(err.find("No such file or directory: 'pcs'") != -1):
                 Log.error("Cluster config failed; pcs not installed")
-                raise HaConfigError("Cluster config failed; pcs not installed")
+                raise HaConfigException("Cluster config failed; pcs not installed")
             # If cluster is not created; create a cluster.
             elif(err.find("cluster is not currently running on this node") != -1):
                 try:
@@ -301,12 +301,16 @@ class CleanupCmd(Cmd):
         Process cleanup command.
         """
         Log.info("Processing cleanup command")
-        # Destroy the cluster
-        output = self._execute.run_cmd(const.PCS_CLUSTER_DESTROY, check_error=True)
-        Log.info(f"Cluster destroyed. Output: {output}")
-        # Delete the config file
-        if os.path.exists(const.HA_CONFIG_FILE):
-            os.remove(const.HA_CONFIG_FILE)
+        try:
+            # Destroy the cluster
+            output = self._execute.run_cmd(const.PCS_CLUSTER_DESTROY, check_error=True)
+            Log.info(f"Cluster destroyed. Output: {output}")
+            # Delete the config file
+            if os.path.exists(const.HA_CONFIG_FILE):
+                os.remove(const.HA_CONFIG_FILE)
+        except Exception as e:
+            Log.error(f"Cluster cleanup command failed. Error: {e}")
+            raise HaCleanupException("Cluster cleanup failed")
         Log.info("cleanup command is successful")
 
 class BackupCmd(Cmd):
