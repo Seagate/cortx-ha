@@ -20,16 +20,36 @@ import argparse
 import inspect
 import traceback
 import os
+import pathlib
 import shutil
 
+sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..'))
 from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
 from cortx.utils.validator.v_pkg import PkgV
 from cortx.utils.security.cipher import Cipher
 from ha.execute import SimpleCommand
 from ha import const
-#from ha.setup.create_cluster import cluster_auth, cluster_create
-#from ha.setup.create_pacemaker_resources import create_all_resources
+from ha.setup.create_cluster import cluster_auth, cluster_create
+from ha.setup.create_pacemaker_resources import create_all_resources
+
+class HaPrerequisiteException(Exception):
+    """
+    Exception to indicate that some error happened during HA prerequisite checks.
+    """
+    pass
+
+class HaConfigError(Exception):
+    """
+    Exception to indicate that config command failed due to some checks.
+    """
+    pass
+
+class HaConfigException(Exception):
+    """
+    Exception to indicate that config command failed during cluster config.
+    """
+    pass
 
 class Cmd:
     """
@@ -87,11 +107,11 @@ class Cmd:
         """
         Add Command args for parsing.
         """
-        parser1 = parser.add_parser(cls.name, help='setup %s' % name)
-        parser1.add_argument('--config', help='Config URL')
-        parser1.add_argument('--plan', nargs="?", default=[], help='Test plan')
-        parser1.add_argument('args', nargs='*', default=[], help='args')
-        parser1.set_defaults(command=cls)
+        setup_arg_parser = parser.add_parser(cls.name, help='setup %s' % name)
+        setup_arg_parser.add_argument('--config', help='Config URL')
+        setup_arg_parser.add_argument('--plan', nargs="?", default=[], help='Test plan')
+        setup_arg_parser.add_argument('args', nargs='*', default=[], help='args')
+        setup_arg_parser.set_defaults(command=cls)
 
 class PostInstallCmd(Cmd):
     """
@@ -111,15 +131,20 @@ class PostInstallCmd(Cmd):
         """
 
         Log.info("Processing post_install command")
-        # Create a directory and copy config file
-        if os.path.exists(const.HA_CONFIG_FILE):
-            os.remove(const.HA_CONFIG_FILE)
-        os.makedirs(const.CONFIG_DIR, exist_ok=True)
-        shutil.copyfile(const.SOURCE_CONFIG_FILE, const.HA_CONFIG_FILE)
-        Log.info(f"{self.name}: Copied HA config file.")
-        # Pre-requisite checks are done here.
-        # Make sure the pacemaker, corosync and pcs packages have been installed
-        PkgV().validate('rpms', const.PCS_CLUSTER_PACKAGES)
+        try:
+            # Create a directory and copy config file
+            if os.path.exists(const.HA_CONFIG_FILE):
+                os.remove(const.HA_CONFIG_FILE)
+            os.makedirs(const.CONFIG_DIR, exist_ok=True)
+            shutil.copyfile(const.SOURCE_CONFIG_FILE, const.HA_CONFIG_FILE)
+            Log.info(f"{self.name}: Copied HA config file.")
+            # Pre-requisite checks are done here.
+            # Make sure the pacemaker, corosync and pcs packages have been installed
+            PkgV().validate('rpms', const.PCS_CLUSTER_PACKAGES)
+            Log.info("Found required cluster packages installed.")
+        except Exception as e:
+            Log.error(f"Failed prerequisite with Error: {e}")
+            raise HaPrerequisiteException("post_install command failed")
         Log.info("post_install command is successful")
 
 class ConfigCmd(Cmd):
@@ -166,22 +191,22 @@ class ConfigCmd(Cmd):
         if rc != 0:
             if(err.find("No such file or directory: 'pcs'") != -1):
                 Log.error("Cluster config failed; pcs not installed")
-                raise Exception("Cluster config failed; pcs not installed")
+                raise HaConfigError("Cluster config failed; pcs not installed")
             # If cluster is not created; create a cluster.
             elif(err.find("cluster is not currently running on this node") != -1):
                 try:
                     Log.info(f"Creating cluster: {cluster_name} with node: {minion_name}")
-                    #cluster_auth(cluster_user, cluster_secret, nodelist)
-                    #cluster_create(cluster_name, nodelist)
+                    cluster_auth(cluster_user, cluster_secret, nodelist)
+                    cluster_create(cluster_name, nodelist)
                     Log.info(f"Created cluster: {cluster_name} successfully")
                     Log.info("Creating pacemaker resources")
-                    #create_all_resources()
+                    create_all_resources()
                     Log.info("Created pacemaker resources successfully")
-                except Exception:
-                    Log.error("Cluster creation failed; destroying the cluster")
+                except Exception as e:
+                    Log.error(f"Cluster creation failed; destroying the cluster. Error: {e}")
                     output = self._execute.run_cmd(const.PCS_CLUSTER_DESTROY, check_error=True)
                     Log.info(f"Cluster destroyed. Output: {output}")
-                    raise Exception("Cluster creation failed")
+                    raise HaConfigException("Cluster creation failed")
             else:
                 pass # Nothing to do
         else:
