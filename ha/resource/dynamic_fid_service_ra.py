@@ -92,7 +92,10 @@ class DynamicFidServiceRA(CortxServiceRA):
         fid_service_name: str = res_param["OCF_RESKEY_fid_service_name"]
         local_node: str = res_param["OCF_RESKEY_CRM_meta_on_node"]
         resource: str = res_param["OCF_RESOURCE_INSTANCE"]
-        instance_id: int = int(resource.split('-')[-1])
+        resource_instance: str = str(resource.split('-')[-1])
+        instance_id: int = 1
+        if resource_instance.isdigit():
+            instance_id = int(resource_instance)
         fid = FidManager.get_fid(fid_service_name, local_node, instance_id)
         if fid is None:
             Log.error(f"Invalid config for fid for resource {resource}")
