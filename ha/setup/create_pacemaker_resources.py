@@ -105,7 +105,7 @@ def s3bp(cib_xml, push=False):
 
 def s3auth(cib_xml, push=False):
     """Create haproxy S3 auth server resource in pacemaker."""
-    cmd_s3auth = f"pcs -f {cib_xml} resource create s3auth systemd:s3authserver clone op monitor interval=30"
+    cmd_s3auth = f"pcs -f {cib_xml} resource create s3auth systemd:s3authserver op monitor interval=30 --group io_group"
     SimpleCommand().run_cmd(cmd_s3auth)
 
     if push:
