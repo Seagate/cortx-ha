@@ -109,6 +109,17 @@ class Cmd:
         setup_arg_parser.add_argument('args', nargs='*', default=[], help='args')
         setup_arg_parser.set_defaults(command=cls)
 
+    @staticmethod
+    def remove_file(file: str) -> None:
+        """
+        Check if file exist and delete existing file.
+
+        Args:
+            file ([str]): File name to be deleted.
+        """
+        if os.path.exists(file):
+            os.remove(file)
+
 class PostInstallCmd(Cmd):
     """
     PostInstall Setup Cmd
@@ -128,12 +139,14 @@ class PostInstallCmd(Cmd):
 
         Log.info("Processing post_install command")
         try:
-            # Create a directory and copy config file
-            if os.path.exists(const.HA_CONFIG_FILE):
-                os.remove(const.HA_CONFIG_FILE)
             os.makedirs(const.CONFIG_DIR, exist_ok=True)
+            # Create a directory and copy config file
+            PostInstallCmd.remove_file(const.HA_CONFIG_FILE)
             shutil.copyfile(const.SOURCE_CONFIG_FILE, const.HA_CONFIG_FILE)
-            Log.info(f"{self.name}: Copied HA config file.")
+            PostInstallCmd.remove_file(const.CLUSTER_MANAGER_CONTROLLER_SCHEMA)
+            shutil.copyfile(f"{const.SOURCE_CONFIG_PATH}/{const.CLUSTER_MANAGER_CONTROLLER_INDEX}.json",
+                            const.CLUSTER_MANAGER_CONTROLLER_SCHEMA)
+            Log.info(f"{self.name}: Copied HA configs file.")
             # Pre-requisite checks are done here.
             # Make sure the pacemaker, corosync and pcs packages have been installed
             PkgV().validate('rpms', const.PCS_CLUSTER_PACKAGES)

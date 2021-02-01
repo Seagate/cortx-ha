@@ -1,0 +1,34 @@
+{
+    "HW": {
+        "pcs": [
+            {
+                "elements": ["cluster"],
+                "interface": "ha.core.controller.pcs.cluster_controller.PcsClusterController"
+            },
+            {
+                "elements": ["node"],
+                "interface": "ha.core.controller.pcs.node_controller.PcsHWNodeController"
+            },
+            {
+                "elements": ["service"],
+                "interface": "ha.core.controller.pcs.service_controller.PcsServiceController"
+            }
+        ]
+    },
+    "VM": {
+        "pcs": [
+            {
+                "elements": ["cluster"],
+                "interface": "ha.core.controller.pcs.cluster_controller.PcsClusterController"
+            },
+            {
+                "elements": ["node"],
+                "interface": "ha.core.controller.pcs.node_controller.PcsVMNodeController"
+            },
+            {
+                "elements": ["service"],
+                "interface": "ha.core.controller.pcs.service_controller.PcsServiceController"
+            }
+        ]
+    }
+}

@@ -18,6 +18,7 @@
 import time
 
 from cortx.utils.log import Log
+from cortx.utils.conf_store.conf_store import Conf
 from cortx.utils.ha.dm.decision_monitor import DecisionMonitor
 
 from ha.core.error import HAUnimplemented
@@ -26,6 +27,7 @@ from ha.execute import SimpleCommand
 from ha.core.support_bundle.ha_bundle import HABundle, CortxHABundle
 from ha import const
 from ha.core.config.config_manager import ConfigManager
+from ha.core.controller.element_controller_factory import ElementControllerFactory
 
 class ClusterManager:
     def __init__(self):
@@ -35,28 +37,6 @@ class ClusterManager:
         pass
 
     def process_request(self, action, args):
-        raise HAUnimplemented()
-
-    def node_status(self, node):
-        # TODO move node logic to node manager class
-        raise HAUnimplemented()
-
-    def remove_node(self, node):
-        raise HAUnimplemented()
-
-    def add_node(self, node):
-        raise HAUnimplemented()
-
-    def start(self):
-        raise HAUnimplemented()
-
-    def stop(self):
-        raise HAUnimplemented()
-
-    def status(self):
-        raise HAUnimplemented()
-
-    def shutdown(self):
         raise HAUnimplemented()
 
 class PcsClusterManager(ClusterManager):
@@ -294,33 +274,38 @@ class PcsClusterManager(ClusterManager):
     def shutdown(self):
         raise HAUnimplemented("This feature is not supported...")
 
-class CortxClusterManager:
+class CortxClusterManager(ClusterManager):
     def __init__(self):
         """
         Manage cluster operation
         """
-        self._execute = SimpleCommand()
+        self._cluster_type = Conf.get(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.cluster_type")
+        self._env = Conf.get(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.env")
+        ConfigManager.load_controller_schema()
 
-    def process_request(self, action, args, output):
+    def process_request(self, args, responce):
         """
         Process cluster request
 
         Args:
-            action (string): action taken on cluster
             args (dictonery): parameteter
-            output (object): Store output
+            responce (object): Store output
 
         Raises:
             HAUnimplemented: [description]
+
+        args example:
+        {element: [<cluster|node|service>],
+        action: <start|stop|standby|active>,
+        args: {process_type: <sync|async>, nodes: [<node name list>],
+        service: <service name>}}
         """
-        # TODO: Provide service and node management
-        self._output = output
-        if action == const.CLUSTER_COMMAND:
-            getattr(self, args.cluster_action)()
-        elif action == const.BUNDLE_COMMAND:
-            CortxHABundle().process_request(action, args, output)
-        else:
-            raise HAUnimplemented("This feature is not supported...")
+        self._responce = responce
+        self._element = args.action
+        if self._element not in const.CLUSTER_MANAGER_ACTION:
+            raise HAUnimplemented(f"Invalid {self._element} element.")
+        controller = ElementControllerFactory.get_controller(self._env, self._cluster_type, self._element)
+        controller.process_request(args, responce)
 
     def remove_node(self):
         raise HAUnimplemented("Cluster remove node is not supported.")
