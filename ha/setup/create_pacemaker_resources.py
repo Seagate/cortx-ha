@@ -61,8 +61,8 @@ def free_space_monitor(cib_xml, push=False):
     SimpleCommand().run_cmd(cmd_fsm)
 
     constraints = [
-            f"pcs -f {cib_xml} constraint order motr-ios then motr-free-space-mon",
-            f"pcs -f {cib_xml} constraint colocation add motr-free-space-mon with motr-ios"
+            f"pcs -f {cib_xml} constraint order motr-ios-1 then motr-free-space-mon",
+            f"pcs -f {cib_xml} constraint colocation add motr-free-space-mon with motr-ios-1"
             ]
     for c in constraints:
         SimpleCommand().run_cmd(c)
