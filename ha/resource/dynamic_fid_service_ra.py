@@ -93,9 +93,10 @@ class DynamicFidServiceRA(CortxServiceRA):
         local_node: str = res_param["OCF_RESKEY_CRM_meta_on_node"]
         resource: str = res_param["OCF_RESOURCE_INSTANCE"]
         resource_instance: str = str(resource.split('-')[-1])
-        instance_id: int = 1
-        if resource_instance.isdigit():
-            instance_id = int(resource_instance)
+        if not resource_instance.isdigit():
+            Log.error(f"Invalid resource name {resource}, missing fid")
+            sys.exit(const.OCF_ERR_CONFIGURED)
+        instance_id: int = int(resource_instance)
         fid = FidManager.get_fid(fid_service_name, local_node, instance_id)
         if fid is None:
             Log.error(f"Invalid config for fid for resource {resource}")
@@ -130,6 +131,9 @@ class DynamicFidServiceRA(CortxServiceRA):
         <longdesc lang="en">
         This is resource agent, wrapper around systemd service.
         It map clone to service instance on node.
+        Note:
+        Only valid resource name expected with format <resource-name>-<instance-id>.
+        Here instance-id always start with 1 which going to map fid of services.
         </longdesc>
         <shortdesc lang="en">Systemd wrapper agent</shortdesc>
         <parameters>
