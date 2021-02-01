@@ -115,30 +115,45 @@ stateful_check_state() {
     return 7
 }
 
+start_sspl_service() {
+        systemctl start sspl-ll
+        echo "START (master): $?"
+        while true
+        do
+            status=`systemctl is-active sspl-ll`
+            if [[ $status == "active" ]]; then
+                return 0
+            elif [[ $status == "failed" ]]; then
+                return 1
+            else
+                sleep 1
+            fi
+        done
+}
+
 stateful_start() {
     stateful_check_state "master"
     if [ $? -eq 0 ]; then
         # CRM Error - Should never happen
         log "START (master)..."
-        systemctl start sspl-ll
-        while ! systemctl is-active sspl-ll | grep "active"
-        do
-            sleep 1
-        done
-        log "START (master): $?"
-        return $OCF_RUNNING_MASTER
+        start_sspl_service
+        if [ $? == 0 ]; then
+            return $OCF_RUNNING_MASTER
+        elif [ $? == 1 ]; then
+            return $OCF_FAILED_MASTER
+        else
+            return $OCF_ERR_GENERIC
+        fi
     fi
     stateful_update "slave"
     "${HA_SBIN_DIR}/crm_master" -l reboot -v 1
     log "START... (crm_reboot: $?)"
-    systemctl start sspl-ll
-    while ! systemctl is-active sspl-ll | grep "active"
-    do
-        sleep 1
-    done
-    log "START: $?"
-
-    return $OCF_SUCCESS
+    start_sspl_service
+    if [ $? == 0 ]; then
+        return $OCF_SUCCESS
+    else
+        return $OCF_ERR_GENERIC
+    fi
 }
 
 stateful_demote() {
