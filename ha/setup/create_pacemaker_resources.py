@@ -114,7 +114,7 @@ def s3auth(cib_xml, push=False):
 
 def haproxy(cib_xml, push=False):
     """Create haproxy clone resource in pacemaker."""
-    cmd_haproxy = f"pcs -f {cib_xml} resource create haproxy systemd:haproxy clone op monitor interval=30 --group io_group"
+    cmd_haproxy = f"pcs -f {cib_xml} resource create haproxy systemd:haproxy op monitor interval=30 --group io_group"
     SimpleCommand().run_cmd(cmd_haproxy)
 
     if push:
