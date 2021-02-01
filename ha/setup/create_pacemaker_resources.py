@@ -124,7 +124,7 @@ def haproxy(cib_xml, push=False):
 def sspl(cib_xml, push=False):
     """Create sspl clone resource in pacemaker."""
     # Using sspl-ll service file according to the content of SSPL repo
-    cmd_sspl = f"pcs -f {cib_xml} resource create sspl-ll systemd:sspl-ll clone op monitor interval=30 --group monitor"
+    cmd_sspl = f"pcs -f {cib_xml} resource create sspl-ll systemd:sspl-ll clone op monitor interval=30"
     SimpleCommand().run_cmd(cmd_sspl)
 
     if push:
