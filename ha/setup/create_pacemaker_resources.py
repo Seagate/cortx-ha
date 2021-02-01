@@ -138,8 +138,8 @@ def io_stack(cib_xml, push=False):
         rcs(cib_xml, push)
 
     cmd_clone_group = f"pcs -f {cib_xml} resource clone io_group"
-    s3bp(cib_xml, push)
     SimpleCommand().run_cmd(cmd_clone_group)
+    s3bp(cib_xml, push)
 
     if push:
         cib_push(cib_xml)
