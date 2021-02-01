@@ -27,7 +27,7 @@
 #	SSPL OCF Stateful master/slave RA.
 
 # Return codes and its menaning
-# 0: OCF_SUCESS: Successful Execution
+# 0: OCF_SUCCESS: Successful Execution
 # 9: OCF_MASTER_FAILED: Resource is failed in Master mode
 # 7: OCF_NOT_RUNNING: Resource is safely stopped.
 
@@ -121,6 +121,10 @@ stateful_start() {
         # CRM Error - Should never happen
         log "START (master)..."
         systemctl start sspl-ll
+        while ! systemctl is-active sspl-ll | grep "active"
+        do
+            sleep 1
+        done
         log "START (master): $?"
         return $OCF_RUNNING_MASTER
     fi
@@ -128,6 +132,10 @@ stateful_start() {
     "${HA_SBIN_DIR}/crm_master" -l reboot -v 1
     log "START... (crm_reboot: $?)"
     systemctl start sspl-ll
+    while ! systemctl is-active sspl-ll | grep "active"
+    do
+        sleep 1
+    done
     log "START: $?"
 
     return $OCF_SUCCESS
@@ -177,7 +185,8 @@ stateful_stop() {
     log "STOP..."
     systemctl stop sspl-ll
     log "STOP: $?"
-    return $OCF_SUCESS
+    rm -rf "${OCF_RESKEY_state}"
+    return $OCF_SUCCESS
 }
 
 stateful_monitor() {
