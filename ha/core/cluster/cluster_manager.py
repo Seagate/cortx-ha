@@ -206,7 +206,7 @@ class PcsClusterManager(ClusterManager):
         """
         _output, _err, _rc = self._execute.run_cmd(const.PCS_STATUS_NODES, check_error=False)
 
-        self.active_nodes = self.standby_nodes = self.offline_nodes = "false"
+        self.active_nodes = self.standby_nodes = self.offline_nodes = False
 
         for status in _output.split("\n"):
             nodes = status.split(":", 1)
@@ -214,15 +214,15 @@ class PcsClusterManager(ClusterManager):
             if nodes[0] == "Pacemaker Remote Nodes":
                 break
             elif nodes[0] == " Online" and len(nodes[1].split()) > 0:
-                self.active_nodes = "true"
+                self.active_nodes = True
             elif nodes[0] == " Standby" and len(nodes[1].split()) > 0:
-                self.standby_nodes = "true"
+                self.standby_nodes = True
             elif nodes[0] == " Standby with resource(s) running" and len(nodes[1].split()) > 0:
-                self.active_nodes = "true"
+                self.active_nodes = True
             elif nodes[0] == " Maintenance" and len(nodes[1].split()) > 0:
-                self.active_nodes = "true"
+                self.active_nodes = True
             elif nodes[0] == "  Offline" and len(nodes[1].split()) > 0:
-                self.offline_nodes = "true"
+                self.offline_nodes = True
 
 
     def start(self):
@@ -246,7 +246,7 @@ class PcsClusterManager(ClusterManager):
                 time.sleep(10)
                 self.get_nodes_status()
                 retries = 18
-                while  self.active_nodes == "false" and retries > 0:
+                while  self.active_nodes == False and retries > 0:
                     time.sleep(5)
                     self.get_nodes_status()
                     retries -= 1
@@ -255,8 +255,8 @@ class PcsClusterManager(ClusterManager):
             #If cluster is running, but all nodes are  in Standby mode;
             #start the nodes
             self.get_nodes_status()
-            if self.active_nodes == "false":
-                if self.standby_nodes == "true":
+            if self.active_nodes == False:
+                if self.standby_nodes == True:
                     # issue pcs cluster unstandby
                     _output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_UNSTANDBY, check_error=False)
 
@@ -271,11 +271,11 @@ class PcsClusterManager(ClusterManager):
         else:
             # confirm that at least one node is active
             self.get_nodes_status()
-            if self.active_nodes == "false":
+            if self.active_nodes == False:
                 # wait for 5 seconds and retry
                 time.sleep(5)
                 self.get_nodes_status()
-                if self.active_nodes == "false":
+                if self.active_nodes == False:
                     self._output.output("Cluster started; nodes not online")
                     self._output.rc(1)
                     raise Exception("Cluster started; nodes not online")
