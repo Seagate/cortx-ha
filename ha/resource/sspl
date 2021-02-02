@@ -130,9 +130,6 @@ start_sspl_service() {
                 failed )
                     return 1
                     ;;
-
-                * )
-                    ;;
             esac
             sleep 1
         done
