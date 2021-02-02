@@ -15,6 +15,8 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
+from ha import const
+from ha.execute import SimpleCommand
 from ha.core.controller.element_controller import ElementController
 from ha.core.error import HAUnimplemented
 
@@ -27,6 +29,7 @@ class PcsClusterController(ElementController):
         Initalize pcs cluster controller
         """
         super(PcsClusterController, self).__init__()
+        self._execute = SimpleCommand()
 
     def _validate(self, args) -> None:
         """
@@ -40,11 +43,45 @@ class PcsClusterController(ElementController):
         """
         pass
 
+    def remove_node(self):
+        raise HAUnimplemented("Cluster remove node is not supported.")
+
+    def add_node(self):
+        raise HAUnimplemented("Cluster add node is not supported.")
+
     def start(self) -> None:
-        raise HAUnimplemented("This feature is not implemented")
+        Log.debug("Executing cluster start")
+        _output, _err, _rc = self._execute.run_cmd(const.HCTL_START, check_error=False)
+        Log.info(f"IO stack started. Output: {_output}, Err: {_err}, RC: {_rc}")
+        self.status()
+        if self._responce.get_rc() == 0:
+            Log.info("Cluster started successfully")
+            self._responce.output("Cluster started successfully")
+            self._responce.rc(0)
+        else:
+            Log.error("Cluster failed to start")
+            self._responce.output("Cluster failed to start")
+            self._responce.rc(1)
 
     def stop(self) -> None:
-        raise HAUnimplemented("This feature is not implemented")
+        Log.info("Executing cluster Stop")
+        _output, _err, _rc = self._execute.run_cmd(const.HCTL_STOP, check_error=False)
+        Log.info(f"Io stack stopped successfully. Output: {_output}, Err: {_err}, RC: {_rc}")
+        self.status()
+        if self._responce.get_rc() == 1:
+            Log.info("Cluster stopped successfully")
+            self._responce.output("Cluster stopped successfully...")
+            self._responce.rc(0)
+        else:
+            Log.error("Cluster failed to stop")
+            self._responce.output("Cluster failed to stop")
+            self._responce.rc(1)
+
+    def status(self) -> None:
+        _output, _err, _rc = self._execute.run_cmd(const.HCTL_STATUS, check_error=False)
+        self._responce.rc(_rc)
+        status = const.HCTL_STARTED_STATUS if _rc == 0 else const.HCTL_STOPPED_STATUS
+        self._responce.output(status)
 
     def standby(self) -> None:
         raise HAUnimplemented("This feature is not implemented")

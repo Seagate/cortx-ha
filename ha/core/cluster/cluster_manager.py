@@ -301,51 +301,8 @@ class CortxClusterManager(ClusterManager):
         service: <service name>}}
         """
         self._responce = responce
-        self._element = args.action
-        if self._element not in const.CLUSTER_MANAGER_ACTION:
+        self._element = args.element
+        if self._element not in const.CLUSTER_MANAGER_ELEMENT:
             raise HAUnimplemented(f"Invalid {self._element} element.")
         controller = ElementControllerFactory.get_controller(self._env, self._cluster_type, self._element)
         controller.process_request(args, responce)
-
-    def remove_node(self):
-        raise HAUnimplemented("Cluster remove node is not supported.")
-
-    def add_node(self):
-        raise HAUnimplemented("Cluster add node is not supported.")
-
-    def start(self):
-        Log.debug("Executing cluster start")
-        _output, _err, _rc = self._execute.run_cmd(const.HCTL_START, check_error=False)
-        Log.info(f"IO stack started. Output: {_output}, Err: {_err}, RC: {_rc}")
-        self.status()
-        if self._output.get_rc() == 0:
-            Log.info("Cluster started successfully")
-            self._output.output("Cluster started successfully")
-            self._output.rc(0)
-        else:
-            Log.error("Cluster failed to start")
-            self._output.output("Cluster failed to start")
-            self._output.rc(1)
-
-    def stop(self):
-        Log.info("Executing cluster Stop")
-        _output, _err, _rc = self._execute.run_cmd(const.HCTL_STOP, check_error=False)
-        Log.info(f"Io stack stopped successfully. Output: {_output}, Err: {_err}, RC: {_rc}")
-        self.status()
-        if self._output.get_rc() == 1:
-            Log.info("Cluster stopped successfully")
-            self._output.output("Cluster stopped successfully...")
-            self._output.rc(0)
-        else:
-            Log.error("Cluster failed to stop")
-            self._output.output("Cluster failed to stop")
-            self._output.rc(1)
-
-    def status(self):
-        _output, _err, _rc = self._execute.run_cmd(const.HCTL_STATUS, check_error=False)
-        self._output.rc(_rc)
-        status = const.HCTL_STARTED_STATUS if _rc == 0 else const.HCTL_STOPPED_STATUS
-        self._output.output(status)
-
-    def shutdown(self):
-        raise HAUnimplemented("Cluster shutdown is not supported.")
