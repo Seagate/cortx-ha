@@ -144,10 +144,8 @@ stateful_start() {
         start_sspl_service
         if [ $? == 0 ]; then
             return $OCF_RUNNING_MASTER
-        elif [ $? == 1 ]; then
-            return $OCF_FAILED_MASTER
         else
-            return $OCF_ERR_GENERIC
+            return $OCF_FAILED_MASTER
         fi
     fi
     stateful_update "slave"
