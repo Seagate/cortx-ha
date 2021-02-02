@@ -118,6 +118,7 @@ stateful_check_state() {
 start_sspl_service() {
         systemctl start sspl-ll
         echo "START (master): $?"
+        count=0
         while true
         do
             status=`systemctl is-active sspl-ll`
@@ -125,9 +126,13 @@ start_sspl_service() {
                 return 0
             elif [[ $status == "failed" ]]; then
                 return 1
-            else
-                sleep 1
+            elif [[ $status == "unknown" ]]; then
+                ((count++))
+                if [ $count == 5 ]; then
+                    return 1
+                fi
             fi
+            sleep 1
         done
 }
 
