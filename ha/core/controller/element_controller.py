@@ -23,9 +23,7 @@ from cortx.utils.log import Log
 # consider callback as def responce(status="Success", error="", rc=0):
 
 class ElementController:
-    """
-    Generic element controller class
-    """
+    """ Generic element controller class """
     def __init__(self):
         """
         Initialize element controller.

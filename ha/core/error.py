@@ -101,7 +101,7 @@ class ValidationFailedError(HAError):
         """
         Validation unsuccessful error.
         """
-        _desc = f"Validation failed" if desc is None else desc
+        _desc = "Validation failed" if desc is None else desc
         _message_id = HA_SUPPORT_BUNDLE_FAILED
         _rc = 1
         super(ValidationFailedError, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)

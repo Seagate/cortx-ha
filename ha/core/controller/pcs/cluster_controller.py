@@ -15,17 +15,12 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-from cortx.utils.log import Log
-
-from ha import const
 from ha.core.error import ValidationFailedError
 from ha.core.controller.element_controller import ElementController
 from ha.core.error import HAUnimplemented
 
 class PcsClusterController(ElementController):
-    """
-    Pcs cluster controller to perform pcs cluster level operation.
-    """
+    """ Pcs cluster controller to perform pcs cluster level operation. """
     def __init__(self):
         """
         Initalize pcs cluster controller

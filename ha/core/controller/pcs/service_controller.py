@@ -15,8 +15,7 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-from cortx.utils.log import Log
-
+from ha.core.error import HAUnimplemented
 from ha.core.error import ValidationFailedError
 from ha.core.controller.element_controller import ElementController
 
@@ -29,7 +28,7 @@ class PcsServiceController(ElementController):
         Initalize pcs cluster controller
         """
         super(PcsServiceController, self).__init__()
-        self._actions: list =  [method for method in dir(PcsClusterController)
+        self._actions: list =  [method for method in dir(PcsServiceController)
             if method.startswith("_") is False]
 
     def _validate(self, args) -> None:
