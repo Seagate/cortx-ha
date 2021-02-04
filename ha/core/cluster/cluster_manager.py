@@ -310,7 +310,7 @@ class CortxClusterManager(ClusterManager):
                 self._cluster_type, args["element"])
             controller.process_request(args, self._responce)
             while self._output == None:
-                sleep(1)
+                sleep(2)
             if self._output["err"] != "":
                 raise ClusterManagerError(self._output["err"])
             Log.debug(f"Cluster Manager Output: {str(self._output)}")
