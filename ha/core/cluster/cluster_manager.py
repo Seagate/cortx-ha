@@ -28,6 +28,7 @@ from ha.core.support_bundle.ha_bundle import HABundle, CortxHABundle
 from ha import const
 from ha.core.config.config_manager import ConfigManager
 from ha.core.controller.element_controller_factory import ElementControllerFactory
+from ha.core.error import ClusterManagerError
 
 class ClusterManager:
     def __init__(self):
@@ -283,7 +284,7 @@ class CortxClusterManager(ClusterManager):
         self._env = Conf.get(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.env")
         ConfigManager.load_controller_schema()
 
-    def process_request(self, args, responce):
+    def process_request(self, args):
         """
         Process cluster request
 
@@ -300,9 +301,34 @@ class CortxClusterManager(ClusterManager):
         args: {process_type: <sync|async>, nodes: [<node name list>],
         service: <service name>}}
         """
-        self._responce = responce
-        self._element = args.element
-        if self._element not in const.CLUSTER_MANAGER_ELEMENT:
-            raise HAUnimplemented(f"Invalid {self._element} element.")
-        controller = ElementControllerFactory.get_controller(self._env, self._cluster_type, self._element)
-        controller.process_request(args, responce)
+        try:
+            if "element" not in args or self._element not in const.CLUSTER_MANAGER_ELEMENT:
+                raise ClusterManagerError(f"Controller element is missing or invalid. Possible options are {const.CLUSTER_MANAGER_ELEMENT}")
+            self._output: dict = None
+            controller = ElementControllerFactory.get_controller(self._env, self._cluster_type, self._element)
+            controller.process_request(args, self._responce)
+            while self._output == None:
+                sleep(1)
+            if self._output["err"] != "":
+                raise ClusterManagerError(self._output["err"])
+            Log.debug(f"Cluster Manager Output: {str(self._output)}")
+            return self._output
+        except Exception as e:
+            Log.error(f"Cluster Manager error: {e}")
+            output = {"rc": 1, "status":"", "err": f"Cluster manager failed. Error: {e}"}
+            return output
+
+    def _responce(self, rc: int, status: str, err: str):
+        """
+        Acts as callback to provide output.
+
+        Args:
+            rc (int): Return code.
+            output (str): Output
+            err (str): error message.
+        """
+        self._output = {
+            "rc": rc,
+            "status": status,
+            "err": err
+        }
