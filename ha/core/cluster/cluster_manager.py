@@ -316,7 +316,6 @@ class CortxClusterManager(ClusterManager):
             Log.debug(f"Cluster Manager Output: {str(self._output)}")
             return self._output
         except Exception as e:
-            print(f"{traceback.format_exc()}, {e}")
             Log.error(f"Cluster Manager error: {traceback.format_exc()}")
             output = {"rc": 1, "status":"", "err": f"Cluster manager failed. Error: {e}"}
             return output
