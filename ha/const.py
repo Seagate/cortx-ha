@@ -92,6 +92,6 @@ PCS_CLUSTER_UNSTANDBY="pcs cluster unstandby --all"
 PCS_STATUS_NODES="pcs status nodes"
 
 # Cluster manager
-CLUSTER_MANAGER_CONTROLLER_INDEX="controller_interface"
-CLUSTER_MANAGER_CONTROLLER_SCHEMA="{}/controller_interface.json".format(CONFIG_DIR)
-CLUSTER_MANAGER_ELEMENT=["cluster", "node", "service"]
+CM_CONTROLLER_INDEX="controller_interface"
+CM_CONTROLLER_SCHEMA="{}/controller_interface.json".format(CONFIG_DIR)
+CM_ELEMENT=["cluster", "node", "service"]

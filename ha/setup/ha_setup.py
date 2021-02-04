@@ -143,9 +143,9 @@ class PostInstallCmd(Cmd):
             # Create a directory and copy config file
             PostInstallCmd.remove_file(const.HA_CONFIG_FILE)
             shutil.copyfile(const.SOURCE_CONFIG_FILE, const.HA_CONFIG_FILE)
-            PostInstallCmd.remove_file(const.CLUSTER_MANAGER_CONTROLLER_SCHEMA)
-            shutil.copyfile(f"{const.SOURCE_CONFIG_PATH}/{const.CLUSTER_MANAGER_CONTROLLER_INDEX}.json",
-                            const.CLUSTER_MANAGER_CONTROLLER_SCHEMA)
+            PostInstallCmd.remove_file(const.CM_CONTROLLER_SCHEMA)
+            shutil.copyfile(f"{const.SOURCE_CONFIG_PATH}/{const.CM_CONTROLLER_INDEX}.json",
+                            const.CM_CONTROLLER_SCHEMA)
             Log.info(f"{self.name}: Copied HA configs file.")
             # Pre-requisite checks are done here.
             # Make sure the pacemaker, corosync and pcs packages have been installed

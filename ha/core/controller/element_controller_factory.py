@@ -15,13 +15,16 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
+from importlib import import_module
+
 from cortx.utils.log import Log
 from cortx.utils.conf_store.conf_store import Conf
+from ha import const
 from ha.core.controller.element_controller import ElementController
 
 class ElementControllerFactory:
 
-    _controllers: dict = {}
+    _controllers: list = []
 
     @staticmethod
     def get_controller(env: str, cluster_type: str, element: str) -> ElementController:
@@ -36,13 +39,20 @@ class ElementControllerFactory:
         Returns:
             ElementController: It is instance of controller need to return.
         """
-        for key in _controllers.keys():
-            if element in list(key):
-                return _controllers[key]
-        controllers = Conf.get(const.CLUSTER_MANAGER_CONTROLLER_INDEX,
+        for key in ElementControllerFactory._controllers:
+            if element in key["elements"]:
+                return key["interface"]
+        controllers: dict = Conf.get(const.CM_CONTROLLER_INDEX,
                         f"{env}.{cluster_type}")
         for controller in controllers:
             if element in controller["elements"]:
-                element_li: list = controller["elements"]
-                _controllers[str(element_li)] = controller["interface"]()
-                return _controllers[str(element_li)]
+                class_path_list: list = controller['interface'].split('.')[:-1]
+                Log.info(f"Initalizing controller api {controller['interface']}")
+                module = import_module(f"{'.'.join(class_path_list)}")
+                element_instace = getattr(module, controller['interface'].split('.')[-1])()
+                Log.debug(f"{element_instace} Added to controllers.")
+                ElementControllerFactory._controllers.append({
+                    "elements": controller["elements"],
+                    "interface": element_instace
+                })
+                return element_instace

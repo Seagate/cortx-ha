@@ -16,6 +16,7 @@
 # cortx-questions@seagate.com.
 
 import time
+import traceback
 
 from cortx.utils.log import Log
 from cortx.utils.conf_store.conf_store import Conf
@@ -302,10 +303,11 @@ class CortxClusterManager(ClusterManager):
         service: <service name>}}
         """
         try:
-            if "element" not in args or self._element not in const.CLUSTER_MANAGER_ELEMENT:
-                raise ClusterManagerError(f"Controller element is missing or invalid. Possible options are {const.CLUSTER_MANAGER_ELEMENT}")
+            if "element" not in args or args["element"] not in const.CM_ELEMENT:
+                raise ClusterManagerError(f"Controller element is missing or invalid. Possible options are {const.CM_ELEMENT}")
             self._output: dict = None
-            controller = ElementControllerFactory.get_controller(self._env, self._cluster_type, self._element)
+            controller = ElementControllerFactory.get_controller(self._env,
+                self._cluster_type, args["element"])
             controller.process_request(args, self._responce)
             while self._output == None:
                 sleep(1)
@@ -314,7 +316,8 @@ class CortxClusterManager(ClusterManager):
             Log.debug(f"Cluster Manager Output: {str(self._output)}")
             return self._output
         except Exception as e:
-            Log.error(f"Cluster Manager error: {e}")
+            print(f"{traceback.format_exc()}, {e}")
+            Log.error(f"Cluster Manager error: {traceback.format_exc()}")
             output = {"rc": 1, "status":"", "err": f"Cluster manager failed. Error: {e}"}
             return output
 

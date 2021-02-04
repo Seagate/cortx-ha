@@ -64,5 +64,4 @@ class ConfigManager:
         """
         Load controller interface schema for cluster management.
         """
-        Conf.load(const.CLUSTER_MANAGER_CONTROLLER_INDEX,
-            f"json://{const.CLUSTER_MANAGER_CONTROLLER_SCHEMA}")
+        Conf.load(const.CM_CONTROLLER_INDEX, f"json://{const.CM_CONTROLLER_SCHEMA}")
