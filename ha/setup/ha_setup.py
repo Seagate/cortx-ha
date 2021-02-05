@@ -78,11 +78,10 @@ class Cmd:
         Print usage instructions
         """
         sys.stderr.write(
-            f"usage: {prog} [-h] <cmd> <--config url> [--plan <TYPE>] <args>...\n"
+            f"usage: {prog} [-h] <cmd> <--config url> <args>...\n"
             f"where:\n"
             f"cmd   post_install, config, init, test, upgrade, reset, cleanup, backup, restore\n"
-            f"--config   Config URL\n"
-            f"--plan   Test plan")
+            f"--config   Config URL")
 
     @staticmethod
     def get_command(desc: str, argv: dict):
@@ -107,7 +106,6 @@ class Cmd:
         """
         setup_arg_parser = parser.add_parser(cls.name, help='setup %s' % name)
         setup_arg_parser.add_argument('--config', help='Config URL')
-        setup_arg_parser.add_argument('--plan', nargs="?", default=[], help='Test plan')
         setup_arg_parser.add_argument('args', nargs='*', default=[], help='args')
         setup_arg_parser.set_defaults(command=cls)
 
