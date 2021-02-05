@@ -18,12 +18,9 @@
 import os
 import pathlib
 import sys
-import pytest
 
+# Test case for Cluster management
 if __name__ == '__main__':
-    """
-    Test case for Cluster management
-    """
     sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..'))
     from ha.core.cluster.cluster_manager import CortxClusterManager
     from ha.core.config.config_manager import ConfigManager

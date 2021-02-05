@@ -24,7 +24,17 @@ from ha.core.controller.element_controller import ElementController
 
 class ElementControllerFactory:
 
-    _controllers: list = []
+    # Example:
+    # {'instances':
+    #   {'ha.core.controller.pcs.cluster_controller.PcsClusterController':
+    #       <ha.core.controller.pcs.cluster_controller.PcsClusterController object at 0x7f056c12ac18>},
+    # 'elements':
+    #   {'cluster':
+    #       'ha.core.controller.pcs.cluster_controller.PcsClusterController'}}
+    _controllers: dict = {
+        "instances": {},
+        "elements": {}
+    }
 
     @staticmethod
     def get_controller(env: str, cluster_type: str, element: str) -> ElementController:
@@ -39,20 +49,19 @@ class ElementControllerFactory:
         Returns:
             ElementController: It is instance of controller need to return.
         """
-        for key in ElementControllerFactory._controllers:
-            if element in key["elements"]:
-                return key["interface"]
+        element_dict = ElementControllerFactory._controllers
+        if element in element_dict["elements"]:
+            return element_dict["instances"][element_dict["elements"]]
         controllers: dict = Conf.get(const.CM_CONTROLLER_INDEX,
                         f"{env}.{cluster_type}")
         for controller in controllers:
             if element in controller["elements"]:
-                class_path_list: list = controller['interface'].split('.')[:-1]
                 Log.info(f"Initalizing controller api {controller['interface']}")
+                class_path_list: list = controller["interface"].split('.')[:-1]
                 module = import_module(f"{'.'.join(class_path_list)}")
-                element_instace = getattr(module, controller['interface'].split('.')[-1])()
-                Log.debug(f"{element_instace} Added to controllers.")
-                ElementControllerFactory._controllers.append({
-                    "elements": controller["elements"],
-                    "interface": element_instace
-                })
+                element_instace = getattr(module, controller["interface"].split('.')[-1])()
+                # Adding instance to element dict.
+                element_dict["elements"][element] = controller["interface"]
+                element_dict["instances"][controller["interface"]] = element_instace
+                Log.info(f"Registered {element_instace} with cluster manager.")
                 return element_instace

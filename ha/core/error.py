@@ -102,7 +102,7 @@ class ClusterManagerError(HAError):
         """
         Handle Support Bundle error.
         """
-        _desc = f"Failed to perform Cluster Manager Operation" if desc is None else desc
+        _desc = "Failed to perform Cluster Manager Operation" if desc is None else desc
         _message_id = HA_CLUSTER_MANAGER_FAILED
         _rc = 1
         super(ClusterManagerError, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)

@@ -25,7 +25,6 @@ from cortx.utils.ha.dm.decision_monitor import DecisionMonitor
 from ha.core.error import HAUnimplemented
 from ha.core.node.replacement.refresh_context import PcsRefreshContex
 from ha.execute import SimpleCommand
-from ha.core.support_bundle.ha_bundle import HABundle, CortxHABundle
 from ha import const
 from ha.core.config.config_manager import ConfigManager
 from ha.core.controller.element_controller_factory import ElementControllerFactory
@@ -310,7 +309,7 @@ class CortxClusterManager(ClusterManager):
                 self._cluster_type, args["element"])
             controller.process_request(args, self._responce)
             while self._output == None:
-                sleep(2)
+                time.sleep(2)
             if self._output["err"] != "":
                 raise ClusterManagerError(self._output["err"])
             Log.debug(f"Cluster Manager Output: {str(self._output)}")
