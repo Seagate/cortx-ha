@@ -120,6 +120,13 @@ class Cmd:
         if os.path.exists(file):
             os.remove(file)
 
+    def get_minion_name(self):
+        command = "cat /etc/machine-id"
+        machine_id, err, rc = self._execute.run_cmd(command, check_error=True)
+        Log.info(f"Read machine-id. Output: {machine_id}, Err: {err}, RC: {rc}")
+        minion_name = Conf.get(self._index, f"cluster.server_nodes.{machine_id.strip()}")
+        return minion_name
+
 class PostInstallCmd(Cmd):
     """
     PostInstall Setup Cmd
@@ -176,10 +183,7 @@ class ConfigCmd(Cmd):
         # Read machine-id and using machine-id read minion name from confstore
         # This minion name will be used for adding the node to the cluster.
         nodelist = []
-        command = "cat /etc/machine-id"
-        machine_id, err, rc = self._execute.run_cmd(command, check_error=True)
-        Log.info(f"Read machine-id. Output: {machine_id}, Err: {err}, RC: {rc}")
-        minion_name = Conf.get(self._index, f"cluster.server_nodes.{machine_id.strip()}")
+        minion_name = self.get_minion_name()
         nodelist.append(minion_name)
         # The config step will be called from primary node alwasys,
         # see how to get and use the node name then.
@@ -243,12 +247,33 @@ class InitCmd(Cmd):
         Init method.
         """
         super().__init__(args)
+        self._ha_conf_index = "ha_update_index"
 
     def process(self):
         """
         Process init command.
         """
-        pass # TBD
+        Log.info("Processing init command")
+        Log.info("INIT: Update ha configuration files")
+        Conf.load(self._ha_conf_index, f"yaml://{const.HA_CONFIG_FILE}")
+        minion_name = self.get_minion_name()
+        node_type = Conf.get(self._index, f"cluster.{minion_name}.node_type").strip()
+        # Set env for cluster manager
+        self._update_env(node_type)
+        Log.info("INIT: HA configuration updated successfully.")
+        Log.info("init command is successful")
+
+    def _update_env(self, node_type):
+        """
+        Update env like VM, HW
+        """
+        Log.info(f"Detected {node_type} env.")
+        if "VM" == node_type.upper():
+            Conf.set(self._ha_conf_index, "CLUSTER_MANAGER.env", node_type.upper())
+        else:
+            # TODO: check if any env available other than vm, hw
+            Conf.set(self._ha_conf_index, "CLUSTER_MANAGER.env", "HW")
+        Conf.save(self._ha_conf_index)
 
 class TestCmd(Cmd):
     """
@@ -328,6 +353,8 @@ class CleanupCmd(Cmd):
             # Delete the config file
             if os.path.exists(const.HA_CONFIG_FILE):
                 os.remove(const.HA_CONFIG_FILE)
+            if os.path.exists(const.CM_CONTROLLER_SCHEMA):
+                os.remove(const.CM_CONTROLLER_SCHEMA)
         except Exception as e:
             Log.error(f"Cluster cleanup command failed. Error: {e}")
             raise HaCleanupException("Cluster cleanup failed")
