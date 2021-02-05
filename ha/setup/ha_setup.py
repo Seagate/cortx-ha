@@ -189,7 +189,7 @@ class ConfigCmd(Cmd):
             if int(s3_instances) < 1:
                 raise HaConfigException(f"Found {s3_instances} which is invalid s3 instance count.")
         except Exception as e:
-            Log.error(f"Found {s3_instances} which is invalid s3 instance count.")
+            Log.error(f"Found {s3_instances} which is invalid s3 instance count. Error: {e}")
             raise HaConfigException(f"Found {s3_instances} which is invalid s3 instance count.")
 
         # Check if the cluster exists already, if yes skip creating the cluster.
