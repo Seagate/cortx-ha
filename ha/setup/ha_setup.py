@@ -184,10 +184,13 @@ class ConfigCmd(Cmd):
         cluster_secret = Cipher.decrypt(key, cluster_secret.encode('ascii')).decode()
 
         # Get s3 instance count
-        s3_instances = Conf.get(self._index, f"cluster.{minion_name}.s3_instances")
-        if int(s3_instances) < 1:
-            Log.error("Found non positive s3 instance count.")
-            raise HaConfigException("Found non positive s3 instance count.")
+        try:
+            s3_instances = Conf.get(self._index, f"cluster.{minion_name}.s3_instances")
+            if int(s3_instances) < 1:
+                raise HaConfigException(f"Found {s3_instances} which is invalid s3 instance count.")
+        except Exception as e:
+            Log.error(f"Found {s3_instances} which is invalid s3 instance count.")
+            raise HaConfigException(f"Found {s3_instances} which is invalid s3 instance count.")
 
         # Check if the cluster exists already, if yes skip creating the cluster.
         output, err, rc = self._execute.run_cmd(const.PCS_CLUSTER_STATUS, check_error=False)

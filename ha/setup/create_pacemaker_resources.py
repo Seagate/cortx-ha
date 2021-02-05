@@ -44,7 +44,7 @@ def cib_get(cib_xml):
 
 def motr_hax(cib_xml, push=False):
     """Create resources that belong to motr group and clone the group."""
-    # TODO here that it's temporary code and should be removed once fixed by hax/provisioner.
+    # TODO cmd_hare_consul is temporary code and should be removed once fixed by hax/provisioner.
     cmd_hare_consul = f"pcs -f {cib_xml} resource create hax-consul systemd:hare-consul-agent --group io_group"
     cmd_hax = f"pcs -f {cib_xml} resource create hax systemd:hare-hax --group io_group"
     cmd_confd = f"pcs -f {cib_xml} resource create motr-confd-1 ocf:seagate:dynamic_fid_service_ra service=m0d fid_service_name=confd --group io_group --force"
@@ -73,7 +73,7 @@ def free_space_monitor(cib_xml, push=False):
         cib_push(cib_xml)
 
 
-def s3servers(cib_xml, instance=11, push=False):
+def s3servers(cib_xml, instance, push=False):
     """Create resources that belong to s3server group and clone the group.
 
     S3 background consumer is ordered after s3server and co-located with it.
@@ -237,7 +237,7 @@ def create_all_resources(cib_xml="/var/log/seagate/cortx/ha/cortx-lr2-cib.xml",
         raise CreateResourceConfigError("Given mgmt VIP configuration is incomplete")
 
     with_uds = kwargs["uds"] if "uds" in kwargs else False
-    s3_instances = int(kwargs["s3_instances"]) if "s3_instances" in kwargs else 11
+    s3_instances = int(kwargs["s3_instances"])
     try:
         cib_get(cib_xml)
         io_stack(cib_xml, s3_instances)
