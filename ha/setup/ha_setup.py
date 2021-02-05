@@ -183,6 +183,12 @@ class ConfigCmd(Cmd):
         key = Cipher.generate_key(cluster_id, 'corosync-pacemaker')
         cluster_secret = Cipher.decrypt(key, cluster_secret.encode('ascii')).decode()
 
+        # Get s3 instance count
+        s3_instances = Conf.get(self._index, f"cluster.{minion_name}.s3_instances")
+        if int(s3_instances) < 1:
+            Log.error("Found non positive s3 instance count.")
+            raise HaConfigException("Found non positive s3 instance count.")
+
         # Check if the cluster exists already, if yes skip creating the cluster.
         output, err, rc = self._execute.run_cmd(const.PCS_CLUSTER_STATUS, check_error=False)
         Log.info(f"Cluster status. Output: {output}, Err: {err}, RC: {rc}")
@@ -198,7 +204,6 @@ class ConfigCmd(Cmd):
                     cluster_create(cluster_name, nodelist)
                     Log.info(f"Created cluster: {cluster_name} successfully")
                     Log.info("Creating pacemaker resources")
-                    s3_instances = Conf.get(self._index, f"cluster.{minion_name}.s3_instances")
                     create_all_resources(s3_instances=s3_instances)
                     Log.info("Created pacemaker resources successfully")
                 except Exception as e:

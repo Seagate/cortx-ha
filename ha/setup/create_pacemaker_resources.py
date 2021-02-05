@@ -44,6 +44,7 @@ def cib_get(cib_xml):
 
 def motr_hax(cib_xml, push=False):
     """Create resources that belong to motr group and clone the group."""
+    # TODO here that it's temporary code and should be removed once fixed by hax/provisioner.
     cmd_hare_consul = f"pcs -f {cib_xml} resource create hax-consul systemd:hare-consul-agent --group io_group"
     cmd_hax = f"pcs -f {cib_xml} resource create hax systemd:hare-hax --group io_group"
     cmd_confd = f"pcs -f {cib_xml} resource create motr-confd-1 ocf:seagate:dynamic_fid_service_ra service=m0d fid_service_name=confd --group io_group --force"
