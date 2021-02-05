@@ -80,7 +80,6 @@ def s3servers(cib_xml, instance=11, push=False):
     for i in range(1, int(instance)+1):
         cmd_s3server = f"pcs -f {cib_xml} resource create s3server-{i} ocf:seagate:dynamic_fid_service_ra service=s3server fid_service_name=s3service --group io_group --force"
         SimpleCommand().run_cmd(cmd_s3server)
-
     cmd_s3bc = f"pcs -f {cib_xml} resource create s3backcons systemd:s3backgroundconsumer meta failure-timeout=300s --group io_group"
     SimpleCommand().run_cmd(cmd_s3bc)
 
