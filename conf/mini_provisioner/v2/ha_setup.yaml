@@ -50,4 +50,4 @@ ha:
         cmd: ha_setup restore
         args: --location $URL
 
-    support_bundle:
+support_bundle:
