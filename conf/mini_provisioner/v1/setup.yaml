@@ -54,5 +54,5 @@ ha:
         script: /opt/seagate/cortx/ha/conf/script/cluster_update
         args: add_node
 
-    support_bundle:
-        - cortxha support_bundle create
+support_bundle:
+    - cortxha support_bundle create
