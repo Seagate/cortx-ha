@@ -198,7 +198,8 @@ class ConfigCmd(Cmd):
                     cluster_create(cluster_name, nodelist)
                     Log.info(f"Created cluster: {cluster_name} successfully")
                     Log.info("Creating pacemaker resources")
-                    create_all_resources()
+                    s3_instances = Conf.get(self._index, f"cluster.{minion_name}.s3_instances")
+                    create_all_resources(s3_instances=s3_instances)
                     Log.info("Created pacemaker resources successfully")
                 except Exception as e:
                     Log.error(f"Cluster creation failed; destroying the cluster. Error: {e}")
