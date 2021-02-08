@@ -78,11 +78,10 @@ class Cmd:
         Print usage instructions
         """
         sys.stderr.write(
-            f"usage: {prog} [-h] <cmd> <--config url> [--plan <TYPE>] <args>...\n"
+            f"usage: {prog} [-h] <cmd> <--config url> <args>...\n"
             f"where:\n"
             f"cmd   post_install, config, init, test, upgrade, reset, cleanup, backup, restore\n"
-            f"--config   Config URL\n"
-            f"--plan   Test plan")
+            f"--config   Config URL")
 
     @staticmethod
     def get_command(desc: str, argv: dict):
@@ -107,7 +106,6 @@ class Cmd:
         """
         setup_arg_parser = parser.add_parser(cls.name, help='setup %s' % name)
         setup_arg_parser.add_argument('--config', help='Config URL')
-        setup_arg_parser.add_argument('--plan', nargs="?", default=[], help='Test plan')
         setup_arg_parser.add_argument('args', nargs='*', default=[], help='args')
         setup_arg_parser.set_defaults(command=cls)
 
@@ -183,6 +181,15 @@ class ConfigCmd(Cmd):
         key = Cipher.generate_key(cluster_id, 'corosync-pacemaker')
         cluster_secret = Cipher.decrypt(key, cluster_secret.encode('ascii')).decode()
 
+        # Get s3 instance count
+        try:
+            s3_instances = Conf.get(self._index, f"cluster.{minion_name}.s3_instances")
+            if int(s3_instances) < 1:
+                raise HaConfigException(f"Found {s3_instances} which is invalid s3 instance count.")
+        except Exception as e:
+            Log.error(f"Found {s3_instances} which is invalid s3 instance count. Error: {e}")
+            raise HaConfigException(f"Found {s3_instances} which is invalid s3 instance count.")
+
         # Check if the cluster exists already, if yes skip creating the cluster.
         output, err, rc = self._execute.run_cmd(const.PCS_CLUSTER_STATUS, check_error=False)
         Log.info(f"Cluster status. Output: {output}, Err: {err}, RC: {rc}")
@@ -198,7 +205,7 @@ class ConfigCmd(Cmd):
                     cluster_create(cluster_name, nodelist)
                     Log.info(f"Created cluster: {cluster_name} successfully")
                     Log.info("Creating pacemaker resources")
-                    create_all_resources()
+                    create_all_resources(s3_instances=s3_instances)
                     Log.info("Created pacemaker resources successfully")
                 except Exception as e:
                     Log.error(f"Cluster creation failed; destroying the cluster. Error: {e}")
