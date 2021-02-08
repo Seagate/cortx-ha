@@ -132,8 +132,9 @@ class DynamicFidServiceRA(CortxServiceRA):
         This is resource agent, wrapper around systemd service.
         It map clone to service instance on node.
         Note:
-        Only valid resource name accepted with format <resource-name>-<instance-id>.
+        Only valid resource name accepted with format 'resource_name'-'instance-id'.
         Here instance-id always start with 1 which going to map fid of services.
+        Example: s3server-2
         </longdesc>
         <shortdesc lang="en">Systemd wrapper agent</shortdesc>
         <parameters>
