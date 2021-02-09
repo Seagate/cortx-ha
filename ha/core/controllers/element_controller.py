@@ -20,7 +20,6 @@ import traceback
 from typing import Callable
 
 from cortx.utils.log import Log
-# consider callback as def responce(status="Success", error="", rc=0):
 
 class ElementController:
     """ Generic element controller class """
@@ -30,22 +29,22 @@ class ElementController:
         """
         self._responce = None
 
-    def _validate(self, args) -> None:
+    def _validate(self, args):
         """
         Abstract validation function.
 
         Args:
-            args (dict): args for validation.
+            args [dict]: args for validation.
         """
         pass
 
-    def process_request(self, args: dict, responce: Callable) -> None:
+    def process_request(self, args: dict, responce: Callable):
         """
         Args related to conroller and action.
 
         Args:
-            args (dict): args for action and controller.
-            responce (object): responce object for output and rc.
+            args [dict]: args for action and controller.
+            responce [object]: responce object for output and rc.
 
         { element: cluster|node|service,
             action: [start|stop|status],

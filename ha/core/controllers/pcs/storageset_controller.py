@@ -19,15 +19,16 @@ from ha.core.error import ValidationFailedError
 from ha.core.error import HAUnimplemented
 from ha.core.controllers.pcs.pcs_controller import PcsController
 
-class PcsClusterController(PcsController):
-    """ Pcs cluster controller to perform pcs cluster level operation. """
+class PcsStorageSetController(PcsController):
+    """ Perform storage set level operation. """
 
     def __init__(self):
         """
-        Initalize pcs cluster controller
+        Initalize PcsStorageSetController controller
         """
-        super(PcsClusterController, self).__init__()
-        self._actions: list =  [method for method in dir(PcsClusterController)
+        super(PcsStorageSetController, self).__init__()
+
+        self._actions: list =  [method for method in dir(PcsStorageSetController)
             if method.startswith("_") is False]
 
     def _validate(self, args: dict):
@@ -74,52 +75,5 @@ class PcsClusterController(PcsController):
         Args:
             args ([dict]): Args for commands. Example args: {}.
                             No extra argument needed for cluster status.
-        """
-        raise HAUnimplemented("This operation is not implemented.")
-
-    def standby(self, args: dict):
-        """
-        Put cluster in standby mode.
-
-        Args:
-            args ([dict]): Args for commands. Example args: {}.
-                            No extra argument needed for cluster standby.
-        """
-        raise HAUnimplemented("This operation is not implemented.")
-
-    def active(self, args: dict):
-        """
-        Start cluster services.
-
-        Args:
-            args ([dict]): Args for commands. Example args: {}.
-                            No extra argument needed for cluster active.
-        """
-        raise HAUnimplemented("This operation is not implemented.")
-
-    def node_list(self, args: dict):
-        """
-        Start node.
-
-        Args:
-            args ([dict]): Args for commands. Example args: {}.
-        """
-        raise HAUnimplemented("This operation is not implemented.")
-
-    def add_node(self, args: dict):
-        """
-        Add new node to cluster.
-
-        Args:
-            args (dict): Add new node to cluster.
-        """
-        raise HAUnimplemented("This operation is not implemented.")
-
-    def add_storageset(self, args: dict):
-        """
-        Add new storageset to cluster.
-
-        Args:
-            args (dict): Add new storageset to cluster.
         """
         raise HAUnimplemented("This operation is not implemented.")

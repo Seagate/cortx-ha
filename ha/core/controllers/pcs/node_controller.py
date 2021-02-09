@@ -17,10 +17,11 @@
 
 from ha.core.error import ValidationFailedError
 from ha.core.error import HAUnimplemented
-from ha.core.controller.element_controller import ElementController
+from ha.core.controllers.pcs.pcs_controller import PcsController
 
-class PcsNodeController(ElementController):
+class PcsNodeController(PcsController):
     """ Controller to manage node. """
+
     def __init__(self):
         """
         Initalize pcs cluster controller
@@ -30,7 +31,7 @@ class PcsNodeController(ElementController):
         self._actions: list =  [method for method in dir(PcsNodeController)
             if method.startswith("_") is False]
 
-    def _validate(self, args) -> None:
+    def _validate(self, args):
         """
         Validate args.
 
@@ -47,70 +48,61 @@ class PcsNodeController(ElementController):
         if action not in self._actions:
             raise ValidationFailedError(f"Invalid action {action} for cluster controller.")
 
-    def start(self, args: dict) -> None:
+    def start(self, args: dict):
         """
         Start node.
 
         Args:
             args ([dict]): Args for commands. Example args: {node: <name>}.
         """
-        raise HAUnimplemented("This operation is not supported.")
+        raise HAUnimplemented("This operation is not implemented.")
 
-    def stop(self, args: dict) -> None:
+    def stop(self, args: dict):
         """
         Stop node.
 
         Args:
             args ([dict]): Args for commands. Example args: {node: <name>}.
         """
-        raise HAUnimplemented("This operation is not supported.")
+        raise HAUnimplemented("This operation is not implemented.")
 
-    def standby(self, args: dict) -> None:
+    def standby(self, args: dict):
         """
         Put node on standby.
 
         Args:
             args ([dict]): Args for commands. Example args: {node: <name>}.
         """
-        raise HAUnimplemented("This operation is not supported.")
+        raise HAUnimplemented("This operation is not implemented.")
 
-    def active(self, args: dict) -> None:
+    def active(self, args: dict):
         """
         Start resources on node.
 
         Args:
             args ([dict]): Args for commands. Example args: {node: <name>}.
         """
-        raise HAUnimplemented("This operation is not supported.")
+        raise HAUnimplemented("This operation is not implemented.")
 
-    def status(self, args: dict) -> None:
+    def status(self, args: dict):
         """
         Status node.
 
         Args:
             args ([dict]): Args for commands. Example args: {node: <name>}.
         """
-        raise HAUnimplemented("This operation is not supported.")
-
-    def node_list(self, args: dict) -> None:
-        """
-        Start node.
-
-        Args:
-            args ([dict]): Args for commands. Example args: {}.
-        """
-        raise HAUnimplemented("This operation is not supported.")
+        raise HAUnimplemented("This operation is not implemented.")
 
 class PcsVMNodeController(PcsNodeController):
-    def start(self, args: dict) -> None:
-        raise HAUnimplemented("This operation is not supported.")
+    def start(self, args: dict):
+        raise HAUnimplemented("This operation is not implemented.")
 
-    def stop(self, args: dict) -> None:
-        raise HAUnimplemented("This operation is not supported.")
+    def stop(self, args: dict):
+        raise HAUnimplemented("This operation is not implemented.")
 
 class PcsHWNodeController(PcsNodeController):
-    def start(self, args: dict) -> None:
-        raise HAUnimplemented("This operation is not supported.")
+    def start(self, args: dict):
+        raise HAUnimplemented("This operation is not implemented.")
 
-    def stop(self, args: dict) -> None:
-        raise HAUnimplemented("This operation is not supported.")
+    def stop(self, args: dict):
+        raise HAUnimplemented("This operation is not implemented.")

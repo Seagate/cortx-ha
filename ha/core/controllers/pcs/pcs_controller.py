@@ -15,10 +15,10 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-#from ha.core.controllers
+from ha.core.controllers.element_controller import ElementController
 
 class PcsController(ElementController):
-    """ Generic Controller for Pcs """
+    """ Generic Controller for Pcs to execute common pcs command """
 
     def __init__(self):
         """

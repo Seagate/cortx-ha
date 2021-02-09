@@ -17,12 +17,11 @@
 
 from ha.core.error import HAUnimplemented
 from ha.core.error import ValidationFailedError
-from ha.core.controller.element_controller import ElementController
+from ha.core.controllers.pcs.pcs_controller import PcsController
 
-class PcsServiceController(ElementController):
-    """
-    Controller to manage node.
-    """
+class PcsServiceController(PcsController):
+    """ Controller to manage node. """
+
     def __init__(self):
         """
         Initalize pcs cluster controller
@@ -31,7 +30,7 @@ class PcsServiceController(ElementController):
         self._actions: list =  [method for method in dir(PcsServiceController)
             if method.startswith("_") is False]
 
-    def _validate(self, args) -> None:
+    def _validate(self, args: dict):
         """
         Validate args.
 
@@ -48,29 +47,29 @@ class PcsServiceController(ElementController):
         if action not in self._actions:
             raise ValidationFailedError(f"Invalid action {action} for cluster controller.")
 
-    def start(self, args) -> None:
+    def start(self, args: dict):
         """
         Start service.
 
         Args:
             args ([dict]): Args for commands. Example args: {nodes: <name>, service: <service>}.
         """
-        raise HAUnimplemented("This operation is not supported.")
+        raise HAUnimplemented("This operation is not implemented.")
 
-    def stop(self, args) -> None:
+    def stop(self, args: dict):
         """
         Start service.
 
         Args:
             args ([dict]): Args for commands. Example args: {nodes: <name>, service: <service>}.
         """
-        raise HAUnimplemented("This operation is not supported.")
+        raise HAUnimplemented("This operation is not implemented.")
 
-    def status(self, args) -> None:
+    def status(self, args: dict):
         """
         Start service.
 
         Args:
             args ([dict]): Args for commands. Example args: {nodes: <name>, service: <service>}.
         """
-        raise HAUnimplemented("This operation is not supported.")
+        raise HAUnimplemented("This operation is not implemented.")
