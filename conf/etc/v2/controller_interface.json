@@ -12,6 +12,10 @@
             {
                 "elements": ["service"],
                 "interface": "ha.core.controller.pcs.service_controller.PcsServiceController"
+            },
+            {
+                "elements": ["storageset"],
+                "interface": "ha.core.controller.pcs.storageset_controller.PcsStorageSetController"
             }
         ]
     },
@@ -28,6 +32,10 @@
             {
                 "elements": ["service"],
                 "interface": "ha.core.controller.pcs.service_controller.PcsServiceController"
+            },
+            {
+                "elements": ["storageset"],
+                "interface": "ha.core.controller.pcs.storageset_controller.PcsStorageSetController"
             }
         ]
     }

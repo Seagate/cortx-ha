@@ -94,4 +94,4 @@ PCS_STATUS_NODES="pcs status nodes"
 # Cluster manager
 CM_CONTROLLER_INDEX="controller_interface"
 CM_CONTROLLER_SCHEMA="{}/controller_interface.json".format(CONFIG_DIR)
-CM_ELEMENT=["cluster", "node", "service"]
+CM_ELEMENT=["cluster", "node", "service", "storageset"]
