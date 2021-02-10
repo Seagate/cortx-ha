@@ -20,7 +20,7 @@ from importlib import import_module
 from cortx.utils.log import Log
 from cortx.utils.conf_store.conf_store import Conf
 from ha import const
-from ha.core.controller.element_controller import ElementController
+from ha.core.controllers.element_controller import ElementController
 
 class ElementControllerFactory:
 

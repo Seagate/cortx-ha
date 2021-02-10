@@ -27,7 +27,7 @@ from ha.core.node.replacement.refresh_context import PcsRefreshContex
 from ha.execute import SimpleCommand
 from ha import const
 from ha.core.config.config_manager import ConfigManager
-from ha.core.controller.element_controller_factory import ElementControllerFactory
+from ha.core.controllers.element_controller_factory import ElementControllerFactory
 from ha.core.error import ClusterManagerError
 
 class ClusterManager:
