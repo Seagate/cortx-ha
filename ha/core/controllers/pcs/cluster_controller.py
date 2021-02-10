@@ -40,8 +40,7 @@ class PcsClusterController(PcsController):
         raise:
             ValidationFailedError
 
-        {element: cluster, action: <start|stop|standby|active>,
-        args: {process_type: <sync|async>}}
+        {element: cluster, action: <start|stop|standby|active>, args: {}}
         """
         action: str = args["action"] if "action" in args else None
         if action not in self._actions:
@@ -53,7 +52,6 @@ class PcsClusterController(PcsController):
 
         Args:
             args ([dict]): Args for commands. Example args: {}.
-                            No extra argument needed for cluster start.
         """
         raise HAUnimplemented("This operation is not implemented.")
 
@@ -63,7 +61,6 @@ class PcsClusterController(PcsController):
 
         Args:
             args ([dict]): Args for commands. Example args: {}.
-                            No extra argument needed for cluster stop.
         """
         raise HAUnimplemented("This operation is not implemented.")
 
@@ -73,7 +70,6 @@ class PcsClusterController(PcsController):
 
         Args:
             args ([dict]): Args for commands. Example args: {}.
-                            No extra argument needed for cluster status.
         """
         raise HAUnimplemented("This operation is not implemented.")
 
@@ -83,7 +79,6 @@ class PcsClusterController(PcsController):
 
         Args:
             args ([dict]): Args for commands. Example args: {}.
-                            No extra argument needed for cluster standby.
         """
         raise HAUnimplemented("This operation is not implemented.")
 
@@ -93,11 +88,10 @@ class PcsClusterController(PcsController):
 
         Args:
             args ([dict]): Args for commands. Example args: {}.
-                            No extra argument needed for cluster active.
         """
         raise HAUnimplemented("This operation is not implemented.")
 
-    def node_list(self, args: dict):
+    def list(self, args: dict):
         """
         Start node.
 

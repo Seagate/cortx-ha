@@ -41,8 +41,7 @@ class PcsNodeController(PcsController):
         raise:
             ValidationFailedError
 
-        {element: cluster, action: <start|stop|standby|active>,
-        args: {process_type: <sync|async>}}
+        {element: node, action: <start|stop|standby|active>, args: {}}
         """
         action: str = args["action"] if "action" in args else None
         if action not in self._actions:

@@ -41,8 +41,8 @@ class PcsStorageSetController(PcsController):
         raise:
             ValidationFailedError
 
-        {element: cluster, action: <start|stop|standby|active>,
-        args: {process_type: <sync|async>}}
+        {element: storageset, action: <start|stop|status>,
+        args: {id: "st-1"}}
         """
         action: str = args["action"] if "action" in args else None
         if action not in self._actions:
