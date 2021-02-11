@@ -15,10 +15,16 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-class ElementController:
-    """ Generic element controller class """
-    def __init__(self):
-        """
-        Initialize element controller.
-        """
-        pass
+import json
+from ha import const
+
+def controller_error_handler(func):
+    def inner_function(*args, **kwargs) -> str:
+        try:
+            result: dict = func(*args, **kwargs)
+            return json.dumps(result)
+        except Exception as e:
+            result: dict = {"status": const.CONTROLLER_FAILED,
+                "msg": f"ClusterManagerException. {func.__name__} failed. Error: {e}"}
+            return json.dumps(result)
+    return inner_function

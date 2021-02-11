@@ -16,8 +16,8 @@
 # cortx-questions@seagate.com.
 
 from ha.core.error import HAUnimplemented
-from ha.core.error import ValidationFailedError
 from ha.core.controllers.pcs.pcs_controller import PcsController
+from ha.core.controllers.controller_annotation import controller_error_handler
 
 class PcsServiceController(PcsController):
     """ Controller to manage node. """
@@ -27,48 +27,51 @@ class PcsServiceController(PcsController):
         Initalize pcs cluster controller
         """
         super(PcsServiceController, self).__init__()
-        self._actions: list =  [method for method in dir(PcsServiceController)
-            if method.startswith("_") is False]
 
-    def _validate(self, args: dict):
-        """
-        Validate args.
-
-        Args:
-            args ([dict]): cluster args
-
-        raise:
-            ValidationFailedError
-
-        {element: service, action: <start|stop|status>, args: {}}
-        """
-        action: str = args["action"] if "action" in args else None
-        if action not in self._actions:
-            raise ValidationFailedError(f"Invalid action {action} for cluster controller.")
-
-    def start(self, args: dict):
+    @controller_error_handler
+    def start(self, service: str, nodeids: list = None) -> dict:
         """
         Start service.
 
         Args:
-            args ([dict]): Args for commands. Example args: {nodes: <name>, service: <service>}.
+            service (str): Service name.
+            nodeids (list, optional): Node ids, if none then all node status.
+                    Defaults to None.
+
+        Returns:
+            ([dict]): Return dictionary. {"status": "", "msg":""}
+                status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
 
-    def stop(self, args: dict):
+    @controller_error_handler
+    def stop(self, service: str, nodeids: list = None) -> dict:
         """
-        Start service.
+        Stop service.
 
         Args:
-            args ([dict]): Args for commands. Example args: {nodes: <name>, service: <service>}.
+            service (str): Service name.
+            nodeids (list, optional): Node ids, if none then all node status.
+                    Defaults to None.
+
+        Returns:
+            ([dict]): Return dictionary. {"status": "", "msg":""}
+                status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
 
-    def status(self, args: dict):
+    @controller_error_handler
+    def status(self, service: str, nodeids: list = None) -> dict:
         """
-        Start service.
+        Return status of service.
 
         Args:
-            args ([dict]): Args for commands. Example args: {nodes: <name>, service: <service>}.
+            service (str): Service name.
+            nodeids (list, optional): Node ids, if none then all node status.
+                    Defaults to None.
+
+        Returns:
+            ([dict]): Return dictionary. {"status": "", "msg":""}
+                status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")

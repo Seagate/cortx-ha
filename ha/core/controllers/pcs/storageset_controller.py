@@ -15,9 +15,9 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-from ha.core.error import ValidationFailedError
 from ha.core.error import HAUnimplemented
 from ha.core.controllers.pcs.pcs_controller import PcsController
+from ha.core.controllers.controller_annotation import controller_error_handler
 
 class PcsStorageSetController(PcsController):
     """ Perform storage set level operation. """
@@ -28,52 +28,72 @@ class PcsStorageSetController(PcsController):
         """
         super(PcsStorageSetController, self).__init__()
 
-        self._actions: list =  [method for method in dir(PcsStorageSetController)
-            if method.startswith("_") is False]
-
-    def _validate(self, args: dict):
+    @controller_error_handler
+    def start(self, storagesetid) -> dict:
         """
-        Validate args.
+        Start storagesetid and all service.
 
         Args:
-            args ([dict]): cluster args
+            storagesetid (str): Storageset ID from cluster nodes.
 
-        raise:
-            ValidationFailedError
-
-        {element: storageset, action: <start|stop|status>,
-        args: {id: "st-1"}}
-        """
-        action: str = args["action"] if "action" in args else None
-        if action not in self._actions:
-            raise ValidationFailedError(f"Invalid action {action} for cluster controller.")
-
-    def start(self, args: dict):
-        """
-        Start cluster and all service.
-
-        Args:
-            args ([dict]): Args for commands. Example args: {}.
-                            No extra argument needed for cluster start.
+        Returns:
+            ([dict]): Return dictionary. {"status": "", "msg":""}
+                status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
 
-    def stop(self, args: dict):
+    @controller_error_handler
+    def stop(self, storagesetid) -> dict:
         """
-        Stop cluster and all service.
+        Stop storagesetid and all service.
 
         Args:
-            args ([dict]): Args for commands. Example args: {}.
-                            No extra argument needed for cluster stop.
+            storagesetid (str): Storageset ID from cluster nodes.
+
+        Returns:
+            ([dict]): Return dictionary. {"status": "", "msg":""}
+                status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
 
-    def status(self, args: dict):
+    @controller_error_handler
+    def status(self, storagesetid) -> dict:
         """
-        Status cluster and all service. It gives status for all resources.
+        Status storagesetid and all service. It gives status for all resources.
 
         Args:
-            args ([dict]): Args for commands. Example args: {}.
-                            No extra argument needed for cluster status.
+            storagesetid (str): Storageset ID from cluster nodes.
+
+        Returns:
+            ([dict]): Return dictionary. {"status": "", "msg":""}
+                status: Succeeded, Failed, InProgress
+        """
+        raise HAUnimplemented("This operation is not implemented.")
+
+    @controller_error_handler
+    def active(self, storagesetid) -> dict:
+        """
+        active storagesetid and all service. It gives status for all resources.
+
+        Args:
+            storagesetid (str): Storageset ID from cluster nodes.
+
+        Returns:
+            ([dict]): Return dictionary. {"status": "", "msg":""}
+                status: Succeeded, Failed, InProgress
+        """
+        raise HAUnimplemented("This operation is not implemented.")
+
+    @controller_error_handler
+    def standby(self, storagesetid) -> dict:
+        """
+        standby storagesetid and all service.
+
+        Args:
+            storagesetid (str): Storageset ID from cluster nodes.
+
+        Returns:
+            ([dict]): Return dictionary. {"status": "", "msg":""}
+                status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")

@@ -15,9 +15,9 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-from ha.core.error import ValidationFailedError
 from ha.core.error import HAUnimplemented
 from ha.core.controllers.pcs.pcs_controller import PcsController
+from ha.core.controllers.controller_annotation import controller_error_handler
 
 class PcsNodeController(PcsController):
     """ Controller to manage node. """
@@ -27,81 +27,133 @@ class PcsNodeController(PcsController):
         Initalize pcs cluster controller
         """
         super(PcsNodeController, self).__init__()
-        self._element = "node"
-        self._actions: list =  [method for method in dir(PcsNodeController)
-            if method.startswith("_") is False]
 
-    def _validate(self, args):
+    @controller_error_handler
+    def start(self, nodeid: str) -> dict:
         """
-        Validate args.
+        Start node with nodeid.
 
         Args:
-            args ([dict]): cluster args
+            nodeid (str): Node ID from cluster nodes.
 
-        raise:
-            ValidationFailedError
-
-        {element: node, action: <start|stop|standby|active>, args: {}}
-        """
-        action: str = args["action"] if "action" in args else None
-        if action not in self._actions:
-            raise ValidationFailedError(f"Invalid action {action} for cluster controller.")
-
-    def start(self, args: dict):
-        """
-        Start node.
-
-        Args:
-            args ([dict]): Args for commands. Example args: {node: <name>}.
+        Returns:
+            ([dict]): Return dictionary. {"status": "", "msg":""}
+                status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
 
-    def stop(self, args: dict):
+    @controller_error_handler
+    def stop(self, nodeid: str) -> dict:
         """
-        Stop node.
+        Stop node with nodeid.
 
         Args:
-            args ([dict]): Args for commands. Example args: {node: <name>}.
+            nodeid (str): Node ID from cluster nodes.
+
+        Returns:
+            ([dict]): Return dictionary. {"status": "", "msg":""}
+                status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
 
-    def standby(self, args: dict):
+    @controller_error_handler
+    def standby(self, nodeid: str) -> dict:
         """
-        Put node on standby.
+        Standby node with nodeid.
 
         Args:
-            args ([dict]): Args for commands. Example args: {node: <name>}.
+            nodeid (str): Node ID from cluster nodes.
+
+        Returns:
+            ([dict]): Return dictionary. {"status": "", "msg":""}
+                status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
 
-    def active(self, args: dict):
+    @controller_error_handler
+    def active(self, nodeid: str) -> dict:
         """
-        Start resources on node.
+        Activate node with nodeid.
 
         Args:
-            args ([dict]): Args for commands. Example args: {node: <name>}.
+            nodeid (str): Node ID from cluster nodes.
+
+        Returns:
+            ([dict]): Return dictionary. {"status": "", "msg":""}
+                status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
 
-    def status(self, args: dict):
+    @controller_error_handler
+    def status(self, nodeids: list = None) -> dict:
         """
-        Status node.
+        Get status of nodes.
 
         Args:
-            args ([dict]): Args for commands. Example args: {node: <name>}.
+            nodeids (list): List of Node IDs from cluster nodes.
+                Default provide list of all node status.
+                if 'local' then provide local node status.
+
+        Returns:
+            ([dict]): Return dictionary. {"status": "", "msg":{}}}
+                status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
 
 class PcsVMNodeController(PcsNodeController):
-    def start(self, args: dict):
+    @controller_error_handler
+    def start(self, nodeid: str) -> dict:
+        """
+        Start node with nodeid.
+
+        Args:
+            nodeid (str): Node ID from cluster nodes.
+
+        Returns:
+            ([dict]): Return dictionary. {"status": "", "msg":""}
+                status: Succeeded, Failed, InProgress
+        """
         raise HAUnimplemented("This operation is not implemented.")
 
-    def stop(self, args: dict):
+    @controller_error_handler
+    def stop(self, nodeid: str) -> dict:
+        """
+        Stop node with nodeid.
+
+        Args:
+            nodeid (str): Node ID from cluster nodes.
+
+        Returns:
+            ([dict]): Return dictionary. {"status": "", "msg":""}
+                status: Succeeded, Failed, InProgress
+        """
         raise HAUnimplemented("This operation is not implemented.")
 
 class PcsHWNodeController(PcsNodeController):
-    def start(self, args: dict):
+    @controller_error_handler
+    def start(self, nodeid: str) -> dict:
+        """
+        Start node with nodeid.
+
+        Args:
+            nodeid (str): Node ID from cluster nodes.
+
+        Returns:
+            ([dict]): Return dictionary. {"status": "", "msg":""}
+                status: Succeeded, Failed, InProgress
+        """
         raise HAUnimplemented("This operation is not implemented.")
 
-    def stop(self, args: dict):
+    @controller_error_handler
+    def stop(self, nodeid: str) -> dict:
+        """
+        Stop node with nodeid.
+
+        Args:
+            nodeid (str): Node ID from cluster nodes.
+
+        Returns:
+            ([dict]): Return dictionary. {"status": "", "msg":""}
+                status: Succeeded, Failed, InProgress
+        """
         raise HAUnimplemented("This operation is not implemented.")

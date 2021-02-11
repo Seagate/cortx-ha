@@ -15,9 +15,9 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-from ha.core.error import ValidationFailedError
 from ha.core.error import HAUnimplemented
 from ha.core.controllers.pcs.pcs_controller import PcsController
+from ha.core.controllers.controller_annotation import controller_error_handler
 
 class PcsClusterController(PcsController):
     """ Pcs cluster controller to perform pcs cluster level operation. """
@@ -27,93 +27,122 @@ class PcsClusterController(PcsController):
         Initalize pcs cluster controller
         """
         super(PcsClusterController, self).__init__()
-        self._actions: list =  [method for method in dir(PcsClusterController)
-            if method.startswith("_") is False]
 
-    def _validate(self, args: dict):
-        """
-        Validate args.
-
-        Args:
-            args ([dict]): cluster args
-
-        raise:
-            ValidationFailedError
-
-        {element: cluster, action: <start|stop|standby|active>, args: {}}
-        """
-        action: str = args["action"] if "action" in args else None
-        if action not in self._actions:
-            raise ValidationFailedError(f"Invalid action {action} for cluster controller.")
-
-    def start(self, args: dict):
+    @controller_error_handler
+    def start(self) -> dict:
         """
         Start cluster and all service.
 
-        Args:
-            args ([dict]): Args for commands. Example args: {}.
+        Returns:
+            ([dict]): Return dictionary. {"status": "", "msg":""}
+                status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
 
-    def stop(self, args: dict):
+    @controller_error_handler
+    def stop(self) -> dict:
         """
         Stop cluster and all service.
 
-        Args:
-            args ([dict]): Args for commands. Example args: {}.
+        Returns:
+            ([dict]): Return dictionary. {"status": "", "msg":""}
+                status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
 
-    def status(self, args: dict):
+    @controller_error_handler
+    def status(self) -> dict:
         """
         Status cluster and all service. It gives status for all resources.
 
-        Args:
-            args ([dict]): Args for commands. Example args: {}.
+        Returns:
+            ([dict]): Return dictionary. {"status": "", "msg":{}}
+                status: Succeeded, Failed, InProgress
+                msg: dict of resource and status.
         """
         raise HAUnimplemented("This operation is not implemented.")
 
-    def standby(self, args: dict):
+    @controller_error_handler
+    def standby(self) -> dict:
         """
         Put cluster in standby mode.
 
-        Args:
-            args ([dict]): Args for commands. Example args: {}.
+        Returns:
+            ([dict]): Return dictionary. {"status": "", "msg":""}
+                status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
 
-    def active(self, args: dict):
+    @controller_error_handler
+    def active(self) -> dict:
         """
-        Start cluster services.
+        Activate all node.
 
-        Args:
-            args ([dict]): Args for commands. Example args: {}.
-        """
-        raise HAUnimplemented("This operation is not implemented.")
-
-    def list(self, args: dict):
-        """
-        Start node.
-
-        Args:
-            args ([dict]): Args for commands. Example args: {}.
+        Returns:
+            ([dict]): Return dictionary. {"status": "", "msg":""}
+                status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
 
-    def add_node(self, args: dict):
+    @controller_error_handler
+    def node_list(self) -> dict:
+        """
+        Provide node list.
+
+        Returns:
+            ([dict]): Return dictionary. {"status": "", "msg":[]}
+                status: Succeeded, Failed, InProgress
+        """
+        raise HAUnimplemented("This operation is not implemented.")
+
+    @controller_error_handler
+    def service_list(self) -> dict:
+        """
+        Provide service list.
+
+        Returns:
+            ([dict]): Return dictionary. {"status": "", "msg":[]}
+                status: Succeeded, Failed, InProgress
+        """
+        raise HAUnimplemented("This operation is not implemented.")
+
+    @controller_error_handler
+    def storageset_list(self) -> dict:
+        """
+        Provide storageset list.
+
+        Returns:
+            ([dict]): Return dictionary. {"status": "", "msg":[]}
+                status: Succeeded, Failed, InProgress
+        """
+        raise HAUnimplemented("This operation is not implemented.")
+
+    @controller_error_handler
+    def add_node(self, nodeid: str = None, descfile: str = None) -> dict:
         """
         Add new node to cluster.
 
         Args:
-            args (dict): Add new node to cluster.
+            nodeid (str, optional): Provide nodeid. Defaults to None.
+            filename (str, optional): Provide descfile. Defaults to None.
+
+        Returns:
+            ([dict]): Return dictionary. {"status": "", "msg":""}
+                status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
 
-    def add_storageset(self, args: dict):
+    @controller_error_handler
+    def add_storageset(self, nodeid: str = None, descfile: str = None) -> dict:
         """
         Add new storageset to cluster.
 
         Args:
-            args (dict): Add new storageset to cluster.
+            nodeid (str, optional): Provide nodeid. Defaults to None.
+            filename (str, optional): Provide descfile. Defaults to None.
+
+        Returns:
+            ([dict]): Return dictionary. {"status": "", "msg":""}
+                status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
