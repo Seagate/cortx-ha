@@ -21,47 +21,44 @@ from cortx.utils.log import Log
 from cortx.utils.conf_store.conf_store import Conf
 from ha import const
 from ha.core.controllers.element_controller import ElementController
+from ha.core.error import ClusterManagerError
 
 class ElementControllerFactory:
 
     # Example:
-    # {'instances':
-    #   {'ha.core.controller.pcs.cluster_controller.PcsClusterController':
-    #       <ha.core.controller.pcs.cluster_controller.PcsClusterController object at 0x7f056c12ac18>},
-    # 'elements':
-    #   {'cluster':
-    #       'ha.core.controller.pcs.cluster_controller.PcsClusterController'}}
-    _controllers: dict = {
-        "instances": {},
-        "elements": {}
-    }
+    # {'cluster': clustercontroller()}
+    _controllers: dict = {}
 
     @staticmethod
-    def get_controller(env: str, cluster_type: str, element: str) -> ElementController:
+    def init_controller(env: str, cluster_type: str) -> dict:
         """
         Get specific controller instance to perform operation.
 
         Args:
             env (str): Detect controller as per env.
             cluster_type (str): Cluster type depend on cluster running on system.
-            element (str): element of cluster.
+        """
+        controllers: dict = Conf.get(const.CM_CONTROLLER_INDEX, f"{env}.{cluster_type}")
+        for controller in controllers:
+            Log.info(f"Initalizing controller api {controller['interface']}")
+            class_path_list: list = controller["interface"].split('.')[:-1]
+            module = import_module(f"{'.'.join(class_path_list)}")
+            element_instace = getattr(module, controller["interface"].split('.')[-1])()
+            ElementControllerFactory._controllers[controller["element"]] = element_instace
+        return ElementControllerFactory._controllers
+
+    @staticmethod
+    def get_controller(controller: str) -> ElementController:
+        """
+        Return controller
+
+        Args:
+            controller (str): object of ElementController.
 
         Returns:
-            ElementController: It is instance of controller need to return.
+            ElementController: Return controller object.
         """
-        element_dict = ElementControllerFactory._controllers
-        if element in element_dict["elements"]:
-            return element_dict["instances"][element_dict["elements"]]
-        controllers: dict = Conf.get(const.CM_CONTROLLER_INDEX,
-                        f"{env}.{cluster_type}")
-        for controller in controllers:
-            if element in controller["elements"]:
-                Log.info(f"Initalizing controller api {controller['interface']}")
-                class_path_list: list = controller["interface"].split('.')[:-1]
-                module = import_module(f"{'.'.join(class_path_list)}")
-                element_instace = getattr(module, controller["interface"].split('.')[-1])()
-                # Adding instance to element dict.
-                element_dict["elements"][element] = controller["interface"]
-                element_dict["instances"][controller["interface"]] = element_instace
-                Log.info(f"Registered {element_instace} with cluster manager.")
-                return element_instace
+        if controller not in ElementControllerFactory._controllers:
+            Log.error(f"Invalid controller {controller} or not yet initalized.")
+            raise ClusterManagerError(f"Invalid controller {controller} or not yet initalized.")
+        return ElementControllerFactory._controllers[controller]

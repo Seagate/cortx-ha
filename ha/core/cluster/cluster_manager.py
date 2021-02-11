@@ -16,6 +16,7 @@
 # cortx-questions@seagate.com.
 
 import time
+import inspect
 import traceback
 
 from cortx.utils.log import Log
@@ -23,6 +24,7 @@ from cortx.utils.conf_store.conf_store import Conf
 from cortx.utils.ha.dm.decision_monitor import DecisionMonitor
 
 from ha.core.error import HAUnimplemented
+from ha.core.support_bundle.ha_bundle import HABundle
 from ha.core.node.replacement.refresh_context import PcsRefreshContex
 from ha.execute import SimpleCommand
 from ha import const
@@ -30,17 +32,7 @@ from ha.core.config.config_manager import ConfigManager
 from ha.core.controllers.element_controller_factory import ElementControllerFactory
 from ha.core.error import ClusterManagerError
 
-class ClusterManager:
-    def __init__(self):
-        """
-        Manage cluster operation
-        """
-        pass
-
-    def process_request(self, action, args):
-        raise HAUnimplemented()
-
-class PcsClusterManager(ClusterManager):
+class PcsClusterManager:
     def __init__(self):
         """
         PcsCluster manage pacemaker/corosync cluster
@@ -275,7 +267,7 @@ class PcsClusterManager(ClusterManager):
     def shutdown(self):
         raise HAUnimplemented("This feature is not supported...")
 
-class CortxClusterManager(ClusterManager):
+class CortxClusterManager:
     def __init__(self):
         """
         Manage cluster operation
@@ -283,53 +275,19 @@ class CortxClusterManager(ClusterManager):
         self._cluster_type = Conf.get(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.cluster_type")
         self._env = Conf.get(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.env")
         ConfigManager.load_controller_schema()
+        self._controllers = ElementControllerFactory.init_controller(self._env, self._cluster_type)
+        for controller in self._controllers.keys():
+            Log.info(f"Adding {controller} property to cluster manager.")
+            # Add property method for controller
+            # Example: cm.cluster_controller.start()
+            self.__dict__[controller] = self._controllers[controller]
 
-    def process_request(self, args):
+    @property
+    def controller_list(self) -> list:
         """
-        Process cluster request
+        Return all controller loaded by init.
 
-        Args:
-            args (dictonery): parameteter
-            responce (object): Store output
-
-        Raises:
-            HAUnimplemented: [description]
-
-        args example:
-        {element: [<cluster|node|service>],
-        action: <start|stop|standby|active>,
-        args: {process_type: <sync|async>, nodes: [<node name list>],
-        service: <service name>}}
+        Returns:
+            [list]: list of controllers.
         """
-        try:
-            if "element" not in args or args["element"] not in const.CM_ELEMENT:
-                raise ClusterManagerError(f"Controller element is missing or invalid. Possible options are {const.CM_ELEMENT}")
-            self._output: dict = None
-            controller = ElementControllerFactory.get_controller(self._env,
-                self._cluster_type, args["element"])
-            controller.process_request(args, self._responce)
-            while self._output == None:
-                time.sleep(2)
-            if self._output["err"] != "":
-                raise ClusterManagerError(self._output["err"])
-            Log.debug(f"Cluster Manager Output: {str(self._output)}")
-            return self._output
-        except Exception as e:
-            Log.error(f"Cluster Manager error: {traceback.format_exc()}")
-            output = {"rc": 1, "status":"", "err": f"Cluster manager failed. Error: {e}"}
-            return output
-
-    def _responce(self, rc: int, status: str, err: str):
-        """
-        Acts as callback to provide output.
-
-        Args:
-            rc (int): Return code.
-            output (str): Output
-            err (str): error message.
-        """
-        self._output = {
-            "rc": rc,
-            "status": status,
-            "err": err
-        }
+        return list(self._controllers.keys())

@@ -2,40 +2,40 @@
     "HW": {
         "pcs": [
             {
-                "elements": ["cluster"],
-                "interface": "ha.core.controller.pcs.cluster_controller.PcsClusterController"
+                "element": "cluster_controller",
+                "interface": "ha.core.controllers.pcs.cluster_controller.PcsClusterController"
             },
             {
-                "elements": ["node"],
-                "interface": "ha.core.controller.pcs.node_controller.PcsHWNodeController"
+                "element": "node_controller",
+                "interface": "ha.core.controllers.pcs.node_controller.PcsHWNodeController"
             },
             {
-                "elements": ["service"],
-                "interface": "ha.core.controller.pcs.service_controller.PcsServiceController"
+                "element": "service_controller",
+                "interface": "ha.core.controllers.pcs.service_controller.PcsServiceController"
             },
             {
-                "elements": ["storageset"],
-                "interface": "ha.core.controller.pcs.storageset_controller.PcsStorageSetController"
+                "element": "storageset_controller",
+                "interface": "ha.core.controllers.pcs.storageset_controller.PcsStorageSetController"
             }
         ]
     },
     "VM": {
         "pcs": [
             {
-                "elements": ["cluster"],
-                "interface": "ha.core.controller.pcs.cluster_controller.PcsClusterController"
+                "element": "cluster_controller",
+                "interface": "ha.core.controllers.pcs.cluster_controller.PcsClusterController"
             },
             {
-                "elements": ["node"],
-                "interface": "ha.core.controller.pcs.node_controller.PcsVMNodeController"
+                "element": "node_controller",
+                "interface": "ha.core.controllers.pcs.node_controller.PcsVMNodeController"
             },
             {
-                "elements": ["service"],
-                "interface": "ha.core.controller.pcs.service_controller.PcsServiceController"
+                "element": "service_controller",
+                "interface": "ha.core.controllers.pcs.service_controller.PcsServiceController"
             },
             {
-                "elements": ["storageset"],
-                "interface": "ha.core.controller.pcs.storageset_controller.PcsStorageSetController"
+                "element": "storageset_controller",
+                "interface": "ha.core.controllers.pcs.storageset_controller.PcsStorageSetController"
             }
         ]
     }

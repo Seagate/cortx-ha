@@ -28,9 +28,6 @@ if __name__ == '__main__':
     try:
         ConfigManager.init("cortxha")
         cm = CortxClusterManager()
-        args = {"element": "cluster",
-            "action": "start",
-            "args": {}}
-        print(cm.process_request(args))
+        print(cm.cluster_controller.start())
     except Exception as e:
         print(f"{traceback.format_exc()}, {e}")
