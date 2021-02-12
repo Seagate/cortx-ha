@@ -15,6 +15,7 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
+set -e -o pipefail
 
 BASE_DIR=$(realpath "$(dirname $0)/../../")
 HA1="1"
@@ -29,10 +30,10 @@ For Production
 """
 }
 
-while getopts ":h:v:e:t" o; do
+while getopts ":h:v:e:t:" o; do
     case "${o}" in
         h)
-            usage
+            usage ; exit 0
             ;;
         v)
             VERSION=${OPTARG}
@@ -44,7 +45,7 @@ while getopts ":h:v:e:t" o; do
             TOKEN=${OPTARG}
             ;;
         *)
-            usage
+            usage ; exit 1
             ;;
     esac
 done
