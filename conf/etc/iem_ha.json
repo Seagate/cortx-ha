@@ -4,7 +4,7 @@
             "lost": {
                 "searchKey": "lost",
                 "module": "NodeFailure",
-                "IEM": "IEC:WS0080010001:The cluster has lost $host server. System is running in degraded mode."
+                "IEM": "IEC:WS0080010001:The cluster has lost $host server. System is running in degraded mode. For more information refer the Troubleshooting guide."
             },
             "member": {
                 "searchKey": "member",
