@@ -43,6 +43,12 @@ class HaConfigException(Exception):
     """
     pass
 
+class HaInitException(Exception):
+    """
+    Exception to indicate that cleanup command failed due to some error.
+    """
+    pass
+
 class HaCleanupException(Exception):
     """
     Exception to indicate that cleanup command failed due to some error.
@@ -257,22 +263,26 @@ class InitCmd(Cmd):
         Log.info("INIT: Update ha configuration files")
         Conf.load(self._ha_conf_index, f"yaml://{const.HA_CONFIG_FILE}")
         minion_name = self.get_minion_name()
+        if "corosync-pacemaker" in Conf.get_keys(self._index):
+            raise HaInitException("Init: failed to find cluster type.")
+        cluster_type = "corosync-pacemaker"
         node_type = Conf.get(self._index, f"cluster.{minion_name}.node_type").strip()
         # Set env for cluster manager
-        self._update_env(node_type)
+        self._update_env(node_type, cluster_type)
         Log.info("INIT: HA configuration updated successfully.")
         Log.info("init command is successful")
 
-    def _update_env(self, node_type):
+    def _update_env(self, node_type, cluster_type):
         """
         Update env like VM, HW
         """
-        Log.info(f"Detected {node_type} env.")
+        Log.info(f"Detected {node_type} env and cluster_type {cluster_type}.")
         if "VM" == node_type.upper():
             Conf.set(self._ha_conf_index, "CLUSTER_MANAGER.env", node_type.upper())
         else:
             # TODO: check if any env available other than vm, hw
             Conf.set(self._ha_conf_index, "CLUSTER_MANAGER.env", "HW")
+        Conf.set(self._ha_conf_index, "CLUSTER_MANAGER.cluster_type", cluster_type)
         Conf.save(self._ha_conf_index)
 
 class TestCmd(Cmd):

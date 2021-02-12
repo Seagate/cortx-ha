@@ -46,19 +46,3 @@ class ElementControllerFactory:
             element_instace = getattr(module, controller["interface"].split('.')[-1])()
             ElementControllerFactory._controllers[controller["element"]] = element_instace
         return ElementControllerFactory._controllers
-
-    @staticmethod
-    def get_controller(controller: str) -> ElementController:
-        """
-        Return controller
-
-        Args:
-            controller (str): object of ElementController.
-
-        Returns:
-            ElementController: Return controller object.
-        """
-        if controller not in ElementControllerFactory._controllers:
-            Log.error(f"Invalid controller {controller} or not yet initalized.")
-            raise ClusterManagerError(f"Invalid controller {controller} or not yet initalized.")
-        return ElementControllerFactory._controllers[controller]

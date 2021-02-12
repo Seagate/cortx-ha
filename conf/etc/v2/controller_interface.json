@@ -1,6 +1,6 @@
 {
     "HW": {
-        "pcs": [
+        "corosync-pacemaker": [
             {
                 "element": "cluster_controller",
                 "interface": "ha.core.controllers.pcs.cluster_controller.PcsClusterController"
@@ -20,7 +20,7 @@
         ]
     },
     "VM": {
-        "pcs": [
+        "corosync-pacemaker": [
             {
                 "element": "cluster_controller",
                 "interface": "ha.core.controllers.pcs.cluster_controller.PcsClusterController"

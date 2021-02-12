@@ -16,8 +16,6 @@
 # cortx-questions@seagate.com.
 
 import time
-import inspect
-import traceback
 
 from cortx.utils.log import Log
 from cortx.utils.conf_store.conf_store import Conf
@@ -30,7 +28,6 @@ from ha.execute import SimpleCommand
 from ha import const
 from ha.core.config.config_manager import ConfigManager
 from ha.core.controllers.element_controller_factory import ElementControllerFactory
-from ha.core.error import ClusterManagerError
 
 class PcsClusterManager:
     def __init__(self):
