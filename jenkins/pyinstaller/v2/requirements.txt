@@ -1,5 +1,5 @@
 setuptools==36.0.1
-pyinstaller==3.5
+pyinstaller==3.6
 aiohttp==3.6.1
 paramiko==2.7.1
 toml==0.10.0
