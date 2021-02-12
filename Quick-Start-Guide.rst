@@ -171,11 +171,9 @@ To build the source code, perform the following:
 
 1. Install the pip packages by running the following commands:
 
- - **$ bash jenkins/cicd/cortx-ha-dep.sh dev <github-token>**
+ - **$ bash jenkins/cicd/cortx-ha-dep.sh -e dev -t <github-token>**
 
   - Refer `GitHub Token <https://github.com/Seagate/cortx/blob/main/doc/ContributingToCortxHA.md#token-personal-access-for-command-line-required-for-submodule-clone-process>`_ to know the process that must be followed to create a GitHub token.
-
- - **$ python3 -m pip install -r jenkins/pyinstaller/requirements.txt**
 
 2. Build the RPMs by navigating to the directory where the HA component has been cloned, and running one of the following commands:
 
