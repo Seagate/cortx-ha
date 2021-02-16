@@ -29,6 +29,7 @@ from ha import const
 from ha.core.config.config_manager import ConfigManager
 from ha.core.controllers.element_controller_factory import ElementControllerFactory
 
+# Note: This class is used by version 1
 class PcsClusterManager:
     def __init__(self):
         """
@@ -264,11 +265,14 @@ class PcsClusterManager:
     def shutdown(self):
         raise HAUnimplemented("This feature is not supported...")
 
+# Note: This class is used by version 2
 class CortxClusterManager:
     def __init__(self):
         """
         Manage cluster operation
         """
+        # TODO: Update Config manager if log utility changes.
+        ConfigManager.init("cluster_manager")
         self._cluster_type = Conf.get(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.cluster_type")
         self._env = Conf.get(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.env")
         ConfigManager.load_controller_schema()
@@ -277,6 +281,7 @@ class CortxClusterManager:
             Log.info(f"Adding {controller} property to cluster manager.")
             # Add property method for controller
             # Example: cm.cluster_controller.start()
+            # Find more example in test case.
             self.__dict__[controller] = self._controllers[controller]
 
     @property
