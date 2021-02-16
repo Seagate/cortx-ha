@@ -15,6 +15,9 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
+# Note: This class is used to bind different type of controller together.
+# Other controller like node, cluster, storageset, service inheriting
+# from this class.
 class ElementController:
     """ Generic element controller class """
     def __init__(self):
