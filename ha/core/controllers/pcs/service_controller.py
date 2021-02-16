@@ -17,9 +17,10 @@
 
 from ha.core.error import HAUnimplemented
 from ha.core.controllers.pcs.pcs_controller import PcsController
+from ha.core.controllers.service_controller import ServiceController
 from ha.core.controllers.controller_annotation import controller_error_handler
 
-class PcsServiceController(PcsController):
+class PcsServiceController(ServiceController, PcsController):
     """ Controller to manage node. """
 
     def __init__(self):

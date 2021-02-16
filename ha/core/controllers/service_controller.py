@@ -16,26 +16,27 @@
 # cortx-questions@seagate.com.
 
 from ha.core.error import HAUnimplemented
-from ha.core.controllers.pcs.pcs_controller import PcsController
-from ha.core.controllers.storageset_controller import StorageSetController
+from ha.core.controllers.element_controller import ElementController
 from ha.core.controllers.controller_annotation import controller_error_handler
 
-class PcsStorageSetController(StorageSetController, PcsController):
-    """ Perform storage set level operation. """
+class ServiceController(ElementController):
+    """ Controller to manage service. """
 
     def __init__(self):
         """
-        Initalize PcsStorageSetController controller
+        Initalize ServiceController
         """
-        super(PcsStorageSetController, self).__init__()
+        super(ServiceController, self).__init__()
 
     @controller_error_handler
-    def start(self, storagesetid) -> dict:
+    def start(self, service: str, nodeids: list = None) -> dict:
         """
-        Start storagesetid and all service.
+        Start service.
 
         Args:
-            storagesetid (str): Storageset ID from cluster nodes.
+            service (str): Service name.
+            nodeids (list, optional): Node ids, if none then all node status.
+                    Defaults to None.
 
         Returns:
             ([dict]): Return dictionary. {"status": "", "msg":""}
@@ -44,12 +45,14 @@ class PcsStorageSetController(StorageSetController, PcsController):
         raise HAUnimplemented("This operation is not implemented.")
 
     @controller_error_handler
-    def stop(self, storagesetid) -> dict:
+    def stop(self, service: str, nodeids: list = None) -> dict:
         """
-        Stop storagesetid and all service.
+        Stop service.
 
         Args:
-            storagesetid (str): Storageset ID from cluster nodes.
+            service (str): Service name.
+            nodeids (list, optional): Node ids, if none then all node status.
+                    Defaults to None.
 
         Returns:
             ([dict]): Return dictionary. {"status": "", "msg":""}
@@ -58,40 +61,14 @@ class PcsStorageSetController(StorageSetController, PcsController):
         raise HAUnimplemented("This operation is not implemented.")
 
     @controller_error_handler
-    def status(self, storagesetid) -> dict:
+    def status(self, service: str, nodeids: list = None) -> dict:
         """
-        Status storagesetid and all service. It gives status for all resources.
+        Return status of service.
 
         Args:
-            storagesetid (str): Storageset ID from cluster nodes.
-
-        Returns:
-            ([dict]): Return dictionary. {"status": "", "msg":""}
-                status: Succeeded, Failed, InProgress
-        """
-        raise HAUnimplemented("This operation is not implemented.")
-
-    @controller_error_handler
-    def active(self, storagesetid) -> dict:
-        """
-        active storagesetid and all service. It gives status for all resources.
-
-        Args:
-            storagesetid (str): Storageset ID from cluster nodes.
-
-        Returns:
-            ([dict]): Return dictionary. {"status": "", "msg":""}
-                status: Succeeded, Failed, InProgress
-        """
-        raise HAUnimplemented("This operation is not implemented.")
-
-    @controller_error_handler
-    def standby(self, storagesetid) -> dict:
-        """
-        standby storagesetid and all service.
-
-        Args:
-            storagesetid (str): Storageset ID from cluster nodes.
+            service (str): Service name.
+            nodeids (list, optional): Node ids, if none then all node status.
+                    Defaults to None.
 
         Returns:
             ([dict]): Return dictionary. {"status": "", "msg":""}

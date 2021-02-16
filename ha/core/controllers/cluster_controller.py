@@ -16,18 +16,17 @@
 # cortx-questions@seagate.com.
 
 from ha.core.error import HAUnimplemented
-from ha.core.controllers.pcs.pcs_controller import PcsController
-from ha.core.controllers.cluster_controller import ClusterController
+from ha.core.controllers.element_controller import ElementController
 from ha.core.controllers.controller_annotation import controller_error_handler
 
-class PcsClusterController(ClusterController, PcsController):
+class ClusterController(ElementController):
     """ Pcs cluster controller to perform pcs cluster level operation. """
 
     def __init__(self):
         """
-        Initalize pcs cluster controller
+        Initalize ClusterController
         """
-        super(PcsClusterController, self).__init__()
+        super(ClusterController, self).__init__()
 
     @controller_error_handler
     def start(self) -> dict:
@@ -38,7 +37,7 @@ class PcsClusterController(ClusterController, PcsController):
             ([dict]): Return dictionary. {"status": "", "msg":""}
                 status: Succeeded, Failed, InProgress
         """
-        raise HAUnimplemented("Cluster start operation is not implemented.")
+        raise HAUnimplemented("This operation is not implemented.")
 
     @controller_error_handler
     def stop(self) -> dict:

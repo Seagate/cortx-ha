@@ -16,18 +16,17 @@
 # cortx-questions@seagate.com.
 
 from ha.core.error import HAUnimplemented
-from ha.core.controllers.pcs.pcs_controller import PcsController
-from ha.core.controllers.storageset_controller import StorageSetController
+from ha.core.controllers.element_controller import ElementController
 from ha.core.controllers.controller_annotation import controller_error_handler
 
-class PcsStorageSetController(StorageSetController, PcsController):
+class StorageSetController(ElementController):
     """ Perform storage set level operation. """
 
     def __init__(self):
         """
-        Initalize PcsStorageSetController controller
+        Initalize StorageSetController controller
         """
-        super(PcsStorageSetController, self).__init__()
+        super(StorageSetController, self).__init__()
 
     @controller_error_handler
     def start(self, storagesetid) -> dict:

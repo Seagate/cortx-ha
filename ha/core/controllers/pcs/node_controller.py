@@ -17,14 +17,15 @@
 
 from ha.core.error import HAUnimplemented
 from ha.core.controllers.pcs.pcs_controller import PcsController
+from ha.core.controllers.node_controller import NodeController
 from ha.core.controllers.controller_annotation import controller_error_handler
 
-class PcsNodeController(PcsController):
+class PcsNodeController(NodeController, PcsController):
     """ Controller to manage node. """
 
     def __init__(self):
         """
-        Initalize pcs cluster controller
+        Initalize PcsNodeController
         """
         super(PcsNodeController, self).__init__()
 
