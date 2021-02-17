@@ -26,6 +26,7 @@ HA_INVALID_NODE_ERROR           = 0x0002
 HA_COMMAND_TERMINATION_ERROR    = 0x0003
 HA_TEST_FAILED                  = 0x0004
 HA_SUPPORT_BUNDLE_FAILED        = 0x0005
+HA_CLUSTER_MANAGER_FAILED       = 0x0006
 
 class HAError(BaseError):
     def __init__(self, rc=1, desc=None, message_id=HA_BASIC_ERROR, message_args=None):
@@ -95,3 +96,13 @@ class SupportBundleError(HAError):
         _message_id = HA_SUPPORT_BUNDLE_FAILED
         _rc = 1
         super(SupportBundleError, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
+
+class ClusterManagerError(HAError):
+    def __init__(self, desc=None):
+        """
+        Handle Support Bundle error.
+        """
+        _desc = "Failed to perform Cluster Manager Operation" if desc is None else desc
+        _message_id = HA_CLUSTER_MANAGER_FAILED
+        _rc = 1
+        super(ClusterManagerError, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
