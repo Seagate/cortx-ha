@@ -572,15 +572,11 @@ hax_systemd_update() {
     log "${FUNCNAME[0]}: Updating hax systemd units..."
     sudo sed -e 's/hare-consul-agent.service/hare-consul-agent-c1.service/' \
              -e "/ExecStart=/aTimeoutStopSec=5sec" \
-             -e "/ExecStart=/aExecStopPost=/usr/sbin/attrd_updater -U 0 -n hax-running" \
-             -e "/ExecStart=/aExecStartPost=/usr/sbin/attrd_updater -U 1 -n hax-running" \
              -i /usr/lib/systemd/system/hare-hax-c1.service
     sudo sed -e 's/hare-consul-agent.service/hare-consul-agent-c2.service/' \
              -e 's;ExecStart.*cd /var/motr;&2;' \
              -e "/ExecStart/iEnvironmentFile=$hare_dir/hax-env-c2" \
              -e "/ExecStart=/aTimeoutStopSec=5sec" \
-             -e "/ExecStart=/aExecStopPost=/usr/sbin/attrd_updater -U 0 -n hax-running" \
-             -e "/ExecStart=/aExecStartPost=/usr/sbin/attrd_updater -U 1 -n hax-running" \
              -i /usr/lib/systemd/system/hare-hax-c2.service
     echo "HARE_HAX_NODE_NAME=$rnode" | sudo tee $hare_dir/hax-env-c2 > /dev/null
 
@@ -591,15 +587,11 @@ hax_systemd_update() {
              -e 's;ExecStart.*cd /var/motr;&1;' \
              -e '/ExecStart/iEnvironmentFile=$hare_dir/hax-env-c1'
              -e \"/ExecStart=/aTimeoutStopSec=5sec\"
-             -e \"/ExecStart=/aExecStopPost=/usr/sbin/attrd_updater -U 0 -n hax-running\"
-             -e \"/ExecStart=/aExecStartPost=/usr/sbin/attrd_updater -U 1 -n hax-running\"
              -i /usr/lib/systemd/system/hare-hax-c1.service &&
     sudo cp -f /usr/lib/systemd/system/hare-hax.service
             /usr/lib/systemd/system/hare-hax-c2.service &&
     sudo sed -e 's/hare-consul-agent.service/hare-consul-agent-c2.service/'
              -e \"/ExecStart=/aTimeoutStopSec=5sec\"
-             -e \"/ExecStart=/aExecStopPost=/usr/sbin/attrd_updater -U 0 -n hax-running\"
-             -e \"/ExecStart=/aExecStartPost=/usr/sbin/attrd_updater -U 1 -n hax-running\"
              -i /usr/lib/systemd/system/hare-hax-c2.service &&
     echo 'HARE_HAX_NODE_NAME=$lnode' | sudo tee $hare_dir/hax-env-c1 > /dev/null"
     ssh $rnode $cmd
@@ -679,12 +671,6 @@ clusterip_rsc_add() {
         log "${FUNCNAME[0]}: Adding ClusterIP constraints in Pacemaker..."
         sudo pcs -f $cib_file constraint order c1 then ClusterIP-clone
         sudo pcs -f $cib_file constraint order c2 then ClusterIP-clone
-        # Make ClusterIP to run only on nodes where motr and S3 stack are
-        # present. S3 stack shall follow the same constraint.
-        sudo pcs -f $cib_file constraint location ClusterIP-clone rule \
-            score=-INFINITY '#uname' eq $lnode and hax-running eq 0
-        sudo pcs -f $cib_file constraint location ClusterIP-clone rule \
-            score=-INFINITY '#uname' eq $rnode and hax-running eq 0
     fi
 }
 
@@ -716,12 +702,6 @@ s3auth_rsc_add() {
     sudo pcs -f $cib_file constraint order ldap-clone then s3auth-clone
     sudo pcs -f $cib_file constraint order motr-ios-c1 then s3auth-clone
     sudo pcs -f $cib_file constraint order motr-ios-c2 then s3auth-clone
-    # Make s3auth resource to run only on nodes where motr and hax are present.
-    # All s3server resources shall follow s3auth due to colocation constraint.
-    sudo pcs -f $cib_file constraint location s3auth-clone rule score=-INFINITY '#uname' \
-        eq $lnode and hax-running eq 0
-    sudo pcs -f $cib_file constraint location s3auth-clone rule score=-INFINITY '#uname' \
-        eq $rnode and hax-running eq 0
 }
 
 elastic_search_rsc_add() {
