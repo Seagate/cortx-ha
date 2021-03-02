@@ -21,19 +21,6 @@ export PS4='+ [${BASH_SOURCE[0]##*/}:${LINENO}${FUNCNAME[0]:+:${FUNCNAME[0]}}] '
 
 PROG=${0##*/}
 
-log_file=${BUILD_HA_IO_LOG_FILE:-/var/log/cortx-ha.log}
-exec &>> $log_file
-exec &> >(stdbuf -oL gawk '{ print strftime("%Y-%m-%d %H:%M:%S"), $0 }')
-
-log() {
-    logger --stderr --tag build-ha-io "$*"
-}
-log "****************************************************************"
-log "${0##*/}"
-log "****************************************************************"
-
-
-
 usage() {
     cat <<EOF
 Usage: $PROG [OPTS] <CDF> [<params.yaml>]
@@ -144,6 +131,7 @@ cdf=${1:-}
 argsfile=${2:-}
 
 hare_dir=/var/lib/hare
+log_file=${LOG_FILE:-/var/log/build-ha.log}
 
 die() {
     echo "$PROG: ERROR: $*" >&2
@@ -209,8 +197,13 @@ run_on_both() {
     ssh $rnode $cmd
 }
 
+log() {
+    local msg=$1
+    echo $msg >> $log_file
+}
+
 ip_addr_rsc_add() {
-    log "${FUNCNAME[0]}: Adding the roaming IP addresses into Pacemaker"
+    log "${FUNCNAME[0]}: Adding the roaming IP addresses into Pacemaker..."
     sudo pcs -f $cib_file resource create ip-c1 ocf:heartbeat:IPaddr2 \
              ip=$ip1 cidr_netmask=$netmask iflabel=c1 op monitor interval=0
     sudo pcs -f $cib_file resource create ip-c2 ocf:heartbeat:IPaddr2 \
@@ -220,7 +213,7 @@ ip_addr_rsc_add() {
 }
 
 lnet_rsc_add() {
-    log "${FUNCNAME[0]}: Adding LNet to pacemaker"
+    log "${FUNCNAME[0]}: Adding LNet to pacemaker..."
     sudo pcs -f $cib_file resource create lnet systemd:lnet
     sudo pcs -f $cib_file resource clone lnet
     sudo pcs -f $cib_file resource create lnet-c1 ocf:cortx:lnet \
@@ -234,7 +227,6 @@ lnet_rsc_add() {
 }
 
 net_config_check() {
-    log "${FUNCNAME[0]}: net config check"
     # Give Pacemaker time to configure the IPs
     for i in {1..10}; do
         sleep 5
@@ -267,15 +259,15 @@ net_config_check() {
 # lvolume is mounted at /var/motr1,
 # rvolume is mounted at /var/motr2.
 prepare_var_motr_dirs() {
-    log "${FUNCNAME[0]}: make sure there are no stale mounts hanging"
+    log "${FUNCNAME[0]}: make sure there are no stale mounts hanging..."
     ssh $lnode 'mountpoint -q /var/motr1 && sudo umount /var/motr1 || true'
     ssh $rnode 'mountpoint -q /var/motr2 && sudo umount /var/motr2 || true'
 
-    log "${FUNCNAME[0]}: check & upgrade old setups with /var/motr directories"
+    log "${FUNCNAME[0]}: check & upgrade old setups with /var/motr directories..."
     ssh $lnode '[ -d /var/motr ] && ! [ -d /var/motr1 ] && mv /var/motr /var/motr1 || true'
     ssh $rnode '[ -d /var/motr ] && ! [ -d /var/motr2 ] && mv /var/motr /var/motr2 || true'
 
-    log "${FUNCNAME[0]}: prepare dirs"
+    log "${FUNCNAME[0]}: prepare dirs..."
     run_on_both 'mkdir -p /var/motr{1,2}'
     ssh $lnode 'ln -sf /var/motr1 /var/motr'
     ssh $rnode 'ln -sf /var/motr2 /var/motr'
@@ -290,7 +282,7 @@ bootstrap() {
         sudo mkfs.ext4 -q $rvolume >/dev/null <<< y
     fi
 
-    log "${FUNCNAME[0]}: Preparing Hare configuration files"
+    log "${FUNCNAME[0]}: Preparing Hare configuration files..."
 
 # Update data_iface values in CDF: 1st data_iface will be `${left_iface}_c1`,
 #                                  2nd data_iface will be `${right_iface}_c2`.
@@ -333,13 +325,11 @@ bootstrap() {
 # Runs hctl bootstrap to update hare configuration changes.
 # Note: This modifies consul kv which needs to be explicitly restored.
 bootstrap_update_only() {
-    log "${FUNCNAME[0]}: Executing bootstrap update"
     hctl bootstrap --conf-dir $hare_dir
     hctl shutdown
 }
 
 motr_config() {
-    log "${FUNCNAME[0]}: Prepare Motr conf files"
     # Prepare Motr conf files on each node:
     lm0confs=$(echo /etc/sysconfig/m0d-*)
     rm0confs=$(sudo ssh $rnode 'echo /etc/sysconfig/m0d-*')
@@ -359,7 +349,7 @@ EOF
 }
 
 consul_systemd_prepare() {
-    log "${FUNCNAME[0]}: Installing Consul systemd units"
+    log "${FUNCNAME[0]}: Installing Consul systemd units..."
     cmd='
     sudo cp /usr/lib/systemd/system/hare-consul-agent.service
             /usr/lib/systemd/system/hare-consul-agent-c1.service &&
@@ -375,7 +365,7 @@ consul_systemd_prepare() {
 }
 
 consul_systemd_update() {
-    log "${FUNCNAME[0]}: Updating Consul systemd units"
+    log "${FUNCNAME[0]}: Updating Consul systemd units..."
 # Cleanup Consul data directory before starting the agent to
 # avoid possible inconsistencies related to consensus when Consul
 # agent joins the Consul cluster. Mainly problems related to leader
@@ -427,7 +417,7 @@ consul_systemd_update() {
 # may have its own `-config-dir` at /var/lib/hare (refer to
 # systemd/hare-consul startup script in Hare repo).
 consul_env_prepare() {
-    log "${FUNCNAME[0]}: Creating Consul environment"
+    log "${FUNCNAME[0]}: Creating Consul environment..."
     sudo cp $hare_dir/consul-env $hare_dir/consul-env-c1
     scp $rnode:$hare_dir/consul-env $hare_dir/consul-env-c2
     sudo sed -r \
@@ -455,7 +445,7 @@ consul_env_prepare() {
 }
 
 consul_conf_prepare() {
-    log "${FUNCNAME[0]}: Preparing Consul agent configuration files"
+    log "${FUNCNAME[0]}: Preparing Consul agent configuration files..."
     run_on_both "mkdir -p $hare_dir/consul-server-c{1,2}-conf"
 
     conf_dir=consul-server-c1-conf
@@ -506,14 +496,12 @@ node_backup() {
 }
 
 conf_backup() {
-    log "${FUNCNAME[0]}: Backup node config"
     node_backup $lnode $rnode
     node_backup $rnode $lnode
 }
 
 # Required in case of node replacement.
 node_restore() {
-    log "${FUNCNAME[0]}: Node restore"
     from=$1
     to=$2
 
@@ -529,7 +517,6 @@ node_restore() {
 }
 
 conf_restore() {
-    log "${FUNCNAME[0]}: Config restore"
     node_restore $lnode $rnode
     node_restore $rnode $lnode
 
@@ -538,7 +525,7 @@ conf_restore() {
 }
 
 consul_rsc_add() {
-    log "${FUNCNAME[0]}: Adding Consul to Pacemaker"
+    log "${FUNCNAME[0]}: Adding Consul to Pacemaker..."
     sudo pcs -f $cib_file resource create consul-c1 systemd:hare-consul-agent-c1
     sudo pcs -f $cib_file resource create consul-c2 systemd:hare-consul-agent-c2
     sudo pcs -f $cib_file resource group add c1 consul-c1 --after ip-c1
@@ -546,7 +533,7 @@ consul_rsc_add() {
 }
 
 motr_kernel_rsc_add() {
-    log "${FUNCNAME[0]}: Adding Motr kernel module to Pacemaker"
+    log "${FUNCNAME[0]}: Adding Motr kernel module to Pacemaker..."
     sudo pcs -f $cib_file resource create motr-kernel systemd:motr-kernel clone
     sudo pcs -f $cib_file constraint order lnet-c1 then motr-kernel-clone
     sudo pcs -f $cib_file constraint order lnet-c2 then motr-kernel-clone
@@ -564,7 +551,7 @@ motr_kernel_rsc_add() {
 }
 
 var_motr_rsc_add() {
-    log "${FUNCNAME[0]}: Adding var-motr mounts to Pacemaker"
+    log "${FUNCNAME[0]}: Adding var-motr mounts to Pacemaker..."
     sudo pcs -f $cib_file resource create var-motr1 ocf:heartbeat:Filesystem \
         device=$lvolume directory=/var/motr1 \
         fstype=ext4 --group c1 op stop timeout=30
@@ -574,7 +561,7 @@ var_motr_rsc_add() {
 }
 
 hax_systemd_prepare() {
-    log "${FUNCNAME[0]}: Installing hax systemd units"
+    log "${FUNCNAME[0]}: Installing hax systemd units..."
     sudo cp -f /usr/lib/systemd/system/hare-hax.service \
             /usr/lib/systemd/system/hare-hax-c1.service
     sudo cp -f /usr/lib/systemd/system/hare-hax.service \
@@ -582,7 +569,7 @@ hax_systemd_prepare() {
 }
 
 hax_systemd_update() {
-    log "${FUNCNAME[0]}: Updating hax systemd units"
+    log "${FUNCNAME[0]}: Updating hax systemd units..."
     sudo sed -e 's/hare-consul-agent.service/hare-consul-agent-c1.service/' \
              -e "/ExecStart=/aTimeoutStopSec=5sec" \
              -e "/ExecStart=/aExecStopPost=/usr/sbin/attrd_updater -U 0 -n hax-running" \
@@ -619,7 +606,7 @@ hax_systemd_update() {
 }
 
 hax_rsc_add() {
-    log "${FUNCNAME[0]}: Adding hax to Pacemaker"
+    log "${FUNCNAME[0]}: Adding hax to Pacemaker..."
     sudo pcs -f $cib_file resource create hax-c1 systemd:hare-hax-c1
     sudo pcs -f $cib_file resource create hax-c2 systemd:hare-hax-c2
     sudo pcs -f $cib_file resource group add c1 hax-c1
@@ -631,7 +618,7 @@ hax_rsc_add() {
 }
 
 motr_systemd_update() {
-    log "${FUNCNAME[0]}: Adding Motr to Pacemaker"
+    log "${FUNCNAME[0]}: Adding Motr to Pacemaker..."
 
     cmd='
     sudo sed "s/TimeoutStopSec=.*/TimeoutStopSec=5sec/"
@@ -656,7 +643,7 @@ motr_rsc_add() {
     c1_ios=$(get_fid c1 ios)
     c2_ios=$(get_fid c2 ios)
 
-    log "${FUNCNAME[0]}: Adding Motr to Pacemaker"
+    log "${FUNCNAME[0]}: Adding Motr to Pacemaker..."
     sudo pcs -f $cib_file resource create motr-confd-c1 systemd:m0d@$c1_confd op stop \
          timeout=600
     sudo pcs -f $cib_file resource create motr-ios-c1 systemd:m0d@$c1_ios op stop \
@@ -689,7 +676,7 @@ is_virtual() {
 
 clusterip_rsc_add() {
     if ! is_virtual; then
-        log "${FUNCNAME[0]}: Adding ClusterIP constraints in Pacemaker"
+        log "${FUNCNAME[0]}: Adding ClusterIP constraints in Pacemaker..."
         sudo pcs -f $cib_file constraint order c1 then ClusterIP-clone
         sudo pcs -f $cib_file constraint order c2 then ClusterIP-clone
         # Make ClusterIP to run only on nodes where motr and S3 stack are
@@ -707,7 +694,7 @@ clusterip_rsc_add() {
 }
 
 systemd_units_disable() {
-    log "${FUNCNAME[0]}: Disabling systemd units"
+    log "${FUNCNAME[0]}: Disabling systemd units..."
     units_to_disable=(
         elasticsearch
         haproxy
@@ -723,12 +710,12 @@ systemd_units_disable() {
 }
 
 ldap_rsc_add() {
-    log "${FUNCNAME[0]}: Adding ldap to Pacemaker"
+    log "${FUNCNAME[0]}: Adding ldap to Pacemaker..."
     sudo pcs -f $cib_file resource create ldap systemd:slapd clone op monitor interval=30s
 }
 
 s3auth_rsc_add() {
-    log "${FUNCNAME[0]}: Adding s3authserver to Pacemaker"
+    log "${FUNCNAME[0]}: Adding s3authserver to Pacemaker..."
     sudo pcs -f $cib_file resource create s3auth systemd:s3authserver clone op \
         monitor interval=30
     sudo pcs -f $cib_file constraint order ldap-clone then s3auth-clone
@@ -743,19 +730,19 @@ s3auth_rsc_add() {
 }
 
 elastic_search_rsc_add() {
-    log "${FUNCNAME[0]}: Adding elastic search to Pacemaker"
+    log "${FUNCNAME[0]}: Adding elastic search to Pacemaker.."
     sudo pcs -f $cib_file resource create els-search systemd:elasticsearch clone op \
         monitor interval=30s
 }
 
 statsd_rsc_add() {
-    log "${FUNCNAME[0]}: Adding statsd to Pacemaker"
+    log "${FUNCNAME[0]}: Adding statsd to Pacemaker..."
     sudo pcs -f $cib_file resource create statsd systemd:statsd clone op monitor interval=30s
     sudo pcs -f $cib_file constraint order els-search-clone then statsd-clone
 }
 
 haproxy_rsc_add() {
-    log "${FUNCNAME[0]}: Adding haproxy to pacemaker"
+    log "${FUNCNAME[0]}: Adding haproxy to pacemaker..."
     sudo pcs -f $cib_file resource create haproxy-c1 systemd:haproxy op monitor interval=30s
     sudo pcs -f $cib_file resource create haproxy-c2 systemd:haproxy op monitor interval=30s
     sudo pcs -f $cib_file constraint location haproxy-c1 prefers $lnode=INFINITY
@@ -772,7 +759,7 @@ get_s3_svc() {
 }
 
 rabbitmq_rsc_add() {
-    log "${FUNCNAME[0]}: Adding rabbit-mq resources and constraints"
+    log "${FUNCNAME[0]}: Adding rabbit-mq resources and constraints..."
     sudo pcs -f $cib_file resource create rabbitmq systemd:rabbitmq-server clone op \
         monitor interval=30s meta failure-timeout=20s
 }
@@ -781,7 +768,7 @@ s3_systemd_update() {
 # Add and update node attribute for s3backgroundconsumer resource on both the
 # nodes. This will be used to define constraints for the resources depending
 # on s3backgroundconsumer resource on a node.
-    log "${FUNCNAME[0]}: Updating s3 systemd units"
+    log "${FUNCNAME[0]}: Updating s3 systemd units..."
     cmd="
     sudo sed
      -e '/ExecStart=/aExecStartPost=/usr/sbin/attrd_updater -U 1 -n s3backcons-running' \
@@ -797,7 +784,7 @@ s3_systemd_update() {
 }
 
 s3back_rsc_add() {
-    log "${FUNCNAME[0]}: Adding s3background services"
+    log "${FUNCNAME[0]}: Adding s3background services..."
     sudo pcs -f $cib_file resource create s3backcons-c1 \
                           systemd:s3backgroundconsumer meta failure-timeout=300s
     sudo pcs -f $cib_file resource create s3backcons-c2 \
@@ -860,7 +847,7 @@ _s3server_rsc_add() {
 }
 
 s3server_rsc_add() {
-    log "${FUNCNAME[0]}: Adding S3server to Pacemaker"
+    log "${FUNCNAME[0]}: Adding S3server to Pacemaker..."
     _s3server_rsc_add c1 $lnode $rnode
     _s3server_rsc_add c2 $rnode $lnode
 

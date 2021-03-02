@@ -19,19 +19,6 @@ set -eu -o pipefail
 export PS4='+ [${BASH_SOURCE[0]##*/}:${LINENO}${FUNCNAME[0]:+:${FUNCNAME[0]}}] '
 # set -x
 
-log_file=${PROV_HA_RESET_LOG_FILE:-/var/log/cortx-ha.log}
-exec &>> $log_file
-exec &> >(stdbuf -oL gawk '{ print strftime("%Y-%m-%d %H:%M:%S"), $0 }')
-
-log() {
-    logger --stderr --tag prov-ha-reset "$*"
-}
-log "****************************************************************"
-log "${0##*/}"
-log "****************************************************************"
-
-
-
 hare_dir=/var/lib/hare
 
 count_s3servers() {
@@ -43,7 +30,6 @@ count_s3servers() {
     fi
 }
 
-log "Deleting pcs resources for s3server "
 for ctrl in c2 c1; do
     conf_dir=consul-server-$ctrl-conf
     for i in $(seq 1 \
@@ -67,7 +53,6 @@ resources=(
     lnet
     ip-c{2,1}
 )
-log "Deleting pcs resources for s3 "
 for r in ${resources[@]}; do
     pcs resource delete $r || true
 done
