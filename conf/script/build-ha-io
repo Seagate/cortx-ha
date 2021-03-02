@@ -295,7 +295,7 @@ bootstrap() {
     if facter --version | grep -q ^3; then
         # New facter-3 requires colons (:) for interface aliases.
         sudo sed -r -e "/[#].*data_iface/b ; # skip commented out data_iface lines
-                        s/(data_iface: *(${left_iface}|${right_iface}))_(c[12])/\1:\3/" \
+                        s/(data_iface: *(${left_iface}|${right_iface}))_(c[12])/\1:\2/" \
                     -i $cdf
     fi
 
