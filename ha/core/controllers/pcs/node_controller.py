@@ -15,7 +15,7 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 import json
-from ha.core.error import HAUnimplemented, HAInvalidNode, ClusterManagerError
+from ha.core.error import HAUnimplemented, ClusterManagerError
 from ha.core.controllers.pcs.pcs_controller import PcsController
 from ha.core.controllers.node_controller import NodeController
 from ha.core.controllers.controller_annotation import controller_error_handler
@@ -103,32 +103,7 @@ class PcsNodeController(NodeController, PcsController):
             ([dict]): Return dictionary. {"status": "", "msg":{}}}
                 status: Succeeded, Failed, InProgress
         """
-        all_nodes_status = dict()
-        _output, _err, _rc = self._execute.run_cmd(const.PCS_STATUS_NODES, check_error=False)
-        if nodeids is not None:
-            for nodeid in nodeids:
-                if nodeid in _output:
-                    for status in _output.split("\n"):
-                        nodes = status.split(":")
-                        if len(nodes) > 1 and nodeid.lower() in nodes[1].strip().lower():
-                            if nodes[0].strip().lower() == NODE_STATUSES.STANDBY.value.lower():
-                                all_nodes_status[nodeid] = NODE_STATUSES.STANDBY.value
-                            elif nodes[0].strip().lower() == NODE_STATUSES.STANDBY_WITH_RESOURCES_RUNNING.value.lower():
-                                all_nodes_status[nodeid] = NODE_STATUSES.STANDBY_WITH_RESOURCES_RUNNING.value
-                            elif nodes[0].strip().lower() == NODE_STATUSES.MAINTENANCE.value.lower():
-                                all_nodes_status[nodeid] = NODE_STATUSES.MAINTENANCE.value
-                            elif nodes[0].strip().lower() == NODE_STATUSES.OFFLINE.value.lower():
-                                all_nodes_status[nodeid] = NODE_STATUSES.OFFLINE.value
-                            elif nodes[0].strip().lower() == NODE_STATUSES.ONLINE.value.lower():
-                                all_nodes_status[nodeid] = NODE_STATUSES.ONLINE.value
-                            break
-                    else:
-                        all_nodes_status[nodeid] = NODE_STATUSES.UNKNOWN.value
-                else:
-                    raise HAInvalidNode(f"Node {nodeid} is not a part of cluster")
-            return {"status": "Succeeded", "msg": all_nodes_status}
-        else:
-            return {"status": "Failed", "msg": "Nodeids are None to check the status"}
+        raise HAUnimplemented("This operation is not implemented.")
 
 
 class PcsVMNodeController(PcsNodeController):
@@ -144,13 +119,16 @@ class PcsVMNodeController(PcsNodeController):
             ([dict]): Return dictionary. {"status": "", "msg":""}
                 status: Succeeded, Failed, InProgress
         """
-        _res = self.status([nodeid])
+        _res = self.nodes_status([nodeid])
         if isinstance(_res, str):
             _res = json.loads(_res)
         _all_node_status = _res.get("msg")
         _node_status = _all_node_status.get(nodeid)
         if _node_status.lower() == NODE_STATUSES.ONLINE.value.lower():
             return {"status": "Succeeded", "msg": f"Node {nodeid}, is already in Online status"}
+        if _node_status.lower() == NODE_STATUSES.STANDBY_WITH_RESOURCES_RUNNING.value.lower():
+            return {"status": "Succeeded", "msg": f"Node {nodeid}, is going in standby mode, "
+                                                  f"We need to wait to complete the resource shutdown"}
         elif _node_status.lower() == NODE_STATUSES.STANDBY.value.lower():
             # make node unstandby
             _output, _err, _rc = self._execute.run_cmd(const.PCS_NODE_UNSTANDBY.replace("<node>", nodeid),

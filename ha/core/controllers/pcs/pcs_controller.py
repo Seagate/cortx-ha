@@ -17,6 +17,9 @@
 
 from ha.core.controllers.element_controller import ElementController
 from ha.execute import SimpleCommand
+from ha import const
+from ha.core.error import HAInvalidNode
+from ha.const import NODE_STATUSES
 
 
 class PcsController(ElementController):
@@ -28,3 +31,42 @@ class PcsController(ElementController):
         """
         super(PcsController, self).__init__()
         self._execute = SimpleCommand()
+
+    def nodes_status(self, nodeids: list = None) -> dict:
+        """
+        Get pcs status of nodes.
+        Args:
+            nodeids (list): List of Node IDs from cluster nodes.
+                Default provide list of all node status.
+                if 'local' then provide local node status.
+
+        Returns:
+            ([dict]): Return dictionary. {"status": "", "msg":{}}}
+                status: Succeeded, Failed, InProgress
+        """
+        all_nodes_status = dict()
+        _output, _err, _rc = self._execute.run_cmd(const.PCS_STATUS_NODES, check_error=False)
+        if nodeids is not None and isinstance(nodeids, list):
+            for nodeid in nodeids:
+                if nodeid in _output:
+                    for status in _output.split("\n"):
+                        nodes = status.split(":")
+                        if len(nodes) > 1 and nodeid.lower() in nodes[1].strip().lower():
+                            if nodes[0].strip().lower() == NODE_STATUSES.STANDBY.value.lower():
+                                all_nodes_status[nodeid] = NODE_STATUSES.STANDBY.value
+                            elif nodes[0].strip().lower() == NODE_STATUSES.STANDBY_WITH_RESOURCES_RUNNING.value.lower():
+                                all_nodes_status[nodeid] = NODE_STATUSES.STANDBY_WITH_RESOURCES_RUNNING.value
+                            elif nodes[0].strip().lower() == NODE_STATUSES.MAINTENANCE.value.lower():
+                                all_nodes_status[nodeid] = NODE_STATUSES.MAINTENANCE.value
+                            elif nodes[0].strip().lower() == NODE_STATUSES.OFFLINE.value.lower():
+                                all_nodes_status[nodeid] = NODE_STATUSES.OFFLINE.value
+                            elif nodes[0].strip().lower() == NODE_STATUSES.ONLINE.value.lower():
+                                all_nodes_status[nodeid] = NODE_STATUSES.ONLINE.value
+                            break
+                    else:
+                        all_nodes_status[nodeid] = NODE_STATUSES.UNKNOWN.value
+                else:
+                    raise HAInvalidNode(f"Node {nodeid} is not a part of cluster")
+            return {"status": "Succeeded", "msg": all_nodes_status}
+        else:
+            return {"status": "Failed", "msg": "Either nodeids is None or not a list to check the status"}
