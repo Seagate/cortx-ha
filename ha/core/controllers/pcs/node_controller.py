@@ -14,12 +14,13 @@
 # with this program. If not, see <https://www.gnu.org/licenses/>. For any questions
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
-
-from ha.core.error import HAUnimplemented
+import json
+from ha.core.error import HAUnimplemented, HAInvalidNode, ClusterManagerError
 from ha.core.controllers.pcs.pcs_controller import PcsController
 from ha.core.controllers.node_controller import NodeController
 from ha.core.controllers.controller_annotation import controller_error_handler
 from ha import const
+from ha.const import NODE_STATUSES
 from cortx.utils.log import Log
 
 
@@ -107,13 +108,27 @@ class PcsNodeController(NodeController, PcsController):
         if nodeids is not None:
             for nodeid in nodeids:
                 if nodeid in _output:
-                    _node_status = "unknown"
                     for status in _output.split("\n"):
-                        nodes = status.split(":", 1)
-                        if nodeid in nodes[1]:
-                            _node_status = nodes[0].trim()
-                    all_nodes_status[nodeid] = _node_status
-        return {"status": "Succeeded", "msg": all_nodes_status}
+                        nodes = status.split(":")
+                        if len(nodes) > 1 and nodeid.lower() in nodes[1].strip().lower():
+                            if nodes[0].strip().lower() == NODE_STATUSES.STANDBY.value.lower():
+                                all_nodes_status[nodeid] = NODE_STATUSES.STANDBY.value
+                            elif nodes[0].strip().lower() == NODE_STATUSES.STANDBY_WITH_RESOURCES_RUNNING.value.lower():
+                                all_nodes_status[nodeid] = NODE_STATUSES.STANDBY_WITH_RESOURCES_RUNNING.value
+                            elif nodes[0].strip().lower() == NODE_STATUSES.MAINTENANCE.value.lower():
+                                all_nodes_status[nodeid] = NODE_STATUSES.MAINTENANCE.value
+                            elif nodes[0].strip().lower() == NODE_STATUSES.OFFLINE.value.lower():
+                                all_nodes_status[nodeid] = NODE_STATUSES.OFFLINE.value
+                            elif nodes[0].strip().lower() == NODE_STATUSES.ONLINE.value.lower():
+                                all_nodes_status[nodeid] = NODE_STATUSES.ONLINE.value
+                            break
+                    else:
+                        all_nodes_status[nodeid] = NODE_STATUSES.UNKNOWN.value
+                else:
+                    raise HAInvalidNode(f"Node {nodeid} is not a part of cluster")
+            return {"status": "Succeeded", "msg": all_nodes_status}
+        else:
+            return {"status": "Failed", "msg": "Nodeids are None to check the status"}
 
 
 class PcsVMNodeController(PcsNodeController):
@@ -130,17 +145,21 @@ class PcsVMNodeController(PcsNodeController):
                 status: Succeeded, Failed, InProgress
         """
         _res = self.status([nodeid])
+        if isinstance(_res, str):
+            _res = json.loads(_res)
         _all_node_status = _res.get("msg")
         _node_status = _all_node_status.get(nodeid)
-        if _node_status == "Standby":
+        if _node_status.lower() == NODE_STATUSES.STANDBY.value.lower():
             # make node unstandby
             _output, _err, _rc = self._execute.run_cmd(const.PCS_NODE_UNSTANDBY.replace("<node>", nodeid),
                                                        check_error=False)
-            return {"status": "", "msg": _output}
-        elif _node_status == "Offline":
+            return {"status": "Succeeded", "msg": f"Node {nodeid} : Node was in standby mode, "
+                                                  f"Unstandby operation started successfully"}
+        elif _node_status.lower() == NODE_STATUSES.OFFLINE.value.lower():
             # start node not in scope of VM
             Log.error("Operation not available for VM")
-        return {"status": "Succeeded", "msg": "Node s"}
+            raise ClusterManagerError(f"Node {nodeid} : Node was in offline mode, "
+                                      "Node start : Operation not available for VM")
 
     @controller_error_handler
     def stop(self, nodeid: str) -> dict:
@@ -155,6 +174,7 @@ class PcsVMNodeController(PcsNodeController):
                 status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
+
 
 class PcsHWNodeController(PcsNodeController):
     @controller_error_handler
