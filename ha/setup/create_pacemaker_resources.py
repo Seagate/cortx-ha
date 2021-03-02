@@ -44,13 +44,11 @@ def cib_get(cib_xml):
 
 def motr_hax(cib_xml, push=False):
     """Create resources that belong to motr group and clone the group."""
-    # TODO cmd_hare_consul is temporary code and should be removed once fixed by hax/provisioner.
-    cmd_hare_consul = f"pcs -f {cib_xml} resource create hax-consul systemd:hare-consul-agent --group io_group"
     cmd_hax = f"pcs -f {cib_xml} resource create hax systemd:hare-hax --group io_group"
     cmd_confd = f"pcs -f {cib_xml} resource create motr-confd-1 ocf:seagate:dynamic_fid_service_ra service=m0d fid_service_name=confd --group io_group --force"
     cmd_ios = f"pcs -f {cib_xml} resource create motr-ios-1 ocf:seagate:dynamic_fid_service_ra service=m0d fid_service_name=ios --group io_group --force"
 
-    for s in (cmd_hare_consul, cmd_hax, cmd_confd, cmd_ios):
+    for s in (cmd_hax, cmd_confd, cmd_ios):
         SimpleCommand().run_cmd(s)
 
     if push:
@@ -73,14 +71,15 @@ def free_space_monitor(cib_xml, push=False):
         cib_push(cib_xml)
 
 
-def s3servers(cib_xml, instance, push=False):
+def s3servers(cib_xml, push=False):
     """Create resources that belong to s3server group and clone the group.
 
     S3 background consumer is ordered after s3server and co-located with it.
     """
-    for i in range(1, int(instance)+1):
+    for i in range(1, 12):
         cmd_s3server = f"pcs -f {cib_xml} resource create s3server-{i} ocf:seagate:dynamic_fid_service_ra service=s3server fid_service_name=s3service --group io_group --force"
         SimpleCommand().run_cmd(cmd_s3server)
+
     cmd_s3bc = f"pcs -f {cib_xml} resource create s3backcons systemd:s3backgroundconsumer meta failure-timeout=300s --group io_group"
     SimpleCommand().run_cmd(cmd_s3bc)
 
@@ -132,13 +131,12 @@ def sspl(cib_xml, push=False):
         cib_push(cib_xml)
 
 
-def io_stack(cib_xml, s3_count, push=False):
+def io_stack(cib_xml, push=False):
     """Create IO stack related resources."""
-    resources = [motr_hax, s3auth, haproxy]
+    resources = [motr_hax, s3auth, haproxy, s3servers]
     for rcs in resources:
         rcs(cib_xml, push)
 
-    s3servers(cib_xml, s3_count, push)
     cmd_clone_group = f"pcs -f {cib_xml} resource clone io_group"
     SimpleCommand().run_cmd(cmd_clone_group)
     s3bp(cib_xml, push)
@@ -237,10 +235,10 @@ def create_all_resources(cib_xml="/var/log/seagate/cortx/ha/cortx-lr2-cib.xml",
         raise CreateResourceConfigError("Given mgmt VIP configuration is incomplete")
 
     with_uds = kwargs["uds"] if "uds" in kwargs else False
-    s3_instances = int(kwargs["s3_instances"])
+
     try:
         cib_get(cib_xml)
-        io_stack(cib_xml, s3_instances)
+        io_stack(cib_xml)
         sspl(cib_xml)
         mgmt_stack(cib_xml, mgmt_vip_cfg, with_uds)
         if push:
@@ -272,7 +270,7 @@ def _main():
     args = _parse_input_args()
 
     create_all_resources(args.cib_xml, vip=args.vip, cidr=args.cidr,
-                         iface=args.iface, s3_instances=args.s3_instances, push=not args.dry_run,
+                         iface=args.iface, push=not args.dry_run,
                          uds=args.with_uds)
 
 
