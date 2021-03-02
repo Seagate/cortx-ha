@@ -264,8 +264,8 @@ prepare_var_motr_dirs() {
     ssh $rnode 'mountpoint -q /var/motr2 && sudo umount /var/motr2 || true'
 
     log "${FUNCNAME[0]}: check & upgrade old setups with /var/motr directories..."
-    [ -d /var/motr ] && ! [ -d /var/motr1 ] && mv /var/motr /var/motr1 || true
-    ssh $rnode '[ -d /var/motr ] && ! [ -d /var/motr2 ] && mv /var/motr /var/motr2 || true'
+    [ -d /var/motr ] && ! [ -d /var/motr1 ] && mv /var/motr /var/motr1
+    ssh $rnode '[ -d /var/motr ] && ! [ -d /var/motr2 ] && mv /var/motr /var/motr2'
 
     log "${FUNCNAME[0]}: prepare dirs..."
     run_on_both 'mkdir -p /var/motr{1,2}'
