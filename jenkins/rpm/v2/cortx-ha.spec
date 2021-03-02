@@ -17,7 +17,7 @@ Name: <RPM_NAME>
 Version: %{version}
 Release: %{dist}
 Summary: HA Tools
-License: Seagate
+License: Seagate Proprietary
 URL: https://github.com/Seagate/cortx-ha
 Source0: <RPM_NAME>-%{version}.tar.gz
 %define debug_package %{nil}
