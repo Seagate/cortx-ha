@@ -62,17 +62,10 @@ class HACli:
 
     @staticmethod
     def _usage():
-
-        if ha_cli._version == const.CORTX_VERSION_1:
-            return """
+        return """
     Use below command for more detail
     cortxha --help
-            """
-        else:
-            return """
-    Use below command for more detail
-    cortx --help
-            """
+    """
 
     def command(self):
         try:

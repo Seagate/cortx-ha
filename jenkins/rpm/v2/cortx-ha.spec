@@ -43,8 +43,8 @@ RES_AGENT="/usr/lib/ocf/resource.d/seagate"
 mkdir -p $HA_DIR/bin /usr/bin $RES_AGENT
 
 # Move binary file
-ln -sf $HA_DIR/lib/cortxha $HA_DIR/bin/cortx
-ln -sf $HA_DIR/lib/cortxha /usr/bin/cortx
+ln -sf $HA_DIR/lib/cortxha $HA_DIR/bin/cortxha
+ln -sf $HA_DIR/lib/cortxha /usr/bin/cortxha
 ln -sf $HA_DIR/lib/dynamic_fid_service_ra $HA_DIR/bin/dynamic_fid_service_ra
 # TODO: dynamic_fid_service_ra to RESOURCE_AGENT path from setup post_install
 ln -sf $HA_DIR/lib/dynamic_fid_service_ra $RES_AGENT/dynamic_fid_service_ra
@@ -59,8 +59,8 @@ exit 0
 %postun
 [ $1 -eq 1 ] && exit 0
 HA_DIR=<HA_PATH>/ha
-rm -f /usr/bin/cortx 2> /dev/null;
-rm -f $HA_DIR/bin/cortx 2> /dev/null;
+rm -f /usr/bin/cortxha 2> /dev/null;
+rm -f $HA_DIR/bin/cortxha 2> /dev/null;
 rm -f $RES_AGENT/dynamic_fid_service_ra 2> /dev/null;
 rm -f $HA_DIR/bin/dynamic_fid_service_ra 2> /dev/null;
 rm -f /usr/local/bin/ha_setup 2> /dev/null;
