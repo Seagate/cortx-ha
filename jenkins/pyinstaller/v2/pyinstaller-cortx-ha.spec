@@ -126,13 +126,13 @@ coll = COLLECT(
         dynamic_fid_service_ra.binaries,
         dynamic_fid_service_ra.zipfiles,
         dynamic_fid_service_ra.datas,
-
+     
         # cortxha
         ha_setup_exe,
         ha_setup.binaries,
         ha_setup.zipfiles,
         ha_setup.datas,
-
+        
         strip=False,
         upx=True,
         upx_exclude=[],

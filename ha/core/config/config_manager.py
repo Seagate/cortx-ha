@@ -49,19 +49,6 @@ class ConfigManager:
 
     @staticmethod
     def get_major_version():
-        """
-        Get product version
-
-        Returns:
-            [int]: Return version
-        """
         version = Conf.get(const.HA_GLOBAL_INDEX, "VERSION.version")
         major_version = version.split('.')
         return major_version[0]
-
-    @staticmethod
-    def load_controller_schema() -> None:
-        """
-        Load controller interface schema for cluster management.
-        """
-        Conf.load(const.CM_CONTROLLER_INDEX, f"json://{const.CM_CONTROLLER_SCHEMA}")

@@ -18,19 +18,48 @@
 import time
 
 from cortx.utils.log import Log
-from cortx.utils.conf_store.conf_store import Conf
 from cortx.utils.ha.dm.decision_monitor import DecisionMonitor
 
 from ha.core.error import HAUnimplemented
-from ha.core.support_bundle.ha_bundle import HABundle
 from ha.core.node.replacement.refresh_context import PcsRefreshContex
 from ha.execute import SimpleCommand
+from ha.core.support_bundle.ha_bundle import HABundle, CortxHABundle
 from ha import const
 from ha.core.config.config_manager import ConfigManager
-from ha.core.controllers.element_controller_factory import ElementControllerFactory
 
-# Note: This class is used by version 1
-class PcsClusterManager:
+class ClusterManager:
+    def __init__(self):
+        """
+        Manage cluster operation
+        """
+        pass
+
+    def process_request(self, action, args):
+        raise HAUnimplemented()
+
+    def node_status(self, node):
+        # TODO move node logic to node manager class
+        raise HAUnimplemented()
+
+    def remove_node(self, node):
+        raise HAUnimplemented()
+
+    def add_node(self, node):
+        raise HAUnimplemented()
+
+    def start(self):
+        raise HAUnimplemented()
+
+    def stop(self):
+        raise HAUnimplemented()
+
+    def status(self):
+        raise HAUnimplemented()
+
+    def shutdown(self):
+        raise HAUnimplemented()
+
+class PcsClusterManager(ClusterManager):
     def __init__(self):
         """
         PcsCluster manage pacemaker/corosync cluster
@@ -265,31 +294,73 @@ class PcsClusterManager:
     def shutdown(self):
         raise HAUnimplemented("This feature is not supported...")
 
-# Note: This class is used by version 2
 class CortxClusterManager:
     def __init__(self):
         """
         Manage cluster operation
         """
-        # TODO: Update Config manager if log utility changes.
-        ConfigManager.init("cluster_manager")
-        self._cluster_type = Conf.get(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.cluster_type")
-        self._env = Conf.get(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.env")
-        ConfigManager.load_controller_schema()
-        self._controllers = ElementControllerFactory.init_controller(self._env, self._cluster_type)
-        for controller in self._controllers.keys():
-            Log.info(f"Adding {controller} property to cluster manager.")
-            # Add property method for controller
-            # Example: cm.cluster_controller.start()
-            # Find more example in test case.
-            self.__dict__[controller] = self._controllers[controller]
+        self._execute = SimpleCommand()
 
-    @property
-    def controller_list(self) -> list:
+    def process_request(self, action, args, output):
         """
-        Return all controller loaded by init.
+        Process cluster request
 
-        Returns:
-            [list]: list of controllers.
+        Args:
+            action (string): action taken on cluster
+            args (dictonery): parameteter
+            output (object): Store output
+
+        Raises:
+            HAUnimplemented: [description]
         """
-        return list(self._controllers.keys())
+        # TODO: Provide service and node management
+        self._output = output
+        if action == const.CLUSTER_COMMAND:
+            getattr(self, args.cluster_action)()
+        elif action == const.BUNDLE_COMMAND:
+            CortxHABundle().process_request(action, args, output)
+        else:
+            raise HAUnimplemented("This feature is not supported...")
+
+    def remove_node(self):
+        raise HAUnimplemented("Cluster remove node is not supported.")
+
+    def add_node(self):
+        raise HAUnimplemented("Cluster add node is not supported.")
+
+    def start(self):
+        Log.debug("Executing cluster start")
+        _output, _err, _rc = self._execute.run_cmd(const.HCTL_START, check_error=False)
+        Log.info(f"IO stack started. Output: {_output}, Err: {_err}, RC: {_rc}")
+        self.status()
+        if self._output.get_rc() == 0:
+            Log.info("Cluster started successfully")
+            self._output.output("Cluster started successfully")
+            self._output.rc(0)
+        else:
+            Log.error("Cluster failed to start")
+            self._output.output("Cluster failed to start")
+            self._output.rc(1)
+
+    def stop(self):
+        Log.info("Executing cluster Stop")
+        _output, _err, _rc = self._execute.run_cmd(const.HCTL_STOP, check_error=False)
+        Log.info(f"Io stack stopped successfully. Output: {_output}, Err: {_err}, RC: {_rc}")
+        self.status()
+        if self._output.get_rc() == 1:
+            Log.info("Cluster stopped successfully")
+            self._output.output("Cluster stopped successfully...")
+            self._output.rc(0)
+        else:
+            Log.error("Cluster failed to stop")
+            self._output.output("Cluster failed to stop")
+            self._output.rc(1)
+
+    def status(self):
+        _output, _err, _rc = self._execute.run_cmd(const.HCTL_STATUS, check_error=False)
+        self._output.rc(_rc)
+        status = const.HCTL_STARTED_STATUS if _rc == 0 else const.HCTL_STOPPED_STATUS
+        self._output.output(status)
+
+    def shutdown(self):
+        raise HAUnimplemented("Cluster shutdown is not supported.")
