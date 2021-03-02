@@ -80,10 +80,6 @@ END
     exit $OCF_SUCCESS
 }
 
-log() {
-    logger -t sspl-ra "$*"
-}
-
 stateful_usage() {
     cat <<END
 usage: $0 {start|stop|promote|demote|monitor|validate-all|meta-data}
@@ -119,27 +115,21 @@ stateful_start() {
     stateful_check_state "master"
     if [ $? -eq 0 ]; then
         # CRM Error - Should never happen
-        log "START (master)..."
         systemctl start sspl-ll
-        log "START (master): $?"
         return $OCF_RUNNING_MASTER
     fi
     stateful_update "slave"
     "${HA_SBIN_DIR}/crm_master" -l reboot -v 1
-    log "START... (crm_reboot: $?)"
     systemctl start sspl-ll
-    log "START: $?"
-
     return $OCF_SUCCESS
 }
 
 stateful_demote() {
-    sspl_pid=`/sbin/pidof -s /usr/bin/sspl_ll_d`
+    stateful_monitor
     sspl_state=`systemctl is-active sspl-ll`
-    log "DEMOTE: pid=$sspl_pid curr_state=$sspl_state"
-    [ $sspl_state == 'active' -a $sspl_pid != '' ] ||
-        return $(stateful_monitor)
-
+    if [ $sspl_state != 'active' ]; then
+       systemctl start sspl-ll
+    fi
     stateful_update "slave"
 
     if [ -z $OCF_RESKEY_sspl_mode ]; then
@@ -147,18 +137,19 @@ stateful_demote() {
     fi
 
     echo "state=degrade" > /var/cortx/sspl/data/state.txt
-    /usr/bin/kill -s SIGHUP $sspl_pid
     return 0
 }
 
 stateful_promote() {
     sleep 5
     sspl_pid=`/sbin/pidof -s /usr/bin/sspl_ll_d`
-    sspl_state=`systemctl is-active sspl-ll`
-    log "PROMOTE: pid=$sspl_pid curr_state=$sspl_state"
-    [ $sspl_state == 'active' -a $sspl_pid != '' ] ||
+    if [ -z $sspl_pid ]; then
         return $(stateful_monitor)
-
+    fi
+    sspl_state=`systemctl is-active sspl-ll`
+    if [ $sspl_state != 'active' ]; then
+       systemctl start sspl-ll
+    fi
     stateful_update "master"
 
     if [ -z $OCF_RESKEY_sspl_mode ]; then
@@ -174,9 +165,7 @@ stateful_promote() {
 }
 
 stateful_stop() {
-    log "STOP..."
     systemctl stop sspl-ll
-    log "STOP: $?"
     return $OCF_SUCESS
 }
 
@@ -184,16 +173,15 @@ stateful_monitor() {
     sspl_state=`systemctl is-active sspl-ll`
     stateful_check_state "master"
     if [ $? -eq 0 ]; then
-        log "MONITOR (master): $sspl_state"
         # Restore the master setting during probes
         case "$sspl_state" in
               active) return $OCF_RUNNING_MASTER;;
               failed) return $OCF_FAILED_MASTER;;
-                   *) return $OCF_NOT_RUNNING;;
+              inactive) return $OCF_NOT_RUNNING;;
+                     *) return $OCF_ERR_GENERIC;;
         esac
     fi
 
-    log "MONITOR: $sspl_state"
     case "$sspl_state" in
            active) return $OCF_SUCCESS;;
            failed) return $OCF_ERR_GENERIC;;
