@@ -149,7 +149,9 @@ class PcsVMNodeController(PcsNodeController):
             _res = json.loads(_res)
         _all_node_status = _res.get("msg")
         _node_status = _all_node_status.get(nodeid)
-        if _node_status.lower() == NODE_STATUSES.STANDBY.value.lower():
+        if _node_status.lower() == NODE_STATUSES.ONLINE.value.lower():
+            return {"status": "Succeeded", "msg": f"Node {nodeid}, is already in Online status"}
+        elif _node_status.lower() == NODE_STATUSES.STANDBY.value.lower():
             # make node unstandby
             _output, _err, _rc = self._execute.run_cmd(const.PCS_NODE_UNSTANDBY.replace("<node>", nodeid),
                                                        check_error=False)
@@ -157,7 +159,7 @@ class PcsVMNodeController(PcsNodeController):
                                                   f"Unstandby operation started successfully"}
         elif _node_status.lower() == NODE_STATUSES.OFFLINE.value.lower():
             # start node not in scope of VM
-            Log.error("Operation not available for VM")
+            Log.error("Operation not available for node type VM")
             raise ClusterManagerError(f"Node {nodeid} : Node was in offline mode, "
                                       "Node start : Operation not available for VM")
 

@@ -106,7 +106,7 @@ CONTROLLER_INPROGRESS="InProgress"
 class NODE_STATUSES(Enum):
     OFFLINE = "Offline"
     STANDBY = "Standby"
-    ONLINE = "Offline"
+    ONLINE = "Online"
     STANDBY_WITH_RESOURCES_RUNNING = "Standby with resource(s) running"
     MAINTENANCE = "Maintenance"
     UNKNOWN = "Unknown"
