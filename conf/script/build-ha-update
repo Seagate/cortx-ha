@@ -92,7 +92,7 @@ echo 'Updating ha resources for IO path, SSPL, CSM and UDS...'
 $ha_script/build-ha-io $cdf $ioargsfile --cib-file $cib_file --update
 $ha_script/build-ha-csm $csmargsfile --cib-file $cib_file --update
 $ha_script/build-ha-sspl $ioargsfile --cib-file $cib_file --update
-$ha_script/build-ha-uds --cib-file $cib_file --update
+$ha_script/build-ees-ha-uds --cib-file $cib_file --update
 
 #XXX Presently replacing the cib xml file does not work if in new versions
 # the resources are deleted.
