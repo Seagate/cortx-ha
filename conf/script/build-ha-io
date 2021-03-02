@@ -260,19 +260,19 @@ net_config_check() {
 # rvolume is mounted at /var/motr2.
 prepare_var_motr_dirs() {
     log "${FUNCNAME[0]}: make sure there are no stale mounts hanging..."
-    ssh $lnode 'mountpoint -q /var/motr1 && sudo umount /var/motr1 || true'
+    mountpoint -q /var/motr1 && sudo umount /var/motr1 || true
     ssh $rnode 'mountpoint -q /var/motr2 && sudo umount /var/motr2 || true'
 
     log "${FUNCNAME[0]}: check & upgrade old setups with /var/motr directories..."
-    ssh $lnode '[ -d /var/motr ] && ! [ -d /var/motr1 ] && mv /var/motr /var/motr1 || true'
+    [ -d /var/motr ] && ! [ -d /var/motr1 ] && mv /var/motr /var/motr1 || true
     ssh $rnode '[ -d /var/motr ] && ! [ -d /var/motr2 ] && mv /var/motr /var/motr2 || true'
 
     log "${FUNCNAME[0]}: prepare dirs..."
     run_on_both 'mkdir -p /var/motr{1,2}'
-    ssh $lnode 'ln -sf /var/motr1 /var/motr'
+    ln -sf /var/motr1 /var/motr
     ssh $rnode 'ln -sf /var/motr2 /var/motr'
 
-    ssh $lnode "sudo mount $lvolume /var/motr1 || true"
+    sudo mount $lvolume /var/motr1 || true
     ssh $rnode "sudo mount $rvolume /var/motr2 || true"
 }
 
@@ -920,7 +920,7 @@ declare -A ha_ops_type=(
     [hax_systemd_prepare]='bootstrap_update_restore'
     [hax_systemd_update]='bootstrap_update_restore'
     [hax_rsc_add]='bootstrap_update'
-    [motr_systemd_update]='bootstrap_update_restore'
+    [motr_systemd_update]='bootstrap_update'
     [motr_rsc_add]='bootstrap_update'
     [clusterip_rsc_add]='bootstrap_update'
     [systemd_units_disable]='bootstrap_update'
