@@ -27,14 +27,8 @@ init() {
     host2=$(echo $node_list | jq '.["local"][1]' | sed s/\"//g)
 
     # Restart csm to enable decision maker changes
-    echo "Restart csm-agent..."
-    cnt=10
-    while ! pcs resource restart csm-agent && ((cnt-- > 0)); do
-        sleep 1
-        echo "Re-try to restart csm-agent..."
-    done
+    pcs resource restart csm-agent
 
-    echo "Create io_path_health resources..."
     pcs cluster cib hw_cfg
     # Hardware io stack resource
     pcs -f hw_cfg resource create io_path_health-c1 ocf:seagate:hw_comp_ra \
