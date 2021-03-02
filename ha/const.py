@@ -79,10 +79,3 @@ HCTL_STOPPED_STATUS="Offline"
 
 # Systemd wrapper resource agent
 HARE_FID_MAPPING_FILE="/var/lib/hare/consul-server-conf/consul-server-conf.json"
-
-CORTX_VERSION_1="1"
-CORTX_VERSION_2="2"
-PCS_CLUSTER_START="pcs cluster start --all"
-PCS_CLUSTER_STATUS="pcs cluster status"
-PCS_CLUSTER_UNSTANDBY="pcs cluster unstandby --all"
-PCS_STATUS_NODES="pcs status nodes"
