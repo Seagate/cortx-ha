@@ -114,7 +114,7 @@ def s3auth(cib_xml, push=False):
 
 def haproxy(cib_xml, push=False):
     """Create haproxy clone resource in pacemaker."""
-    cmd_haproxy = f"pcs -f {cib_xml} resource create haproxy systemd:haproxy op monitor interval=30 --group io_group"
+    cmd_haproxy = f"pcs -f {cib_xml} resource create haproxy systemd:haproxy clone op monitor interval=30 --group io_group"
     SimpleCommand().run_cmd(cmd_haproxy)
 
     if push:
@@ -124,7 +124,7 @@ def haproxy(cib_xml, push=False):
 def sspl(cib_xml, push=False):
     """Create sspl clone resource in pacemaker."""
     # Using sspl-ll service file according to the content of SSPL repo
-    cmd_sspl = f"pcs -f {cib_xml} resource create sspl-ll systemd:sspl-ll clone op monitor interval=30"
+    cmd_sspl = f"pcs -f {cib_xml} resource create sspl-ll systemd:sspl-ll clone op monitor interval=30 --group monitor"
     SimpleCommand().run_cmd(cmd_sspl)
 
     if push:
@@ -133,13 +133,12 @@ def sspl(cib_xml, push=False):
 
 def io_stack(cib_xml, push=False):
     """Create IO stack related resources."""
-    resources = [motr_hax, s3auth, haproxy, s3servers]
+    resources = [motr_hax, s3auth, haproxy, s3servers, s3bp]
     for rcs in resources:
         rcs(cib_xml, push)
 
     cmd_clone_group = f"pcs -f {cib_xml} resource clone io_group"
     SimpleCommand().run_cmd(cmd_clone_group)
-    s3bp(cib_xml, push)
 
     if push:
         cib_push(cib_xml)
