@@ -23,7 +23,15 @@
             "action":"resolved"
         }
     ],
-    "iem": [],
+    "iem":[
+        {
+            "alert_type":"fault",
+            "severity":"alert",
+            "component_id":"auth",
+            "module_id":"LDAP",
+            "action":"restart"
+        }
+    ],
     "node:interface:sas":[
         {
             "alert_type":"fault",
