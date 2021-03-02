@@ -16,38 +16,38 @@
 ha:
     post_install:
         cmd: ha_setup post_install
-        args: --config $URL
+        args: --config <URL>
 
     config:
         cmd: ha_setup config
-        args: --config $URL
+        args: --config <URL>
 
     init:
         cmd: ha_setup init
-        args: --config $URL
+        args: --config <URL>
 
     test:
         cmd: ha_setup test
-        args: --config $URL
+        args: --config <URL> [--plan <TYPE>]
 
     upgrade:
         cmd: ha_setup upgrade
-        args: --config $URL
+        args: --config <URL>
 
     reset:
         cmd: ha_setup reset
-        args: --config $URL
+        args: --config <URL>
 
     cleanup:
         cmd: ha_setup cleanup
-        args: --config $URL
+        args: --config <URL>
 
     backup:
         cmd: ha_setup backup
-        args: --location $URL
+        args: --location <URL>
 
     restore:
         cmd: ha_setup restore
-        args: --location $URL
+        args: --location <URL>
 
-support_bundle:
+    support_bundle:
