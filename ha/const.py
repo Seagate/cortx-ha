@@ -71,6 +71,8 @@ PCS_CLEANUP="pcs resource cleanup"
 PCS_FAILCOUNT_STATUS="pcs resource failcount show"
 PCS_STATUS = "pcs status"
 PCS_CLUSTER_DESTROY="pcs cluster destroy"
+CIB_FILE="/var/log/seagate/cortx/ha/cortx-lr2-cib.xml"
+
 
 NODE_DISCONNECTED="Disconnected"
 NODE_ONLINE="Online"

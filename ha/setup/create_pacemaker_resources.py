@@ -21,174 +21,199 @@ from cortx.utils.log import Log
 
 from ha.core.error import CreateResourceError
 from ha.core.error import CreateResourceConfigError
+from ha import const
+
+"""
+# List of resource
+motr-free-space-mon
+s3auth-clone
+    s3auth
+io_group-clone
+    hax-consul
+    hax
+    motr-confd-1
+    motr-ios-1
+    haproxy
+    s3server-1
+    s3server-2
+    s3server-3
+    s3server-4
+    s3backcons
+s3backprod
+sspl-ll-clone
+    sspl-ll
+management
+    kibana
+    csm-agent
+    csm-web
+"""
+
+process = SimpleCommand()
 
 def cib_push(cib_xml):
     """Shortcut to avoid boilerplate pushing CIB file."""
-    verify_push = f"pcs cluster verify -V {cib_xml}"
-    cmd_push = f"pcs cluster cib-push {cib_xml} --config"
-    print(SimpleCommand().run_cmd(verify_push))
-    SimpleCommand().run_cmd(cmd_push)
+    process.run_cmd(f"pcs cluster verify -V {cib_xml}")
+    process.run_cmd(f"pcs cluster cib-push {cib_xml} --config")
 
 def cib_get(cib_xml):
     """Generate CIB file using pcs."""
-    cmd = f"pcs cluster cib {cib_xml}"
-    SimpleCommand().run_cmd(cmd)
-
+    process.run_cmd(f"pcs cluster cib {cib_xml}")
     return cib_xml
 
-
-def motr_hax(cib_xml, push=False):
-    """Create resources that belong to motr group and clone the group."""
+def hax(cib_xml, push=False, **kwargs):
+    """Create resources that belong to hax and clone the group."""
     # TODO cmd_hare_consul is temporary code and should be removed once fixed by hax/provisioner.
-    cmd_hare_consul = f"pcs -f {cib_xml} resource create hax-consul systemd:hare-consul-agent --group io_group"
-    cmd_hax = f"pcs -f {cib_xml} resource create hax systemd:hare-hax --group io_group"
-    cmd_confd = f"pcs -f {cib_xml} resource create motr-confd-1 ocf:seagate:dynamic_fid_service_ra service=m0d fid_service_name=confd --group io_group"
-    cmd_ios = f"pcs -f {cib_xml} resource create motr-ios-1 ocf:seagate:dynamic_fid_service_ra service=m0d fid_service_name=ios --group io_group"
-
-    for s in (cmd_hare_consul, cmd_hax, cmd_confd, cmd_ios):
-        SimpleCommand().run_cmd(s)
-
+    # hax-consul
+    process.run_cmd(f"pcs -f {cib_xml} resource create hax-consul systemd:hare-consul-agent \
+        op start timeout=100s interval=0s \
+        op monitor timeout=30s interval=30s \
+        op stop timeout=120s interval=0s --group io_group")
+    # hax
+    process.run_cmd(f"pcs -f {cib_xml} resource create hax systemd:hare-hax \
+        op start timeout=100s interval=0s \
+        op monitor timeout=30s interval=30s \
+        op stop timeout=120s interval=0s --group io_group")
     if push:
         cib_push(cib_xml)
 
+def motr(cib_xml, push=False, **kwargs):
+    """Configure motr resource."""
+    process.run_cmd(f"pcs -f {cib_xml} resource create motr-confd-1 ocf:seagate:dynamic_fid_service_ra service=m0d fid_service_name=confd \
+        op start timeout=100s interval=0s \
+        op monitor timeout=30s interval=30s \
+        op stop timeout=120s interval=0s --group io_group")
+    process.run_cmd(f"pcs -f {cib_xml} resource create motr-ios-1 ocf:seagate:dynamic_fid_service_ra service=m0d fid_service_name=ios \
+        op start timeout=100s interval=0s \
+        op monitor timeout=30s interval=30s \
+        op stop timeout=120s interval=0s --group io_group")
+    if push:
+        cib_push(cib_xml)
 
-def free_space_monitor(cib_xml, push=False):
+def free_space_monitor(cib_xml, push=False, **kwargs):
     """Create free space monitor resource. 1 per cluster, no affinity."""
-    cmd_fsm = f"pcs -f {cib_xml} resource create motr-free-space-mon systemd:motr-free-space-monitor op monitor interval=30s meta failure-timeout=300s"
-    SimpleCommand().run_cmd(cmd_fsm)
+    process.run_cmd(f"pcs -f {cib_xml} resource create motr-free-space-mon systemd:motr-free-space-monitor \
+        op start timeout=100s interval=0s \
+        op monitor timeout=30s interval=30s \
+        op stop timeout=120s interval=0s meta failure-timeout=300s")
     if push:
         cib_push(cib_xml)
 
-
-def s3servers(cib_xml, instance, push=False):
+def s3servers(cib_xml, push=False, **kwargs):
     """Create resources that belong to s3server group and clone the group.
 
     S3 background consumer is ordered after s3server and co-located with it.
     """
+    try:
+        instance = int(kwargs["s3_instances"])
+    except Exception as e:
+        raise CreateResourceConfigError(f"Invalid s3 instance. Error: {e}")
     for i in range(1, int(instance)+1):
-        cmd_s3server = f"pcs -f {cib_xml} resource create s3server-{i} ocf:seagate:dynamic_fid_service_ra service=s3server fid_service_name=s3service --group io_group"
-        SimpleCommand().run_cmd(cmd_s3server)
-    cmd_s3bc = f"pcs -f {cib_xml} resource create s3backcons systemd:s3backgroundconsumer meta failure-timeout=300s --group io_group"
-    SimpleCommand().run_cmd(cmd_s3bc)
-
+        process.run_cmd(f"pcs -f {cib_xml} resource create s3server-{i} ocf:seagate:dynamic_fid_service_ra service=s3server fid_service_name=s3service \
+            op start timeout=60s interval=0s \
+            op monitor timeout=30s interval=30s \
+            op stop timeout=60s interval=0s --group io_group")
     if push:
         cib_push(cib_xml)
 
+def s3bc(cib_xml, push=False, **kwargs):
+    """Create S3 background consumer."""
+    process.run_cmd(f"pcs -f {cib_xml} resource create s3backcons systemd:s3backgroundconsumer meta failure-timeout=300s \
+        op start timeout=100s interval=0s \
+        op monitor timeout=30s interval=30s \
+        op stop timeout=120s interval=0s --group io_group")
+    if push:
+        cib_push(cib_xml)
 
-def s3bp(cib_xml, push=False):
+def s3bp(cib_xml, push=False, **kwargs):
     """Create S3 background producer.
 
     S3 background producer have to be only 1 per cluster and co-located with
     s3server.
     """
-    cmd_s3bp = f"pcs -f {cib_xml} resource create s3backprod systemd:s3backgroundproducer op monitor interval=30s"
-    SimpleCommand().run_cmd(cmd_s3bp)
-
+    process.run_cmd(f"pcs -f {cib_xml} resource create s3backprod systemd:s3backgroundproducer \
+        op start timeout=60s interval=0s \
+        op monitor timeout=30s interval=30s \
+        op stop timeout=60s interval=0s")
     if push:
         cib_push(cib_xml)
 
-
-def s3auth(cib_xml, push=False):
+def s3auth(cib_xml, push=False, **kwargs):
     """Create haproxy S3 auth server resource in pacemaker."""
-    cmd_s3auth = f"pcs -f {cib_xml} resource create s3auth systemd:s3authserver clone op monitor interval=30"
-    SimpleCommand().run_cmd(cmd_s3auth)
-
+    process.run_cmd(f"pcs -f {cib_xml} resource create s3auth systemd:s3authserver \
+        op start timeout=60s interval=0s \
+        op monitor timeout=30s interval=30s \
+        op stop timeout=60s interval=0s --group io_group")
     if push:
         cib_push(cib_xml)
 
-
-def haproxy(cib_xml, push=False):
+def haproxy(cib_xml, push=False, **kwargs):
     """Create haproxy clone resource in pacemaker."""
-    cmd_haproxy = f"pcs -f {cib_xml} resource create haproxy systemd:haproxy op monitor interval=30 --group io_group"
-    SimpleCommand().run_cmd(cmd_haproxy)
-
+    process.run_cmd(f"pcs -f {cib_xml} resource create haproxy systemd:haproxy \
+        op start timeout=60s interval=0s \
+        op monitor timeout=30s interval=30s \
+        op stop timeout=60s interval=0s --group io_group")
     if push:
         cib_push(cib_xml)
 
-
-def sspl(cib_xml, push=False):
+def sspl(cib_xml, push=False, **kwargs):
     """Create sspl clone resource in pacemaker."""
     # Using sspl-ll service file according to the content of SSPL repo
-    cmd_sspl = f"pcs -f {cib_xml} resource create sspl-ll systemd:sspl-ll clone op monitor interval=30"
-    SimpleCommand().run_cmd(cmd_sspl)
-
+    process.run_cmd(f"pcs -f {cib_xml} resource create sspl-ll systemd:sspl-ll \
+        op start timeout=60s interval=0s \
+        op monitor timeout=30s interval=30s \
+        op stop timeout=60s interval=0s --group monitor_group")
     if push:
         cib_push(cib_xml)
 
-
-def io_stack(cib_xml, s3_count, push=False):
-    """Create IO stack related resources."""
-    free_space_monitor(cib_xml)
-    resources = [motr_hax, s3auth, haproxy]
-    for rcs in resources:
-        rcs(cib_xml, push)
-
-    s3servers(cib_xml, s3_count, push)
-    cmd_clone_group = f"pcs -f {cib_xml} resource clone io_group"
-    SimpleCommand().run_cmd(cmd_clone_group)
-    s3bp(cib_xml, push)
-
-    if push:
-        cib_push(cib_xml)
-
-
-def mgmt_vip(cib_xml, vip, iface, cidr=24, push=False):
+def mgmt_vip(cib_xml, push=False, **kwargs):
     """Create mgmt Virtual IP resource."""
-    cmd = f"pcs -f {cib_xml} resource create mgmt-vip ocf:heartbeat:IPaddr2 \
-ip={vip} cidr_netmask={cidr} nic={iface} iflabel=v1 \
-op start   interval=0s timeout=60s \
-op monitor interval=5s timeout=20s \
-op stop    interval=0s timeout=60s"
-    SimpleCommand().run_cmd(cmd)
-
-    if push:
-        cib_push(cib_xml)
-
-
-def mgmt_resources(cib_xml, push=False):
-    """Create mandatory resources for mgmt stack."""
-    kibana = f"pcs -f {cib_xml} resource create kibana systemd:kibana op monitor interval=30s"
-    agent = f"pcs -f {cib_xml} resource create csm-agent systemd:csm_agent op monitor interval=30s"
-    web = f"pcs -f {cib_xml} resource create csm-web systemd:csm_web op monitor interval=30s"
-
-    for c in (kibana, agent, web):
-        SimpleCommand().run_cmd(c)
-
-    if push:
-        cib_push(cib_xml)
-
-
-def uds(cib_xml, push=False):
-    """Create uds resource."""
-    cmd_uds = f"pcs -f {cib_xml} resource create uds systemd:uds op monitor interval=30s"
-    SimpleCommand().run_cmd(cmd_uds)
-    if push:
-        cib_push(cib_xml)
-
-
-def mgmt_stack(cib_xml, mgmt_vip_cfg, with_uds=False, push=False):
-    """Create Mgmt stack related resources.
-
-    It also creates and defines management group to support colocation and
-    ordering requirements.
-    """
-    mgmt_resources(cib_xml)
-
-    if with_uds:
-        uds(cib_xml)
-
-    cmd = f"pcs -f {cib_xml} resource group add management kibana csm-agent csm-web"
-    SimpleCommand().run_cmd(cmd)
-
+    mgmt_vip_cfg = {k: kwargs[k] for k in ("vip", "cidr", "iface")
+                    if k in kwargs and kwargs[k] is not None}
+    if len(mgmt_vip_cfg) not in (0, 3):
+        raise CreateResourceConfigError("Given mgmt VIP configuration is incomplete")
     if mgmt_vip_cfg:
-        mgmt_vip(cib_xml, **mgmt_vip_cfg, push=False)
-        cmd_group = f"pcs -f {cib_xml} resource group add management kibana --before csm-agent"
-        SimpleCommand().run_cmd(cmd_group)
-
+        process.run_cmd(f"pcs -f {cib_xml} resource create mgmt-vip ocf:heartbeat:IPaddr2 \
+            ip={mgmt_vip_cfg['vip']} cidr_netmask={mgmt_vip_cfg['cidr']} nic={mgmt_vip_cfg['iface']} iflabel=v1 \
+            op start timeout=60s interval=0s \
+            op monitor timeout=30s interval=30s \
+            op stop timeout=60s interval=0s --group management_group")
     if push:
         cib_push(cib_xml)
 
-def config_constraint(cib_xml, uds, push=False):
+def csm(cib_xml, push=False, **kwargs):
+    """Create mandatory resources for mgmt stack."""
+    process.run_cmd(f"pcs -f {cib_xml} resource create csm-agent systemd:csm_agent \
+        op start timeout=60s interval=0s \
+        op monitor timeout=30s interval=30s \
+        op stop timeout=120s interval=0s --group management_group")
+    process.run_cmd(f"pcs -f {cib_xml} resource create csm-web systemd:csm_web \
+        op start timeout=60s interval=0s \
+        op monitor timeout=30s interval=30s \
+        op stop timeout=60s interval=0s --group management_group")
+    if push:
+        cib_push(cib_xml)
+
+def kibana(cib_xml, push=False, **kwargs):
+    """Create mandatory resources for mgmt stack."""
+    process.run_cmd(f"pcs -f {cib_xml} resource create kibana systemd:kibana \
+        op start timeout=60s interval=0s \
+        op monitor timeout=30s interval=30s \
+        op stop timeout=60s interval=0s --group management_group")
+    if push:
+        cib_push(cib_xml)
+
+def uds(cib_xml, push=False, **kwargs):
+    """Create uds resource."""
+    with_uds = kwargs["uds"] if "uds" in kwargs else False
+    if with_uds:
+        process.run_cmd(f"pcs -f {cib_xml} resource create uds systemd:uds \
+            op start timeout=60s interval=0s \
+            op monitor timeout=30s interval=30s \
+            op stop timeout=60s interval=0s")
+        if push:
+            cib_push(cib_xml)
+
+def config_constraint(cib_xml, push=False, **kwargs):
     """
     Configure all constaints
 
@@ -198,29 +223,62 @@ def config_constraint(cib_xml, uds, push=False):
     constraints = [
             f"pcs -f {cib_xml} constraint order io_group-clone then motr-free-space-mon",
             f"pcs -f {cib_xml} constraint colocation add motr-free-space-mon with io_group-clone",
-            f"pcs -f {cib_xml} constraint order io_group-clone then s3backprod"
-            f"pcs -f {cib_xml} constraint colocation add uds with csm-agent score=INFINITY",
+            f"pcs -f {cib_xml} constraint colocation add s3backprod with io_group-clone"
             # According to EOS-9258, there is a bug which requires UDS to be started after csm_agent
+            f"pcs -f {cib_xml} constraint colocation add uds with csm-agent score=INFINITY",
             f"pcs -f {cib_xml} constraint order csm-agent then uds"
         ]
+    with_uds = kwargs["uds"] if "uds" in kwargs else False
     for c in constraints:
-        if uds == False and "uds" in c:
+        if with_uds == False and "uds" in c:
             continue
-        SimpleCommand().run_cmd(c)
+        process.run_cmd(c)
+    if push:
+        cib_push(cib_xml)
 
-def create_all_resources(cib_xml="/var/log/seagate/cortx/ha/cortx-lr2-cib.xml",
-                         push=True, **kwargs):
+core_io = [hax, motr, haproxy, s3auth, s3servers]
+io_helper_aa = [s3bc]
+io_helper_ap = [free_space_monitor, s3bp]
+monitor_config = [sspl]
+management_config = [mgmt_vip, kibana, csm, uds]
+# TODO: ha_group
+
+def io_stack(cib_xml, push, **kwargs):
+    """Create IO stack related resources."""
+    # Create core io resources
+    for fun in core_io:
+        fun(cib_xml, push, **kwargs)
+    # Create helper active_active io resources
+    for fun in io_helper_aa:
+        fun(cib_xml, push, **kwargs)
+    # Create helper active_passive io resources
+    for fun in io_helper_ap:
+        fun(cib_xml, push, **kwargs)
+    process.run_cmd(f"pcs -f {cib_xml} resource clone io_group")
+    if push:
+        cib_push(cib_xml)
+
+def monitor_stack(cib_xml, push, **kwargs):
+    """Configure monitor stack"""
+    for fun in monitor_config:
+        fun(cib_xml, push, **kwargs)
+    process.run_cmd(f"pcs -f {cib_xml} resource clone monitor_group")
+    if push:
+        cib_push(cib_xml)
+
+def management_group(cib_xml, push, **kwargs):
+    """Configure management group"""
+    for fun in management_config:
+        fun(cib_xml, push, **kwargs)
+    if push:
+        cib_push(cib_xml)
+
+def create_all_resources(cib_xml=const.CIB_FILE, push=True, **kwargs):
     """Populate the cluster with all Cortx resources.
 
     Parameters:
         cib_xml - file where CIB XML shall be stored (optional)
         push - whether changes shall be actually applied (optional)
-        vip - mgmt virtual ip (example: 10.0.0.6)
-        cidr - netmask for mgmt vip (example: 24)
-        iface - interface to configure mgmt vip (example: eno1)
-
-        vip, cidr, iface options are validated to be passed together.
-
     Returns: None
 
     Exceptions:
@@ -228,19 +286,16 @@ def create_all_resources(cib_xml="/var/log/seagate/cortx/ha/cortx-lr2-cib.xml",
         CreateResourceConfigError: exception is generated if set of argument is
         not empty but incomplete.
     """
-    mgmt_vip_cfg = {k: kwargs[k] for k in ("vip", "cidr", "iface")
-                    if k in kwargs and kwargs[k] is not None}
-    if len(mgmt_vip_cfg) not in (0, 3):
-        raise CreateResourceConfigError("Given mgmt VIP configuration is incomplete")
-
-    with_uds = kwargs["uds"] if "uds" in kwargs else False
-    s3_instances = int(kwargs["s3_instances"])
     try:
         cib_get(cib_xml)
-        io_stack(cib_xml, s3_instances)
-        sspl(cib_xml)
-        mgmt_stack(cib_xml, mgmt_vip_cfg, with_uds)
-        config_constraint(cib_xml, with_uds)
+        # Configure io resource
+        io_stack(cib_xml, False, **kwargs)
+        # Configuration of monitor
+        monitor_stack(cib_xml, False, **kwargs)
+        # Configure of management group
+        management_group(cib_xml, False, **kwargs)
+        # Configure constraint
+        config_constraint(cib_xml, False, **kwargs)
         if push:
             cib_push(cib_xml)
     except Exception:
