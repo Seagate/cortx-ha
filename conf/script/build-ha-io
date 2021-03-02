@@ -685,11 +685,6 @@ clusterip_rsc_add() {
             score=-INFINITY '#uname' eq $lnode and hax-running eq 0
         sudo pcs -f $cib_file constraint location ClusterIP-clone rule \
             score=-INFINITY '#uname' eq $rnode and hax-running eq 0
-        # Make ClusterIP to retry to start on original node after specified
-        # timeout since last failure. This is supposed to recover resource in
-        # case of sporadic failures, but will clean errors in 'pcs status'
-        # output.
-        sudo pcs -f $cib_file resource meta ClusterIP-clone failure-timeout=300
     fi
 }
 
