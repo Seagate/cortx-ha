@@ -1,15 +1,8 @@
 setuptools==36.0.1
 pyinstaller==3.5
-aiohttp==3.6.1
-paramiko==2.7.1
 PyYAML==5.1.2
 argparse==1.4.0
-prettytable==0.7.2
-pika==1.1.0
-idna==2.8
 dataclasses==0.7
 python-consul==1.1.0
-elasticsearch>=6.0.0,<7.0.0
-elasticsearch-dsl==6.4.0
 pathlib==1.0.1
 pytest==5.4.2
