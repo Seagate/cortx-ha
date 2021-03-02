@@ -19,20 +19,15 @@ import argparse
 from ha.execute import SimpleCommand
 from cortx.utils.log import Log
 
-
-class CreateResourceError(Exception):
-    """Exception to indicate any failure happened during resource creation."""
-
-
-class CreateResourceConfigError(CreateResourceError):
-    """Exception to indicate that given resource configuration is incorrect or incomplete."""
-
+from ha.core.error import CreateResourceError
+from ha.core.error import CreateResourceConfigError
 
 def cib_push(cib_xml):
     """Shortcut to avoid boilerplate pushing CIB file."""
+    verify_push = f"pcs cluster verify -V {cib_xml}"
     cmd_push = f"pcs cluster cib-push {cib_xml} --config"
+    print(SimpleCommand().run_cmd(verify_push))
     SimpleCommand().run_cmd(cmd_push)
-
 
 def cib_get(cib_xml):
     """Generate CIB file using pcs."""
@@ -61,14 +56,6 @@ def free_space_monitor(cib_xml, push=False):
     """Create free space monitor resource. 1 per cluster, no affinity."""
     cmd_fsm = f"pcs -f {cib_xml} resource create motr-free-space-mon systemd:motr-free-space-monitor op monitor interval=30s meta failure-timeout=300s"
     SimpleCommand().run_cmd(cmd_fsm)
-
-    constraints = [
-            f"pcs -f {cib_xml} constraint order motr-ios-1 then motr-free-space-mon",
-            f"pcs -f {cib_xml} constraint colocation add motr-free-space-mon with motr-ios-1"
-            ]
-    for c in constraints:
-        SimpleCommand().run_cmd(c)
-
     if push:
         cib_push(cib_xml)
 
@@ -95,10 +82,7 @@ def s3bp(cib_xml, push=False):
     s3server.
     """
     cmd_s3bp = f"pcs -f {cib_xml} resource create s3backprod systemd:s3backgroundproducer op monitor interval=30s"
-    cmd_order = f"pcs -f {cib_xml} constraint order io_group-clone then s3backprod"
-
-    for s in (cmd_s3bp, cmd_order):
-        SimpleCommand().run_cmd(s)
+    SimpleCommand().run_cmd(cmd_s3bp)
 
     if push:
         cib_push(cib_xml)
@@ -134,6 +118,7 @@ def sspl(cib_xml, push=False):
 
 def io_stack(cib_xml, s3_count, push=False):
     """Create IO stack related resources."""
+    free_space_monitor(cib_xml)
     resources = [motr_hax, s3auth, haproxy]
     for rcs in resources:
         rcs(cib_xml, push)
@@ -174,16 +159,9 @@ def mgmt_resources(cib_xml, push=False):
 
 
 def uds(cib_xml, push=False):
-    """Create uds resource and constraints."""
+    """Create uds resource."""
     cmd_uds = f"pcs -f {cib_xml} resource create uds systemd:uds op monitor interval=30s"
     SimpleCommand().run_cmd(cmd_uds)
-    constraints = [
-            f"pcs -f {cib_xml} constraint colocation add uds with csm-agent score=INFINITY",
-            # According to EOS-9258, there is a bug which requires UDS to be started after csm_agent
-            f"pcs -f {cib_xml} constraint order csm-agent then uds"
-            ]
-    for c in constraints:
-        SimpleCommand().run_cmd(c)
     if push:
         cib_push(cib_xml)
 
@@ -210,6 +188,25 @@ def mgmt_stack(cib_xml, mgmt_vip_cfg, with_uds=False, push=False):
     if push:
         cib_push(cib_xml)
 
+def config_constraint(cib_xml, uds, push=False):
+    """
+    Configure all constaints
+
+    Args:
+        cib_xml (str): cib cluster file.
+    """
+    constraints = [
+            f"pcs -f {cib_xml} constraint order io_group-clone then motr-free-space-mon",
+            f"pcs -f {cib_xml} constraint colocation add motr-free-space-mon with io_group-clone",
+            f"pcs -f {cib_xml} constraint order io_group-clone then s3backprod"
+            f"pcs -f {cib_xml} constraint colocation add uds with csm-agent score=INFINITY",
+            # According to EOS-9258, there is a bug which requires UDS to be started after csm_agent
+            f"pcs -f {cib_xml} constraint order csm-agent then uds"
+        ]
+    for c in constraints:
+        if uds == False and "uds" in c:
+            continue
+        SimpleCommand().run_cmd(c)
 
 def create_all_resources(cib_xml="/var/log/seagate/cortx/ha/cortx-lr2-cib.xml",
                          push=True, **kwargs):
@@ -243,38 +240,8 @@ def create_all_resources(cib_xml="/var/log/seagate/cortx/ha/cortx-lr2-cib.xml",
         io_stack(cib_xml, s3_instances)
         sspl(cib_xml)
         mgmt_stack(cib_xml, mgmt_vip_cfg, with_uds)
+        config_constraint(cib_xml, with_uds)
         if push:
             cib_push(cib_xml)
     except Exception:
         raise CreateResourceError("Failed to populate cluster with resources")
-
-
-def _parse_input_args():
-    """Parse and validate input arguments passed by mini-provisioner or CLI."""
-    parser = argparse.ArgumentParser(
-            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-            description="Create resources for Cortx cluster")
-    parser.add_argument("--dry-run", action="store_true", help="Generate CIB XML but don't push")
-    parser.add_argument("--with-uds", action="store_true", default=False, help="Also create UDS resource")
-    parser.add_argument("--cib-xml", type=str, default="/var/log/seagate/cortx/ha/cortx-lr2-cib.xml", help="File name to store generated CIB")
-    group = parser.add_argument_group("Management", "Parameters to setup virtual IP if needed")
-    group.add_argument("--vip", type=str, nargs="?", help="Virtual mgmt IP address")
-    group.add_argument("--cidr", type=int, nargs="?", help="Netmask for mgmt VIP. Ex.: 24")
-    group.add_argument("--iface", type=str, nargs="?", help="Network interface for mgmt VIP")
-    return parser.parse_args()
-
-
-def _main():
-    # Workaround to make SimpleCommand work, not crash
-    Log.init(service_name="create_pacemaker_resources",
-             log_path="/var/log/seagate/cortx/ha", level="INFO")
-
-    args = _parse_input_args()
-
-    create_all_resources(args.cib_xml, vip=args.vip, cidr=args.cidr,
-                         iface=args.iface, s3_instances=args.s3_instances, push=not args.dry_run,
-                         uds=args.with_uds)
-
-
-if __name__ == "__main__":
-    _main()

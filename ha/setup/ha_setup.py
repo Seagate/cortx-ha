@@ -21,39 +21,21 @@ import inspect
 import traceback
 import os
 import shutil
+import pathlib
 
 from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
 from cortx.utils.validator.v_pkg import PkgV
 from cortx.utils.security.cipher import Cipher
+sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..'))
 from ha.execute import SimpleCommand
 from ha import const
 from ha.setup.create_cluster import cluster_auth, cluster_create
 from ha.setup.create_pacemaker_resources import create_all_resources
-
-class HaPrerequisiteException(Exception):
-    """
-    Exception to indicate that some error happened during HA prerequisite checks.
-    """
-    pass
-
-class HaConfigException(Exception):
-    """
-    Exception to indicate that config command failed during cluster config.
-    """
-    pass
-
-class HaInitException(Exception):
-    """
-    Exception to indicate that cleanup command failed due to some error.
-    """
-    pass
-
-class HaCleanupException(Exception):
-    """
-    Exception to indicate that cleanup command failed due to some error.
-    """
-    pass
+from ha.core.error import HaPrerequisiteException
+from ha.core.error import HaConfigException
+from ha.core.error import HaInitException
+from ha.core.error import HaCleanupException
 
 class Cmd:
     """
@@ -411,7 +393,7 @@ def main(argv: dict):
         desc = "HA Setup command"
         command = Cmd.get_command(desc, argv[1:])
         command.process()
-
+        print(f"Mini Provisioning {sys.argv[1]} configured sussesfully.")
     except Exception:
         Log.error("%s\n" % traceback.format_exc())
         sys.stderr.write(f"Setup command:{argv[1]} failed for cortx-ha\n")
@@ -422,6 +404,6 @@ if __name__ == '__main__':
     Conf.init(delim='.')
     Conf.load(const.HA_GLOBAL_INDEX, f"yaml://{const.SOURCE_CONFIG_FILE}")
     log_path = Conf.get(const.HA_GLOBAL_INDEX, "LOG.path")
-    log_level = Conf.get(const.HA_GLOBAL_INDEX, "LOG.level")
+    log_level = "DEBUG"
     Log.init(service_name='ha_setup', log_path=log_path, level=log_level)
     sys.exit(main(sys.argv))
