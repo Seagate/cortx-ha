@@ -86,7 +86,7 @@ argsfile=${1:-}
 hare_dir=/var/lib/hare
 
 if [[ -f $argsfile ]]; then
-    while IFS=': ' read name value || [[ $name =~ [a-zA-Z0-9] ]]; do
+    while IFS=': ' read name value; do
        case $name in
            left-node)    lnode=$value   ;;
            right-node)   rnode=$value   ;;
