@@ -52,22 +52,8 @@ dynamic_fid_service_ra =  Analysis([ha_path + '/ha/resource/dynamic_fid_service_
         cipher=block_cipher,
         noarchive=False)
 
-ha_setup =  Analysis([ha_path + '/ha/setup/ha_setup.py'],
-        pathex=[ha_path],
-        binaries=[],
-        datas=[],
-        hiddenimports=[],
-        hookspath=[],
-        runtime_hooks=[],
-        excludes=['numpy', 'matplotlib'],
-        win_no_prefer_redirects=False,
-        win_private_assemblies=False,
-        cipher=block_cipher,
-        noarchive=False)
-
 MERGE((cortxha, 'cortxha', 'cortxha'),
-        (dynamic_fid_service_ra, 'dynamic_fid_service_ra', 'dynamic_fid_service_ra'),
-        (ha_setup, 'ha_setup', 'ha_setup'))
+        (dynamic_fid_service_ra, 'dynamic_fid_service_ra', 'dynamic_fid_service_ra'))
 
 # cortxha
 cortxha_pyz = PYZ(cortxha.pure, cortxha.zipped_data,
@@ -99,21 +85,6 @@ dynamic_fid_service_ra_exe = EXE(dynamic_fid_service_ra_pyz,
         upx=True,
         console=True )
 
-# ha_setup
-ha_setup_pyz = PYZ(ha_setup.pure, ha_setup.zipped_data,
-        cipher=block_cipher)
-
-ha_setup_exe = EXE(ha_setup_pyz,
-        ha_setup.scripts,
-        [],
-        exclude_binaries=True,
-        name='ha_setup',
-        debug=False,
-        bootloader_ignore_signals=False,
-        strip=False,
-        upx=True,
-        console=True )
-
 coll = COLLECT(
         # cortxha
         cortxha_exe,
@@ -126,13 +97,7 @@ coll = COLLECT(
         dynamic_fid_service_ra.binaries,
         dynamic_fid_service_ra.zipfiles,
         dynamic_fid_service_ra.datas,
-     
-        # cortxha
-        ha_setup_exe,
-        ha_setup.binaries,
-        ha_setup.zipfiles,
-        ha_setup.datas,
-        
+
         strip=False,
         upx=True,
         upx_exclude=[],
