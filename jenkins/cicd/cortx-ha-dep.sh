@@ -56,13 +56,13 @@ else
     source "${VENV}/bin/activate"
 
     echo "Installing python packages..."
-    python3 -m pip install --upgrade pip
-    python3 -m pip install git+https://"${TOKEN}"@github.com/Seagate/cortx-utils.git#subdirectory=py-utils
+    pip install --upgrade pip
+    pip install git+https://"${TOKEN}"@github.com/Seagate/cortx-py-utils.git
     req_file=${BASE_DIR}/jenkins/pyinstaller/requirements.txt
-    python3 -m pip install -r "$req_file" || {
+    pip install -r "$req_file" || {
         echo "Unable to install package from $req_file"; exit 1;
     };
-    deactivate
+    deavtivate
 
     echo "Execute:"
     echo "**************************************"
