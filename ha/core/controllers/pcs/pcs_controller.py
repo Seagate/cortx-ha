@@ -16,6 +16,8 @@
 # cortx-questions@seagate.com.
 
 from ha.core.controllers.element_controller import ElementController
+from ha.execute import SimpleCommand
+
 
 class PcsController(ElementController):
     """ Generic Controller for Pcs to execute common pcs command """
@@ -25,3 +27,4 @@ class PcsController(ElementController):
         Initalize pcs controller
         """
         super(PcsController, self).__init__()
+        self._execute = SimpleCommand()

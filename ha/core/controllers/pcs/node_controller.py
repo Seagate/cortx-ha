@@ -19,6 +19,9 @@ from ha.core.error import HAUnimplemented
 from ha.core.controllers.pcs.pcs_controller import PcsController
 from ha.core.controllers.node_controller import NodeController
 from ha.core.controllers.controller_annotation import controller_error_handler
+from ha import const
+from cortx.utils.log import Log
+
 
 class PcsNodeController(NodeController, PcsController):
     """ Controller to manage node. """
@@ -99,7 +102,19 @@ class PcsNodeController(NodeController, PcsController):
             ([dict]): Return dictionary. {"status": "", "msg":{}}}
                 status: Succeeded, Failed, InProgress
         """
-        raise HAUnimplemented("This operation is not implemented.")
+        all_nodes_status = dict()
+        _output, _err, _rc = self._execute.run_cmd(const.PCS_STATUS_NODES, check_error=False)
+        if nodeids is not None:
+            for nodeid in nodeids:
+                if nodeid in _output:
+                    _node_status = "unknown"
+                    for status in _output.split("\n"):
+                        nodes = status.split(":", 1)
+                        if nodeid in nodes[1]:
+                            _node_status = nodes[0].trim()
+                    all_nodes_status[nodeid] = _node_status
+        return {"status": "Succeeded", "msg": all_nodes_status}
+
 
 class PcsVMNodeController(PcsNodeController):
     @controller_error_handler
@@ -114,7 +129,18 @@ class PcsVMNodeController(PcsNodeController):
             ([dict]): Return dictionary. {"status": "", "msg":""}
                 status: Succeeded, Failed, InProgress
         """
-        raise HAUnimplemented("This operation is not implemented.")
+        _res = self.status([nodeid])
+        _all_node_status = _res.get("msg")
+        _node_status = _all_node_status.get(nodeid)
+        if _node_status == "Standby":
+            # make node unstandby
+            _output, _err, _rc = self._execute.run_cmd(const.PCS_NODE_UNSTANDBY.replace("<node>", nodeid),
+                                                       check_error=False)
+            return {"status": "", "msg": _output}
+        elif _node_status == "Offline":
+            # start node not in scope of VM
+            Log.error("Operation not available for VM")
+        return {"status": "Succeeded", "msg": "Node s"}
 
     @controller_error_handler
     def stop(self, nodeid: str) -> dict:

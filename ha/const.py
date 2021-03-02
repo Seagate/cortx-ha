@@ -13,6 +13,8 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
+from enum import Enum
+
 #LOGS
 RA_LOG_DIR="/var/log/seagate/cortx/ha"
 PACEMAKER_LOG="/var/log/pacemaker.log"
@@ -90,6 +92,7 @@ PCS_CLUSTER_START="pcs cluster start --all"
 PCS_CLUSTER_STATUS="pcs cluster status"
 PCS_CLUSTER_UNSTANDBY="pcs cluster unstandby --all"
 PCS_STATUS_NODES="pcs status nodes"
+PCS_NODE_UNSTANDBY="pcs node unstandby <node>"
 
 # Cluster manager
 CM_CONTROLLER_INDEX="controller_interface"
@@ -98,3 +101,10 @@ CM_ELEMENT=["cluster", "node", "service", "storageset"]
 CONTROLLER_FAILED="Failed"
 CONTROLLER_SUCCESS="Success"
 CONTROLLER_INPROGRESS="InProgress"
+
+
+class NODE_STATUSES(Enum):
+    OFFLINE = "Offline"
+    STANDBY = "Standby"
+    ONLINE = "Offline"
+
