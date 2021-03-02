@@ -45,8 +45,8 @@ def cib_get(cib_xml):
 def motr_hax(cib_xml, push=False):
     """Create resources that belong to motr group and clone the group."""
     cmd_hax = f"pcs -f {cib_xml} resource create hax systemd:hare-hax --group io_group"
-    cmd_confd = f"pcs -f {cib_xml} resource create motr-confd-1 ocf:seagate:dynamic_fid_service_ra service=m0d fid_service_name=confd --group io_group"
-    cmd_ios = f"pcs -f {cib_xml} resource create motr-ios-1 ocf:seagate:dynamic_fid_service_ra service=m0d fid_service_name=ios --group io_group"
+    cmd_confd = f"pcs -f {cib_xml} resource create motr-confd ocf:seagate:dynamic_fid_service_ra service=m0d fid_service_name=confd --group io_group"
+    cmd_ios = f"pcs -f {cib_xml} resource create motr-ios ocf:seagate:dynamic_fid_service_ra service=m0d fid_service_name=ios --group io_group"
 
     for s in (cmd_hax, cmd_confd, cmd_ios):
         SimpleCommand().run_cmd(s)
@@ -61,8 +61,8 @@ def free_space_monitor(cib_xml, push=False):
     SimpleCommand().run_cmd(cmd_fsm)
 
     constraints = [
-            f"pcs -f {cib_xml} constraint order motr-ios-1 then motr-free-space-mon",
-            f"pcs -f {cib_xml} constraint colocation add motr-free-space-mon with motr-ios-1"
+            f"pcs -f {cib_xml} constraint order motr-ios then motr-free-space-mon",
+            f"pcs -f {cib_xml} constraint colocation add motr-free-space-mon with motr-ios"
             ]
     for c in constraints:
         SimpleCommand().run_cmd(c)
