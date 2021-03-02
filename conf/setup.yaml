@@ -45,6 +45,3 @@ ha:
     ha-cleanup:
         script: /opt/seagate/cortx/ha/conf/script/build-cortx-ha
         args: cleanup
-
-support_bundle:
-    - cortxha support_bundle create

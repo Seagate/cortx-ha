@@ -23,7 +23,6 @@ from cortx.utils.ha.dm.decision_monitor import DecisionMonitor
 from ha.core.error import HAUnimplemented
 from ha.core.node.replacement.refresh_context import PcsRefreshContex
 from ha.execute import SimpleCommand
-from ha.core.support_bundle.ha_bundle import HABundle, CortxHABundle
 from ha import const
 
 class ClusterManager:
@@ -80,17 +79,24 @@ class PcsClusterManager(ClusterManager):
             args ([dict]): Parameter pass to request to process.
         """
         # TODO Add validater
+        # TODO Optimize if else
         if action == const.CLUSTER_COMMAND:
-            if args.cluster_action in ["add_node", "remove_node"]:
-                getattr(self, args.cluster_action)(args.node)
-            else:
-                getattr(self, args.cluster_action)()
+            if args.cluster_action == "add_node":
+                self.add_node(args.node)
+            elif args.cluster_action == "remove_node":
+                self.remove_node(args.node)
+            elif args.cluster_action == "start":
+                self.start()
+            elif args.cluster_action == "stop":
+                self.stop()
+            elif args.cluster_action == "status":
+                self.status()
+            elif args.cluster_action == "shutdown":
+                self.shutdown()
         elif action == const.NODE_COMMAND:
             self._refresh_contex.process_request(action, args)
-        elif action == const.BUNDLE_COMMAND:
-            HABundle().process_request(action, args, output)
         else:
-            raise HAUnimplemented("This feature is not supported...")
+            raise HAUnimplemented()
 
     def node_status(self, node):
         """
@@ -113,7 +119,7 @@ class PcsClusterManager(ClusterManager):
                 Log.debug(f"For {node} node rc: {node_rc}, status: {node_status}")
                 return node_rc, node_status
         Log.debug(f"{node} is not detected in cluster, treating as disconnected node")
-        return 1, const.NODE_DISCONNECTED
+        return 1, "Disconnected"
 
     def remove_node(self, node):
         """
@@ -121,8 +127,6 @@ class PcsClusterManager(ClusterManager):
         """
         # TODO: Limitation for node remove (in cluster node cannot remove it self)
         # Check if node already removed
-        _output, _err, _rc = self._execute.run_cmd(const.PCS_STATUS)
-        Log.info(f"Cluster status output before remove node: {_output}, {_err}, {_rc}")
         _rc, status = self.node_status(node)
         if _rc != 1:
             self._execute.run_cmd(f"pcs cluster node remove {node} --force")
@@ -135,65 +139,45 @@ class PcsClusterManager(ClusterManager):
                 Log.info(f"Node {node} removed from cluster")
         else:
             Log.info(f"Node {node} already removed from cluster")
-        _output, _err, _rc = self._execute.run_cmd(const.PCS_STATUS)
-        Log.info(f"Cluster status output after remove node: {_output}, {_err}, {_rc}")
 
     def add_node(self, node):
         """
         Add new node to pcs cluster
         """
-        _output, _err, _rc = self._execute.run_cmd(const.PCS_STATUS)
-        Log.info(f"Cluster status output before add node: {_output}, {_err}, {_rc}")
         # TODO: Limitation for node add (in cluster node cannot add it self)
         commands = [f"pcs cluster node add {node}",
+                "pcs resource cleanup --all",
                 f"pcs cluster enable {node}",
-                f"pcs cluster start {node}",
-                "pcs resource cleanup --all"]
+                f"pcs cluster start {node}"]
         _rc, status = self.node_status(node)
         if _rc != 0:
             for command in commands:
-                _output, _err, _rc = self._execute.run_cmd(command)
-                Log.info(f"{command} : {_output}, {_err}, {_rc}")
-                time.sleep(5)
-            retries = 0
-            add_node_flag = -1
-            while retries < 12:
-                _rc, status = self.node_status(node)
-                Log.info(f"{node} status rc: {_rc}, status: {status}")
-                if status == const.NODE_ONLINE:
-                    Log.info(f"Node {node} added to cluster")
-                    add_node_flag = 0
-                    break
-                elif status != const.NODE_DISCONNECTED:
-                    add_node_flag = 1
-                    Log.info(f"Node {node} added to cluster but not Online check status again.")
-                retries += 1
-                time.sleep(10)
-            if add_node_flag == 1:
-                Log.info(f"Node {node} added to cluster but not in Online state.")
-            elif add_node_flag == 0:
-                Log.info(f"Node {node} Successfully added to cluster and in Online state")
+                self._execute.run_cmd(command)
+            time.sleep(20)
+            _rc, status = self.node_status(node)
+            Log.debug(f"{node} status rc: {_rc}, status: {status}")
+            if status != 'Online':
+                Log.error(f"Failed to add {node}")
+                raise Exception(f"Failed to add {node}")
             else:
-                raise Exception(f"Failed to add {node} to cluster")
+                Log.info(f"Node {node} added to cluster")
         else:
             Log.info(f"Node {node} already added to cluster")
-        _output, _err, _rc = self._execute.run_cmd(const.PCS_STATUS)
-        Log.info(f"Cluster status output after add node: {_output}, {_err}, {_rc}")
 
     def start(self):
         # TODO Add wrapper to hctl pcswrap
-        raise HAUnimplemented("This feature is not supported...")
+        raise HAUnimplemented()
 
     def stop(self):
         # TODO Add wrapper to hctl pcswrap
-        raise HAUnimplemented("This feature is not supported...")
+        raise HAUnimplemented()
 
     def status(self):
         # TODO Add wrapper to hctl pcswrap
-        raise HAUnimplemented("This feature is not supported...")
+        raise HAUnimplemented()
 
     def shutdown(self):
-        raise HAUnimplemented("This feature is not supported...")
+        raise HAUnimplemented()
 
 class CortxClusterManager:
     def __init__(self):
@@ -218,10 +202,6 @@ class CortxClusterManager:
         self._output = output
         if action == const.CLUSTER_COMMAND:
             getattr(self, args.cluster_action)()
-        elif action == const.BUNDLE_COMMAND:
-            CortxHABundle().process_request(action, args, output)
-        else:
-            raise HAUnimplemented("This feature is not supported...")
 
     def remove_node(self):
         raise HAUnimplemented("Cluster remove node is not supported.")

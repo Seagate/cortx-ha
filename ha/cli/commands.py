@@ -32,21 +32,21 @@ class NodeCommand(Command):
             component_parser (<class 'argparse._SubParsersAction'>): argparse to add subparser.
         """
         node_parser = component_parser.add_parser("node",
-            help = "This command is used to manage node level operation")
+            help = "Node management")
         action_subparser = node_parser.add_subparsers(
             title="Node Actions",
             dest="node_action")
 
         refresh_parser = action_subparser.add_parser("refresh",
-            help = "Refresh nodes to recheck service status and take particular action")
+            help = "Refresh nodes")
         refresh_parser.add_argument("--node",
-            help="Provide node name to take action on particular node.")
+            help="Refresh services for given node")
         refresh_parser.add_argument("--soft", action='store_true',
-            help="Check node status and then perform action only if require.")
+            help="Check status and then perform refresh")
         refresh_parser.add_argument("--hard", action='store_true',
             help="Perform refresh forcefully")
         refresh_parser.add_argument("--data-only", action='store_true',
-            help="Forget all previous data and collect new data in db to take action.")
+            help="Perform refresh forcefully")
 
 class ClusterCommand(Command):
     @staticmethod
@@ -58,32 +58,32 @@ class ClusterCommand(Command):
             component_parser (<class 'argparse._SubParsersAction'>): argparse to add subparser.
         """
         cluster_parser =  component_parser.add_parser("cluster",
-            help = "Manage cluster operations like start, stop cluster.")
+            help = "Manage cluster")
         action_subparser = cluster_parser.add_subparsers(
             title="Cluster Actions",
             dest="cluster_action")
 
         add_node_parser = action_subparser.add_parser("add_node",
-            help = "Add new node to existing cluster to manage their service.")
+            help = "Add node to cluster")
         add_node_parser.add_argument("node",
-            help="Provide node name to add it in cluster.", action="store")
+            help="Node name", action="store")
 
         remove_node_parser = action_subparser.add_parser("remove_node",
-            help = "Remove node from cluster")
+            help = "Remove node to cluster")
         remove_node_parser.add_argument("node",
-            help="Provide node name to remove it from the cluster.", action="store")
+            help="Node name", action="store")
 
         start_parser = action_subparser.add_parser("start",
-            help = "Start cluster and it's services.")
+            help = "Start cluster")
 
         stop_parser = action_subparser.add_parser("stop",
-            help = "Stop cluster and it's services.")
+            help = "Stop cluster")
 
         status_parser = action_subparser.add_parser("status",
-            help = "Get cluster status.")
+            help = "cluster status")
 
         shutdown_parser = action_subparser.add_parser("shutdown",
-            help = "Shutdown cluster.")
+            help = "shutdown cluster")
 
 class ServiceCommand(Command):
     @staticmethod
@@ -95,7 +95,7 @@ class ServiceCommand(Command):
             component_parser (<class 'argparse._SubParsersAction'>): argparse to add subparser.
         """
         service_parser =  component_parser.add_parser("service",
-                    help = "Manage cluster services and it's operations.")
+                    help = "Manage service")
         action_subparser = service_parser.add_subparsers(
             title="Service Actions",
             dest="service_action")
@@ -105,40 +105,18 @@ class ServiceCommand(Command):
         start_parser.add_argument("service_name",
             help="Service name", action="store")
         start_parser.add_argument("--node",
-            help="Provide node name to start service on particular node")
+            help="Node name")
 
         stop_parser = action_subparser.add_parser("stop",
             help = "Stop Service")
         stop_parser.add_argument("service_name",
             help="Service name", action="store")
         stop_parser.add_argument("--node",
-            help="Provide node name to stop service on particular node")
+            help="Node name")
 
         status_parser = action_subparser.add_parser("status",
-            help = "Status of service")
+            help = "status Service")
         status_parser.add_argument("service_name",
             help="Service name", action="store")
         status_parser.add_argument("--node",
-            help="Provide node name to get status of service.")
-
-class SupportBundleCommand(Command):
-    @staticmethod
-    def add_args(component_parser):
-        """
-        Add parser for support bundle command
-
-        Args:
-            component_parser (<class 'argparse._SubParsersAction'>): argparse to add subparser.
-        """
-        bundle_parser =  component_parser.add_parser("support_bundle",
-                                help = "Manage support bundle operation like create.")
-        action_subparser = bundle_parser.add_subparsers(
-            title="Support Bundle",
-            dest="bundle_action")
-
-        create_parser = action_subparser.add_parser("create",
-            help = "Create Support Bundle")
-        create_parser.add_argument("id",
-            help="Bundle id", action="store")
-        create_parser.add_argument("path",
-            help="Bundle Path", action="store")
+            help="Node name")

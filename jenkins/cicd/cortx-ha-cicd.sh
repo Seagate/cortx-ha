@@ -26,10 +26,14 @@ rm -rf "${TMPHA}"
 mkdir -p "${TMPHA}"
 cp -rs "$BASE_DIR"/ha/* "${TMPHA}"
 
-mkdir -p /etc/cortx/ha/ /var/log/seagate/cortx/ha
+mkdir -p /etc/cortx/ha/
+ls "${BASE_DIR}"/jenkins/cicd/etc/
 cp -rf "${BASE_DIR}"/jenkins/cicd/etc/* /etc/cortx/ha/
 
 # Perform unit test
 python3 "${TMPHA}"/test/main.py "${TMPHA}"/test/unit
 
+#/usr/bin/cortxha node refresh --hard --data-only || exit 1
+
 /usr/lib/ocf/resource.d/seagate/hw_comp_ra meta-data
+/usr/lib/ocf/resource.d/seagate/iem_comp_ra meta-data
