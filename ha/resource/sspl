@@ -27,7 +27,7 @@
 #	SSPL OCF Stateful master/slave RA.
 
 # Return codes and its menaning
-# 0: OCF_SUCCESS: Successful Execution
+# 0: OCF_SUCESS: Successful Execution
 # 9: OCF_MASTER_FAILED: Resource is failed in Master mode
 # 7: OCF_NOT_RUNNING: Resource is safely stopped.
 
@@ -115,48 +115,22 @@ stateful_check_state() {
     return 7
 }
 
-start_sspl_service() {
-        systemctl start sspl-ll
-        echo "START (master): $?"
-        count=0
-        while true
-        do
-            status=`systemctl is-active sspl-ll`
-            if [[ $status == "active" ]]; then
-                return 0
-            elif [[ $status == "failed" ]]; then
-                return 1
-            elif [[ $status == "unknown" ]]; then
-                ((count++))
-                if [ $count == 5 ]; then
-                    return 1
-                fi
-            fi
-            sleep 1
-        done
-}
-
 stateful_start() {
     stateful_check_state "master"
     if [ $? -eq 0 ]; then
         # CRM Error - Should never happen
         log "START (master)..."
-        start_sspl_service
-        if [ $? == 0 ]; then
-            return $OCF_RUNNING_MASTER
-        else
-            return $OCF_FAILED_MASTER
-        fi
+        systemctl start sspl-ll
+        log "START (master): $?"
+        return $OCF_RUNNING_MASTER
     fi
     stateful_update "slave"
     "${HA_SBIN_DIR}/crm_master" -l reboot -v 1
     log "START... (crm_reboot: $?)"
-    start_sspl_service
-    if [ $? == 0 ]; then
-        return $OCF_SUCCESS
-    else
-        return $OCF_ERR_GENERIC
-    fi
+    systemctl start sspl-ll
+    log "START: $?"
+
+    return $OCF_SUCCESS
 }
 
 stateful_demote() {
@@ -203,8 +177,7 @@ stateful_stop() {
     log "STOP..."
     systemctl stop sspl-ll
     log "STOP: $?"
-    rm -rf "${OCF_RESKEY_state}"
-    return $OCF_SUCCESS
+    return $OCF_SUCESS
 }
 
 stateful_monitor() {
