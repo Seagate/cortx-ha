@@ -55,6 +55,7 @@ class Cleanup:
             else:
                 pass
         if not data_only:
+            Log.info(f"Reseting HA decision event for {node}")
             self.reset_failover(node)
 
     def is_cleanup_required(self, node=None):
@@ -67,23 +68,35 @@ class Cleanup:
         node = "all" if node is None else node
         Log.debug(f"Performing failback on {node}")
         resource_list = Conf.get(const.RESOURCE_GLOBAL_INDEX, "resources")
-        status_list = []
+        status_list = {}
         for resource in resource_list:
             if node == "all":
-                status_list.append(self._decision_monitor.get_resource_status(resource))
+                status_list[resource] = self._decision_monitor.get_resource_status(resource)
             elif node in resource:
-                status_list.append(self._decision_monitor.get_resource_status(resource))
+                status_list[resource] = self._decision_monitor.get_resource_status(resource)
             else:
                 pass
-            Log.debug(f"For {resource} status is {status_list[-1]}")
-        if Action.FAILED in status_list:
-            Log.debug("Some component are not yet recovered skipping failback")
-        elif Action.RESOLVED in status_list:
-            Log.info("Failback is required as some of alert are resolved.")
+        if Action.FAILED in status_list.values():
+            Log.info(f"Some component are not yet recovered skipping failback. status: {status_list}")
+        elif Action.RESOLVED in status_list.values():
+            Log.info(f"Failback is required as some of alert are resolved. status: {status_list}")
+            self._ack_resource(status_list)
             return True
         else:
             Log.debug(f"{node} node already in good state no need for failback")
         return False
+
+    def _ack_resource(self, status_list):
+        """
+        Ack resource which are already resolved
+
+        Args:
+            status_list ([dir]): Resource and its status.
+        """
+        for event in status_list.keys():
+            if status_list[event] == Action.RESOLVED:
+                Log.info(f"Ack of {event} event as this alert is resolved")
+                self._decision_monitor.acknowledge_resource(event)
 
     def reset_failover(self, node=None, soft_cleanup=False):
         """
@@ -94,11 +107,11 @@ class Cleanup:
         if soft_cleanup:
             if self.is_cleanup_required(node):
                 _output, _err, _rc = self._execute.run_cmd(const.PCS_FAILCOUNT_STATUS)
-                Log.info(f"Resource failcount before cleanup: {_output}, Error:{_err}, RC:{_rc}")
+                Log.info(f"Resource failcount before Failback: {_output}, Error:{_err}, RC:{_rc}")
                 _output, _err, _rc = self._execute.run_cmd(cmd)
-                Log.info(f"failover is happened, Output:{_output}, Error:{_err}, RC:{_rc}")
+                Log.info(f"Failback is happened, Output:{_output}, Error:{_err}, RC:{_rc}")
                 _output, _err, _rc = self._execute.run_cmd(const.PCS_FAILCOUNT_STATUS)
-                Log.info(f"Resource failcount after cleanup: {_output}, Error:{_err}, RC:{_rc}")
+                Log.info(f"Resource failcount after Failback: {_output}, Error:{_err}, RC:{_rc}")
             else:
                 Log.debug("cleanup is not required alerts are not yet resolved.")
         else:

@@ -1,0 +1,138 @@
+{
+  "request_timeout": 2.0,
+  "nodes": {
+    "<UUID1>": "<HOST1>",
+    "<UUID2>": "<HOST2>",
+    "local": "<LOCAL>"
+  },
+  "network": {
+      "<HOST1>": {
+          "data_iface": "<N1_DATA_IFACE>",
+          "mgmt_iface": "<N1_MGMT_IFACE>"
+      },
+      "<HOST2>": {
+          "data_iface": "<N2_DATA_IFACE>",
+          "mgmt_iface": "<N2_MGMT_IFACE>"
+      }
+  },
+  "resources": {
+    "encl_ctrl_<HOST1>": {
+      "entity": "enclosure",
+      "entity_id": "0",
+      "component": "controller",
+      "component_id": "<HOST1>"
+    },
+    "encl_ctrl_<HOST2>": {
+      "entity": "enclosure",
+      "entity_id": "0",
+      "component": "controller",
+      "component_id": "<HOST2>"
+    },
+    "encl_con_<HOST1>": {
+      "entity": "enclosure",
+      "entity_id": "0",
+      "component": "connectivity",
+      "component_id": "<HOST1>"
+    },
+    "encl_con_<HOST2>": {
+      "entity": "enclosure",
+      "entity_id": "0",
+      "component": "connectivity",
+      "component_id": "<HOST2>"
+    },
+    "node_nw_data_<HOST1>": {
+      "entity": "node",
+      "entity_id": "<HOST1>",
+      "component": "nw",
+      "component_id": "data"
+    },
+    "node_nw_data_<HOST2>": {
+      "entity": "node",
+      "entity_id": "<HOST2>",
+      "component": "nw",
+      "component_id": "data"
+    },
+    "node_nw_mgmt_<HOST1>": {
+      "entity": "node",
+      "entity_id": "<HOST1>",
+      "component": "nw",
+      "component_id": "mgmt"
+    },
+    "node_nw_mgmt_<HOST2>": {
+      "entity": "node",
+      "entity_id": "<HOST2>",
+      "component": "nw",
+      "component_id": "mgmt"
+    },
+    "node_nw_cable_data_<HOST1>": {
+      "entity": "node",
+      "entity_id": "<HOST1>",
+      "component": "cable",
+      "component_id": "data"
+    },
+    "node_nw_cable_data_<HOST2>": {
+      "entity": "node",
+      "entity_id": "<HOST2>",
+      "component": "cable",
+      "component_id": "data"
+    },
+    "node_nw_cable_mgmt_<HOST1>": {
+      "entity": "node",
+      "entity_id": "<HOST1>",
+      "component": "cable",
+      "component_id": "mgmt"
+    },
+    "node_nw_cable_mgmt_<HOST2>": {
+      "entity": "node",
+      "entity_id": "<HOST2>",
+      "component": "cable",
+      "component_id": "mgmt"
+    },
+    "node_sas_<HOST1>": {
+      "entity": "node",
+      "entity_id": "<HOST1>",
+      "component": "sas",
+      "component_id": "SASHBA-0"
+    },
+    "node_sas_<HOST2>": {
+      "entity": "node",
+      "entity_id": "<HOST2>",
+      "component": "sas",
+      "component_id": "SASHBA-0"
+    }
+  },
+  "resource_groups": {
+    "io_<HOST1>": [
+      "node_nw_data_<HOST1>",
+      "node_nw_cable_data_<HOST1>",
+      "node_sas_<HOST1>",
+      "encl_con_<HOST1>",
+      "encl_ctrl_<HOST1>"
+    ],
+    "io_<HOST2>": [
+      "node_nw_data_<HOST2>",
+      "node_nw_cable_data_<HOST2>",
+      "node_sas_<HOST2>",
+      "encl_con_<HOST2>",
+      "encl_ctrl_<HOST2>"
+    ],
+    "storage_encl_<HOST1>": [
+      "node_sas_<HOST1>",
+      "encl_con_<HOST1>",
+      "encl_ctrl_<HOST1>"
+    ],
+    "storage_encl_<HOST2>": [
+      "node_sas_<HOST2>",
+      "encl_con_<HOST2>",
+      "encl_ctrl_<HOST2>"
+    ],
+    "mgmt_<HOST1>": [
+      "node_nw_mgmt_<HOST1>",
+      "node_nw_cable_mgmt_<HOST1>"
+    ],
+    "mgmt_<HOST2>": [
+      "node_nw_mgmt_<HOST2>",
+      "node_nw_cable_mgmt_<HOST2>"
+    ]
+  }
+}

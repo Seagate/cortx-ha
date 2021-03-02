@@ -20,6 +20,7 @@ import os
 import sys
 from typing import Any, Callable, List, Optional
 
+from functools import reduce
 from systemd import journal
 
 from pcswrap.exception import CliException, MaintenanceFailed, TimeoutException
@@ -185,15 +186,11 @@ class Client():
             return (s or '').lower()
 
         eligible = self.connector.get_eligible_resource_count()
+        node_info = self.connector.get_nodes()
+        started = reduce(lambda x, y: x + y,
+                         [i.resources_running for i in node_info], 0)
 
-        started = 0
-        stopped = 0
-        for res in self.connector.get_resources():
-            role = safe_lower(res.role)
-            if role == 'started':
-                started += 1
-            elif role == 'stopped':
-                stopped += 1
+        stopped = self.connector.get_stopped_resource_count()
 
         result = {
             'resources': {

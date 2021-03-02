@@ -18,57 +18,35 @@
 import time
 
 from cortx.utils.log import Log
+from cortx.utils.conf_store.conf_store import Conf
 from cortx.utils.ha.dm.decision_monitor import DecisionMonitor
 
 from ha.core.error import HAUnimplemented
+from ha.core.support_bundle.ha_bundle import HABundle
 from ha.core.node.replacement.refresh_context import PcsRefreshContex
 from ha.execute import SimpleCommand
 from ha import const
+from ha.core.config.config_manager import ConfigManager
+from ha.core.controllers.element_controller_factory import ElementControllerFactory
 
-class ClusterManager:
-    def __init__(self):
-        """
-        Manage cluster operation
-        """
-        pass
-
-    def process_request(self, action, args):
-        raise HAUnimplemented()
-
-    def node_status(self, node):
-        # TODO move node logic to node manager class
-        raise HAUnimplemented()
-
-    def remove_node(self, node):
-        raise HAUnimplemented()
-
-    def add_node(self, node):
-        raise HAUnimplemented()
-
-    def start(self):
-        raise HAUnimplemented()
-
-    def stop(self):
-        raise HAUnimplemented()
-
-    def status(self):
-        raise HAUnimplemented()
-
-    def shutdown(self):
-        raise HAUnimplemented()
-
-class PcsClusterManager(ClusterManager):
+# Note: This class is used by version 1
+class PcsClusterManager:
     def __init__(self):
         """
         PcsCluster manage pacemaker/corosync cluster
         """
         super(PcsClusterManager, self).__init__()
         self._execute = SimpleCommand()
-        self._decision_monitor = DecisionMonitor()
-        # TODO: add node_manager class to handle query
-        self._refresh_contex = PcsRefreshContex(self._decision_monitor)
-        # TODO move node logic to node manager class
-        self._node_status = [ 'Online', 'Standby', 'Maintenance', 'Offline', 'Disconnected']
+
+        # get version from ha.conf
+        self._version = ConfigManager.get_major_version()
+
+        if self._version == const.CORTX_VERSION_1:
+            self._decision_monitor = DecisionMonitor()
+            # TODO: add node_manager class to handle query
+            self._refresh_contex = PcsRefreshContex(self._decision_monitor)
+            # TODO move node logic to node manager class
+            self._node_status = [ 'Online', 'Standby', 'Maintenance', 'Offline', 'Disconnected']
 
     def process_request(self, action, args, output):
         """
@@ -78,25 +56,19 @@ class PcsClusterManager(ClusterManager):
             action ([string]): Take cluster action for each request.
             args ([dict]): Parameter pass to request to process.
         """
+        self._output = output
         # TODO Add validater
-        # TODO Optimize if else
         if action == const.CLUSTER_COMMAND:
-            if args.cluster_action == "add_node":
-                self.add_node(args.node)
-            elif args.cluster_action == "remove_node":
-                self.remove_node(args.node)
-            elif args.cluster_action == "start":
-                self.start()
-            elif args.cluster_action == "stop":
-                self.stop()
-            elif args.cluster_action == "status":
-                self.status()
-            elif args.cluster_action == "shutdown":
-                self.shutdown()
-        elif action == const.NODE_COMMAND:
+            if args.cluster_action in ["add_node", "remove_node"]:
+                getattr(self, args.cluster_action)(args.node)
+            else:
+                getattr(self, args.cluster_action)()
+        elif action == const.NODE_COMMAND and self._version == const.CORTX_VERSION_1:
             self._refresh_contex.process_request(action, args)
+        elif action == const.BUNDLE_COMMAND:
+            HABundle().process_request(action, args, output)
         else:
-            raise HAUnimplemented()
+            raise HAUnimplemented("This feature is not supported...")
 
     def node_status(self, node):
         """
@@ -119,7 +91,7 @@ class PcsClusterManager(ClusterManager):
                 Log.debug(f"For {node} node rc: {node_rc}, status: {node_status}")
                 return node_rc, node_status
         Log.debug(f"{node} is not detected in cluster, treating as disconnected node")
-        return 1, "Disconnected"
+        return 1, const.NODE_DISCONNECTED
 
     def remove_node(self, node):
         """
@@ -127,6 +99,8 @@ class PcsClusterManager(ClusterManager):
         """
         # TODO: Limitation for node remove (in cluster node cannot remove it self)
         # Check if node already removed
+        _output, _err, _rc = self._execute.run_cmd(const.PCS_STATUS)
+        Log.info(f"Cluster status output before remove node: {_output}, {_err}, {_rc}")
         _rc, status = self.node_status(node)
         if _rc != 1:
             self._execute.run_cmd(f"pcs cluster node remove {node} --force")
@@ -139,109 +113,183 @@ class PcsClusterManager(ClusterManager):
                 Log.info(f"Node {node} removed from cluster")
         else:
             Log.info(f"Node {node} already removed from cluster")
+        _output, _err, _rc = self._execute.run_cmd(const.PCS_STATUS)
+        Log.info(f"Cluster status output after remove node: {_output}, {_err}, {_rc}")
 
     def add_node(self, node):
         """
         Add new node to pcs cluster
         """
+        _output, _err, _rc = self._execute.run_cmd(const.PCS_STATUS)
+        Log.info(f"Cluster status output before add node: {_output}, {_err}, {_rc}")
         # TODO: Limitation for node add (in cluster node cannot add it self)
         commands = [f"pcs cluster node add {node}",
-                "pcs resource cleanup --all",
                 f"pcs cluster enable {node}",
-                f"pcs cluster start {node}"]
+                f"pcs cluster start {node}",
+                "pcs resource cleanup --all"]
         _rc, status = self.node_status(node)
         if _rc != 0:
             for command in commands:
-                self._execute.run_cmd(command)
-            time.sleep(20)
-            _rc, status = self.node_status(node)
-            Log.debug(f"{node} status rc: {_rc}, status: {status}")
-            if status != 'Online':
-                Log.error(f"Failed to add {node}")
-                raise Exception(f"Failed to add {node}")
+                _output, _err, _rc = self._execute.run_cmd(command)
+                Log.info(f"{command} : {_output}, {_err}, {_rc}")
+                time.sleep(5)
+            retries = 0
+            add_node_flag = -1
+            while retries < 12:
+                _rc, status = self.node_status(node)
+                Log.info(f"{node} status rc: {_rc}, status: {status}")
+                if status == const.NODE_ONLINE:
+                    Log.info(f"Node {node} added to cluster")
+                    add_node_flag = 0
+                    break
+                elif status != const.NODE_DISCONNECTED:
+                    add_node_flag = 1
+                    Log.info(f"Node {node} added to cluster but not Online check status again.")
+                retries += 1
+                time.sleep(10)
+            if add_node_flag == 1:
+                Log.info(f"Node {node} added to cluster but not in Online state.")
+            elif add_node_flag == 0:
+                Log.info(f"Node {node} Successfully added to cluster and in Online state")
             else:
-                Log.info(f"Node {node} added to cluster")
+                raise Exception(f"Failed to add {node} to cluster")
         else:
             Log.info(f"Node {node} already added to cluster")
+        _output, _err, _rc = self._execute.run_cmd(const.PCS_STATUS)
+        Log.info(f"Cluster status output after add node: {_output}, {_err}, {_rc}")
+
+    def get_nodes_status(self):
+        """
+        Sample output of the const.PCS_STATUS_NODES command
+
+        Pacemaker Nodes:
+         Online: node1 node2
+         Standby:
+         Standby with resource(s) running:
+         Maintenance:
+         Offline:
+        Pacemaker Remote Nodes:
+         Online:
+         Standby:
+         Standby with resource(s) running:
+         Maintenance:
+         Offline:
+        """
+        _output, _err, _rc = self._execute.run_cmd(const.PCS_STATUS_NODES, check_error=False)
+
+        self.active_nodes = self.standby_nodes = self.offline_nodes = False
+
+        for status in _output.split("\n"):
+            nodes = status.split(":", 1)
+            # This break should be removed if pacemaker remote is also used in the cluster
+            if nodes[0] == "Pacemaker Remote Nodes":
+                break
+            elif nodes[0] == " Online" and len(nodes[1].split()) > 0:
+                self.active_nodes = True
+            elif nodes[0] == " Standby" and len(nodes[1].split()) > 0:
+                self.standby_nodes = True
+            elif nodes[0] == " Standby with resource(s) running" and len(nodes[1].split()) > 0:
+                self.active_nodes = True
+            elif nodes[0] == " Maintenance" and len(nodes[1].split()) > 0:
+                self.active_nodes = True
+            elif nodes[0] == "  Offline" and len(nodes[1].split()) > 0:
+                self.offline_nodes = True
+
 
     def start(self):
-        # TODO Add wrapper to hctl pcswrap
-        raise HAUnimplemented()
+
+        Log.debug("Executing cortxha cluster start")
+
+        _output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_STATUS, check_error=False)
+        if _rc != 0:
+            if(_err.find("No such file or directory: 'pcs'") != -1):
+                Log.error("Cluster failed to start; pcs not installed")
+                self._output.output("Cluster failed to start; pcs not installed")
+                self._output.rc(1)
+                raise Exception("Cluster failed to start; pcs not installed")
+            # if cluster is not running; start cluster
+            elif(_err.find("cluster is not currently running on this node") != -1):
+                self._execute.run_cmd(const.PCS_CLUSTER_START, check_error=False)
+                Log.info("cluster started ; waiting for nodes to come online ")
+                # It takes nodes 30 seconds to come to their original state after cluster is started
+                # observation on a 2 node cluster
+                # wait for upto 100 sec for nodes to come to active states (online / maintenance mode)
+                time.sleep(10)
+                self.get_nodes_status()
+                retries = 18
+                while  self.active_nodes == False and retries > 0:
+                    time.sleep(5)
+                    self.get_nodes_status()
+                    retries -= 1
+
+        else:
+            #If cluster is running, but all nodes are  in Standby mode;
+            #start the nodes
+            self.get_nodes_status()
+            if self.active_nodes == False:
+                if self.standby_nodes == True:
+                    # issue pcs cluster unstandby
+                    _output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_UNSTANDBY, check_error=False)
+
+        # check cluster and node status
+        _output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_STATUS, check_error=False)
+        if _rc != 0:
+            # cluster could not be started.
+            Log.error("Cluster failed to start")
+            self._output.output("Cluster failed to start")
+            self._output.rc(1)
+            raise Exception("Cluster failed to start")
+        else:
+            # confirm that at least one node is active
+            self.get_nodes_status()
+            if self.active_nodes == False:
+                # wait for 5 seconds and retry
+                time.sleep(5)
+                self.get_nodes_status()
+                if self.active_nodes == False:
+                    self._output.output("Cluster started; nodes not online")
+                    self._output.rc(1)
+                    raise Exception("Cluster started; nodes not online")
+
+        Log.info("Cluster started successfully")
+
 
     def stop(self):
         # TODO Add wrapper to hctl pcswrap
-        raise HAUnimplemented()
+        raise HAUnimplemented("This feature is not supported...")
 
     def status(self):
         # TODO Add wrapper to hctl pcswrap
-        raise HAUnimplemented()
+        raise HAUnimplemented("This feature is not supported...")
 
     def shutdown(self):
-        raise HAUnimplemented()
+        raise HAUnimplemented("This feature is not supported...")
 
+# Note: This class is used by version 2
 class CortxClusterManager:
     def __init__(self):
         """
         Manage cluster operation
         """
-        self._execute = SimpleCommand()
+        # TODO: Update Config manager if log utility changes.
+        ConfigManager.init("cluster_manager")
+        self._cluster_type = Conf.get(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.cluster_type")
+        self._env = Conf.get(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.env")
+        ConfigManager.load_controller_schema()
+        self._controllers = ElementControllerFactory.init_controller(self._env, self._cluster_type)
+        for controller in self._controllers.keys():
+            Log.info(f"Adding {controller} property to cluster manager.")
+            # Add property method for controller
+            # Example: cm.cluster_controller.start()
+            # Find more example in test case.
+            self.__dict__[controller] = self._controllers[controller]
 
-    def process_request(self, action, args, output):
+    @property
+    def controller_list(self) -> list:
         """
-        Process cluster request
+        Return all controller loaded by init.
 
-        Args:
-            action (string): action taken on cluster
-            args (dictonery): parameteter
-            output (object): Store output
-
-        Raises:
-            HAUnimplemented: [description]
+        Returns:
+            [list]: list of controllers.
         """
-        # TODO: Provide service and node management
-        self._output = output
-        if action == const.CLUSTER_COMMAND:
-            getattr(self, args.cluster_action)()
-
-    def remove_node(self):
-        raise HAUnimplemented("Cluster remove node is not supported.")
-
-    def add_node(self):
-        raise HAUnimplemented("Cluster add node is not supported.")
-
-    def start(self):
-        Log.debug("Executing cluster start")
-        _output, _err, _rc = self._execute.run_cmd(const.HCTL_START, check_error=False)
-        Log.info(f"IO stack started. Output: {_output}, Err: {_err}, RC: {_rc}")
-        self.status()
-        if self._output.get_rc() == 0:
-            Log.info("Cluster started successfully")
-            self._output.output("Cluster started successfully")
-            self._output.rc(0)
-        else:
-            Log.error("Cluster failed to start")
-            self._output.output("Cluster failed to start")
-            self._output.rc(1)
-
-    def stop(self):
-        Log.info("Executing cluster Stop")
-        _output, _err, _rc = self._execute.run_cmd(const.HCTL_STOP, check_error=False)
-        Log.info(f"Io stack stopped successfully. Output: {_output}, Err: {_err}, RC: {_rc}")
-        self.status()
-        if self._output.get_rc() == 1:
-            Log.info("Cluster stopped successfully")
-            self._output.output("Cluster stopped successfully...")
-            self._output.rc(0)
-        else:
-            Log.error("Cluster failed to stop")
-            self._output.output("Cluster failed to stop")
-            self._output.rc(1)
-
-    def status(self):
-        _output, _err, _rc = self._execute.run_cmd(const.HCTL_STATUS, check_error=False)
-        self._output.rc(_rc)
-        status = const.HCTL_STARTED_STATUS if _rc == 0 else const.HCTL_STOPPED_STATUS
-        self._output.output(status)
-
-    def shutdown(self):
-        raise HAUnimplemented("Cluster shutdown is not supported.")
+        return list(self._controllers.keys())

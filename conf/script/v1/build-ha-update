@@ -1,0 +1,141 @@
+#!/bin/bash
+
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# This program is free software: you can redistribute it and/or modify it under the
+# terms of the GNU Affero General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+# PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License along
+# with this program. If not, see <https://www.gnu.org/licenses/>. For any questions
+# about this software or licensing, please email opensource@seagate.com or
+# cortx-questions@seagate.com.
+
+set -eu -o pipefail
+export PS4='+ [${BASH_SOURCE[0]##*/}:${LINENO}${FUNCNAME[0]:+:${FUNCNAME[0]}}] '
+# set -x
+
+PROG=${0##*/}
+
+log_file=${BUILD_HA_UPDATE_LOG_FILE:-/var/log/cortx-ha.log}
+exec &>> $log_file
+exec &> >(stdbuf -oL gawk '{ print strftime("%Y-%m-%d %H:%M:%S"), $0 }')
+
+
+usage() {
+    cat <<EOF
+Usage: $PROG [OPTS] <CDF> <params.yaml>
+
+Update HA instructions for IO path, SSPL, CSM and UDS
+Caveats:
+
+* The script expects existing Pacemaker cluster to be running.
+
+* Passwordless SSH access between the nodes is required.
+
+* The script should be executed from the "left" node.
+
+Mandatory parameters:
+    <CDF>         Hare cluster description file
+    <IO_HA_ARGS>  IO path argument file
+    <CSM_HA_ARGS> CSM HA argument file
+
+Note: parameters can be specified either directly via command line options
+or via YAML file, e.g.:
+EOF
+}
+
+log() {
+    logger --stderr --tag build-ha-update "$*"
+}
+log "****************************************************************"
+log "${0##*/}"
+log "****************************************************************"
+
+
+TEMP=$(getopt --options h: \
+              --longoptions help \
+              --name "$PROG" -- "$@" || true)
+
+(($? == 0)) || { usage >&2; exit 1; }
+
+eval set -- "$TEMP"
+
+while true; do
+    case "$1" in
+        -h|--help)           usage; exit ;;
+        --)                  shift; break ;;
+        *)                   break ;;
+    esac
+done
+
+cdf=${1:-}
+ioargsfile=${2:-}
+csmargsfile=${3:-}
+
+[[ $cdf ]] && [[ $ioargsfile ]] && [[ $csmargsfile ]] || {
+    usage >&2
+    exit 1
+}
+
+hare_dir=/var/lib/hare
+cib_file=/var/lib/hare/cib_cortx_cluster.xml
+ha_script=/opt/seagate/cortx/ha/conf/script
+consul_bin=/opt/seagate/cortx/hare/bin
+
+reset_all() {
+    $ha_script/prov-ha-uds-reset
+    $ha_script/prov-ha-csm-reset
+    $ha_script/prov-ha-sspl-reset
+    $ha_script/prov-ha-reset
+    $ha_script/build-cortx-ha cleanup
+}
+
+echo 'Exporting Consul KV...'
+consul_kv_dump=$hare_dir/consul-kv-dump.json
+if [[ -f $consul_kv_dump ]]; then
+    cat $consul_kv_dump | xz > ${consul_kv_dump%.json}-$(date '+%Y%m%d%H%M%S').json.xz
+fi
+$consul_bin/consul kv export > $consul_kv_dump
+
+# Move cluster into standby mode before deleting the resources
+pcs_status=$(sudo pcs status)
+echo $pcs_status | grep "Node srvnode-1: standby" && echo $pcs_status | grep "Node srvnode-2: standby" || sudo pcs cluster standby --all
+
+reset_all
+
+sudo pcs cluster unstandby --all
+
+while ! sudo pcs status | grep "Online: \[ srvnode-1 srvnode-2 ]"
+do
+    echo 'Waiting till cluster becomes online'
+    sleep 1
+done
+
+sudo pcs cluster cib $cib_file
+
+echo 'Updating ha resources for IO path, SSPL, CSM and UDS...'
+log "Updating ha resources for IO path, SSPL, CSM and UDS"
+$ha_script/build-ha-io $cdf $ioargsfile --cib-file $cib_file --update
+$ha_script/build-ha-csm $csmargsfile --cib-file $cib_file --update
+$ha_script/build-ha-sspl $ioargsfile --cib-file $cib_file --update
+$ha_script/build-ha-uds --cib-file $cib_file --update
+
+#XXX Presently replacing the cib xml file does not work if in new versions
+# the resources are deleted.
+# Revisit this to avoid deleting of resources from pacemaker.
+#cibadmin --replace --xml-file $cib_file
+echo 'Updating Pacemaker CIB...'
+log "Updating Pacemaker CIB"
+sudo pcs cluster cib-push $cib_file --config
+
+$ha_script/build-cortx-ha init
+
+sudo pcs resource cleanup
+
+echo 'Importing Consul KV...'
+$consul_bin/consul kv import @$consul_kv_dump

@@ -21,9 +21,9 @@ import traceback
 import argparse
 import pathlib
 
-from cortx.utils.schema.conf import Conf
+
 from cortx.utils.log import Log
-from cortx.utils.schema.payload import *
+
 
 class Output:
     def __init__(self):
@@ -55,23 +55,24 @@ class HACli:
         Initialization of HA CLI.
         """
         # TODO Check product env and load specific conf
-        Conf.init()
-        Conf.load(const.RESOURCE_GLOBAL_INDEX, Json(const.RESOURCE_SCHEMA))
-        Conf.load(const.RULE_GLOBAL_INDEX, Json(const.RULE_ENGINE_SCHAMA))
-        Conf.load(const.HA_GLOBAL_INDEX, Yaml(const.HA_CONFIG_FILE))
-        log_path = Conf.get(const.HA_GLOBAL_INDEX, "LOG.path")
-        log_level = Conf.get(const.HA_GLOBAL_INDEX, "LOG.level")
-        Log.init(service_name='cortxha', log_path=log_path, level=log_level)
+        ConfigManager.init('cortxha')
+
+        # get version from ha.conf
+        self._version = ConfigManager.get_major_version()
 
     @staticmethod
     def _usage():
-        return """
 
-    Example:
-    cortxha cleanup db --node <node_minion_id>
-    cortxha cluster add_node <node_minion_id>
-    cortxha cluster remove_node <node_minion_id>
-    """
+        if ha_cli._version == const.CORTX_VERSION_1:
+            return """
+    Use below command for more detail
+    cortxha --help
+            """
+        else:
+            return """
+    Use below command for more detail
+    cortx --help
+            """
 
     def command(self):
         try:
@@ -86,20 +87,22 @@ class HACli:
             CommandFactory.get_command(component_parser)
             args = argParser.parse_args()
 
-            # TODO: Load cluster from config
             Log.info(f"Executing: {' '.join(sys.argv)}")
             if len(sys.argv) <= 1:
                 argParser.print_help(sys.stderr)
             else:
                 output = Output()
-                cluster = CortxClusterManager()
+                if self._version == const.CORTX_VERSION_1:
+                    cluster = CortxClusterManager()
+                else:
+                    cluster = PcsClusterManager()
                 cluster.process_request(args.cortxha_action, args, output)
                 sys.stdout.write(f"{output.get_output()}\n")
                 sys.exit(output.get_rc())
-            # argParser.print_help(sys.stderr)
         except Exception as e:
             sys.stderr.write(f"{e}\n")
             Log.error(f"{traceback.format_exc()}, {e}")
+            print(f"{traceback.format_exc()}")
             sys.exit(1)
 
 if __name__ == '__main__':
@@ -108,7 +111,12 @@ if __name__ == '__main__':
     """
     sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..'))
     from ha import const
+    from ha.core.config.config_manager import ConfigManager
     from ha.cli.command_factory import CommandFactory
-    from ha.core.cluster.cluster_manager import CortxClusterManager
     ha_cli = HACli()
+
+    if ha_cli._version == const.CORTX_VERSION_1:
+        from ha.core.cluster.cluster_manager import CortxClusterManager
+    else:
+        from ha.core.cluster.cluster_manager import PcsClusterManager
     ha_cli.command()

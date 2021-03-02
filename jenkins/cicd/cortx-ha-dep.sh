@@ -15,33 +15,60 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
+set -e -o pipefail
 
 BASE_DIR=$(realpath "$(dirname $0)/../../")
+HA1="1"
+HA2="2"
 
 usage() {
     echo """
 For Developer to create venv
-    $ ./cortx-ha-dep.sh dev <github-token>
+    $ ./cortx-ha-dep.sh [-v <cortx-ha major version>] [-e dev] [-t <github-token>]
 For Production
-    $ ./cortx-ha-dep.sh
+    $ ./cortx-ha-dep.sh [-v <cortx-ha major version>]
 """
 }
 
-# Check Dev
-DEV=$1
-[ -z "$DEV" ] && DEV=false
+while getopts ":h:v:e:t:" o; do
+    case "${o}" in
+        h)
+            usage ; exit 0
+            ;;
+        v)
+            VERSION=${OPTARG}
+            ;;
+        e)
+            DEV=${OPTARG}
+            ;;
+        t)
+            TOKEN=${OPTARG}
+            ;;
+        *)
+            usage ; exit 1
+            ;;
+    esac
+done
 
-if [ "$DEV" == false ]; then
+# Check Dev
+[ -z "$DEV" ] && DEV="false"
+[ -z "$VERSION" ] && VERSION="${HA2}"
+
+if [ "$DEV" == "false" ]; then
     set -x
     yum erase eos-py-utils -y && yum install cortx-py-utils -y
-    req_file=${BASE_DIR}/jenkins/pyinstaller/requirements.txt
+    if [ "$VERSION" == "${HA1}" ]
+    then
+        req_file=${BASE_DIR}/jenkins/pyinstaller/v1/requirements.txt
+    else
+        req_file=${BASE_DIR}/jenkins/pyinstaller/v2/requirements.txt
+    fi
     python3 -m pip install -r $req_file > /dev/null || {
         echo "Unable to install package from $req_file"; exit 1;
     };
 else
     mkdir -p "${BASE_DIR}"/dist
 
-    TOKEN=$2
     [ -z "$TOKEN" ] && {
         usage; exit 1
     }
@@ -56,13 +83,18 @@ else
     source "${VENV}/bin/activate"
 
     echo "Installing python packages..."
-    pip install --upgrade pip
-    pip install git+https://"${TOKEN}"@github.com/Seagate/cortx-py-utils.git
-    req_file=${BASE_DIR}/jenkins/pyinstaller/requirements.txt
-    pip install -r "$req_file" || {
+    python3 -m pip install --upgrade pip
+    python3 -m pip install git+https://"${TOKEN}"@github.com/Seagate/cortx-utils.git#subdirectory=py-utils
+    if [ "$VERSION" == "${HA1}" ]
+    then
+        req_file=${BASE_DIR}/jenkins/pyinstaller/v1/requirements.txt
+    else
+        req_file=${BASE_DIR}/jenkins/pyinstaller/v2/requirements.txt
+    fi
+    python3 -m pip install -r "$req_file" || {
         echo "Unable to install package from $req_file"; exit 1;
     };
-    deavtivate
+    deactivate
 
     echo "Execute:"
     echo "**************************************"

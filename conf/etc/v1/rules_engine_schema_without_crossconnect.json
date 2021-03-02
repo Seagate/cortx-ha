@@ -1,0 +1,73 @@
+{
+    "enclosure":[
+        {
+            "alert_type": "fault",
+            "severity": "critical",
+            "action": "failed"
+        },
+        {
+            "alert_type": "fault_resolved",
+            "severity": "informational",
+            "action": "resolved"
+        }
+    ],
+    "enclosure:fru:controller":[
+        {
+            "alert_type":"fault",
+            "severity":"critical",
+            "action":"failed"
+        },
+        {
+            "alert_type":"fault_resolved",
+            "severity":"informational",
+            "action":"resolved"
+        },
+        {
+            "alert_type":"missing",
+            "severity":"critical",
+            "action":"failed"
+        },
+        {
+            "alert_type":"insertion",
+            "severity":"informational",
+            "action":"resolved"
+        }
+    ],
+    "node:interface:nw":[
+        {
+            "alert_type":"fault",
+            "severity":"critical",
+            "action":"failed"
+        },
+        {
+            "alert_type":"fault_resolved",
+            "severity":"informational",
+            "action":"resolved"
+        }
+    ],
+    "node:interface:nw:cable":[
+        {
+            "alert_type":"fault",
+            "severity":"critical",
+            "action":"failed"
+        },
+        {
+            "alert_type":"fault_resolved",
+            "severity":"informational",
+            "action":"resolved"
+        }
+    ],
+    "iem": [],
+    "node:interface:sas":[
+        {
+            "alert_type":"fault",
+            "severity":"critical",
+            "action":"failed"
+        },
+        {
+            "alert_type":"fault_resolved",
+            "severity":"informational",
+            "action":"resolved"
+        }
+    ]
+}

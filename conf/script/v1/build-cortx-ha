@@ -1,0 +1,110 @@
+#!/bin/bash
+
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# This program is free software: you can redistribute it and/or modify it under the
+# terms of the GNU Affero General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+# PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License along
+# with this program. If not, see <https://www.gnu.org/licenses/>. For any questions
+# about this software or licensing, please email opensource@seagate.com or
+# cortx-questions@seagate.com.
+
+
+set -eu -o pipefail
+
+HA_PATH="<HA_PATH>"
+
+log_file=${BUILD_CORTX_HA_LOG_FILE:-/var/log/cortx-ha.log}
+exec &>> $log_file
+exec &> >(stdbuf -oL gawk '{ print strftime("%Y-%m-%d %H:%M:%S"), $0 }')
+
+log() {
+    logger --stderr --tag build-cortx-ha "$*"
+}
+log "****************************************************************"
+log "${0##*/}"
+log "****************************************************************"
+
+
+
+init() {
+    log "${FUNCNAME[0]}: Init cluster"
+    # Get node name
+    node_list=$(salt-call --local pillar.get cluster:node_list --output=json)
+    host1=$(echo $node_list | jq '.["local"][0]' | sed s/\"//g)
+    host2=$(echo $node_list | jq '.["local"][1]' | sed s/\"//g)
+
+    # Restart csm to enable decision maker changes
+    echo "Restart csm-agent..."
+    cnt=10
+    while ! pcs resource restart csm-agent && ((cnt-- > 0)); do
+        sleep 1
+        echo "Re-try to restart csm-agent..."
+    done
+
+    echo "Create io_path_health resources..."
+    pcs cluster cib hw_cfg
+    # Hardware io stack resource
+    pcs -f hw_cfg resource create io_path_health-c1 ocf:seagate:hw_comp_ra \
+        path='io' filename='io_path_health-c1' \
+        op start timeout=30s interval=0s \
+        op monitor timeout=30s interval=30s \
+        op stop timeout=30s interval=0s
+    pcs -f hw_cfg resource create io_path_health-c2 ocf:seagate:hw_comp_ra \
+        path='io' filename='io_path_health-c2' \
+        op start timeout=30s interval=0s \
+        op monitor timeout=30s interval=30s \
+        op stop timeout=30s interval=0s
+    pcs -f hw_cfg resource create mgmt_path_health-c1 ocf:seagate:hw_comp_ra \
+        path='mgmt' filename='mgmt_path_health-c1' \
+        op start timeout=30s interval=0s \
+        op monitor timeout=30s interval=30s \
+        op stop timeout=30s interval=0s
+
+    pcs -f hw_cfg resource group add c1 io_path_health-c1
+    pcs -f hw_cfg resource group add c2 io_path_health-c2
+    pcs -f hw_cfg resource group add csm-kibana mgmt_path_health-c1
+    pcs -f hw_cfg constraint order consul-c1 then io_path_health-c1
+    pcs -f hw_cfg constraint order consul-c2 then io_path_health-c2
+    pcs -f hw_cfg constraint order consul-c1 then mgmt_path_health-c1
+
+    # TODO: Replace with non-offensive terms when
+    # https://bugs.clusterlabs.org/show_bug.cgi?id=5437 is resolved
+
+    # Hardware resource monitor by sspl master
+    pcs -f hw_cfg resource create sspl_primary_hw ocf:seagate:hw_comp_ra \
+        path='storage_encl' filename='sspl_primary_hw' \
+        op start timeout=30s interval=0s \
+        op monitor timeout=30s interval=30s \
+        op stop timeout=30s interval=0s
+    pcs -f hw_cfg resource update sspl_primary_hw meta migration-threshold=1 failure-timeout=40s
+    pcs -f hw_cfg constraint colocation add sspl_primary_hw with sspl-master INFINITY with-rsc-role=Master
+    pcs -f hw_cfg constraint location sspl_primary_hw prefers $host1=INFINITY
+    pcs -f hw_cfg constraint location sspl_primary_hw prefers $host2=INFINITY
+    pcs cluster cib-push hw_cfg
+}
+
+cleanup() {
+    echo "Delete resources"
+    log "${FUNCNAME[0]}: Delete resources"
+    resources=(
+        io_path_health-c1
+        io_path_health-c2
+        mgmt_path_health-c1
+        sspl_primary_hw
+    )
+    for r in ${resources[@]}; do
+        log "${FUNCNAME[0]}: Deleting resource: $r"
+        pcs resource delete $r || true
+    done
+}
+
+ACTION=$1
+
+$ACTION
