@@ -32,10 +32,10 @@
 . ${OCF_FUNCTIONS_DIR}/ocf-shellfuncs
 
 # Defaults
-OCF_RESKEY_ip_default=""
+OCF_RESKEY_iface_default=""
 OCF_RESKEY_nettype_default="tcp"
 
-: ${OCF_RESKEY_ip=${OCF_RESKEY_ip_default}}
+: ${OCF_RESKEY_iface=${OCF_RESKEY_iface_default}}
 : ${OCF_RESKEY_nettype=${OCF_RESKEY_nettype_default}}
 
 #######################################################################
@@ -53,12 +53,12 @@ This is LNet Resource Agent. It configures NID over TCP.
 <shortdesc lang="en">LNet over TCP resource agent</shortdesc>
 
 <parameters>
-<parameter name="ip" unique="1" required="1">
+<parameter name="iface" unique="1" required="1">
 <longdesc lang="en">
-The network IP address for LNet NID.
+The network interface to add NID to.
 </longdesc>
-<shortdesc lang="en">Network IP</shortdesc>
-<content type="string" default="${OCF_RESKEY_ip_default}" />
+<shortdesc lang="en">Network interface</shortdesc>
+<content type="string" default="${OCF_RESKEY_iface_default}" />
 </parameter>
 <parameter name="nettype" unique="0" required="0">
 <longdesc lang="en">
@@ -94,22 +94,19 @@ END
 }
 
 lnet_start() {
-	lnet_monitor && return $OCF_SUCCESS
-	iface=$(ip a | grep $OCF_RESKEY_ip | awk '{print $NF}')
-	[[ $iface ]] || {
-		ocf_exit_reason "IP address $OCF_RESKEY_ip is not configured"
-		return $OCF_ERR_INSTALLED
-	}
-	lnetctl net add --net ${OCF_RESKEY_nettype} --if $iface ||
-		return $OCF_ERR_INSTALLED
+    lnet_monitor
+    if [ $? =  $OCF_SUCCESS ]; then
 	return $OCF_SUCCESS
+    fi
+    lnetctl net add --net ${OCF_RESKEY_nettype} --if ${OCF_RESKEY_iface}
 }
 
 lnet_stop() {
-	lnet_monitor || return $OCF_SUCCESS
-	iface=$(lnetctl net show | grep -A4 $OCF_RESKEY_ip | tail -1 | awk '{print $2}')
-	[[ $iface ]] && lnetctl net del --net ${OCF_RESKEY_nettype} --if $iface
-	return $OCF_SUCCESS
+    lnet_monitor
+    if [ $? =  $OCF_SUCCESS ]; then
+        lnetctl net del --net ${OCF_RESKEY_nettype} --if ${OCF_RESKEY_iface}
+    fi
+    return $OCF_SUCCESS
 }
 
 lnet_monitor() {
@@ -118,7 +115,7 @@ lnet_monitor() {
 	# That is THREE states, not just yes/no.
 	
 	if systemctl is-active --quiet lnet &&
-           lnetctl net show | grep -q ${OCF_RESKEY_ip}; then
+           lnetctl net show | grep -q ${OCF_RESKEY_iface}; then
 	    return $OCF_SUCCESS
 	fi
 	if false ; then
@@ -127,23 +124,19 @@ lnet_monitor() {
 
 	if ! ocf_is_probe && [ "$__OCF_ACTION" = "monitor" ]; then
 		# set exit string only when NOT_RUNNING occurs during an actual monitor operation.
-		if ! systemctl is-active --quiet lnet; then
-			ocf_exit_reason "LNet is not started"
-		elif ! lnetctl net show | grep -q ${OCF_RESKEY_ip}; then
-			ocf_exit_reason "LNet NID for ${OCF_RESKEY_ip} is not set"
-		fi
+		ocf_exit_reason "LNet is not started"
 	fi
 	return $OCF_NOT_RUNNING
 }
 
 lnet_validate() {
-    if [ -z ${OCF_RESKEY_ip} ]; then
-	ocf_exit_reason "Network IP address is not set"
+    if [ -z ${OCF_RESKEY_iface} ]; then
+	ocf_exit_reason "Network interface is not set"
 	return $OCF_ERR_ARGS
     fi
 
-    if ! ip a | grep -q ${OCF_RESKEY_ip}; then
-	ocf_exit_reason "Network is not configured"
+    if ! ip a | grep -q ${OCF_RESKEY_iface}; then
+	ocf_exit_reason "Network interface is not available"
 	return $OCF_ERR_ARGS
     fi
 

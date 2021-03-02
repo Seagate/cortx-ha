@@ -46,10 +46,7 @@ Mandatory parameters:
         <CDF>          Hare Cluster Description File
 
 Optional parameters:
-  -i, --interface <if>  Data network interface (when they are the same
-                        on both nodes, default: eth1)
-  --left-iface    <if>  Left node data nw interface (default: eth1)
-  --right-iface   <if>  Right node data nw interface (default: eth1)
+  -i, --interface <if>  Data network interface (default: eth1)
   --left-node     <n1>  Left  node hostname (default: pod-c1)
   --right-node    <n2>  Right node hostname (default: pod-c2)
   --left-volume   <lv>  Left  node /var/motr volume (default: /dev/sdb)
@@ -68,8 +65,6 @@ or via a yaml file, e.g.:
   ip1: <ip>
   ip2: <ip2>
   interface: <iface>
-  left-iface: <iface>
-  right-iface: <iface>
   left-node: <lnode>
   right-node: <rnode>
   left-volume: <lvolume>
@@ -80,8 +75,7 @@ EOF
 }
 
 TEMP=$(getopt --options h,i: \
-              --longoptions help,ip1:,ip2:,interface:,left-iface:,right-iface: \
-              --longoptions left-node:,right-node: \
+              --longoptions help,ip1:,ip2:,interface:,left-node:,right-node: \
               --longoptions left-volume:,right-volume:,skip-mkfs,net-type: \
               --longoptions cib-file:,restore-conf,update \
               --name "$PROG" -- "$@" || true)
@@ -93,8 +87,6 @@ eval set -- "$TEMP"
 ip1=
 ip2=
 iface=eth1
-left_iface=
-right_iface=
 lnode=pod-c1
 rnode=pod-c2
 lvolume=/dev/sdb
@@ -111,8 +103,6 @@ while true; do
         --ip1)               ip1=$2; shift 2 ;;
         --ip2)               ip2=$2; shift 2 ;;
         -i|--interface)      iface=$2; shift 2 ;;
-        --left-iface)        left_iface=$2; shift 2 ;;
-        --right-iface)       right_iface=$2; shift 2 ;;
         --left-node)         lnode=$2; shift 2 ;;
         --right-node)        rnode=$2; shift 2 ;;
         --left-volume)       lvolume=$2; shift 2 ;;
@@ -144,8 +134,6 @@ if [[ -f $argsfile ]]; then
            ip1)          ip1=$value     ;;
            ip2)          ip2=$value     ;;
            interface)    iface=$value   ;;
-           left_iface)   left_iface=$value   ;;
-           right_iface)  right_iface=$value   ;;
            left-node)    lnode=$value   ;;
            right-node)   rnode=$value   ;;
            left-volume)  lvolume=$value ;;
@@ -163,10 +151,6 @@ Supported values: true, false'
     done < $argsfile
 fi
 
-# Set left/right_iface if they are not set explicitly by user:
-[[ $left_iface ]] || left_iface=$iface
-[[ $right_iface ]] || right_iface=$iface
-
 [[ $ip1 ]] && [[ $ip2 ]] && [[ $cdf ]]  || {
     usage >&2
     exit 1
@@ -177,19 +161,10 @@ fi
 
 # Sample output:
 #   $ ip -oneline -4 address show dev eno1
-#   2: eno1    inet 10.230.249.241/20 brd 10.230.255.255 scope global noprefixroute dynamic eno1
-#       valid_lft 327971sec preferred_lft 327971sec
-#   2: eno1    inet 10.230.255.1/24 brd 10.230.255.255 scope global eno1:v1
-#       valid_lft forever preferred_lft forever
-
-# Check the netmask on the nodes - they must be the same.
-netmaskl=$(ip -oneline -4 address show dev $left_iface | head -1 |
-              awk '{print $4}' | cut -d/ -f2)
-netmaskr=$(ssh $rnode ip -oneline -4 address show dev $right_iface | head -1 |
-              awk '{print $4}' | cut -d/ -f2)
-[[ $netmaskl == $netmaskr ]] ||
-    die "Data network interfaces netmask differs between the nodes."
-netmask=$netmaskl
+#   2: eno1    inet 10.230.249.241/20 brd 10.230.255.255 scope global noprefixroute dynamic eno1\       valid_lft 327971sec preferred_lft 327971sec
+#   2: eno1    inet 10.230.255.1/24 brd 10.230.255.255 scope global eno1:v1\       valid_lft forever preferred_lft forever
+netmask=$(ip -oneline -4 address show dev $iface |
+              awk '{print $4}' | cut -d/ -f2 | head -1)
 
 run_on_both() {
     local cmd=$*
@@ -217,9 +192,9 @@ lnet_rsc_add() {
     sudo pcs -f $cib_file resource create lnet systemd:lnet
     sudo pcs -f $cib_file resource clone lnet
     sudo pcs -f $cib_file resource create lnet-c1 ocf:cortx:lnet \
-             ip=$ip1 nettype=$net_type op monitor interval=30s
+             iface=$iface:c1 nettype=$net_type op monitor interval=30s
     sudo pcs -f $cib_file resource create lnet-c2 ocf:cortx:lnet \
-             ip=$ip2 nettype=$net_type op monitor interval=30s
+             iface=$iface:c2 nettype=$net_type op monitor interval=30s
     sudo pcs -f $cib_file resource group add c1 ip-c1 lnet-c1
     sudo pcs -f $cib_file resource group add c2 ip-c2 lnet-c2
     sudo pcs -f $cib_file constraint order lnet-clone then lnet-c1
@@ -238,7 +213,7 @@ net_config_check() {
     # Check the IPs
     check_msg="
     Check the following:
-     1) Make sure the netmask of the main IP on data interface is <= 24 bits.
+     1) Make sure the netmask of the main IP on $iface interface is <= 24 bits.
      2) Run 'pcs status' and make sure LNet is configured.
      3) STONITH is configured or disabled in Pacemaker."
 
@@ -284,18 +259,18 @@ bootstrap() {
 
     log "${FUNCNAME[0]}: Preparing Hare configuration files..."
 
-# Update data_iface values in CDF: 1st data_iface will be `${left_iface}_c1`,
-#                                  2nd data_iface will be `${right_iface}_c2`.
+# Update data_iface values in CDF: 1st data_iface will be `${iface}_c1`,
+#                                  2nd data_iface will be `${iface}_c2`.
     sudo sed -r -e "/[#].*data_iface/b ; # skip commented out data_iface lines
                     /data_iface: *[a-z0-9]+[_:]c[12]/b ; # skip already updated
-                    0,/(data_iface: *)[a-z0-9]+\b/s//\1${left_iface}_c1/ ;
-                    0,/(data_iface: *)[a-z0-9]+\b/s//\1${right_iface}_c2/" \
+                    0,/(data_iface: *)[a-z0-9]+\b/s//\1${iface}_c1/ ;
+                    0,/(data_iface: *)[a-z0-9]+\b/s//\1${iface}_c2/" \
                 -i $cdf
 
     if facter --version | grep -q ^3; then
         # New facter-3 requires colons (:) for interface aliases.
         sudo sed -r -e "/[#].*data_iface/b ; # skip commented out data_iface lines
-                        s/(data_iface: *(${left_iface}|${right_iface}))_(c[12])/\1:\2/" \
+                        s/(data_iface: *${iface})_(c[12])/\1:\2/" \
                     -i $cdf
     fi
 
