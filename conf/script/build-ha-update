@@ -84,9 +84,9 @@ reset_all() {
 
 echo 'Exporting Consul KV...'
 consul_kv_dump=$hare_dir/consul-kv-dump.json
-if [[ -f $consul_kv_dump ]]; then
+if [[ -f $consul_kv_dump ]]; do
     cat $consul_kv_dump | xz > ${consul_kv_dump%.json}-$(date '+%Y%m%d%H%M%S').json.xz
-fi
+done
 $consul_bin/consul kv export > $consul_kv_dump
 
 reset_all
