@@ -146,8 +146,6 @@ then
      cp -rf $BASE_DIR/conf/etc/v1/* $HA_DIR/conf/etc/
      cp -rf $BASE_DIR/conf/script/v1/* $HA_DIR/conf/script/
      cp -rf $BASE_DIR/conf/iostack-ha/ $HA_DIR/conf/
-     cp -rf $BASE_DIR/conf/mini_provisioner/v1/setup.yaml $HA_DIR/conf/setup.yaml
-
      # Update HA path in setup
      sed -i -e "s|<HA_PATH>|${HA_PATH}/ha|g" ${HA_DIR}/conf/script/ha_setup
      sed -i -e "s|<HA_PATH>|${HA_PATH}/ha|g" ${HA_DIR}/conf/script/build-cortx-ha
@@ -155,7 +153,6 @@ then
 else
      cp -rf $BASE_DIR/conf/etc/v2/* $HA_DIR/conf/etc/
      cp -rf $BASE_DIR/conf/script/v2/* $HA_DIR/conf/script/
-     cp -rf $BASE_DIR/conf/mini_provisioner/v2/ha_setup.yaml $HA_DIR/conf/setup.yaml
      # pcswrap will only present in v1, hence removing it from v2
      rm -rf ${TMPHA}/pcswrap
 fi
