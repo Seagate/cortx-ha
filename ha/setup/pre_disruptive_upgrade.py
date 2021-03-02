@@ -30,11 +30,8 @@ from xml.etree.ElementTree import Element
 from cortx.utils.log import Log
 from ha.const import (BACKUP_DEST_DIR_CONF, BACKUP_DEST_DIR_CONSUL,
                       CONFIG_DIR, RA_LOG_DIR)
+from ha.core.error import PreRequisiteUpgradeError
 from ha.execute import SimpleCommand
-
-
-class PreRequisiteUpgradeError(Exception):
-    """Base class for any exceptions in this module."""
 
 
 def backup_consul(filename: str = "consul-kv-dump.json", dst: str = BACKUP_DEST_DIR_CONSUL) -> None:
