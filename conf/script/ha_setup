@@ -183,11 +183,16 @@ consul_watcher_failback() {
 rule_engine_config() {
     rule_file=${HA_CROSS_CONNECT_RULE_FILE}
 
-    # Note: Cross-connect detection mechanism has been removed now. So, by dafault
-    # cross-connect rule engine file will be installed. Hence removed that check
-    # from here
+    # Based on cross-connect check, load appropriate rule_engine
+    # file. If cross-connect - load rules_engine_schema.json
+    # If no cross-connect - load rules_engine_schema_without_crossconnect.json
+    [[ -f ${SYSTEM_CROSS_CONNECT_FILE} ]] && echo "Cross connect File Exists" || {
 
-    # Copy a rule file to HA_CONF directory with name as
+        echo "Cross connect file does not exist"
+        rule_file=${HA_NON_CROSS_CONNECT_RULE_FILE}
+    }
+
+    # Copy a relevant rule file to HA_CONF directory with name as
     # 'rules_engine_schema.json' as HA component search for this specific name
     cp -rf ${SOURCE_HA_CONF}/${rule_file} ${HA_CONF}/${HA_CONF_RULE_FILE}
 }
