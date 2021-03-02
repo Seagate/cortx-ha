@@ -77,7 +77,7 @@ class Cleanup:
             else:
                 pass
         if Action.FAILED in status_list.values():
-            Log.info(f"Some component are not yet recovered skipping failback. status: {status_list}")
+            Log.debug(f"Some component are not yet recovered skipping failback. status: {status_list}")
         elif Action.RESOLVED in status_list.values():
             Log.info(f"Failback is required as some of alert are resolved. status: {status_list}")
             self._ack_resource(status_list)
