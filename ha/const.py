@@ -35,6 +35,9 @@ RULE_GLOBAL_INDEX="rules_engine"
 HA_CONFIG_FILE="{}/ha.conf".format(CONFIG_DIR)
 HA_GLOBAL_INDEX="ha_conf"
 SOURCE_CONFIG_FILE="{}/ha.conf".format(SOURCE_CONFIG_PATH)
+BACKUP_DEST_DIR="/opt/seagate/cortx/ha_backup"
+BACKUP_DEST_DIR_CONF = "{}/conf".format(BACKUP_DEST_DIR)
+BACKUP_DEST_DIR_CONSUL = "{}/Consul".format(BACKUP_DEST_DIR)
 
 CURRENT_NODE_STATUS="self_node_status"
 OTHER_NODE_STATUS="other_node_status"
@@ -111,6 +114,3 @@ class NODE_STATUSES(Enum):
     STANDBY_WITH_RESOURCES_RUNNING = "Standby with resource(s) running"
     MAINTENANCE = "Maintenance"
     UNKNOWN = "Unknown"
-
-
-
