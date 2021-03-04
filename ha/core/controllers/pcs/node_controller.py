@@ -14,7 +14,7 @@
 # with this program. If not, see <https://www.gnu.org/licenses/>. For any questions
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
-import json
+
 from ha.core.error import HAUnimplemented, ClusterManagerError
 from ha.core.controllers.pcs.pcs_controller import PcsController
 from ha.core.controllers.node_controller import NodeController

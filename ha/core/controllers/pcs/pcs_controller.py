@@ -18,7 +18,6 @@
 import time
 
 from ha.core.controllers.element_controller import ElementController
-from ha.core.controllers.controller_annotation import controller_error_handler
 from ha.execute import SimpleCommand
 from ha import const
 from ha.core.error import HAInvalidNode, ClusterManagerError
