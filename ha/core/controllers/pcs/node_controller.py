@@ -120,10 +120,7 @@ class PcsVMNodeController(PcsNodeController):
                 status: Succeeded, Failed, InProgress
         """
         _res = self.nodes_status([nodeid])
-        if isinstance(_res, str):
-            _res = json.loads(_res)
-        _all_node_status = _res.get("msg")
-        _node_status = _all_node_status.get(nodeid)
+        _node_status = _res.get(nodeid)
         if _node_status.lower() == NODE_STATUSES.ONLINE.value.lower():
             return {"status": "Succeeded", "msg": f"Node {nodeid}, is already in Online status"}
         elif _node_status.lower() == NODE_STATUSES.STANDBY_WITH_RESOURCES_RUNNING.value.lower():
@@ -134,6 +131,7 @@ class PcsVMNodeController(PcsNodeController):
             _output, _err, _rc = self._execute.run_cmd(const.PCS_NODE_UNSTANDBY.replace("<node>", nodeid),
                                                        check_error=False)
             if self.check_resource_failcount():
+                Log.error(f"Node {nodeid} : Resource failcount found in the node start operation")
                 return {"status": "Failed", "msg": f"Node {nodeid} : Resource failcount found "
                                                    f"in the node start operation"}
             else:

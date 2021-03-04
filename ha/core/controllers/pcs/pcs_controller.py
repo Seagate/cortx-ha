@@ -21,7 +21,7 @@ from ha.core.controllers.element_controller import ElementController
 from ha.core.controllers.controller_annotation import controller_error_handler
 from ha.execute import SimpleCommand
 from ha import const
-from ha.core.error import HAInvalidNode
+from ha.core.error import HAInvalidNode, ClusterManagerError
 from ha.const import NODE_STATUSES
 
 
@@ -58,7 +58,6 @@ class PcsController(ElementController):
             count += 1
         return failcount_found
 
-    @controller_error_handler
     def nodes_status(self, nodeids: list = None) -> dict:
         """
         Get pcs status of nodes.
@@ -94,6 +93,6 @@ class PcsController(ElementController):
                         all_nodes_status[nodeid] = NODE_STATUSES.UNKNOWN.value
                 else:
                     raise HAInvalidNode(f"Node {nodeid} is not a part of cluster")
-            return {"status": "Succeeded", "msg": all_nodes_status}
+            return all_nodes_status
         else:
-            return {"status": "Failed", "msg": "Either nodeids is None or not a list to check the status"}
+            raise ClusterManagerError("Either nodeids is None or not a list to check the status")
