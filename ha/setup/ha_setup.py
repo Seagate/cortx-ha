@@ -43,6 +43,12 @@ class HaConfigException(Exception):
     """
     pass
 
+class HaInitException(Exception):
+    """
+    Exception to indicate that cleanup command failed due to some error.
+    """
+    pass
+
 class HaCleanupException(Exception):
     """
     Exception to indicate that cleanup command failed due to some error.
@@ -109,6 +115,24 @@ class Cmd:
         setup_arg_parser.add_argument('args', nargs='*', default=[], help='args')
         setup_arg_parser.set_defaults(command=cls)
 
+    @staticmethod
+    def remove_file(file: str) -> None:
+        """
+        Check if file exist and delete existing file.
+
+        Args:
+            file ([str]): File name to be deleted.
+        """
+        if os.path.exists(file):
+            os.remove(file)
+
+    def get_minion_name(self):
+        command = "cat /etc/machine-id"
+        machine_id, err, rc = self._execute.run_cmd(command, check_error=True)
+        Log.info(f"Read machine-id. Output: {machine_id}, Err: {err}, RC: {rc}")
+        minion_name = Conf.get(self._index, f"cluster.server_nodes.{machine_id.strip()}")
+        return minion_name
+
 class PostInstallCmd(Cmd):
     """
     PostInstall Setup Cmd
@@ -128,12 +152,14 @@ class PostInstallCmd(Cmd):
 
         Log.info("Processing post_install command")
         try:
-            # Create a directory and copy config file
-            if os.path.exists(const.HA_CONFIG_FILE):
-                os.remove(const.HA_CONFIG_FILE)
             os.makedirs(const.CONFIG_DIR, exist_ok=True)
+            # Create a directory and copy config file
+            PostInstallCmd.remove_file(const.HA_CONFIG_FILE)
             shutil.copyfile(const.SOURCE_CONFIG_FILE, const.HA_CONFIG_FILE)
-            Log.info(f"{self.name}: Copied HA config file.")
+            PostInstallCmd.remove_file(const.CM_CONTROLLER_SCHEMA)
+            shutil.copyfile(f"{const.SOURCE_CONFIG_PATH}/{const.CM_CONTROLLER_INDEX}.json",
+                            const.CM_CONTROLLER_SCHEMA)
+            Log.info(f"{self.name}: Copied HA configs file.")
             # Pre-requisite checks are done here.
             # Make sure the pacemaker, corosync and pcs packages have been installed
             PkgV().validate('rpms', const.PCS_CLUSTER_PACKAGES)
@@ -163,10 +189,7 @@ class ConfigCmd(Cmd):
         # Read machine-id and using machine-id read minion name from confstore
         # This minion name will be used for adding the node to the cluster.
         nodelist = []
-        command = "cat /etc/machine-id"
-        machine_id, err, rc = self._execute.run_cmd(command, check_error=True)
-        Log.info(f"Read machine-id. Output: {machine_id}, Err: {err}, RC: {rc}")
-        minion_name = Conf.get(self._index, f"cluster.server_nodes.{machine_id.strip()}")
+        minion_name = self.get_minion_name()
         nodelist.append(minion_name)
         # The config step will be called from primary node alwasys,
         # see how to get and use the node name then.
@@ -230,12 +253,37 @@ class InitCmd(Cmd):
         Init method.
         """
         super().__init__(args)
+        self._ha_conf_index = "ha_update_index"
 
     def process(self):
         """
         Process init command.
         """
-        pass # TBD
+        Log.info("Processing init command")
+        Log.info("INIT: Update ha configuration files")
+        Conf.load(self._ha_conf_index, f"yaml://{const.HA_CONFIG_FILE}")
+        minion_name = self.get_minion_name()
+        if "corosync-pacemaker" in Conf.get_keys(self._index):
+            raise HaInitException("Init: failed to find cluster type.")
+        cluster_type = "corosync-pacemaker"
+        node_type = Conf.get(self._index, f"cluster.{minion_name}.node_type").strip()
+        # Set env for cluster manager
+        self._update_env(node_type, cluster_type)
+        Log.info("INIT: HA configuration updated successfully.")
+        Log.info("init command is successful")
+
+    def _update_env(self, node_type, cluster_type):
+        """
+        Update env like VM, HW
+        """
+        Log.info(f"Detected {node_type} env and cluster_type {cluster_type}.")
+        if "VM" == node_type.upper():
+            Conf.set(self._ha_conf_index, "CLUSTER_MANAGER.env", node_type.upper())
+        else:
+            # TODO: check if any env available other than vm, hw
+            Conf.set(self._ha_conf_index, "CLUSTER_MANAGER.env", "HW")
+        Conf.set(self._ha_conf_index, "CLUSTER_MANAGER.cluster_type", cluster_type)
+        Conf.save(self._ha_conf_index)
 
 class TestCmd(Cmd):
     """
@@ -315,6 +363,8 @@ class CleanupCmd(Cmd):
             # Delete the config file
             if os.path.exists(const.HA_CONFIG_FILE):
                 os.remove(const.HA_CONFIG_FILE)
+            if os.path.exists(const.CM_CONTROLLER_SCHEMA):
+                os.remove(const.CM_CONTROLLER_SCHEMA)
         except Exception as e:
             Log.error(f"Cluster cleanup command failed. Error: {e}")
             raise HaCleanupException("Cluster cleanup failed")

@@ -25,13 +25,17 @@ CORTX_SUPPORT_BUNDLE_LOGS=[RA_LOG_DIR]
 
 HA_INIT_DIR="/var/cortx/ha/"
 CONFIG_DIR="/etc/cortx/ha"
+SOURCE_CONFIG_PATH="/opt/seagate/cortx/ha/conf/etc"
 RESOURCE_SCHEMA="{}/decision_monitor_conf.json".format(CONFIG_DIR)
 RESOURCE_GLOBAL_INDEX="decision_monitor"
 RULE_ENGINE_SCHAMA="{}/rules_engine_schema.json".format(CONFIG_DIR)
 RULE_GLOBAL_INDEX="rules_engine"
 HA_CONFIG_FILE="{}/ha.conf".format(CONFIG_DIR)
 HA_GLOBAL_INDEX="ha_conf"
-SOURCE_CONFIG_FILE="/opt/seagate/cortx/ha/conf/etc/ha.conf"
+SOURCE_CONFIG_FILE="{}/ha.conf".format(SOURCE_CONFIG_PATH)
+BACKUP_DEST_DIR="/opt/seagate/cortx/ha_backup"
+BACKUP_DEST_DIR_CONF = "{}/conf".format(BACKUP_DEST_DIR)
+BACKUP_DEST_DIR_CONSUL = "{}/Consul".format(BACKUP_DEST_DIR)
 
 CURRENT_NODE_STATUS="self_node_status"
 OTHER_NODE_STATUS="other_node_status"
@@ -89,3 +93,11 @@ PCS_CLUSTER_START="pcs cluster start --all"
 PCS_CLUSTER_STATUS="pcs cluster status"
 PCS_CLUSTER_UNSTANDBY="pcs cluster unstandby --all"
 PCS_STATUS_NODES="pcs status nodes"
+
+# Cluster manager
+CM_CONTROLLER_INDEX="controller_interface"
+CM_CONTROLLER_SCHEMA="{}/controller_interface.json".format(CONFIG_DIR)
+CM_ELEMENT=["cluster", "node", "service", "storageset"]
+CONTROLLER_FAILED="Failed"
+CONTROLLER_SUCCESS="Success"
+CONTROLLER_INPROGRESS="InProgress"
