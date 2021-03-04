@@ -65,9 +65,24 @@ ha_setup =  Analysis([ha_path + '/ha/setup/ha_setup.py'],
         cipher=block_cipher,
         noarchive=False)
 
+pre_disruptive_upgrade =  Analysis([ha_path + '/ha/setup/pre_disruptive_upgrade.py'],
+        pathex=[ha_path],
+        binaries=[],
+        datas=[],
+        hiddenimports=[],
+        hookspath=[],
+        runtime_hooks=[],
+        excludes=['numpy', 'matplotlib'],
+        win_no_prefer_redirects=False,
+        win_private_assemblies=False,
+        cipher=block_cipher,
+        noarchive=False)
+
 MERGE((cortxha, 'cortxha', 'cortxha'),
         (dynamic_fid_service_ra, 'dynamic_fid_service_ra', 'dynamic_fid_service_ra'),
-        (ha_setup, 'ha_setup', 'ha_setup'))
+        (ha_setup, 'ha_setup', 'ha_setup'),
+        (pre_disruptive_upgrade, 'pre_disruptive_upgrade', 'pre_disruptive_upgrade'),
+        )
 
 # cortxha
 cortxha_pyz = PYZ(cortxha.pure, cortxha.zipped_data,
@@ -114,6 +129,21 @@ ha_setup_exe = EXE(ha_setup_pyz,
         upx=True,
         console=True )
 
+# pre_disruptive_upgrade
+pre_disruptive_upgrade_pyz = PYZ(pre_disruptive_upgrade.pure, pre_disruptive_upgrade.zipped_data,
+        cipher=block_cipher)
+
+pre_disruptive_upgrade_exe = EXE(pre_disruptive_upgrade_pyz,
+        pre_disruptive_upgrade.scripts,
+        [],
+        exclude_binaries=True,
+        name='pre_disruptive_upgrade',
+        debug=False,
+        bootloader_ignore_signals=False,
+        strip=False,
+        upx=True,
+        console=True )
+
 coll = COLLECT(
         # cortxha
         cortxha_exe,
@@ -127,11 +157,17 @@ coll = COLLECT(
         dynamic_fid_service_ra.zipfiles,
         dynamic_fid_service_ra.datas,
 
-        # cortxha
+        # ha_setup
         ha_setup_exe,
         ha_setup.binaries,
         ha_setup.zipfiles,
         ha_setup.datas,
+
+        # pre_disruptive_upgrade
+        pre_disruptive_upgrade_exe,
+        pre_disruptive_upgrade.binaries,
+        pre_disruptive_upgrade.zipfiles,
+        pre_disruptive_upgrade.datas,
 
         strip=False,
         upx=True,
