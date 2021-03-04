@@ -101,7 +101,8 @@ CM_ELEMENT=["cluster", "node", "service", "storageset"]
 CONTROLLER_FAILED="Failed"
 CONTROLLER_SUCCESS="Success"
 CONTROLLER_INPROGRESS="InProgress"
-
+NO_FAILCOUNT = "No failcounts"
+RETRY_COUNT = 2
 
 class NODE_STATUSES(Enum):
     OFFLINE = "Offline"

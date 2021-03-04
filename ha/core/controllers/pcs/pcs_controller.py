@@ -15,11 +15,15 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
+import time
+
 from ha.core.controllers.element_controller import ElementController
+from ha.core.controllers.controller_annotation import controller_error_handler
 from ha.execute import SimpleCommand
 from ha import const
 from ha.core.error import HAInvalidNode
 from ha.const import NODE_STATUSES
+
 
 
 class PcsController(ElementController):
@@ -32,6 +36,29 @@ class PcsController(ElementController):
         super(PcsController, self).__init__()
         self._execute = SimpleCommand()
 
+    def check_resource_failcount(self) -> bool:
+        """
+        Resource fail count check
+        """
+        count = 0
+        while True:
+            time.sleep(10)
+            _output, _err, _rc = self._execute.run_cmd(const.PCS_FAILCOUNT_STATUS,
+                                                       check_error=False)
+            if _output == const.NO_FAILCOUNT:
+                failcount_found = False
+            else:
+                failcount_found = True
+
+            if count >= const.RETRY_COUNT:
+                break
+            if failcount_found:
+                _output, _err, _rc = self._execute.run_cmd(const.PCS_CLEANUP,
+                                                               check_error=False)
+            count += 1
+        return failcount_found
+
+    @controller_error_handler
     def nodes_status(self, nodeids: list = None) -> dict:
         """
         Get pcs status of nodes.
