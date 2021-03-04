@@ -98,7 +98,7 @@ class Cmd:
         setup_arg_parser.set_defaults(command=cls)
 
     @staticmethod
-    def remove_file(file: str) -> None:
+    def remove_file(file: str):
         """
         Check if file exist and delete existing file.
 
@@ -393,7 +393,7 @@ def main(argv: dict):
         desc = "HA Setup command"
         command = Cmd.get_command(desc, argv[1:])
         command.process()
-        print(f"Mini Provisioning {sys.argv[1]} configured sussesfully.")
+        sys.stdout.write(f"Mini Provisioning {sys.argv[1]} configured sussesfully.")
     except Exception:
         Log.error("%s\n" % traceback.format_exc())
         sys.stderr.write(f"Setup command:{argv[1]} failed for cortx-ha\n")
