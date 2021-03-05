@@ -44,8 +44,9 @@ class PcsController(ElementController):
             time.sleep(10)
             _output, _err, _rc = self._execute.run_cmd(const.PCS_FAILCOUNT_STATUS,
                                                        check_error=False)
-            if _output == const.NO_FAILCOUNT:
+            if const.NO_FAILCOUNT in _output:
                 failcount_found = False
+                break
             else:
                 failcount_found = True
 
