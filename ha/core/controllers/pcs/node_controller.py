@@ -130,13 +130,13 @@ class PcsVMNodeController(PcsNodeController):
             # make node unstandby
             _output, _err, _rc = self._execute.run_cmd(const.PCS_NODE_UNSTANDBY.replace("<node>", nodeid),
                                                        check_error=False)
-            if self.check_resource_failcount():
+            if self.heal_resource():
                 Log.error(f"Node {nodeid} : Resource failcount found in the node start operation")
                 return {"status": "Failed", "msg": f"Node {nodeid} : Resource failcount found "
                                                    f"in the node start operation"}
             else:
-                return {"status": "Succeeded", "msg": f"Node {nodeid} : Node was in standby mode, "
-                                                      f"Unstandby operation started node successfully"}
+                return {"status": "InProgress", "msg": f"Node {nodeid} : Node was in standby mode, "
+                                                      f"Unstandby operation started successfully"}
         elif _node_status.lower() == NODE_STATUSES.OFFLINE.value.lower():
             # start node not in scope of VM
             Log.error("Operation not available for node type VM")

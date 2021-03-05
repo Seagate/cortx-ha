@@ -35,30 +35,40 @@ class PcsController(ElementController):
         super(PcsController, self).__init__()
         self._execute = SimpleCommand()
 
-    def check_resource_failcount(self) -> bool:
+    def heal_resource(self):
         """
-        Resource fail count check
+        Heal the resources if there are any fail count exists
         """
         count = 0
         while True:
             time.sleep(10)
-            _output, _err, _rc = self._execute.run_cmd(const.PCS_FAILCOUNT_STATUS,
-                                                       check_error=False)
-            if const.NO_FAILCOUNT in _output:
-                failcount_found = False
-                break
-            else:
-                failcount_found = True
-
+            fail_count_exists = self.check_resource_failcount()
             if count >= const.RETRY_COUNT:
                 break
-            if failcount_found:
-                _output, _err, _rc = self._execute.run_cmd(const.PCS_CLEANUP,
-                                                               check_error=False)
+            if fail_count_exists:
+                self.clean_failure_count()
             count += 1
-        return failcount_found
+        return fail_count_exists
 
-    def nodes_status(self, nodeids: list = None) -> dict:
+    def check_resource_failcount(self) -> bool:
+        """
+        Resource fail count check
+        """
+        _output, _err, _rc = self._execute.run_cmd(const.PCS_FAILCOUNT_STATUS,
+                                                   check_error=False)
+        if const.NO_FAILCOUNT in _output:
+            return False
+        else:
+            return True
+
+    def clean_failure_count(self):
+        """
+        Cleanup resources fail count
+        """
+        _output, _err, _rc = self._execute.run_cmd(const.PCS_CLEANUP,
+                                                   check_error=False)
+
+    def nodes_status(self, nodeids: list) -> dict:
         """
         Get pcs status of nodes.
         Args:
@@ -72,27 +82,26 @@ class PcsController(ElementController):
         """
         all_nodes_status = dict()
         _output, _err, _rc = self._execute.run_cmd(const.PCS_STATUS_NODES, check_error=False)
-        if nodeids is not None and isinstance(nodeids, list):
-            for nodeid in nodeids:
-                if nodeid in _output:
-                    for status in _output.split("\n"):
-                        nodes = status.split(":")
-                        if len(nodes) > 1 and nodeid.lower() in nodes[1].strip().lower():
-                            if nodes[0].strip().lower() == NODE_STATUSES.STANDBY.value.lower():
-                                all_nodes_status[nodeid] = NODE_STATUSES.STANDBY.value
-                            elif nodes[0].strip().lower() == NODE_STATUSES.STANDBY_WITH_RESOURCES_RUNNING.value.lower():
-                                all_nodes_status[nodeid] = NODE_STATUSES.STANDBY_WITH_RESOURCES_RUNNING.value
-                            elif nodes[0].strip().lower() == NODE_STATUSES.MAINTENANCE.value.lower():
-                                all_nodes_status[nodeid] = NODE_STATUSES.MAINTENANCE.value
-                            elif nodes[0].strip().lower() == NODE_STATUSES.OFFLINE.value.lower():
-                                all_nodes_status[nodeid] = NODE_STATUSES.OFFLINE.value
-                            elif nodes[0].strip().lower() == NODE_STATUSES.ONLINE.value.lower():
-                                all_nodes_status[nodeid] = NODE_STATUSES.ONLINE.value
-                            break
-                    else:
-                        all_nodes_status[nodeid] = NODE_STATUSES.UNKNOWN.value
+        if not isinstance(nodeids, list):
+            raise ClusterManagerError(f"Invalid nodeids type `{type(nodeids)}`, required `list`")
+        for nodeid in nodeids:
+            if nodeid in _output:
+                for status in _output.split("\n"):
+                    nodes = status.split(":")
+                    if len(nodes) > 1 and nodeid.lower() in nodes[1].strip().lower():
+                        if nodes[0].strip().lower() == NODE_STATUSES.STANDBY.value.lower():
+                            all_nodes_status[nodeid] = NODE_STATUSES.STANDBY.value
+                        elif nodes[0].strip().lower() == NODE_STATUSES.STANDBY_WITH_RESOURCES_RUNNING.value.lower():
+                            all_nodes_status[nodeid] = NODE_STATUSES.STANDBY_WITH_RESOURCES_RUNNING.value
+                        elif nodes[0].strip().lower() == NODE_STATUSES.MAINTENANCE.value.lower():
+                            all_nodes_status[nodeid] = NODE_STATUSES.MAINTENANCE.value
+                        elif nodes[0].strip().lower() == NODE_STATUSES.OFFLINE.value.lower():
+                            all_nodes_status[nodeid] = NODE_STATUSES.OFFLINE.value
+                        elif nodes[0].strip().lower() == NODE_STATUSES.ONLINE.value.lower():
+                            all_nodes_status[nodeid] = NODE_STATUSES.ONLINE.value
+                        break
                 else:
-                    raise HAInvalidNode(f"Node {nodeid} is not a part of cluster")
-            return all_nodes_status
-        else:
-            raise ClusterManagerError("Either nodeids is None or not a list to check the status")
+                    all_nodes_status[nodeid] = NODE_STATUSES.UNKNOWN.value
+            else:
+                raise HAInvalidNode(f"Node {nodeid} is not a part of cluster")
+        return all_nodes_status
