@@ -82,10 +82,15 @@ def motr(cib_xml, push=False, **kwargs):
         op start timeout=100s interval=0s \
         op monitor timeout=30s interval=30s \
         op stop timeout=120s interval=0s --group io_group")
-    process.run_cmd(f"pcs -f {cib_xml} resource create motr-ios-1 ocf:seagate:dynamic_fid_service_ra service=m0d fid_service_name=ios \
-        op start timeout=100s interval=0s \
-        op monitor timeout=30s interval=30s \
-        op stop timeout=120s interval=0s --group io_group")
+    if "ios_instances" in kwargs:
+        ios_instances = int(kwargs["ios_instances"])
+    else:
+        ios_instances = 1
+    for i in range(1, int(ios_instances)+1):
+        process.run_cmd(f"pcs -f {cib_xml} resource create motr-ios-{i} ocf:seagate:dynamic_fid_service_ra service=m0d fid_service_name=ios \
+            op start timeout=100s interval=0s \
+            op monitor timeout=30s interval=30s \
+            op stop timeout=120s interval=0s --group io_group")
     if push:
         cib_push(cib_xml)
 
