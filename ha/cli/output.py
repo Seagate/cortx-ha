@@ -15,36 +15,26 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-import os
+import json
 import sys
-import argparse
-import pathlib
-import inspect 
 
-#from cortx.utils.schema.conf import Conf
-#from cortx.utils.log import Log
-#from cortx.utils.schema.payload import *
 
-#if __name__ == '__main__':
-def main(argv):
-    """
-    Entry point for cortx CLI
-    """
-    description = "CORTX HA CLI"
-     
-    sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..'))
-    # from ha import const
-    from ha.cli.command_factory import cmdFactory
-    from ha.cli.permissions import Permissions
-#    from ha.core.cluster.cluster_manager import CortxClusterManager
-    
-    ha_cli = cmdFactory()
-    
-    #ha_cli.usage(argv[0])
-    command = ha_cli.get_command(description, argv[1:])
-    permissions = Permissions()
-    permissions.validate_permissions()
-    command.execute()
+class Output():
+    """Class representing a generic framework for output handling. """
 
-if __name__ == '__main__':
-    sys.exit(main(sys.argv))
+    def __init__(self, rc, desc):
+        self.output_string = "output"
+        
+    # print the output in json format
+    def print_json(self, output_data, format):               
+        # we should be okay with using print instead of sys.stdout.write
+        # since print writes to stdout only.            
+        print(json.dumps(output_json, indent=4, sort_keys=False))
+            
+        # TBD check if exit required at this point
+        #sys.exit()
+            
+    # TBD print in  tabular format 
+    def print_string(self, output_data):
+        print(json.dumps(output_json, indent=4, sort_keys=False))
+        

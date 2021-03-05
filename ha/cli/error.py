@@ -15,36 +15,22 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-import os
-import sys
-import argparse
-import pathlib
-import inspect 
+class Error(Exception):
+    """Class to raise exceptions in CLI; with error code and output."""
 
-#from cortx.utils.schema.conf import Conf
-#from cortx.utils.log import Log
-#from cortx.utils.schema.payload import *
+    def __init__(self, rc, desc):
+        self._rc = rc
+        self._desc = desc
 
-#if __name__ == '__main__':
-def main(argv):
-    """
-    Entry point for cortx CLI
-    """
-    description = "CORTX HA CLI"
-     
-    sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..'))
-    # from ha import const
-    from ha.cli.command_factory import cmdFactory
-    from ha.cli.permissions import Permissions
-#    from ha.core.cluster.cluster_manager import CortxClusterManager
-    
-    ha_cli = cmdFactory()
-    
-    #ha_cli.usage(argv[0])
-    command = ha_cli.get_command(description, argv[1:])
-    permissions = Permissions()
-    permissions.validate_permissions()
-    command.execute()
+        error = "%s: %s" % (self._rc, self._desc)
+        super(Error, self).__init__(error)
+        # TBD log error to Log 
+        
+    @property
+    def rc(self):
+        return self._rc
 
-if __name__ == '__main__':
-    sys.exit(main(sys.argv))
+    @property
+    def desc(self):
+        return self._desc
+
