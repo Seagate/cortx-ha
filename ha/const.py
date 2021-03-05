@@ -96,6 +96,8 @@ PCS_CLUSTER_STATUS="pcs cluster status"
 PCS_CLUSTER_UNSTANDBY="pcs cluster unstandby --all"
 PCS_STATUS_NODES="pcs status nodes"
 PCS_NODE_UNSTANDBY="pcs node unstandby <node>"
+PCS_NODE_CLEANUP="pcs resource cleanup --node <node>"
+PCS_NODE_FAILCOUNT_STATUS="pcs resource failcount show --node <node>"
 
 # Cluster manager
 CM_CONTROLLER_INDEX="controller_interface"

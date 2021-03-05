@@ -35,37 +35,37 @@ class PcsController(ElementController):
         super(PcsController, self).__init__()
         self._execute = SimpleCommand()
 
-    def heal_resource(self):
+    def heal_resource(self, node_id):
         """
         Heal the resources if there are any fail count exists
         """
         count = 0
         while True:
             time.sleep(10)
-            fail_count_exists = self.check_resource_failcount()
+            fail_count_exists = self.check_resource_failcount(node_id)
             if count >= const.RETRY_COUNT:
                 break
             if fail_count_exists:
-                self.clean_failure_count()
+                self.clean_failure_count(node_id)
             count += 1
         return fail_count_exists
 
-    def check_resource_failcount(self) -> bool:
+    def check_resource_failcount(self, node_id) -> bool:
         """
         Resource fail count check
         """
-        _output, _err, _rc = self._execute.run_cmd(const.PCS_FAILCOUNT_STATUS,
+        _output, _err, _rc = self._execute.run_cmd(const.PCS_NODE_FAILCOUNT_STATUS.replace("<node>", node_id),
                                                    check_error=False)
         if const.NO_FAILCOUNT in _output:
             return False
         else:
             return True
 
-    def clean_failure_count(self):
+    def clean_failure_count(self, node_id):
         """
         Cleanup resources fail count
         """
-        _output, _err, _rc = self._execute.run_cmd(const.PCS_CLEANUP,
+        _output, _err, _rc = self._execute.run_cmd(const.PCS_NODE_CLEANUP.replace("<node>", node_id),
                                                    check_error=False)
 
     def nodes_status(self, nodeids: list) -> dict:

@@ -130,7 +130,7 @@ class PcsVMNodeController(PcsNodeController):
             # make node unstandby
             _output, _err, _rc = self._execute.run_cmd(const.PCS_NODE_UNSTANDBY.replace("<node>", nodeid),
                                                        check_error=False)
-            if self.heal_resource():
+            if self.heal_resource(nodeid):
                 Log.error(f"Node {nodeid} : Resource failcount found in the node start operation")
                 return {"status": "Failed", "msg": f"Node {nodeid} : Resource failcount found "
                                                    f"in the node start operation"}
