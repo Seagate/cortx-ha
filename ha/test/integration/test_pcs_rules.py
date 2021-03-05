@@ -21,7 +21,6 @@ import pathlib
 import argparse
 from cortx.utils.log import Log
 sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..', '..'))
-from ha.execute import SimpleCommand
 from ha.setup.create_pacemaker_resources import create_all_resources
 
 def _parse_input_args():
@@ -40,7 +39,6 @@ def _parse_input_args():
 
 
 def _main():
-    # Workaround to make SimpleCommand work, not crash
     Log.init(service_name="create_pacemaker_resources",
              log_path="/var/log/seagate/cortx/ha", level="INFO")
 
