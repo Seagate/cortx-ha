@@ -38,10 +38,8 @@ class Command:
         parser1 = parser.add_parser(
             cmd_class.name, help='%s operations' % cmd_name)
         # If required help can be specified individually each child class
-        # by overriding add_args method    
-        # Mandatory parameter    
+        # by overriding add_args method
         parser1.add_argument('op_type', help='operation type')
-        # Optional parameters
         parser1.add_argument('args', nargs='*', default=[], help='args')
         
         parser1.set_defaults(command=cmd_class)

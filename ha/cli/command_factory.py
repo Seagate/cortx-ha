@@ -61,10 +61,20 @@ class cmdFactory:
         
         cmds = inspect.getmembers(self.command, inspect.isclass)
         
+        cli_modules = []
         for name, cmd in cmds:
             # Command is the base class name 
             if name != "Command" and "Command" in name:
                 cmd.add_args(subparsers, cmd, name)
+                cli_modules.append(name.replace("Command",''))
+
+
+        # Raise exception if correct but insufficient parameters are passed
+        if len(argv) < 2:
+            if (len(argv) == 0) or (len(argv) == 1 and argv[0] in cli_modules):
+                print(self.usage())
+                raise Error(errno.EINVAL,
+                    "Insufficient parameters; refer to help for details")
         
         # TBD This is printing help twice in case of exception, exception not 
         # caught by try catch. Needs to be debugged 
