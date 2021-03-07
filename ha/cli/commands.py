@@ -69,7 +69,7 @@ class clusterCommand(Command):
         """Execute cluster commands """
 
         print("Placeholder cluster command")
-#        self._cluster.process(self.op_type, self.args)
+        self._cluster.process(self.op_type, self.args)
  
  
 

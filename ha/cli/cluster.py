@@ -16,13 +16,24 @@
 # cortx-questions@seagate.com.
 
 import errno
+import time
 
+from cortx.utils.log import Log
+from ha.execute import SimpleCommand
+from ha import const
 from ha.cli.output import Output
 from ha.cli.permissions import Permissions
 
 # Sample / placeholder file for cluster commands
 class Cluster:
     """cluster related CLI commands """
+    def __init__(self):
+        """
+        manage pacemaker/corosync cluster
+        """
+        super(Cluster, self).__init__()
+        # To be removed once the "cortx cluster start" user story [EOS-16248] is started
+        self._execute = SimpleCommand()
 
 
     def process(self, op_type, args):
@@ -31,7 +42,13 @@ class Cluster:
         Usage (arguments to be provided):
         
         """
-        print("Placeholder cluster CLIs")
+        # This is temporary code, copied from M0
+        # To be removed once the "cortx cluster start" user story [EOS-16248] is started
+        if op_type == "start":
+            self.start()
+        else:
+            print("Placeholder cluster CLIs")    
+
         #Output.print(string, "json")
         
 
@@ -40,3 +57,98 @@ class Cluster:
 
     def is_internal_command():
         print("Placeholder check if command is internal or external")
+
+    def get_nodes_status(self):
+        """
+        Sample output of the const.PCS_STATUS_NODES command
+
+        Pacemaker Nodes:
+         Online: node1 node2
+         Standby:
+         Standby with resource(s) running:
+         Maintenance:
+         Offline:
+        Pacemaker Remote Nodes:
+         Online:
+         Standby:
+         Standby with resource(s) running:
+         Maintenance:
+         Offline:
+        """
+        _output, _err, _rc = self._execute.run_cmd(const.PCS_STATUS_NODES, check_error=False)
+
+        self.active_nodes = self.standby_nodes = self.offline_nodes = False
+
+        for status in _output.split("\n"):
+            nodes = status.split(":", 1)
+            # This break should be removed if pacemaker remote is also used in the cluster
+            if nodes[0] == "Pacemaker Remote Nodes":
+                break
+            elif nodes[0] == " Online" and len(nodes[1].split()) > 0:
+                self.active_nodes = True
+            elif nodes[0] == " Standby" and len(nodes[1].split()) > 0:
+                self.standby_nodes = True
+            elif nodes[0] == " Standby with resource(s) running" and len(nodes[1].split()) > 0:
+                self.active_nodes = True
+            elif nodes[0] == " Maintenance" and len(nodes[1].split()) > 0:
+                self.active_nodes = True
+            elif nodes[0] == "  Offline" and len(nodes[1].split()) > 0:
+                self.offline_nodes = True
+    
+    def start(self):
+
+        Log.info("Executing cortxha cluster start")
+        print("Executing cortxha cluster start")
+
+        _output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_STATUS, check_error=False)
+        if _rc != 0:
+            if(_err.find("No such file or directory: 'pcs'") != -1):
+                Log.error("Cluster failed to start; pcs not installed")
+                #print("Cluster failed to start; pcs not installed")
+                raise Exception("Cluster failed to start; pcs not installed")
+            # if cluster is not running; start cluster
+            elif(_err.find("cluster is not currently running on this node") != -1):
+                self._execute.run_cmd(const.PCS_CLUSTER_START, check_error=False)
+                Log.info("cluster started ; waiting for nodes to come online ")
+                # It takes nodes 30 seconds to come to their original state after cluster is started
+                # observation on a 2 node cluster
+                # wait for upto 100 sec for nodes to come to active states (online / maintenance mode)
+                time.sleep(10)
+                self.get_nodes_status()
+                retries = 18
+                while  self.active_nodes == False and retries > 0:
+                    time.sleep(5)
+                    self.get_nodes_status()
+                    retries -= 1
+
+        else:
+            #If cluster is running, but all nodes are  in Standby mode;
+            #start the nodes
+            self.get_nodes_status()
+            if self.active_nodes == False:
+                if self.standby_nodes == True:
+                    # issue pcs cluster unstandby
+                    _output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_UNSTANDBY, check_error=False)
+
+        # check cluster and node status
+        _output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_STATUS, check_error=False)
+        if _rc != 0:
+            # cluster could not be started.
+            Log.error("Cluster failed to start")
+            raise Exception("Cluster failed to start")
+        else:
+            # confirm that at least one node is active
+            self.get_nodes_status()
+            if self.active_nodes == False:
+                # wait for 5 seconds and retry
+                time.sleep(5)
+                self.get_nodes_status()
+                if self.active_nodes == False:
+                    Log.info("Cluster started; nodes not online")
+                    raise Exception("Cluster started; nodes not online")
+
+        Log.info("Cluster started successfully")
+
+
+
+    

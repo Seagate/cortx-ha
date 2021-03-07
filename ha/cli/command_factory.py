@@ -23,24 +23,18 @@ import traceback
 
 from ha.cli import commands
 from ha.cli.error import Error
-
-#Enable when needed 
-#from cortx.utils.schema.conf import Conf
+from ha import const
+from ha.core.config.config_manager import ConfigManager
 from cortx.utils.log import Log
-#from cortx.utils.schema.payload import *
+
 
 class cmdFactory:
     def __init__(self):
         """
         init of command factory
         """
-	    #Enable later when logging with Conf is needed
-        #Conf.init()
-        #Conf.load(const.RESOURCE_GLOBAL_INDEX, Json(const.RESOURCE_SCHEMA))
-        #Conf.load(const.HA_GLOBAL_INDEX, Yaml(const.HA_CONFIG_FILE))
-        #log_path = Conf.get(const.HA_GLOBAL_INDEX, "LOG.path")
-        #log_level = Conf.get(const.HA_GLOBAL_INDEX, "LOG.level")
-        #Log.init(service_name='cortx', log_path=log_path, level=log_level)
+        # Init logging to  cortxcli.log file
+        ConfigManager.init("cortxcli")
 
         #from  ha.cli import commands
         self.command = commands
@@ -68,7 +62,6 @@ class cmdFactory:
                 cmd.add_args(subparsers, cmd, name)
                 cli_modules.append(name.replace("Command",''))
 
-
         # Raise exception if correct but insufficient parameters are passed
         if len(argv) < 2:
             if (len(argv) == 0) or (len(argv) == 1 and argv[0] in cli_modules):
@@ -76,9 +69,7 @@ class cmdFactory:
                 raise Error(errno.EINVAL,
                     "Insufficient parameters; refer to help for details")
         
-        # TBD This is printing help twice in case of exception, exception not 
-        # caught by try catch. Needs to be debugged 
-        args = parser.parse_args(argv)        
+        args = parser.parse_args(argv)
         return args.command(args)
 
 

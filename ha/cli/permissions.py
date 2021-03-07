@@ -23,8 +23,11 @@ user validation, permissions validation module
 import grp
 import getpass
 import os
+import errno
 
 from ha import const
+from cortx.utils.log import Log
+from ha.cli.error import Error
 
 class Permissions:
 
