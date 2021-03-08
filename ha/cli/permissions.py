@@ -71,6 +71,3 @@ class Permissions:
             Log.error("Group root / haclient is not defined")
             raise Error(errno.EINVAL,
                 "Group root / haclient is not defined ")
-            
-
-
