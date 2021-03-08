@@ -103,7 +103,7 @@ class serviceCommand(Command):
         #self._service = Service()
 
     def execute(self):
-        
+
         """Execute service commands """
         print("Placeholder serviceCommand")
         #self._service.execute(self.op_type, self.args)

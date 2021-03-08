@@ -97,6 +97,3 @@ class cmdFactory:
                         "\tservice stop <service> [--node <Node>] [--json]\n"
                         "\tservice status <service> [--node <Node>] [--json]\n")
         return usage_string
-
-    
-
