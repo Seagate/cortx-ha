@@ -26,15 +26,15 @@ class Output():
         #self.output_string = "output"
 
     # print the output in json format
-    def print_json(self, output_data):               
+    def print_json(self, output_data):
         # we should be okay with using print instead of sys.stdout.write
         # since print writes to stdout only.
         print(json.dumps(output_data, indent=4, sort_keys=False))
-            
+
         # TBD check if exit required at this point
         #sys.exit()
             
-    # TBD print in  tabular format 
+    # TBD print in  tabular format
     def print_string(self, output_data):
         print(json.dumps(output_data, indent=4, sort_keys=False))
         

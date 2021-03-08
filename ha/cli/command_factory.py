@@ -18,7 +18,7 @@
 import inspect
 import argparse
 import errno
-#import traceback 
+#import traceback
 
 from ha.cli import commands
 from ha.cli.error import Error
@@ -43,7 +43,7 @@ class cmdFactory:
         parse the cli and return the right executor
         """
 
-        parser = argparse.ArgumentParser( 
+        parser = argparse.ArgumentParser(
             usage = "%(prog)s\n\n" +  self.usage(),
             formatter_class = argparse.RawDescriptionHelpFormatter)
 
@@ -51,7 +51,7 @@ class cmdFactory:
 
         # inspect the commands.py file containing all classes including base class
         cmds = inspect.getmembers(self.command, inspect.isclass)
-        
+
         cli_modules = []
         for name, cmd in cmds:
             # Command is the base class name

@@ -15,13 +15,11 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-import errno
 import time
 
 from cortx.utils.log import Log
 from ha.execute import SimpleCommand
 from ha import const
-from ha.cli.permissions import Permissions
 
 # Sample / placeholder file for cluster commands
 class Cluster:
@@ -47,12 +45,12 @@ class Cluster:
             print("Placeholder cluster CLIs")
 
         #Output.print(string, "json")
-        
 
-    def validate():
+
+    def validate(self):
         print("Placeholder validate method")
 
-    def is_internal_command():
+    def is_internal_command(self):
         print("Placeholder check if command is internal or external")
 
     def get_nodes_status(self):

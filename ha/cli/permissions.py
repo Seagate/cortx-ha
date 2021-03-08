@@ -34,7 +34,6 @@ class Permissions:
     def __init__(self):
         self._is_hauser = False
 
-    
     """
     Routine used by executors to confirm acess permissions.
     Used to differentiate between external and internal CLIs
@@ -50,7 +49,7 @@ class Permissions:
         group_id = os.getgid()
                 
         try:
-            # find group id for root and haclient 
+            # find group id for root and haclient
             id_ha = grp.getgrnam(const.USER_GROUP_HACLIENT)
             id_root = grp.getgrnam(const.USER_GROUP_ROOT)
 
@@ -58,20 +57,20 @@ class Permissions:
             if group_id != id_ha.gr_gid and group_id != id_root.gr_gid:
                 Log.error(f"User {user} does not have necessary permissions to execute this CLI")
                 raise Error(errno.EACCES,
-                            f"User {user} does not have necessary permissions to execute this CLI")    
+                            f"User {user} does not have necessary permissions to execute this CLI")
 
             # The user name "hauser"; which is part of the "haclient" group;
             # is used by HA.
             # internal commands are allowed only if the user is "hauser"
             if user == const.USER_HA_INTERNAL:
                 self._is_hauser = True
-                
+
 
         # TBD : If required raise seperate exception  for root and haclient
         except KeyError:
             Log.error("Group root / haclient is not defined")
-            raise Error(errno.EINVAL, 
-                "Group root / haclient is not defined ")    
+            raise Error(errno.EINVAL,
+                "Group root / haclient is not defined ")
             
 
 

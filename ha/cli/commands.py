@@ -41,7 +41,7 @@ class Command:
         # by overriding add_args method
         parser1.add_argument('op_type', help='operation type')
         parser1.add_argument('args', nargs='*', default=[], help='args')
-        
+
         parser1.set_defaults(command=cmd_class)
 
     @staticmethod
@@ -112,4 +112,4 @@ class serviceCommand(Command):
 """
 SupportBundleCommand is currently broken, so removed the code.
 This will be added when the support bundle user story is started 
-"""            
+"""
