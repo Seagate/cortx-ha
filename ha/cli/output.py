@@ -33,7 +33,7 @@ class Output():
 
         # TBD check if exit required at this point
         #sys.exit()
-            
+
     # TBD print in  tabular format
     def print_string(self, output_data):
         print(json.dumps(output_data, indent=4, sort_keys=False))

@@ -70,8 +70,8 @@ class clusterCommand(Command):
 
         print("Placeholder cluster command")
         self._cluster.process(self.op_type, self.args)
- 
- 
+
+
 
 class nodeCommand(Command):
     """Node related commands."""

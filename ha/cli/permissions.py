@@ -42,7 +42,7 @@ class Permissions:
         return self._is_hauser
 
     def validate_permissions(self):
-        
+
         # confirm that user is root or part of haclient group"
 
         user = getpass.getuser()

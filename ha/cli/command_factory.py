@@ -65,7 +65,7 @@ class cmdFactory:
                 print(self.usage())
                 raise Error(errno.EINVAL,
                     "Insufficient parameters; refer to help for details")
-        
+
         args = parser.parse_args(argv)
         return args.command(args)
 

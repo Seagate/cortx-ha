@@ -89,7 +89,7 @@ class Cluster:
                 self.active_nodes = True
             elif nodes[0] == "  Offline" and len(nodes[1].split()) > 0:
                 self.offline_nodes = True
-    
+
     def start(self):
 
         Log.info("Executing cortxha cluster start")

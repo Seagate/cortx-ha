@@ -38,7 +38,7 @@ def main(argv):
 #    from ha.core.cluster.cluster_manager import CortxClusterManager
 
     ha_cli = cmdFactory()
-    
+
     #ha_cli.usage(argv[0])
     command = ha_cli.get_command(description, argv[1:])
     permissions = Permissions()
