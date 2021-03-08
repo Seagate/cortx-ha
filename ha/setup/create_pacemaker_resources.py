@@ -26,14 +26,13 @@ from ha import const
 """
 # List of resource
 motr-free-space-mon
-s3auth-clone
-    s3auth
 io_group-clone
     hax-consul
     hax
     motr-confd-1
     motr-ios-1
     haproxy
+    s3auth
     s3server-1
     s3server-2
     s3server-3
