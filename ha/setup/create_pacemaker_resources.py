@@ -1,4 +1,4 @@
-#!/bin/python3
+#!/usr/bin/env python3
 
 # Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
 #
@@ -250,14 +250,18 @@ management_config = [mgmt_vip, kibana, csm, uds]
 
 def io_stack(cib_xml, push, **kwargs):
     """Create IO stack related resources."""
+    Log.info("HA Rules: ******* io_group *********")
     # Create core io resources
     for fun in core_io:
+        Log.info(f"HA Rules: Configure {str(fun)}")
         fun(cib_xml, push, **kwargs)
     # Create helper active_active io resources
     for fun in io_helper_aa:
+        Log.info(f"HA Rules: Configure {str(fun)}")
         fun(cib_xml, push, **kwargs)
     # Create helper active_passive io resources
     for fun in io_helper_ap:
+        Log.info(f"HA Rules: Configure {str(fun)}")
         fun(cib_xml, push, **kwargs)
     process.run_cmd(f"pcs -f {cib_xml} resource clone io_group")
     if push:
@@ -265,7 +269,9 @@ def io_stack(cib_xml, push, **kwargs):
 
 def monitor_stack(cib_xml, push, **kwargs):
     """Configure monitor stack"""
+    Log.info("HA Rules: ******* monitor_group *********")
     for fun in monitor_config:
+        Log.info(f"HA Rules: Configure {str(fun)}")
         fun(cib_xml, push, **kwargs)
     process.run_cmd(f"pcs -f {cib_xml} resource clone monitor_group")
     if push:
@@ -273,7 +279,9 @@ def monitor_stack(cib_xml, push, **kwargs):
 
 def management_group(cib_xml, push, **kwargs):
     """Configure management group"""
+    Log.info("HA Rules: ******* management_group *********")
     for fun in management_config:
+        Log.info(f"HA Rules: Configure {str(fun)}")
         fun(cib_xml, push, **kwargs)
     if push:
         cib_push(cib_xml)
@@ -292,6 +300,7 @@ def create_all_resources(cib_xml=const.CIB_FILE, push=True, **kwargs):
         not empty but incomplete.
     """
     try:
+        Log.info("HA Rules: Start creating all HA resources.")
         cib_get(cib_xml)
         # Configure io resource
         io_stack(cib_xml, False, **kwargs)
@@ -300,8 +309,10 @@ def create_all_resources(cib_xml=const.CIB_FILE, push=True, **kwargs):
         # Configure of management group
         management_group(cib_xml, False, **kwargs)
         # Configure constraint
+        Log.info("HA Rules: Start configuring HA Rules.")
         config_constraint(cib_xml, False, **kwargs)
         if push:
             cib_push(cib_xml)
+        Log.info("HA Rules: Successfully configured all HA resources and its configuration.")
     except Exception:
         raise CreateResourceError("Failed to populate cluster with resources")

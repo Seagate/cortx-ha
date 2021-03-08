@@ -1,4 +1,4 @@
-#!/bin/env python3
+#!/usr/bin/env python3
 
 # Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
 # This program is free software: you can redistribute it and/or modify
@@ -393,10 +393,10 @@ def main(argv: dict):
         desc = "HA Setup command"
         command = Cmd.get_command(desc, argv[1:])
         command.process()
-        sys.stdout.write(f"Mini Provisioning {sys.argv[1]} configured sussesfully.")
+        sys.stdout.write(f"Mini Provisioning {sys.argv[1]} configured sussesfully.\n")
     except Exception:
         Log.error("%s\n" % traceback.format_exc())
-        sys.stderr.write(f"Setup command:{argv[1]} failed for cortx-ha\n")
+        sys.stderr.write(f"Setup command:{argv[1]} failed for cortx-ha.\n")
         return errno.EINVAL
 
 if __name__ == '__main__':
