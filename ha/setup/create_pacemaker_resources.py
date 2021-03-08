@@ -240,7 +240,7 @@ def config_constraint(cib_xml, push=False, **kwargs):
     if push:
         cib_push(cib_xml)
 
-core_io = [hax, motr, haproxy, s3auth, s3servers]
+core_io = [hax, motr, s3auth, s3servers, haproxy]
 io_helper_aa = [s3bc]
 io_helper_ap = [free_space_monitor, s3bp]
 monitor_config = [sspl]
