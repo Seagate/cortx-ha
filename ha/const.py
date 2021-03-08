@@ -109,6 +109,13 @@ CONTROLLER_INPROGRESS="InProgress"
 NO_FAILCOUNT = "No failcounts"
 RETRY_COUNT = 2
 
+
+class STATUSES(Enum):
+    IN_PROGRESS = "InProgress"
+    SUCCEEDED = "Succeeded"
+    FAILED = "Failed"
+
+
 class NODE_STATUSES(Enum):
     OFFLINE = "Offline"
     STANDBY = "Standby"

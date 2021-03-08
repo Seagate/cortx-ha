@@ -122,22 +122,22 @@ class PcsVMNodeController(PcsNodeController):
         _res = self.nodes_status([nodeid])
         _node_status = _res.get(nodeid)
         if _node_status.lower() == NODE_STATUSES.ONLINE.value.lower():
-            return {"status": "Succeeded", "msg": f"Node {nodeid}, is already in Online status"}
+            return {"status": const.STATUSES.SUCCEEDED.value, "msg": f"Node {nodeid}, is already in Online status"}
         elif _node_status.lower() == NODE_STATUSES.STANDBY_WITH_RESOURCES_RUNNING.value.lower():
-            return {"status": "Succeeded", "msg": f"Node {nodeid}, is going in standby mode, "
+            return {"status": const.STATUSES.SUCCEEDED.value, "msg": f"Node {nodeid}, is going in standby mode, "
                                                   f"We need to wait to complete the resource shutdown"}
         elif _node_status.lower() == NODE_STATUSES.STANDBY.value.lower():
             # make node unstandby
             if self.heal_resource(nodeid):
                 _output, _err, _rc = self._execute.run_cmd(const.PCS_NODE_UNSTANDBY.replace("<node>", nodeid),
                                                            check_error=False)
-                return {"status": "InProgress", "msg": f"Node {nodeid} : Node was in standby mode, "
+                return {"status": const.STATUSES.IN_PROGRESS.value, "msg": f"Node {nodeid} : Node was in standby mode, "
                                                        f"Unstandby operation started successfully"}
             else:
                 Log.error(f"Node {nodeid} is in standby mode : Resource failcount found on the node, "
                           f"cleanup not worked after 2 retries")
-                return {"status": "Failed", "msg": f"Node {nodeid} is in standby mode: Resource failcount "
-                                                   f"found on the node cleanup not worked after 2 retries"}
+                return {"status": const.STATUSES.FAILED.value, "msg": f"Node {nodeid} is in standby mode: Resource "
+                                                   f"failcount found on the node cleanup not worked after 2 retries"}
 
         elif _node_status.lower() == NODE_STATUSES.OFFLINE.value.lower():
             # start node not in scope of VM

@@ -81,8 +81,8 @@ class PcsController(ElementController):
                 if 'local' then provide local node status.
 
         Returns:
-            ([dict]): Return dictionary. {"status": "", "msg":{}}}
-                status: Succeeded, Failed, InProgress
+            ([dict]): Return dictionary. {"node_id1": "status of node_id1",
+                                          "node_id2": "status of node_id2"...}
         """
         all_nodes_status = dict()
         _output, _err, _rc = self._execute.run_cmd(const.PCS_STATUS_NODES, check_error=False)
