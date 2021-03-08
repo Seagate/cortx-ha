@@ -128,15 +128,17 @@ class PcsVMNodeController(PcsNodeController):
                                                   f"We need to wait to complete the resource shutdown"}
         elif _node_status.lower() == NODE_STATUSES.STANDBY.value.lower():
             # make node unstandby
-            _output, _err, _rc = self._execute.run_cmd(const.PCS_NODE_UNSTANDBY.replace("<node>", nodeid),
-                                                       check_error=False)
             if self.heal_resource(nodeid):
-                Log.error(f"Node {nodeid} : Resource failcount found in the node start operation")
-                return {"status": "Failed", "msg": f"Node {nodeid} : Resource failcount found "
-                                                   f"in the node start operation"}
-            else:
+                _output, _err, _rc = self._execute.run_cmd(const.PCS_NODE_UNSTANDBY.replace("<node>", nodeid),
+                                                           check_error=False)
                 return {"status": "InProgress", "msg": f"Node {nodeid} : Node was in standby mode, "
-                                                      f"Unstandby operation started successfully"}
+                                                       f"Unstandby operation started successfully"}
+            else:
+                Log.error(f"Node {nodeid} is in standby mode : Resource failcount found on the node, "
+                          f"cleanup not worked after 2 retries")
+                return {"status": "Failed", "msg": f"Node {nodeid} is in standby mode: Resource failcount "
+                                                   f"found on the node cleanup not worked after 2 retries"}
+
         elif _node_status.lower() == NODE_STATUSES.OFFLINE.value.lower():
             # start node not in scope of VM
             Log.error("Operation not available for node type VM")

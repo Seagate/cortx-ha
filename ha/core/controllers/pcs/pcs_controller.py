@@ -40,15 +40,19 @@ class PcsController(ElementController):
         Heal the resources if there are any fail count exists
         """
         count = 0
+        resources_healed = False
         while True:
-            time.sleep(10)
-            fail_count_exists = self.check_resource_failcount(node_id)
             if count >= const.RETRY_COUNT:
                 break
+            fail_count_exists = self.check_resource_failcount(node_id)
             if fail_count_exists:
                 self.clean_failure_count(node_id)
+            else:
+                resources_healed = True
+                break
             count += 1
-        return fail_count_exists
+            time.sleep(10)
+        return resources_healed
 
     def check_resource_failcount(self, node_id) -> bool:
         """
