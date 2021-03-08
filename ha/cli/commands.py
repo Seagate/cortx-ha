@@ -85,7 +85,7 @@ class nodeCommand(Command):
         #self._node = Node()
 
     def execute(self):
-        
+
         """Eexecute node commands """
         print("Placeholder nodeCommand")
         #self._node.execute(self.op_type, self.args)

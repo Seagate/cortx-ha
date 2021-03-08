@@ -70,7 +70,7 @@ class cmdFactory:
         return args.command(args)
 
 
-        
+
     @staticmethod
     def usage():
         usage_string = ("\t[-h]\n"

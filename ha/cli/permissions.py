@@ -47,7 +47,7 @@ class Permissions:
 
         user = getpass.getuser()
         group_id = os.getgid()
-                
+  
         try:
             # find group id for root and haclient
             id_ha = grp.getgrnam(const.USER_GROUP_HACLIENT)
