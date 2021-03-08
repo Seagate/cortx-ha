@@ -19,7 +19,6 @@ import os
 import sys
 import argparse
 import pathlib
-import inspect 
 
 #from cortx.utils.schema.conf import Conf
 #from cortx.utils.log import Log
@@ -31,7 +30,7 @@ def main(argv):
     Entry point for cortx CLI
     """
     description = "CORTX HA CLI"
-     
+
     sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..'))
     # from ha import const
     from ha.cli.command_factory import cmdFactory

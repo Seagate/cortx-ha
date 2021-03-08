@@ -31,7 +31,7 @@ from ha.cli.error import Error
 
 class Permissions:
 
-    def __init__(self):    
+    def __init__(self):
         self._is_hauser = False
 
     

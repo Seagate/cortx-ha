@@ -16,16 +16,14 @@
 # cortx-questions@seagate.com.
 
 import inspect
-import sys
 import argparse
 import errno
-import traceback 
+#import traceback 
 
 from ha.cli import commands
 from ha.cli.error import Error
-from ha import const
 from ha.core.config.config_manager import ConfigManager
-from cortx.utils.log import Log
+#from cortx.utils.log import Log
 
 
 class cmdFactory:
@@ -51,13 +49,12 @@ class cmdFactory:
 
         subparsers = parser.add_subparsers()
 
-        # inspect the commands.py file containing all classes including base class 
-        
+        # inspect the commands.py file containing all classes including base class
         cmds = inspect.getmembers(self.command, inspect.isclass)
         
         cli_modules = []
         for name, cmd in cmds:
-            # Command is the base class name 
+            # Command is the base class name
             if name != "Command" and "Command" in name:
                 cmd.add_args(subparsers, cmd, name)
                 cli_modules.append(name.replace("Command",''))

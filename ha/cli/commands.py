@@ -46,7 +46,7 @@ class Command:
 
     @staticmethod
     def validate():
-        print("Placeholder validate method")        
+        print("Placeholder validate method")
 
     @staticmethod
     def execute():

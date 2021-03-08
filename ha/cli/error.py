@@ -24,8 +24,8 @@ class Error(Exception):
 
         error = "%s: %s" % (self._rc, self._desc)
         super(Error, self).__init__(error)
-        # TBD log error to Log 
-        
+        # TBD log error to Log if required
+
     @property
     def rc(self):
         return self._rc

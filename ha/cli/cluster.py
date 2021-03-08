@@ -21,7 +21,6 @@ import time
 from cortx.utils.log import Log
 from ha.execute import SimpleCommand
 from ha import const
-from ha.cli.output import Output
 from ha.cli.permissions import Permissions
 
 # Sample / placeholder file for cluster commands
@@ -39,21 +38,19 @@ class Cluster:
     def process(self, op_type, args):
         """
         Process cluster CLIs.
-        Usage (arguments to be provided):
-        
         """
         # This is temporary code, copied from M0
         # To be removed once the "cortx cluster start" user story [EOS-16248] is started
         if op_type == "start":
             self.start()
         else:
-            print("Placeholder cluster CLIs")    
+            print("Placeholder cluster CLIs")
 
         #Output.print(string, "json")
         
 
     def validate():
-        print("Placeholder validate method")      
+        print("Placeholder validate method")
 
     def is_internal_command():
         print("Placeholder check if command is internal or external")
