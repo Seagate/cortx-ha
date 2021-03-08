@@ -27,7 +27,6 @@ from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
 from cortx.utils.validator.v_pkg import PkgV
 from cortx.utils.security.cipher import Cipher
-sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..'))
 from ha.execute import SimpleCommand
 from ha import const
 from ha.setup.create_cluster import cluster_auth, cluster_create

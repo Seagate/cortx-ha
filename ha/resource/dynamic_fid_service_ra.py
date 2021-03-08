@@ -28,7 +28,6 @@ import pathlib
 
 from cortx.utils.log import Log
 
-sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..'))
 from ha.core.config.config_manager import ConfigManager
 from ha.resource.resource_agent import CortxServiceRA
 from ha.execute import SimpleCommand
