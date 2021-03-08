@@ -251,17 +251,17 @@ def io_stack(cib_xml, push, **kwargs):
     """Create IO stack related resources."""
     Log.info("HA Rules: ******* io_group *********")
     # Create core io resources
-    for fun in core_io:
-        Log.info(f"HA Rules: Configure {str(fun)}")
-        fun(cib_xml, push, **kwargs)
+    for create_resource in core_io:
+        Log.info(f"HA Rules: Configure {str(create_resource)}")
+        create_resource(cib_xml, push, **kwargs)
     # Create helper active_active io resources
-    for fun in io_helper_aa:
-        Log.info(f"HA Rules: Configure {str(fun)}")
-        fun(cib_xml, push, **kwargs)
+    for create_resource in io_helper_aa:
+        Log.info(f"HA Rules: Configure {str(create_resource)}")
+        create_resource(cib_xml, push, **kwargs)
     # Create helper active_passive io resources
-    for fun in io_helper_ap:
-        Log.info(f"HA Rules: Configure {str(fun)}")
-        fun(cib_xml, push, **kwargs)
+    for create_resource in io_helper_ap:
+        Log.info(f"HA Rules: Configure {str(create_resource)}")
+        create_resource(cib_xml, push, **kwargs)
     process.run_cmd(f"pcs -f {cib_xml} resource clone io_group")
     if push:
         cib_push(cib_xml)
@@ -269,9 +269,9 @@ def io_stack(cib_xml, push, **kwargs):
 def monitor_stack(cib_xml, push, **kwargs):
     """Configure monitor stack"""
     Log.info("HA Rules: ******* monitor_group *********")
-    for fun in monitor_config:
-        Log.info(f"HA Rules: Configure {str(fun)}")
-        fun(cib_xml, push, **kwargs)
+    for create_resource in monitor_config:
+        Log.info(f"HA Rules: Configure {str(create_resource)}")
+        create_resource(cib_xml, push, **kwargs)
     process.run_cmd(f"pcs -f {cib_xml} resource clone monitor_group")
     if push:
         cib_push(cib_xml)
@@ -279,9 +279,9 @@ def monitor_stack(cib_xml, push, **kwargs):
 def management_group(cib_xml, push, **kwargs):
     """Configure management group"""
     Log.info("HA Rules: ******* management_group *********")
-    for fun in management_config:
-        Log.info(f"HA Rules: Configure {str(fun)}")
-        fun(cib_xml, push, **kwargs)
+    for create_resource in management_config:
+        Log.info(f"HA Rules: Configure {str(create_resource)}")
+        create_resource(cib_xml, push, **kwargs)
     if push:
         cib_push(cib_xml)
 
