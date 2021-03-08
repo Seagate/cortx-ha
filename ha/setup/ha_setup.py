@@ -21,7 +21,6 @@ import inspect
 import traceback
 import os
 import shutil
-import pathlib
 
 from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log

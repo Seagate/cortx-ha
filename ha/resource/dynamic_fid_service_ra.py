@@ -24,7 +24,6 @@
 import os
 import sys
 import time
-import pathlib
 
 from cortx.utils.log import Log
 
