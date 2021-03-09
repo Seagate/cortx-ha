@@ -15,7 +15,15 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
+import time
+
 from ha.core.controllers.element_controller import ElementController
+from ha.execute import SimpleCommand
+from ha import const
+from ha.core.error import HAInvalidNode, ClusterManagerError
+from ha.const import NODE_STATUSES
+
+
 
 class PcsController(ElementController):
     """ Generic Controller for Pcs to execute common pcs command """
@@ -25,3 +33,79 @@ class PcsController(ElementController):
         Initalize pcs controller
         """
         super(PcsController, self).__init__()
+        self._execute = SimpleCommand()
+
+    def heal_resource(self, node_id):
+        """
+        Heal the resources if there are any fail count exists
+        """
+        count = 0
+        resources_healed = False
+        while True:
+            if count >= const.RETRY_COUNT:
+                break
+            fail_count_exists = self.check_resource_failcount(node_id)
+            if fail_count_exists:
+                self.clean_failure_count(node_id)
+            else:
+                resources_healed = True
+                break
+            count += 1
+            time.sleep(10)
+        return resources_healed
+
+    def check_resource_failcount(self, node_id) -> bool:
+        """
+        Resource fail count check
+        """
+        _output, _err, _rc = self._execute.run_cmd(const.PCS_NODE_FAILCOUNT_STATUS.replace("<node>", node_id),
+                                                   check_error=False)
+        if const.NO_FAILCOUNT in _output:
+            return False
+        else:
+            return True
+
+    def clean_failure_count(self, node_id):
+        """
+        Cleanup resources fail count
+        """
+        _output, _err, _rc = self._execute.run_cmd(const.PCS_NODE_CLEANUP.replace("<node>", node_id),
+                                                   check_error=False)
+
+    def nodes_status(self, nodeids: list) -> dict:
+        """
+        Get pcs status of nodes.
+        Args:
+            nodeids (list): List of Node IDs from cluster nodes.
+                Default provide list of all node status.
+                if 'local' then provide local node status.
+
+        Returns:
+            ([dict]): Return dictionary. {"node_id1": "status of node_id1",
+                                          "node_id2": "status of node_id2"...}
+        """
+        all_nodes_status = dict()
+        _output, _err, _rc = self._execute.run_cmd(const.PCS_STATUS_NODES, check_error=False)
+        if not isinstance(nodeids, list):
+            raise ClusterManagerError(f"Invalid nodeids type `{type(nodeids)}`, required `list`")
+        for nodeid in nodeids:
+            if nodeid in _output:
+                for status in _output.split("\n"):
+                    nodes = status.split(":")
+                    if len(nodes) > 1 and nodeid.lower() in nodes[1].strip().lower():
+                        if nodes[0].strip().lower() == NODE_STATUSES.STANDBY.value.lower():
+                            all_nodes_status[nodeid] = NODE_STATUSES.STANDBY.value
+                        elif nodes[0].strip().lower() == NODE_STATUSES.STANDBY_WITH_RESOURCES_RUNNING.value.lower():
+                            all_nodes_status[nodeid] = NODE_STATUSES.STANDBY_WITH_RESOURCES_RUNNING.value
+                        elif nodes[0].strip().lower() == NODE_STATUSES.MAINTENANCE.value.lower():
+                            all_nodes_status[nodeid] = NODE_STATUSES.MAINTENANCE.value
+                        elif nodes[0].strip().lower() == NODE_STATUSES.OFFLINE.value.lower():
+                            all_nodes_status[nodeid] = NODE_STATUSES.OFFLINE.value
+                        elif nodes[0].strip().lower() == NODE_STATUSES.ONLINE.value.lower():
+                            all_nodes_status[nodeid] = NODE_STATUSES.ONLINE.value
+                        break
+                else:
+                    all_nodes_status[nodeid] = NODE_STATUSES.UNKNOWN.value
+            else:
+                raise HAInvalidNode(f"Node {nodeid} is not a part of cluster")
+        return all_nodes_status
