@@ -1,4 +1,4 @@
-#!/bin/env python3
+#!/usr/bin/env python3
 
 # Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
 # This program is free software: you can redistribute it and/or modify
@@ -30,30 +30,10 @@ from ha.execute import SimpleCommand
 from ha import const
 from ha.setup.create_cluster import cluster_auth, cluster_create
 from ha.setup.create_pacemaker_resources import create_all_resources
-
-class HaPrerequisiteException(Exception):
-    """
-    Exception to indicate that some error happened during HA prerequisite checks.
-    """
-    pass
-
-class HaConfigException(Exception):
-    """
-    Exception to indicate that config command failed during cluster config.
-    """
-    pass
-
-class HaInitException(Exception):
-    """
-    Exception to indicate that cleanup command failed due to some error.
-    """
-    pass
-
-class HaCleanupException(Exception):
-    """
-    Exception to indicate that cleanup command failed due to some error.
-    """
-    pass
+from ha.core.error import HaPrerequisiteException
+from ha.core.error import HaConfigException
+from ha.core.error import HaInitException
+from ha.core.error import HaCleanupException
 
 class Cmd:
     """
@@ -116,7 +96,7 @@ class Cmd:
         setup_arg_parser.set_defaults(command=cls)
 
     @staticmethod
-    def remove_file(file: str) -> None:
+    def remove_file(file: str):
         """
         Check if file exist and delete existing file.
 
@@ -411,10 +391,10 @@ def main(argv: dict):
         desc = "HA Setup command"
         command = Cmd.get_command(desc, argv[1:])
         command.process()
-
+        sys.stdout.write(f"Mini Provisioning {sys.argv[1]} configured sussesfully.\n")
     except Exception:
         Log.error("%s\n" % traceback.format_exc())
-        sys.stderr.write(f"Setup command:{argv[1]} failed for cortx-ha\n")
+        sys.stderr.write(f"Setup command:{argv[1]} failed for cortx-ha.\n")
         return errno.EINVAL
 
 if __name__ == '__main__':

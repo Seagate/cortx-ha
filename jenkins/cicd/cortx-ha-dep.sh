@@ -96,6 +96,8 @@ else
     };
     deactivate
 
+    # TODO: add python path
+
     echo "Execute:"
     echo "**************************************"
     echo "source ${VENV}/bin/activate"
