@@ -34,7 +34,7 @@ class PcsNodeController(NodeController, PcsController):
         super(PcsNodeController, self).__init__()
 
     @controller_error_handler
-    def initialize(self):
+    def initialize(self, controllers):
         """
         Initialize the node controller
         """
@@ -105,7 +105,7 @@ class PcsNodeController(NodeController, PcsController):
 
 class PcsVMNodeController(PcsNodeController):
     @controller_error_handler
-    def initialize(self):
+    def initialize(self, controllers):
         """
         Initialize the node controller
         """
@@ -162,7 +162,7 @@ class PcsVMNodeController(PcsNodeController):
 
 class PcsHWNodeController(PcsNodeController):
     @controller_error_handler
-    def initialize(self):
+    def initialize(self, controllers):
         """
         Initialize the storageset controller
         """

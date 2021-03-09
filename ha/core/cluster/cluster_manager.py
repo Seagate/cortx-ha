@@ -284,7 +284,7 @@ class CortxClusterManager:
             # Find more example in test case.
             self.__dict__[controller] = self._controllers[controller]
         for controller in self._controllers.keys():
-            Log.info(f"Pass the list of instances of all the controllers to each controller.")
+            Log.info("Pass the list of instances of all the controllers to each controller.")
             self._controllers[controller].initialize(self._controllers)
 
     @property

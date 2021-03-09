@@ -29,7 +29,7 @@ class NodeController(ElementController):
         super(NodeController, self).__init__()
 
     @controller_error_handler
-    def initialize(self):
+    def initialize(self, controllers):
         """
         Initialize the node controller
         """

@@ -29,7 +29,7 @@ class StorageSetController(ElementController):
         super(StorageSetController, self).__init__()
 
     @controller_error_handler
-    def initialize(self):
+    def initialize(self, controllers):
         """
         Initialize the storageset controller
         """

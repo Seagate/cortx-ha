@@ -78,9 +78,9 @@ class PcsClusterController(ClusterController, PcsController):
                             Log.error(f"Node {_node_id} : {msg}")
                     time.sleep(30)
 
-                return {"status": const.STATUSES.IN_PROGRESS.value, "msg": f"Cluster start operation performed"}
+                return {"status": const.STATUSES.IN_PROGRESS.value, "msg": "Cluster start operation performed"}
             else:
-                return {"status": const.STATUSES.FAILED.value, "msg": f"Node list is empty"}
+                return {"status": const.STATUSES.FAILED.value, "msg": "Node list is empty"}
 
     @controller_error_handler
     def stop(self) -> dict:
