@@ -101,3 +101,14 @@ CM_ELEMENT=["cluster", "node", "service", "storageset"]
 CONTROLLER_FAILED="Failed"
 CONTROLLER_SUCCESS="Success"
 CONTROLLER_INPROGRESS="InProgress"
+
+# System Health
+ENCLOSURE = "enclosure"
+NODE = "node"
+SOFTWARE = "sw"
+NODE_HW_UPDATE_HIERARCHY = ("node_hw", "server", "node",
+                            "storageset", "rack", "site", "cluster")
+NODE_SERVICE_UPDATE_HIERARCHY = ("node_service", "agg_service", "server", "node",
+                                 "storageset", "rack", "site", "cluster")
+STORAGE_COMPONENT_UPDATE_HIERARCHY = ("storage_component", "storage", "node",
+                                      "storageset", "rack", "site", "cluster")
