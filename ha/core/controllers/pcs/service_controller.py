@@ -30,6 +30,13 @@ class PcsServiceController(ServiceController, PcsController):
         super(PcsServiceController, self).__init__()
 
     @controller_error_handler
+    def initialize(self):
+        """
+        Initialize the service controller
+        """
+        raise HAUnimplemented("This operation is not implemented.")
+
+    @controller_error_handler
     def start(self, service: str, nodeids: list = None) -> dict:
         """
         Start service.

@@ -29,6 +29,13 @@ class StorageSetController(ElementController):
         super(StorageSetController, self).__init__()
 
     @controller_error_handler
+    def initialize(self):
+        """
+        Initialize the storageset controller
+        """
+        raise HAUnimplemented("This operation is not implemented.")
+
+    @controller_error_handler
     def start(self, storagesetid) -> dict:
         """
         Start storagesetid and all service.

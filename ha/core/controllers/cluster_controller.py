@@ -29,6 +29,14 @@ class ClusterController(ElementController):
         super(ClusterController, self).__init__()
 
     @controller_error_handler
+    def initialize(self):
+        """
+        Initialize the cluster controller
+        """
+        raise HAUnimplemented("This operation is not implemented.")
+
+
+    @controller_error_handler
     def start(self) -> dict:
         """
         Start cluster and all service.

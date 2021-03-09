@@ -14,11 +14,16 @@
 # with this program. If not, see <https://www.gnu.org/licenses/>. For any questions
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
+import json
+import time
 
 from ha.core.error import HAUnimplemented
 from ha.core.controllers.pcs.pcs_controller import PcsController
 from ha.core.controllers.cluster_controller import ClusterController
 from ha.core.controllers.controller_annotation import controller_error_handler
+from ha import const
+from ha.const import NODE_STATUSES
+from cortx.utils.log import Log
 
 class PcsClusterController(ClusterController, PcsController):
     """ Pcs cluster controller to perform pcs cluster level operation. """
@@ -29,6 +34,12 @@ class PcsClusterController(ClusterController, PcsController):
         """
         super(PcsClusterController, self).__init__()
 
+    def initialize(self, controllers):
+        """
+        Initialize the cluster controller
+        """
+        self._controllers = controllers
+
     @controller_error_handler
     def start(self) -> dict:
         """
@@ -38,7 +49,38 @@ class PcsClusterController(ClusterController, PcsController):
             ([dict]): Return dictionary. {"status": "", "msg":""}
                 status: Succeeded, Failed, InProgress
         """
-        raise HAUnimplemented("Cluster start operation is not implemented.")
+        # TODO Need to remove hardcoding and figure out the way to get local node
+        self._local_node = 'srvnode-1'
+        _res = self.nodes_status([self._local_node])
+
+        if _res.get(self._local_node).lower() != NODE_STATUSES.ONLINE.value.lower():
+            self._controllers[const.NODE_CONTROLLER].start(self._local_node)
+            time.sleep(30)
+            _res = self.nodes_status([self._local_node])
+            if _res.get(self._local_node).lower() != NODE_STATUSES.ONLINE.value.lower():
+                return {"status": const.STATUSES.FAILED.value, "msg": f"Node {self._local_node} : failed to start local node "
+                                                   f"in the cluster start operation"}
+
+        _res = self.node_list()
+        _res = json.loads(_res)
+
+        if _res.get("status") == const.STATUSES.SUCCEEDED.value:
+            _node_list = _res.get("msg")
+            if _node_list is not None:
+                _node_group = [ _node_list[i:i + const.PCS_NODE_START_GROUP_SIZE] for i in range(0, len(_node_list), const.PCS_NODE_START_GROUP_SIZE)]
+
+                for _node_subgroup in _node_group:
+                    for _node_id in _node_subgroup:
+                        _res = self._controllers[const.NODE_CONTROLLER].start(_node_id)
+                        _res = json.loads(_res)
+                        if _res.get("status") == const.STATUSES.FAILED.value:
+                            msg = _res.get("msg")
+                            Log.error(f"Node {_node_id} : {msg}")
+                    time.sleep(30)
+
+                return {"status": const.STATUSES.IN_PROGRESS.value, "msg": f"Cluster start operation performed"}
+            else:
+                return {"status": const.STATUSES.FAILED.value, "msg": f"Node list is empty"}
 
     @controller_error_handler
     def stop(self) -> dict:
@@ -94,7 +136,16 @@ class PcsClusterController(ClusterController, PcsController):
             ([dict]): Return dictionary. {"status": "", "msg":[]}
                 status: Succeeded, Failed, InProgress
         """
-        raise HAUnimplemented("This operation is not implemented.")
+        #TODO: This is temporary implementation and It should be removed once nodelist is available in the system health.
+        nodelist = []
+        _output, _err, _rc = self._execute.run_cmd(const.PCS_STATUS_NODES, check_error=False)
+
+        for status in _output.split("\n"):
+            nodes = status.split(":")
+            if len(nodes) > 1:
+                nodelist.extend(nodes[1].split())
+
+        return {"status": const.STATUSES.SUCCEEDED.value, "msg": nodelist}
 
     @controller_error_handler
     def service_list(self) -> dict:
