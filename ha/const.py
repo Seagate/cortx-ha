@@ -125,3 +125,14 @@ class NODE_STATUSES(Enum):
     STANDBY_WITH_RESOURCES_RUNNING = "Standby with resource(s) running"
     MAINTENANCE = "Maintenance"
     UNKNOWN = "Unknown"
+
+# System Health
+ENCLOSURE = "enclosure"
+NODE = "node"
+SOFTWARE = "sw"
+NODE_HW_UPDATE_HIERARCHY = ("node_hw", "server", "node",
+                            "storageset", "rack", "site", "cluster")
+NODE_SERVICE_UPDATE_HIERARCHY = ("node_service", "agg_service", "server", "node",
+                                 "storageset", "rack", "site", "cluster")
+STORAGE_COMPONENT_UPDATE_HIERARCHY = ("storage_component", "storage", "node",
+                                      "storageset", "rack", "site", "cluster")
