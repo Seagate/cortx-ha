@@ -15,12 +15,8 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-import time
 
-from cortx.utils.log import Log
-from ha.execute import SimpleCommand
-from ha import const
-from ha.cli.error import Error
+#from cortx.utils.log import Log
 
 
 class CommandExecutor:

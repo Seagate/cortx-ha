@@ -18,11 +18,8 @@
 #from ha.core.error import HAUnimplemented
 #from  ha.cli import cluster
 
-import sys
 import inspect
-import errno
 
-from ha.cli.error import Error
 from ha.core.error import HAInvalidCommand
 from ha.cli.command_factory import cmdFactory
 from ha.cli.exec.commandExecutor import CLIUsage
@@ -54,7 +51,7 @@ class Command:
             self.operation_name = args[1]
             self.options = args[2:]
 
-        except Exception as e:
+        except Exception:
 
             print(CLIUsage.usage())
             if self.module_name != "-h" and self.module_name != "--help":

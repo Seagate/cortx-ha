@@ -16,11 +16,8 @@
 # cortx-questions@seagate.com.
 
 import inspect
-import argparse
-import errno
 
 from ha.cli import commands
-from ha.cli.error import Error
 from ha.core.config.config_manager import ConfigManager
 #from cortx.utils.log import Log
 
@@ -85,6 +82,6 @@ class cmdFactory:
 
         try:
             executor = self.cmd_dict.get(module_name).get(operation_name)
-        except:
+        except Exception:
             return None
         return executor
