@@ -1,12 +1,17 @@
 import paramiko
 
 
-class SSH
+class SSH:
+    '''class which enables remote communication using SSH'''
 
-    def __init__(self):
+    def __init__(self, hostname, username, port=22, password=None):
+        '''init method'''
+        super(hostname, port)
         self._ssh_client = paramiko.SSHClient()
+        self._username = username
+        self._password = password
 
-    def connect(self, hostname, username):
+    def connect(self):
         '''Establishes a connection'''
         pass
 
