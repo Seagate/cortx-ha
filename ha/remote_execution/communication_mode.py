@@ -15,14 +15,14 @@ class CommunicationMode:
     @abc.abstractmethod
     def connect(self):
         '''Establishes a connection'''
-        pass
+        raise NotImplementedError
 
     @abc.abstractmethod
     def communicate(self, command):
         '''Communicates to remote node by code execution'''
-        pass
+        raise NotImplementedError
 
     @abc.abstractmethod
     def disconnect(self):
         '''closes the connection'''
-        pass
+        raise NotImplementedError
