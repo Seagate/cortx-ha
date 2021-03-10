@@ -1,7 +1,8 @@
 import paramiko
+from ha.remote_execution.communication_mode import CommunicationMode
 
 
-class SSH:
+class SSH(CommunicationMode):
     '''class which enables remote communication using SSH'''
 
     def __init__(self, hostname, username, port=22, password=None):
@@ -22,3 +23,4 @@ class SSH:
     def disconnect(self):
         '''closes the connection'''
         pass
+
