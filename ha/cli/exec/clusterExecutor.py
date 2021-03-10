@@ -20,38 +20,17 @@ import time
 from cortx.utils.log import Log
 from ha.execute import SimpleCommand
 from ha import const
+from ha.cli.exec.commandExecutor import CommandExecutor
 
-# Sample / placeholder file for cluster commands
-class Cluster:
-    """cluster related CLI commands """
+class ClusterStartExecutor(CommandExecutor):
+
     def __init__(self):
-        """
-        manage pacemaker/corosync cluster
-        """
-        super(Cluster, self).__init__()
+
         # To be removed once the "cortx cluster start" user story [EOS-16248] is started
         self._execute = SimpleCommand()
 
-
-    def process(self, op_type, args):
-        """
-        Process cluster CLIs.
-        """
-        # This is temporary code, copied from M0
-        # To be removed once the "cortx cluster start" user story [EOS-16248] is started
-        if op_type == "start":
-            self.start()
-        else:
-            print("Placeholder cluster CLIs")
-
-        #Output.print(string, "json")
-
-
     def validate(self):
-        print("Placeholder validate method")
-
-    def is_internal_command(self):
-        print("Placeholder check if command is internal or external")
+        print("Placeholder: validate for ", self.__class__.__name__)
 
     def get_nodes_status(self):
         """
@@ -90,8 +69,11 @@ class Cluster:
             elif nodes[0] == "  Offline" and len(nodes[1].split()) > 0:
                 self.offline_nodes = True
 
-    def start(self):
 
+    def execute(self):
+
+        # This is temporary code, copied from M0
+        # To be removed once the "cortx cluster start" user story [EOS-16248] is started
         Log.info("Executing cortxha cluster start")
         print("Executing cortxha cluster start")
 
@@ -145,5 +127,51 @@ class Cluster:
         Log.info("Cluster started successfully")
 
 
+class ClusterStopExecutor(CommandExecutor):
+    def validate(self):
+        print("Placeholder: validate for ", self.__class__.__name__)
 
-    
+    def execute(self):
+        print("Placeholder:  execute for ", self.__class__.__name__)
+
+class ClusterRestartExecutor(CommandExecutor):
+    def validate(self):
+        print("Placeholder: validate for ", self.__class__.__name__)
+
+    def execute(self):
+        print("Placeholder:  execute for ", self.__class__.__name__)
+
+class ClusterStandbyExecutor(CommandExecutor):
+    def validate(self):
+        print("Placeholder: validate for ", self.__class__.__name__)
+
+    def execute(self):
+        print("Placeholder:  execute for ", self.__class__.__name__)
+
+class ClusterActiveExecutor(CommandExecutor):
+    def validate(self):
+        print("Placeholder: validate for ", self.__class__.__name__)
+
+    def execute(self):
+        print("Placeholder:  execute for ", self.__class__.__name__)
+
+class ClusterListExecutor(CommandExecutor):
+    def validate(self):
+        print("Placeholder: validate for ", self.__class__.__name__)
+
+    def execute(self):
+        print("Placeholder:  execute for ", self.__class__.__name__)
+
+class ClusterStatusExecutor(CommandExecutor):
+    def validate(self):
+        print("Placeholder: validate for ", self.__class__.__name__)
+
+    def execute(self):
+        print("Placeholder:  execute for ", self.__class__.__name__)
+
+class ClusterAddExecutor(CommandExecutor):
+    def validate(self):
+        print("Placeholder: validate for ", self.__class__.__name__)
+
+    def execute(self):
+        print("Placeholder:  execute for ", self.__class__.__name__)

@@ -18,7 +18,6 @@
 import inspect
 import argparse
 import errno
-#import traceback
 
 from ha.cli import commands
 from ha.cli.error import Error
@@ -31,69 +30,61 @@ class cmdFactory:
         """
         init of command factory
         """
-        # Init logging to  cortxcli.log file
+        # Initialize logging.
+        # Prefix of the log file name "cortxcli" is passed to the init function;
+        # So the generated log file will be cortxcli.log
         ConfigManager.init("cortxcli")
 
-        #from  ha.cli import commands
-        self.command = commands
+        # This dictionary contains the class names used by all HA CLIs
+        # In case of any modifications to the CLI,
+        # this dictionary should be updated.
+        self.cmd_dict = {
+            "cluster": {
+                "start": "ClusterStartExecutor",
+                "stop": "ClusterStopExecutor",
+                "restart": "ClusterRestartExecutor",
+                "standby": "ClusterStandbyExecutor",
+                "active": "ClusterActiveExecutor",
+                "list": "ClusterListExecutor",
+                "status": "ClusterStatusExecutor",
+                "add": "ClusterAddExecutor",
+                "-h": "CLIUsage",
+                "--help": "CLIUsage"
+            },
+            "node": {
+                "start": "NodeStartExecutor",
+                "stop": "NodeStopExecutor",
+                "standby": "NodeStandbyExecutor",
+                "active": "NodeActiveExecutor",
+                "status": "NodeStatusExecutor",
+                "-h": "CLIUsage",
+                "--help": "CLIUsage"
+            },
+            "storageset": {
+                "start": "StoragesetStartExecutor",
+                "stop": "StoragesetStopExecutor",
+                "standby": "StoragesetStandbyExecutor",
+                "active": "StoragesetActiveExecutor",
+                "status": "StoragesetStatusExecutor",
+                "-h": "CLIUsage",
+                "--help": "CLIUsage"
+            },
+            "service": {
+                "start": "ServiceStartExecutor",
+                "stop": "ServiceStopExecutor",
+                "status": "ServiceStatusExecutor",
+                "-h": "CLIUsage",
+                "--help": "CLIUsage"
+            },
+            "-h": "CLIUsage",
+            "--help": "CLIUsage"
+        }
 
-    #@staticmethod
-    def get_command(self, description, argv):
-        """
-        parse the cli and return the right executor
-        """
+    def get_executor(self, module_name, operation_name):
+        """ return the appropriate class name from the dictionary"""
 
-        parser = argparse.ArgumentParser(
-            usage = "%(prog)s\n\n" +  self.usage(),
-            formatter_class = argparse.RawDescriptionHelpFormatter)
-
-        subparsers = parser.add_subparsers()
-
-        # inspect the commands.py file containing all classes including base class
-        cmds = inspect.getmembers(self.command, inspect.isclass)
-
-        cli_modules = []
-        for name, cmd in cmds:
-            # Command is the base class name
-            if name != "Command" and "Command" in name:
-                cmd.add_args(subparsers, cmd, name)
-                cli_modules.append(name.replace("Command",''))
-
-        # Raise exception if correct but insufficient parameters are passed
-        if len(argv) < 2:
-            if (len(argv) == 0) or (len(argv) == 1 and argv[0] in cli_modules):
-                print(self.usage())
-                raise Error(errno.EINVAL,
-                    "Insufficient parameters; refer to help for details")
-
-        args = parser.parse_args(argv)
-        return args.command(args)
-
-
-
-    @staticmethod
-    def usage():
-        usage_string = ("\t[-h]\n"
-                        "\tcluster start [all|server] [--json]\n"
-                        "\tcluster stop [all|server] [--json]\n"
-                        "\tcluster restart\n"
-                        "\tcluster standby [--json]\n"
-                        "\tcluster active [--json]\n"
-                        "\tcluster list [nodes|storagesets|services]\n"
-                        "\tcluster status [all|hw|services] [--json]\n"
-                        "\tcluster add node [<node id>] [ --descfile <node description file>] [--json]\n"
-                        "\tcluster add storageset [<storageset id>] [ --descfile <storageset description file>] [--json]\n"
-                        "\tnode start <Node> [all|server] [--json]\n"
-                        "\tnode stop <Node> [all|server] [--json]\n"
-                        "\tnode standby <Node> [--json]\n"
-                        "\tnode active <Node> [--json]\n"
-                        "\tnode status <Node> [all|hw|services] [--json]\n"
-                        "\tstorageset status [all|hw|services] <storageset_id>\n"
-                        "\tstorageset start <storageset_id>\n"
-                        "\tstorageset stop <storageset_id>\n"
-                        "\tstorageset standby <storageset_id>\n"
-                        "\tstorageset active <storageset_id>\n"
-                        "\tservice start <service> [--node <Node>] [--json]\n"
-                        "\tservice stop <service> [--node <Node>] [--json]\n"
-                        "\tservice status <service> [--node <Node>] [--json]\n")
-        return usage_string
+        try:
+            executor = self.cmd_dict.get(module_name).get(operation_name)
+        except:
+            return None
+        return executor

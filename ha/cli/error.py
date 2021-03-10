@@ -15,6 +15,9 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
+
+# This is temporary file,
+# To be removed once the "cortx cluster start" user story [EOS-16248] is started
 class Error(Exception):
     """Class to raise exceptions in CLI; with error code and output."""
 

@@ -18,96 +18,79 @@
 #from ha.core.error import HAUnimplemented
 #from  ha.cli import cluster
 
+import sys
+import inspect
+import errno
+
+from ha.cli.error import Error
+from ha.core.error import HAInvalidCommand
+from ha.cli.command_factory import cmdFactory
+from ha.cli.exec.commandExecutor import CLIUsage
+from ha.cli.exec.permissions import Permissions
+from ha.cli.exec import clusterExecutor
+from ha.cli.exec import nodeExecutor
+from ha.cli.exec import commandExecutor
+from ha.cli.exec import serviceExecutor
+from ha.cli.exec import storagesetExecutor
+
+
 class Command:
-    def __init__(self, args):
-        self._op_type = args.op_type
-        self._args = args.args
 
-    @property
-    def args(self):
-        return self._args
+    def __init__(self):
+        self.module_name = None
+        self.operation_name = None
+        self.options = None
+        self.cmd_factory = cmdFactory()
 
-    @property
-    def op_type(self):
-        return self._op_type
-
-    #@staticmethod
-    def add_args(parser, cmd_class, cmd_name):
-        """Add Command args for parsing."""
-
-        parser1 = parser.add_parser(
-            cmd_class.name, help='%s operations' % cmd_name)
-        # If required help can be specified individually each child class
-        # by overriding add_args method
-        parser1.add_argument('op_type', help='operation type')
-        parser1.add_argument('args', nargs='*', default=[], help='args')
-
-        parser1.set_defaults(command=cmd_class)
-
-    @staticmethod
-    def validate():
-        print("Placeholder validate method")
-
-    @staticmethod
-    def execute():
-        print("Placeholder execute method")
+        # Modules where executor classes are defined
+        self.execute = [commandExecutor, clusterExecutor, nodeExecutor, serviceExecutor, storagesetExecutor]
 
 
-class clusterCommand(Command):
-    """Cluster related commands."""
+    def parse(self, args):
+        """ Parse the CLI string to identify parameters"""
 
-    name = "cluster"
+        try:
+            self.module_name = args[0]
+            self.operation_name = args[1]
+            self.options = args[2:]
 
-    def __init__(self, args):
-        super(clusterCommand, self).__init__(args)
+        except Exception as e:
 
-        from cluster import Cluster
-
-        self._cluster = Cluster()
-
-    def execute(self):
-        """Execute cluster commands """
-
-        print("Placeholder cluster command")
-        self._cluster.process(self.op_type, self.args)
-
+            print(CLIUsage.usage())
+            if self.module_name != "-h" and self.module_name != "--help":
+                raise HAInvalidCommand("Invalid parameters passed; refer to help for details")
+            else:
+                return False
+        return True
 
 
-class nodeCommand(Command):
-    """Node related commands."""
+    def get_class(self, commandExecutor):
 
-    name = "node"
-
-    def __init__(self, args):
-        super(nodeCommand, self).__init__(args)
-
-        #from node import Node
-        #self._node = Node()
-
-    def execute(self):
-
-        """Eexecute node commands """
-        print("Placeholder nodeCommand")
-        #self._node.execute(self.op_type, self.args)
+        for module in self.execute:
+            cmds = inspect.getmembers(module, inspect.isclass)
+            for name , cmd in cmds:
+                if name == commandExecutor:
+                    return cmd
+        return None
 
 
-class serviceCommand(Command):
-    """service related commands."""
+    def process(self, args):
+        """ Process the command """
 
-    name = "service"
+        # Raise exception if user does not have proper permissions
+        self.validate = Permissions()
+        self.validate.validate_permissions()
 
-    def __init__(self, args):
-        super(serviceCommand, self).__init__(args)
+        if self.parse(args) == True:
+            commandExecutor = self.cmd_factory.get_executor(self.module_name, self.operation_name)
 
-        #from service import Service
-        #self._service = Service()
+            if commandExecutor == None:
+                print(CLIUsage.usage())
+                raise HAInvalidCommand("Invalid parameters passed; refer to help for details")
 
-    def execute(self):
-
-        """Execute service commands """
-        print("Placeholder serviceCommand")
-        #self._service.execute(self.op_type, self.args)
-
+            classnm = self.get_class(commandExecutor)
+            executorClass = classnm()
+            executorClass.execute()
 
 """
 SupportBundleCommand is currently broken, so removed the code.

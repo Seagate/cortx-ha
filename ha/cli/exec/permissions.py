@@ -27,7 +27,7 @@ import errno
 
 from ha import const
 from cortx.utils.log import Log
-from ha.cli.error import Error
+from ha.core.error import HAInvalidPermission
 
 class Permissions:
 
@@ -56,7 +56,7 @@ class Permissions:
             # if group not root or haclient return error
             if group_id != id_ha.gr_gid and group_id != id_root.gr_gid:
                 Log.error(f"User {user} does not have necessary permissions to execute this CLI")
-                raise Error(errno.EACCES,
+                raise HAInvalidPermission(
                             f"User {user} does not have necessary permissions to execute this CLI")
 
             # The user name "hauser"; which is part of the "haclient" group;
@@ -69,5 +69,4 @@ class Permissions:
         # TBD : If required raise seperate exception  for root and haclient
         except KeyError:
             Log.error("Group root / haclient is not defined")
-            raise Error(errno.EINVAL,
-                "Group root / haclient is not defined ")
+            raise HAInvalidPermission("Group root / haclient is not defined ")
