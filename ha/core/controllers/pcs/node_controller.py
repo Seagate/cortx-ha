@@ -33,7 +33,6 @@ class PcsNodeController(NodeController, PcsController):
         """
         super(PcsNodeController, self).__init__()
 
-    @controller_error_handler
     def initialize(self, controllers):
         """
         Initialize the node controller
@@ -104,12 +103,11 @@ class PcsNodeController(NodeController, PcsController):
 
 
 class PcsVMNodeController(PcsNodeController):
-    @controller_error_handler
     def initialize(self, controllers):
         """
         Initialize the node controller
         """
-        raise HAUnimplemented("This operation is not implemented.")
+        self._controllers = controllers
 
     @controller_error_handler
     def start(self, nodeid: str) -> dict:
@@ -161,12 +159,11 @@ class PcsVMNodeController(PcsNodeController):
 
 
 class PcsHWNodeController(PcsNodeController):
-    @controller_error_handler
     def initialize(self, controllers):
         """
         Initialize the storageset controller
         """
-        raise HAUnimplemented("This operation is not implemented.")
+        self._controllers = controllers
 
     @controller_error_handler
     def start(self, nodeid: str) -> dict:

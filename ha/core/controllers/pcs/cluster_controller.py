@@ -61,6 +61,7 @@ class PcsClusterController(ClusterController, PcsController):
 
         if _res.get("status") == const.STATUSES.SUCCEEDED.value:
             _node_list = _res.get("msg")
+            Log.info(f"Node List : {_node_list}")
             if _node_list is not None:
                 _node_group = [ _node_list[i:i + const.PCS_NODE_START_GROUP_SIZE] for i in range(0, len(_node_list), const.PCS_NODE_START_GROUP_SIZE)]
 
@@ -77,7 +78,7 @@ class PcsClusterController(ClusterController, PcsController):
             else:
                 return {"status": const.STATUSES.FAILED.value, "msg": "Node list is empty"}
         else:
-            return {"status": const.STATUSES.FAILED.value, "msg": "Failed to get node list"}
+            return {"status": const.STATUSES.FAILED.value, "msg": "Cluster start failed. Not able to verify node list."}
 
 
     @controller_error_handler

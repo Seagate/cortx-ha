@@ -28,7 +28,6 @@ class ServiceController(ElementController):
         """
         super(ServiceController, self).__init__()
 
-    @controller_error_handler
     def initialize(self, controllers):
         """
         Initialize the service controller
