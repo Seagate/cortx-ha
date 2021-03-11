@@ -49,17 +49,14 @@ class PcsClusterController(ClusterController, PcsController):
             ([dict]): Return dictionary. {"status": "", "msg":""}
                 status: Succeeded, Failed, InProgress
         """
-        # TODO Need to remove hardcoding and figure out the way to get local node
-        self._local_node = 'srvnode-1'
-        _res = self.nodes_status([self._local_node])
-
-        if _res.get(self._local_node).lower() != NODE_STATUSES.ONLINE.value.lower():
-            self._controllers[const.NODE_CONTROLLER].start(self._local_node)
-            time.sleep(30)
-            _res = self.nodes_status([self._local_node])
-            if _res.get(self._local_node).lower() != NODE_STATUSES.ONLINE.value.lower():
-                return {"status": const.STATUSES.FAILED.value, "msg": f"Node {self._local_node} : failed to start local node "
-                                                   f"in the cluster start operation"}
+        output, err, rc = self._execute.run_cmd(const.PCS_CLUSTER_STATUS, check_error=False)
+        if rc != 0:
+            if (err.find("cluster is not currently running on this node") != -1):
+                self._execute.run_cmd(const.PCS_CLUSTER_START, check_error=False)
+                time.sleep(60)
+                output, err, rc = self._execute.run_cmd(const.PCS_CLUSTER_STATUS, check_error=False)
+                if (err.find("cluster is not currently running on this node") != -1):
+                    return {"status": const.STATUSES.FAILED.value, "msg": "Cluster operation start failed"}
 
         _res = self.node_list()
         _res = json.loads(_res)
@@ -81,6 +78,9 @@ class PcsClusterController(ClusterController, PcsController):
                 return {"status": const.STATUSES.IN_PROGRESS.value, "msg": "Cluster start operation performed"}
             else:
                 return {"status": const.STATUSES.FAILED.value, "msg": "Node list is empty"}
+        else:
+            return {"status": const.STATUSES.FAILED.value, "msg": "Failed to get node list"}
+
 
     @controller_error_handler
     def stop(self) -> dict:
@@ -140,12 +140,15 @@ class PcsClusterController(ClusterController, PcsController):
         nodelist = []
         _output, _err, _rc = self._execute.run_cmd(const.PCS_STATUS_NODES, check_error=False)
 
-        for status in _output.split("\n"):
-            nodes = status.split(":")
-            if len(nodes) > 1:
-                nodelist.extend(nodes[1].split())
+        if _rc != 0:
+            return {"status": const.STATUSES.FAILED.value, "msg": "Failed to get nodes status"}
+        else:
+            for status in _output.split("\n"):
+                nodes = status.split(":")
+                if len(nodes) > 1:
+                    nodelist.extend(nodes[1].split())
 
-        return {"status": const.STATUSES.SUCCEEDED.value, "msg": nodelist}
+            return {"status": const.STATUSES.SUCCEEDED.value, "msg": nodelist}
 
     @controller_error_handler
     def service_list(self) -> dict:

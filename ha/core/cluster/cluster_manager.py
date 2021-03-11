@@ -209,7 +209,7 @@ class PcsClusterManager:
                 raise Exception("Cluster failed to start; pcs not installed")
             # if cluster is not running; start cluster
             elif(_err.find("cluster is not currently running on this node") != -1):
-                self._execute.run_cmd(const.PCS_CLUSTER_START, check_error=False)
+                self._execute.run_cmd(const.PCS_CLUSTER_START_ALL, check_error=False)
                 Log.info("cluster started ; waiting for nodes to come online ")
                 # It takes nodes 30 seconds to come to their original state after cluster is started
                 # observation on a 2 node cluster
