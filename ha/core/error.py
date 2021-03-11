@@ -29,6 +29,7 @@ HA_SUPPORT_BUNDLE_FAILED        = 0x0005
 HA_CLUSTER_MANAGER_FAILED       = 0x0006
 HA_PRE_UPGRADE_FAILED           = 0x0007
 HA_SETUP_FAILED                 = 0x0008
+HA_SYSTEM_HEALTH_FAILED         = 0x0009
 
 class HAError(BaseError):
     def __init__(self, rc=1, desc=None, message_id=HA_BASIC_ERROR, message_args=None):
@@ -158,5 +159,33 @@ class HaInitException(SetupError):
 class HaCleanupException(SetupError):
     """
     Exception to indicate that cleanup command failed due to some error.
+    """
+    pass
+
+class SystemHealth(HAError):
+    def __init__(self, desc=None):
+        """
+        Handle system health exceptions.
+        """
+        _desc = "HA System Health failure." if desc is None else desc
+        _message_id = HA_SYSTEM_HEALTH_FAILED
+        _rc = 1
+        super(SystemHealth, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
+
+class HaEntityHealthException(SystemHealth):
+    """
+    Exception to indicate that some error happened when populating entity health.
+    """
+    pass
+
+class HaStatusMapperException(SystemHealth):
+    """
+    Exception to indicate that some error happened when mapping an event to system health status.
+    """
+    pass
+
+class HaSystemHealthException(SystemHealth):
+    """
+    Exception to indicate that some error happened during HA System Health processing.
     """
     pass

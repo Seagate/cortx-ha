@@ -14,37 +14,110 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
+import os
+import sys
+import pathlib
+import re
+
+from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
+sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..', '..'))
 from ha import const
 from ha.core.system_health.health_event import HealthEvent
 from ha.core.system_health.status_mapper import StatusMapper
 from ha.core.system_health.entity_health import EntityHealth
 from ha.core.system_health.system_health_manager import SystemHealthManager
-
-
-class HaSystemHealthException(Exception):
-    """
-    Exception to indicate that some error happened during HA System Health processing.
-    """
-    pass
-
+from ha.core.error import HaSystemHealthException
 
 class SystemHealth:
     """
     System Health. This class implements an interface to the HA System Health module.
     """
 
-    def __init__(self):
+    def __init__(self, store):
         """
         Init method.
         """
-        self.cluster_id =  # TODO: Read from store
+        self.update_hierarchy = []
+        self.node_id = None
         self.node_map = {}
-        self.update_hierarchy = ()
         self.statusmapper = StatusMapper()
-        self.healthmanager = SystemHealthManager()
+        self.healthmanager = SystemHealthManager(store)
 
-    def process_event(self, HealthEvent):
+    def _prepare_key(self, component, **kwargs) -> str:
+        """
+        Prepare Key. This is an internal method for preparing component status key.
+        This will be used when updating/querying a component status.
+        """ 
+
+        # Get the key template.
+        key = const.SYSTEM_HEALTH_KEYS[component]
+        # Check what all substitutions with actual values passed in kwargs to be done.
+        subs = re.findall("\$\w+", key)
+        # Check if the related argument present in kwargs, if yes substitute the same.
+        for sub in subs:
+            argument = re.split("\$", sub)
+            if argument[1] in kwargs:
+                key = re.sub("\$\w+", kwargs[argument[1]], key, 1)
+            else:
+                # Argument not present, break and return the key till this missing argument.
+                key = re.split("\$", key)
+                key = key[0]
+                break
+        return key
+
+    def get_status(self, component, id, **kwargs):
+        """
+        get status method. This is a generic method which can return status of any component(s).
+        """
+        try:
+            # Prepare key and read the health value.
+            key = self._prepare_key(component, id=id, **kwargs)
+            return self.healthmanager.get_key(key)
+
+        except Exception as e:
+            Log.error(f"Failed reading status for component: {component} with Error: {e}")
+            raise HaSystemHealthException("Failed reading status")
+
+    def get_service_status(self, type=None, node_id=None):
+        """
+        get service status method. This method is for returning a status of a service.
+        """
+
+    def get_node_status(self, node_id, **kwargs):
+        """
+        get node status method. This method is for returning a status of a node.
+        """
+    
+    def get_storageset_status(self, storageset_id, **kwargs):
+        """
+        get storageset status method. This method is for returning a status of a storageset.
+        """
+
+    def get_cluster_status(self, cluster_id, **kwargs):
+        """
+        get cluster status method. This method is for returning a status of a cluster.
+        """
+    def _update(self, component, type, id, healthvalue, next_component=None):
+        """
+        update method. This is an internal method for updating the system health.
+        """
+        key = self._prepare_key(component, cluster_id=self.node_map['cluster_id'], site_id=self.node_map['site_id'],
+                                rack_id=self.node_map['rack_id'], storageset_id=self.node_map['storageset_id'],
+                                node_id=self.node_id, server_id=self.node_id, storage_id=self.node_id,
+                                type=type, id=id)
+        self.healthmanager.set_key(key, healthvalue)
+
+        # TODO: Check and if not present already, store the node map.
+
+        # Check the next component to be updated, if none then return.
+        if next_component is None:
+            return
+        else:
+            # TODO: Calculate and update the health of the next component in the hierarchy.
+            return
+
+    def process_event(self, healthevent: HealthEvent):
         """
         Process Event method. This method could be called for updating the health status.
         """
@@ -52,59 +125,61 @@ class SystemHealth:
         # TODO: Check the user and see if allowed to update the system health.
 
         try:
-            status = self.statusmapper.map_event(HealthEvent.event_type)
-            # Check what component the health event is for
-            component = HealthEvent.resource_type.split(':')[0]
-            if component == const.ENCLOSURE:
-                self.update_hierarchy = const.STORAGE_COMPONENT_UPDATE_HIERARCHY
-            elif component == const.NODE:
-                sub_component = HealthEvent.resource_type.split(':')[1]
-                if sub_component == const.SOFTWARE:
-                    self.update_hierarchy = const.NODE_SERVICE_UPDATE_HIERARCHY
-                else:
-                    self.update_hierarchy = const.NODE_HW_UPDATE_HIERARCHY
-            else:
+            status = self.statusmapper.map_event(healthevent.event_type)
+            # Get system health component from the resource type in the event
+            component = None
+            for key in const.SYSTEM_HEALTH_COMPONENTS:
+                for item in const.SYSTEM_HEALTH_COMPONENTS[key][const.RESOURCE_LIST]:
+                    if item in healthevent.resource_type:
+                        component = key
+                        self.update_hierarchy = const.SYSTEM_HEALTH_COMPONENTS[key][const.UPDATE_HIERARCHY]
+                        break
+                if component:
+                    break
+
+            if component is None:
+                # System health does not support ths component.
                 Log.error(f"System health does not support health update for component: {component}")
                 raise HaSystemHealthException(f"Health update for an unsupported component: {component}")
                 return
 
-            _update(self.update_hierarchy[0], )
-            Log.info(f"Updating status for . Output: {machine_id}, Err: {err}, RC: {rc}")
+            # Get the component type and id received in the event.
+            if (len(self.update_hierarchy) - 1) > self.update_hierarchy.index(component):
+                next_component = self.update_hierarchy[self.update_hierarchy.index(component) + 1]
+            else:
+                next_component = None
+            component_type = healthevent.resource_type.split(':')[-1]
+            component_id = healthevent.resource_id
+            # Read the currently stored health value
+            current_health = self.get_status(component, component_id, type=component_type,
+                                        cluster_id=healthevent.cluster_id, site_id=healthevent.site_id,
+                                        rack_id=healthevent.rack_id, storageset_id=healthevent.storageset_id,
+                                        node_id=healthevent.node_id, server_id=healthevent.node_id,
+                                        storage_id=healthevent.node_id)
 
-    def _update(self, component, type, id, healthvalue, next_component=None):
-    """
-    update method. This is an internal method for updating the system health.
-    """
-        key = self._prepare_key(component,)
-        self.system_health_manager.set_key(key, healthvalue)
+            # Get the updated health value
+            updated_health = EntityHealth(healthevent.timestamp, status, const.ACTION_STATUS.PENDING.value,
+                                          previous_health=current_health)
+            # Update the node map
+            self.node_id = healthevent.node_id
+            self.node_map = {'cluster_id':healthevent.cluster_id, 'site_id':healthevent.site_id,
+                             'rack_id':healthevent.rack_id, 'storageset_id':healthevent.storageset_id}
 
-    def _prepare_key(self, component, **kwargs) -> str:
-    """
-    Prepare Key. This is an internal method for preparing component status key.
-    This will be used when updating/querying a component status.
-    """ 
+            self._update(component, component_type, component_id, updated_health, next_component=next_component)
+            Log.info(f"Updated health for component: {component}, Type: {component_type}, Id: {component_id}")
 
-    def get_status(self, component, type, id, **kwargs):
-    """
-    get status method. This is a generic method which can return status of any component(s).
-    """
+        except Exception as e:
+            Log.error(f"Failed processing system health event with Error: {e}")
+            raise HaSystemHealthException("Failed processing system health event")
 
-    def get_service_status(self, type=None, node_id=None):
-    """
-    get service status method. This method is for returning a status of a service.
-    """
+def main(argv: dict):
+    pass
 
-    def get_node_status(self, node_id, **kwargs):
-    """
-    get node status method. This method is for returning a status of a node.
-    """
-    
-    def get_storageset_status(self, storageset_id, **kwargs):
-    """
-    get storageset status method. This method is for returning a status of a storageset.
-    """
-
-    def get_cluster_status(self, cluster_id, **kwargs):
-    """
-    get cluster status method. This method is for returning a status of a cluster.
-    """
+if __name__ == '__main__':
+    # TODO: Import and use config_manager.py
+    Conf.init(delim='.')
+    Conf.load(const.HA_GLOBAL_INDEX, f"yaml://{const.SOURCE_CONFIG_FILE}")
+    log_path = Conf.get(const.HA_GLOBAL_INDEX, "LOG.path")
+    log_level = Conf.get(const.HA_GLOBAL_INDEX, "LOG.level")
+    Log.init(service_name='ha_system_health', log_path=log_path, level=log_level)
+    sys.exit(main(sys.argv))

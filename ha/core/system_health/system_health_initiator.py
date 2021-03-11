@@ -30,7 +30,6 @@ class SystemHealthInitiator:
         """
         Init method.
         """
-        self.cluster_id =  # TODO: Read from store
         self.system_health = SystemHealth()
 
     def process_schema(self, filename: str):

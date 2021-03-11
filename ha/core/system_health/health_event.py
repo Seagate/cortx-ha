@@ -21,7 +21,7 @@ class HealthEvent:
     """
 
     def __init__(self, event_id, event_type, severity, site_id, rack_id, cluster_id, storageset_id,
-                 node_id, host_id, resource_type, timestamp, resource_id, specific_info):
+                 node_id, host_id, resource_type, timestamp, resource_id, specific_info=None):
         """
         Init method.
         """

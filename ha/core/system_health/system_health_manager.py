@@ -33,7 +33,7 @@ class SystemHealthManager:
         return self.store.get(key)
 
     def set_key(self, key, value):
-    """
+        """
         Set key method.
         """
-    self.store.put(value, key)
+        self.store.put(value, key)
