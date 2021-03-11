@@ -38,8 +38,8 @@ class SSHRemoteExecutor(RemoteExecutor):
         Log.info(f'Execting command: {command} on a remote host {self._hostname}')
         try:
             ret_code, res = self._ssh_client.execute(command)
-        if ret_code:
-            raise RemoteExecutorError(f'Failed to execute command {command} on a \
+            if ret_code:
+                raise RemoteExecutorError(f'Failed to execute command {command} on a \
                                         remote node with error: {res}')
         except:
             raise RemoteExecutorError("Failed to execute command {command} \

@@ -98,7 +98,7 @@ class RemoteExecutorError(HAError):
         """
         Init method.
         """
-        _desc = f"Failed to execute opeartion on a remote node" if desc is None else desc
+        _desc = f'{"Failed to execute opeartion on a remote node"}' if desc is None else desc
         _message_id = HA_REMOTE_EXECUTOR_FAILED
         _rc = 1
         super(RemoteExecutorError, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
