@@ -1,9 +1,9 @@
 import abc
 
 
-class CommunicationMode:
+class RemoteExecutor:
     '''An abstract Base class for all the remote node
-       communication mode'''
+       execution'''
 
     __metaclass__ = abc.ABCMeta
 
@@ -13,16 +13,6 @@ class CommunicationMode:
         self._port = port
 
     @abc.abstractmethod
-    def connect(self):
-        '''Establishes a connection'''
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def communicate(self, command):
+    def execute(self, command):
         '''Communicates to remote node by code execution'''
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def disconnect(self):
-        '''closes the connection'''
         raise NotImplementedError
