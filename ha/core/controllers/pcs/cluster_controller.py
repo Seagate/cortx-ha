@@ -76,9 +76,9 @@ class PcsClusterController(ClusterController, PcsController):
 
                 return {"status": const.STATUSES.IN_PROGRESS.value, "msg": "Cluster start operation performed"}
             else:
-                return {"status": const.STATUSES.FAILED.value, "msg": "Node list is empty"}
+                return {"status": const.STATUSES.FAILED.value, "msg": "Cluster start failed. Not able to verify node list."}
         else:
-            return {"status": const.STATUSES.FAILED.value, "msg": "Cluster start failed. Not able to verify node list."}
+            return {"status": _res.get("status"), "msg": _res.get("msg")}
 
 
     @controller_error_handler
