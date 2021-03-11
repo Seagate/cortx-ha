@@ -22,7 +22,6 @@ from ha.core.controllers.pcs.pcs_controller import PcsController
 from ha.core.controllers.cluster_controller import ClusterController
 from ha.core.controllers.controller_annotation import controller_error_handler
 from ha import const
-from ha.const import NODE_STATUSES
 from cortx.utils.log import Log
 
 class PcsClusterController(ClusterController, PcsController):
@@ -49,14 +48,13 @@ class PcsClusterController(ClusterController, PcsController):
             ([dict]): Return dictionary. {"status": "", "msg":""}
                 status: Succeeded, Failed, InProgress
         """
-        output, err, rc = self._execute.run_cmd(const.PCS_CLUSTER_STATUS, check_error=False)
-        if rc != 0:
-            if (err.find("cluster is not currently running on this node") != -1):
-                self._execute.run_cmd(const.PCS_CLUSTER_START, check_error=False)
-                time.sleep(60)
-                output, err, rc = self._execute.run_cmd(const.PCS_CLUSTER_STATUS, check_error=False)
-                if (err.find("cluster is not currently running on this node") != -1):
-                    return {"status": const.STATUSES.FAILED.value, "msg": "Cluster operation start failed"}
+        _, _, _rc = self._execute.run_cmd(const.PCS_CLUSTER_STATUS, check_error=False)
+        if _rc != 0:
+            self._execute.run_cmd(const.PCS_CLUSTER_START, check_error=False)
+            time.sleep(60)
+            _, _, _rc = self._execute.run_cmd(const.PCS_CLUSTER_STATUS, check_error=False)
+            if _rc != 0:
+                return {"status": const.STATUSES.FAILED.value, "msg": "Cluster start operation failed"}
 
         _res = self.node_list()
         _res = json.loads(_res)
