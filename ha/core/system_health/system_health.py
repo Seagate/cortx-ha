@@ -48,7 +48,7 @@ class SystemHealth:
         """
         Prepare Key. This is an internal method for preparing component status key.
         This will be used when updating/querying a component status.
-        """ 
+        """
 
         # Get the key template.
         key = const.SYSTEM_HEALTH_KEYS[component]
@@ -66,20 +66,20 @@ class SystemHealth:
                 break
         return key
 
-    def get_status(self, component, id, **kwargs):
+    def get_status(self, component, component_id, **kwargs):
         """
         get status method. This is a generic method which can return status of any component(s).
         """
         try:
             # Prepare key and read the health value.
-            key = self._prepare_key(component, id=id, **kwargs)
+            key = self._prepare_key(component, comp_id=component_id, **kwargs)
             return self.healthmanager.get_key(key)
 
         except Exception as e:
             Log.error(f"Failed reading status for component: {component} with Error: {e}")
             raise HaSystemHealthException("Failed reading status")
 
-    def get_service_status(self, type=None, node_id=None):
+    def get_service_status(self, service_type=None, node_id=None):
         """
         get service status method. This method is for returning a status of a service.
         """
@@ -88,7 +88,7 @@ class SystemHealth:
         """
         get node status method. This method is for returning a status of a node.
         """
-    
+
     def get_storageset_status(self, storageset_id, **kwargs):
         """
         get storageset status method. This method is for returning a status of a storageset.
@@ -98,14 +98,14 @@ class SystemHealth:
         """
         get cluster status method. This method is for returning a status of a cluster.
         """
-    def _update(self, component, type, id, healthvalue, next_component=None):
+    def _update(self, component, comp_type, comp_id, healthvalue, next_component=None):
         """
         update method. This is an internal method for updating the system health.
         """
         key = self._prepare_key(component, cluster_id=self.node_map['cluster_id'], site_id=self.node_map['site_id'],
                                 rack_id=self.node_map['rack_id'], storageset_id=self.node_map['storageset_id'],
                                 node_id=self.node_id, server_id=self.node_id, storage_id=self.node_id,
-                                type=type, id=id)
+                                comp_type=comp_type, comp_id=comp_id)
         self.healthmanager.set_key(key, healthvalue)
 
         # TODO: Check and if not present already, store the node map.
@@ -141,7 +141,6 @@ class SystemHealth:
                 # System health does not support ths component.
                 Log.error(f"System health does not support health update for component: {component}")
                 raise HaSystemHealthException(f"Health update for an unsupported component: {component}")
-                return
 
             # Get the component type and id received in the event.
             if (len(self.update_hierarchy) - 1) > self.update_hierarchy.index(component):
@@ -151,7 +150,7 @@ class SystemHealth:
             component_type = healthevent.resource_type.split(':')[-1]
             component_id = healthevent.resource_id
             # Read the currently stored health value
-            current_health = self.get_status(component, component_id, type=component_type,
+            current_health = self.get_status(component, component_id, comp_type=component_type,
                                         cluster_id=healthevent.cluster_id, site_id=healthevent.site_id,
                                         rack_id=healthevent.rack_id, storageset_id=healthevent.storageset_id,
                                         node_id=healthevent.node_id, server_id=healthevent.node_id,

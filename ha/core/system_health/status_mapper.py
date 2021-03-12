@@ -15,6 +15,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
 from cortx.utils.log import Log
+from ha.core.error import HaStatusMapperException
 
 class StatusMapper:
     """
@@ -45,8 +46,6 @@ class StatusMapper:
         except KeyError as e:
             Log.error('StatusMapper, map_event, No equivalent event type found: %s' % e)
             raise HaStatusMapperException('StatusMapper, map_event, No equivalent event type found: %s' % e)
-            return
         except Exception as e:
             Log.error('StatusMapper, map_event, Exception occured while mapping event_type to status: %s' % e)
             raise HaStatusMapperException('StatusMapper, map_event, Exception while mapping event: %s' % e)
-            return

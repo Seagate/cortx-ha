@@ -161,24 +161,24 @@ SYSTEM_HEALTH_COMPONENTS = {"server_hw": {RESOURCE_LIST: ["node:fru", "node:sens
 # Health keys
 SYSTEM_HEALTH_KEYS = {
     "cluster": "/cortx/ha/system/cluster/$cluster_id/health",
-    "site": "/cortx/ha/system/cluster/$cluster_id/site/$site_id/health", 
+    "site": "/cortx/ha/system/cluster/$cluster_id/site/$site_id/health",
     "rack": "/cortx/ha/system/cluster/$cluster_id/site/$site_id/rack/$rack_id/health",
     "storageset": "/cortx/ha/system/cluster/$cluster_id/storageset/$storageset_id/health",
-    "node": "/cortx/ha/system/cluster/$cluster_id/site/$site_id/rack/$rack_id/node/$node_id/health", 
+    "node": "/cortx/ha/system/cluster/$cluster_id/site/$site_id/rack/$rack_id/node/$node_id/health",
     "server": "/cortx/ha/system/cluster/$cluster_id/site/$site_id/rack/$rack_id/node/$node_id/server/$server_id/health",
-    "server_hw": "/cortx/ha/system/cluster/$cluster_id/site/$site_id/rack/$rack_id/node/$node_id/server/$server_id/hw/$type/$id/health", 
-    "server_service": "/cortx/ha/system/cluster/$cluster_id/site/$site_id/rack/$rack_id/node/$node_id/server/$server_id/service/$type/$id/health",
+    "server_hw": "/cortx/ha/system/cluster/$cluster_id/site/$site_id/rack/$rack_id/node/$node_id/server/$server_id/hw/$comp_type/$comp_id/health",
+    "server_service": "/cortx/ha/system/cluster/$cluster_id/site/$site_id/rack/$rack_id/node/$node_id/server/$server_id/service/$comp_type/$comp_id/health",
     "storage": "/cortx/ha/system/cluster/$cluster_id/site/$site_id/rack/$rack_id/node/$node_id/storage/$storage_id/health",
-    "storage_component": "/cortx/ha/system/cluster/$cluster_id/site/$site_id/rack/$rack_id/node/$node_id/storage/$storage_id/hw/$type/$id/health",
-    "agg_service": "/cortx/ha/system/cluster/$cluster_id/service/$type/$id/health",
+    "storage_component": "/cortx/ha/system/cluster/$cluster_id/site/$site_id/rack/$rack_id/node/$node_id/storage/$storage_id/hw/$comp_type/$comp_id/health",
+    "agg_service": "/cortx/ha/system/cluster/$cluster_id/service/$comp_type/$comp_id/health",
     "node_map": "/cortx/ha/system/cluster/node_map/$node_id"
 }
 
 # Entity health value
-ENTITY_HEALTH = {"events": [{"event_timestamp": "", "created_timestamp": "", "status": ""}, 
+ENTITY_HEALTH = {"events": [{"event_timestamp": "", "created_timestamp": "", "status": ""},
                            {"event_timestamp": "", "created_timestamp": "", "status": ""}],
                  "specific_info": "",
-                 "action": {"modified_timestamp": "", "status": ""}, 
+                 "action": {"modified_timestamp": "", "status": ""},
                  "properties": {"IsFru": ""}}
 
 # Num of historical status values to be saved per component

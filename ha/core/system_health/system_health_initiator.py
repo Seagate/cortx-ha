@@ -36,3 +36,4 @@ class SystemHealthInitiator:
         # TODO: Read the health view schema file. Convert the same into the KvPayLoad.
         # Create HealthEvent object and call process_event for every entity within the health view schema file.
         # self.system_health.process_event(healthevent)
+        pass
