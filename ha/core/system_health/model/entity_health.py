@@ -17,6 +17,7 @@
 import time
 import json
 
+from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
 from ha import const
 from ha.core.system_health import system_health_metadata
