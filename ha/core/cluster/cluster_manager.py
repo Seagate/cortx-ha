@@ -27,6 +27,7 @@ from ha.core.node.replacement.refresh_context import PcsRefreshContex
 from ha.execute import SimpleCommand
 from ha import const
 from ha.core.config.config_manager import ConfigManager
+from ha.core.config.ha_conf import HAConf
 from ha.core.controllers.element_controller_factory import ElementControllerFactory
 
 # Note: This class is used by version 1
@@ -39,7 +40,7 @@ class PcsClusterManager:
         self._execute = SimpleCommand()
 
         # get version from ha.conf
-        self._version = ConfigManager.get_major_version()
+        self._version = HAConf.get_major_version()
 
         if self._version == const.CORTX_VERSION_1:
             self._decision_monitor = DecisionMonitor()

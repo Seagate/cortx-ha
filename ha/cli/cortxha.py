@@ -58,7 +58,7 @@ class HACli:
         ConfigManager.init('cortxha')
 
         # get version from ha.conf
-        self._version = ConfigManager.get_major_version()
+        self._version = HAConf.get_major_version()
 
     @staticmethod
     def _usage():
@@ -112,6 +112,7 @@ if __name__ == '__main__':
     sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..'))
     from ha import const
     from ha.core.config.config_manager import ConfigManager
+    from ha.core.config.ha_conf import HAConf
     from ha.cli.command_factory import CommandFactory
     ha_cli = HACli()
 

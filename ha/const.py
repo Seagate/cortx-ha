@@ -25,6 +25,8 @@ SUPPORT_BUNDLE_ERR="{}/support_bundle.err".format(RA_LOG_DIR)
 SUPPORT_BUNDLE_LOGS=[RA_LOG_DIR, PCSD_LOG, PACEMAKER_LOG, COROSYNC_LOG]
 CORTX_SUPPORT_BUNDLE_LOGS=[RA_LOG_DIR]
 
+# Cluster Manager
+CLUSTER_CONFSTORE_PREFIX = "cortx/ha/"
 HA_INIT_DIR="/var/cortx/ha/"
 CONFIG_DIR="/etc/cortx/ha"
 SOURCE_CONFIG_PATH="/opt/seagate/cortx/ha/conf/etc"
