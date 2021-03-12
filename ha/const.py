@@ -93,8 +93,8 @@ HARE_FID_MAPPING_FILE="/var/lib/hare/consul-server-conf/consul-server-conf.json"
 
 CORTX_VERSION_1="1"
 CORTX_VERSION_2="2"
-PCS_CLUSTER_START_ALL="pcs cluster start --all"
-PCS_CLUSTER_START="pcs cluster start"
+PCS_CLUSTER_START="pcs cluster start --all"
+PCS_CLUSTER_START_NODE="pcs cluster start"
 PCS_CLUSTER_STATUS="pcs cluster status"
 PCS_CLUSTER_UNSTANDBY="pcs cluster unstandby --all"
 PCS_STATUS_NODES="pcs status nodes"
@@ -113,6 +113,8 @@ NO_FAILCOUNT = "No failcounts"
 RETRY_COUNT = 2
 PCS_NODE_START_GROUP_SIZE = 3
 NODE_CONTROLLER = "node_controller"
+CLUSTER_RETRY_COUNT = 6
+BASE_WAIT_TIME = 5
 
 
 class STATUSES(Enum):

@@ -39,6 +39,29 @@ class PcsClusterController(ClusterController, PcsController):
         """
         self._controllers = controllers
 
+    def _is_pcs_cluster_running(self):
+        """
+        Check pcs cluster status
+        """
+        _, _, _rc = self._execute.run_cmd(const.PCS_CLUSTER_STATUS, check_error=False)
+        if _rc != 0:
+            return False
+        return True
+
+    def _pcs_cluster_start(self):
+        """
+        Start pcs cluster
+        """
+        _status = const.STATUSES.FAILED.value
+        self._execute.run_cmd(const.PCS_CLUSTER_START_NODE, check_error=False)
+        for retry_index in range(0, const.CLUSTER_RETRY_COUNT):
+            time.sleep(const.BASE_WAIT_TIME)
+            _status = self._is_pcs_cluster_running()
+            if _status is True:
+                _status = const.STATUSES.SUCCEEDED.value
+                break
+        return _status
+
     @controller_error_handler
     def start(self) -> dict:
         """
@@ -48,12 +71,9 @@ class PcsClusterController(ClusterController, PcsController):
             ([dict]): Return dictionary. {"status": "", "msg":""}
                 status: Succeeded, Failed, InProgress
         """
-        _, _, _rc = self._execute.run_cmd(const.PCS_CLUSTER_STATUS, check_error=False)
-        if _rc != 0:
-            self._execute.run_cmd(const.PCS_CLUSTER_START, check_error=False)
-            time.sleep(60)
-            _, _, _rc = self._execute.run_cmd(const.PCS_CLUSTER_STATUS, check_error=False)
-            if _rc != 0:
+        if self._is_pcs_cluster_running() is False:
+            _res = self._pcs_cluster_start()
+            if _res != const.STATUSES.SUCCEEDED.value:
                 return {"status": const.STATUSES.FAILED.value, "msg": "Cluster start operation failed"}
 
         _res = self.node_list()
@@ -72,13 +92,15 @@ class PcsClusterController(ClusterController, PcsController):
                         if _res.get("status") == const.STATUSES.FAILED.value:
                             msg = _res.get("msg")
                             Log.error(f"Node {_node_id} : {msg}")
-                    time.sleep(30)
+                    # Wait till all the resources get started in the sub group
+                    time.sleep(const.BASE_WAIT_TIME * const.PCS_NODE_START_GROUP_SIZE)
 
                 return {"status": const.STATUSES.IN_PROGRESS.value, "msg": "Cluster start operation performed"}
             else:
                 return {"status": const.STATUSES.FAILED.value, "msg": "Cluster start failed. Not able to verify node list."}
         else:
-            return {"status": _res.get("status"), "msg": _res.get("msg")}
+            msg = _res.get("msg")
+            return {"status": _res.get("status"), "msg": f"Cluster start operation failed, {msg}"}
 
 
     @controller_error_handler
@@ -146,7 +168,6 @@ class PcsClusterController(ClusterController, PcsController):
                 nodes = status.split(":")
                 if len(nodes) > 1:
                     nodelist.extend(nodes[1].split())
-
             return {"status": const.STATUSES.SUCCEEDED.value, "msg": nodelist}
 
     @controller_error_handler
