@@ -14,11 +14,11 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
-from cortx.utils.log import Log
-from cortx.utils.kv_store.kv_payload import KvPayload
-from ha import const
-from ha.core.system_health.health_event import HealthEvent
-from ha.core.system_health.system_health import SystemHealth
+#from cortx.utils.log import Log
+#from cortx.utils.kv_store.kv_payload import KvPayload
+#from ha import const
+#from ha.core.system_health.health_event import HealthEvent
+#from ha.core.system_health.system_health import SystemHealth
 
 class SystemHealthInitiator:
     """
@@ -30,7 +30,8 @@ class SystemHealthInitiator:
         """
         Init method.
         """
-        self.system_health = SystemHealth()
+        #self.system_health = SystemHealth()
+        pass
 
     def process_schema(self, filename: str):
         # TODO: Read the health view schema file. Convert the same into the KvPayLoad.
