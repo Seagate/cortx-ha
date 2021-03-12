@@ -60,6 +60,7 @@ class PcsClusterController(ClusterController, PcsController):
             if _status is True:
                 _status = const.STATUSES.SUCCEEDED.value
                 break
+            Log.info(f"Pcs cluster start retry index : {retry_index}")
         return _status
 
     @controller_error_handler
