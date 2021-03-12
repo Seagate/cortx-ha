@@ -17,12 +17,14 @@
 import json
 import time
 
-from ha.core.error import HAUnimplemented
+import json
+from ha.core.error import HAUnimplemented, ClusterManagerError
 from ha.core.controllers.pcs.pcs_controller import PcsController
 from ha.core.controllers.cluster_controller import ClusterController
 from ha.core.controllers.controller_annotation import controller_error_handler
 from ha import const
 from cortx.utils.log import Log
+
 
 class PcsClusterController(ClusterController, PcsController):
     """ Pcs cluster controller to perform pcs cluster level operation. """
@@ -62,6 +64,18 @@ class PcsClusterController(ClusterController, PcsController):
                 break
             Log.info(f"Pcs cluster start retry index : {retry_index}")
         return _status
+
+    @staticmethod
+    def load_json_file(self, json_file):
+        """
+        Load json file to read node & the cluster details to auth node
+        :param json_file:
+        """
+        try:
+            with open(json_file) as f:
+                return json.load(f)
+        except Exception as e:
+            raise ClusterManagerError(f"Error in reading desc_file, reason : {e}")
 
     @controller_error_handler
     def start(self) -> dict:
@@ -194,19 +208,41 @@ class PcsClusterController(ClusterController, PcsController):
         raise HAUnimplemented("This operation is not implemented.")
 
     @controller_error_handler
-    def add_node(self, nodeid: str = None, descfile: str = None) -> dict:
+    def add_node(self, node_id: str = None, cluster_user: str = None,
+                 cluster_password: str = None, desc_file: str = None) -> dict:
         """
         Add new node to cluster.
-
+        :param cluster_user:
+        :param cluster_password:
+        :param node_id:
+        :param desc_file:
         Args:
-            nodeid (str, optional): Provide nodeid. Defaults to None.
-            filename (str, optional): Provide descfile. Defaults to None.
+            node_id (str, optional): Provide node_id. Defaults to None.
+            filename (str, optional): Provide desc_file. Defaults to None.
 
         Returns:
             ([dict]): Return dictionary. {"status": "", "msg":""}
                 status: Succeeded, Failed, InProgress
         """
-        raise HAUnimplemented("This operation is not implemented.")
+        if not node_id and not desc_file:
+            return {"status": "Failed", "msg": "Either node_id or desc_file is required to add node"}
+
+        if desc_file:
+            _json_data = PcsClusterController.load_json_file(desc_file)
+            node_id = _json_data.get("node_id")
+            cluster_user = _json_data.get("cluster_user")
+            cluster_password = _json_data.get("cluster_password")
+        elif node_id and not(cluster_user or cluster_password):
+            return {"status": "Failed", "msg": "Missing parameters (cluster_user or cluster_password) for node_id"}
+
+        self.auth_node(node_id, cluster_user, cluster_password)
+        cluster_node_count = self.get_cluster_size()
+        if cluster_node_count < 32:
+            _output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_NODE_ADD.replace("<node>", node_id))
+            return {"status": "InProgress", "msg": f"Node {node_id} added successfully in the cluster"}
+        else:
+            return {"status": "Failed", "msg": "Cluster size is already filled to 32, "
+                                               "Please use add-remote node mechanism"}
 
     @controller_error_handler
     def add_storageset(self, nodeid: str = None, descfile: str = None) -> dict:

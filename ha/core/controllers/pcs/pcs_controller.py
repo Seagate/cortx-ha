@@ -22,7 +22,8 @@ from ha.execute import SimpleCommand
 from ha import const
 from ha.core.error import HAInvalidNode, ClusterManagerError
 from ha.const import NODE_STATUSES
-
+from cortx.utils.conf_store import Conf
+from cortx.utils.log import Log
 
 
 class PcsController(ElementController):
@@ -30,7 +31,7 @@ class PcsController(ElementController):
 
     def __init__(self):
         """
-        Initalize pcs controller
+        Initialize pcs controller
         """
         super(PcsController, self).__init__()
         self._execute = SimpleCommand()
@@ -71,6 +72,27 @@ class PcsController(ElementController):
         """
         _output, _err, _rc = self._execute.run_cmd(const.PCS_NODE_CLEANUP.replace("<node>", node_id),
                                                    check_error=False)
+
+    def auth_node(self, node_id, cluster_user, cluster_password):
+        """
+        Auth node to add
+        """
+        try:
+            _output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_NODE_AUTH.replace("<node>", node_id)
+                                                       .replace("<username>", cluster_user)
+                                                       .replace("<password>", cluster_password))
+        except Exception as e:
+            raise ClusterManagerError(f"Failed to authenticate node : {node_id} with reason : {e}")
+
+    def get_cluster_size(self):
+        """
+        Auth node to add
+        """
+        try:
+            _output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_PCSD_STATUS)
+            return len(_output.split("\n"))
+        except Exception as e:
+            raise ClusterManagerError(f"Unable to get cluster : with reason : {e}")
 
     def nodes_status(self, nodeids: list) -> dict:
         """
