@@ -23,9 +23,10 @@ from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
 sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..', '..'))
 from ha import const
-from ha.core.system_health.health_event import HealthEvent
+from ha.core.system_health import system_health_metadata
+from ha.core.system_health.model.health_event import HealthEvent
+from ha.core.system_health.model.entity_health import EntityHealth
 from ha.core.system_health.status_mapper import StatusMapper
-from ha.core.system_health.entity_health import EntityHealth
 from ha.core.system_health.system_health_manager import SystemHealthManager
 from ha.core.error import HaSystemHealthException
 
@@ -51,7 +52,7 @@ class SystemHealth:
         """
 
         # Get the key template.
-        key = const.SYSTEM_HEALTH_KEYS[component]
+        key = system_health_metadata.SYSTEM_HEALTH_KEYS[component]
         # Check what all substitutions with actual values passed in kwargs to be done.
         subs = re.findall("\$\w+", key)
         # Check if the related argument present in kwargs, if yes substitute the same.
@@ -128,11 +129,11 @@ class SystemHealth:
             status = self.statusmapper.map_event(healthevent.event_type)
             # Get system health component from the resource type in the event
             component = None
-            for key in const.SYSTEM_HEALTH_COMPONENTS:
-                for item in const.SYSTEM_HEALTH_COMPONENTS[key][const.RESOURCE_LIST]:
+            for key in system_health_metadata.SYSTEM_HEALTH_COMPONENTS:
+                for item in system_health_metadata.SYSTEM_HEALTH_COMPONENTS[key][const.RESOURCE_LIST]:
                     if item in healthevent.resource_type:
                         component = key
-                        self.update_hierarchy = const.SYSTEM_HEALTH_COMPONENTS[key][const.UPDATE_HIERARCHY]
+                        self.update_hierarchy = system_health_metadata.SYSTEM_HEALTH_COMPONENTS[key][const.UPDATE_HIERARCHY]
                         break
                 if component:
                     break

@@ -127,62 +127,9 @@ class NODE_STATUSES(Enum):
     UNKNOWN = "Unknown"
 
 # System Health
-# Components health update hierarchy
-CLUSTER_UPDATE_HIERARCHY = ["cluster"]
-SITE_UPDATE_HIERARCHY = ["site"] + CLUSTER_UPDATE_HIERARCHY
-RACK_UPDATE_HIERARCHY = ["rack"] + SITE_UPDATE_HIERARCHY
-STORAGESET_UPDATE_HIERARCHY = ["storageset"] + RACK_UPDATE_HIERARCHY
-NODE_UPDATE_HIERARCHY = ["node"] + STORAGESET_UPDATE_HIERARCHY
-SERVER_UPDATE_HIERARCHY = ["server"] + NODE_UPDATE_HIERARCHY
-SERVER_HW_UPDATE_HIERARCHY = ["server_hw"] + SERVER_UPDATE_HIERARCHY
-SERVER_SERVICE_UPDATE_HIERARCHY = ["server_service", "agg_service"] + SERVER_UPDATE_HIERARCHY
-STORAGE_UPDATE_HIERARCHY = ["storage"] + NODE_UPDATE_HIERARCHY
-STORAGE_COMPONENT_UPDATE_HIERARCHY = ["storage_component"] + STORAGE_UPDATE_HIERARCHY
-
 # Constants
 RESOURCE_LIST = "resource_list"
 UPDATE_HIERARCHY = "update_hierarchy"
-
-# Components/resources maintained by System Health module. Note: Do not change the order.
-SYSTEM_HEALTH_COMPONENTS = {"server_hw": {RESOURCE_LIST: ["node:fru", "node:sensor", "node:os", "node:interface"],
-                                          UPDATE_HIERARCHY: SERVER_HW_UPDATE_HIERARCHY},
-                            "server_service": {RESOURCE_LIST: ["node:sw"],
-                                               UPDATE_HIERARCHY: SERVER_SERVICE_UPDATE_HIERARCHY},
-                            "storage_component": {RESOURCE_LIST: ["enclosure"],
-                                                  UPDATE_HIERARCHY: STORAGE_COMPONENT_UPDATE_HIERARCHY},
-                            "storageset": {RESOURCE_LIST: ["storageset"], UPDATE_HIERARCHY: STORAGESET_UPDATE_HIERARCHY},
-                            "server": {RESOURCE_LIST: ["server"], UPDATE_HIERARCHY: SERVER_UPDATE_HIERARCHY},
-                            "storage": {RESOURCE_LIST: ["storage"], UPDATE_HIERARCHY: STORAGE_UPDATE_HIERARCHY},
-                            "node": {RESOURCE_LIST: ["node"], UPDATE_HIERARCHY: NODE_UPDATE_HIERARCHY},
-                            "rack": {RESOURCE_LIST: ["rack"], UPDATE_HIERARCHY: RACK_UPDATE_HIERARCHY},
-                            "site": {RESOURCE_LIST: ["site"], UPDATE_HIERARCHY: SITE_UPDATE_HIERARCHY},
-                            "cluster": {RESOURCE_LIST: ["cluster"],  UPDATE_HIERARCHY: CLUSTER_UPDATE_HIERARCHY}}
-
-# Health keys
-SYSTEM_HEALTH_KEYS = {
-    "cluster": "/cortx/ha/system/cluster/$cluster_id/health",
-    "site": "/cortx/ha/system/cluster/$cluster_id/site/$site_id/health",
-    "rack": "/cortx/ha/system/cluster/$cluster_id/site/$site_id/rack/$rack_id/health",
-    "storageset": "/cortx/ha/system/cluster/$cluster_id/storageset/$storageset_id/health",
-    "node": "/cortx/ha/system/cluster/$cluster_id/site/$site_id/rack/$rack_id/node/$node_id/health",
-    "server": "/cortx/ha/system/cluster/$cluster_id/site/$site_id/rack/$rack_id/node/$node_id/server/$server_id/health",
-    "server_hw": "/cortx/ha/system/cluster/$cluster_id/site/$site_id/rack/$rack_id/node/$node_id/server/$server_id/hw/$comp_type/$comp_id/health",
-    "server_service": "/cortx/ha/system/cluster/$cluster_id/site/$site_id/rack/$rack_id/node/$node_id/server/$server_id/service/$comp_type/$comp_id/health",
-    "storage": "/cortx/ha/system/cluster/$cluster_id/site/$site_id/rack/$rack_id/node/$node_id/storage/$storage_id/health",
-    "storage_component": "/cortx/ha/system/cluster/$cluster_id/site/$site_id/rack/$rack_id/node/$node_id/storage/$storage_id/hw/$comp_type/$comp_id/health",
-    "agg_service": "/cortx/ha/system/cluster/$cluster_id/service/$comp_type/$comp_id/health",
-    "node_map": "/cortx/ha/system/cluster/node_map/$node_id"
-}
-
-# Entity health value
-ENTITY_HEALTH = {"events": [{"event_timestamp": "", "created_timestamp": "", "status": ""},
-                           {"event_timestamp": "", "created_timestamp": "", "status": ""}],
-                 "specific_info": "",
-                 "action": {"modified_timestamp": "", "status": ""},
-                 "properties": {"IsFru": ""}}
-
-# Num of historical status values to be saved per component
-NUM_ENTITY_HEALTH_EVENTS = 2
 
 # Health update HA action status
 class ACTION_STATUS(Enum):

@@ -17,7 +17,7 @@
 #from cortx.utils.log import Log
 #from cortx.utils.kv_store.kv_payload import KvPayload
 #from ha import const
-#from ha.core.system_health.health_event import HealthEvent
+#from ha.core.system_health.model.health_event import HealthEvent
 #from ha.core.system_health.system_health import SystemHealth
 
 class SystemHealthInitiator:

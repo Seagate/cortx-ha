@@ -19,6 +19,7 @@ import json
 
 from cortx.utils.log import Log
 from ha import const
+from ha.core.system_health import system_health_metadata
 from ha.core.error import HaEntityHealthException
 
 class EntityHealth:
@@ -46,12 +47,12 @@ class EntityHealth:
             if self.previous_health:
                 healthvalue = json.loads(self.previous_health)
                 # Keep the history of events as per the configuration
-                num_events = const.NUM_ENTITY_HEALTH_EVENTS - 1
+                num_events = Conf.get(const.HA_GLOBAL_INDEX, "SYSTEM_HEALTH.num_entity_health_events") - 1
                 while num_events:
                     healthvalue['events'][num_events] = healthvalue['events'][num_events - 1]
                     num_events = num_events - 1
             else:
-                healthvalue = const.ENTITY_HEALTH
+                healthvalue = system_health_metadata.ENTITY_HEALTH
 
             # Update health status
             healthvalue['events'][0] = {"event_timestamp": self.event_timestamp,
