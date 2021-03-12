@@ -14,11 +14,15 @@
 # with this program. If not, see <https://www.gnu.org/licenses/>. For any questions
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
+import json
+import time
 
 from ha.core.error import HAUnimplemented
 from ha.core.controllers.pcs.pcs_controller import PcsController
 from ha.core.controllers.cluster_controller import ClusterController
 from ha.core.controllers.controller_annotation import controller_error_handler
+from ha import const
+from cortx.utils.log import Log
 
 class PcsClusterController(ClusterController, PcsController):
     """ Pcs cluster controller to perform pcs cluster level operation. """
@@ -29,6 +33,36 @@ class PcsClusterController(ClusterController, PcsController):
         """
         super(PcsClusterController, self).__init__()
 
+    def initialize(self, controllers):
+        """
+        Initialize the cluster controller
+        """
+        self._controllers = controllers
+
+    def _is_pcs_cluster_running(self):
+        """
+        Check pcs cluster status
+        """
+        _, _, _rc = self._execute.run_cmd(const.PCS_CLUSTER_STATUS, check_error=False)
+        if _rc != 0:
+            return False
+        return True
+
+    def _pcs_cluster_start(self):
+        """
+        Start pcs cluster
+        """
+        _status = const.STATUSES.FAILED.value
+        self._execute.run_cmd(const.PCS_CLUSTER_START_NODE, check_error=False)
+        for retry_index in range(0, const.CLUSTER_RETRY_COUNT):
+            time.sleep(const.BASE_WAIT_TIME)
+            _status = self._is_pcs_cluster_running()
+            if _status is True:
+                _status = const.STATUSES.SUCCEEDED.value
+                break
+            Log.info(f"Pcs cluster start retry index : {retry_index}")
+        return _status
+
     @controller_error_handler
     def start(self) -> dict:
         """
@@ -38,7 +72,37 @@ class PcsClusterController(ClusterController, PcsController):
             ([dict]): Return dictionary. {"status": "", "msg":""}
                 status: Succeeded, Failed, InProgress
         """
-        raise HAUnimplemented("Cluster start operation is not implemented.")
+        if self._is_pcs_cluster_running() is False:
+            _res = self._pcs_cluster_start()
+            if _res != const.STATUSES.SUCCEEDED.value:
+                return {"status": const.STATUSES.FAILED.value, "msg": "Cluster start operation failed"}
+
+        _res = self.node_list()
+        _res = json.loads(_res)
+
+        if _res.get("status") == const.STATUSES.SUCCEEDED.value:
+            _node_list = _res.get("msg")
+            Log.info(f"Node List : {_node_list}")
+            if _node_list is not None:
+                _node_group = [ _node_list[i:i + const.PCS_NODE_START_GROUP_SIZE] for i in range(0, len(_node_list), const.PCS_NODE_START_GROUP_SIZE)]
+
+                for _node_subgroup in _node_group:
+                    for _node_id in _node_subgroup:
+                        _res = self._controllers[const.NODE_CONTROLLER].start(_node_id)
+                        _res = json.loads(_res)
+                        if _res.get("status") == const.STATUSES.FAILED.value:
+                            msg = _res.get("msg")
+                            Log.error(f"Node {_node_id} : {msg}")
+                    # Wait till all the resources get started in the sub group
+                    time.sleep(const.BASE_WAIT_TIME * const.PCS_NODE_START_GROUP_SIZE)
+
+                return {"status": const.STATUSES.IN_PROGRESS.value, "msg": "Cluster start operation performed"}
+            else:
+                return {"status": const.STATUSES.FAILED.value, "msg": "Cluster start failed. Not able to verify node list."}
+        else:
+            msg = _res.get("msg")
+            return {"status": _res.get("status"), "msg": f"Cluster start operation failed, {msg}"}
+
 
     @controller_error_handler
     def stop(self) -> dict:
@@ -94,7 +158,18 @@ class PcsClusterController(ClusterController, PcsController):
             ([dict]): Return dictionary. {"status": "", "msg":[]}
                 status: Succeeded, Failed, InProgress
         """
-        raise HAUnimplemented("This operation is not implemented.")
+        #TODO: This is temporary implementation and It should be removed once nodelist is available in the system health.
+        nodelist = []
+        _output, _err, _rc = self._execute.run_cmd(const.PCS_STATUS_NODES, check_error=False)
+
+        if _rc != 0:
+            return {"status": const.STATUSES.FAILED.value, "msg": "Failed to get nodes status"}
+        else:
+            for status in _output.split("\n"):
+                nodes = status.split(":")
+                if len(nodes) > 1:
+                    nodelist.extend(nodes[1].split())
+            return {"status": const.STATUSES.SUCCEEDED.value, "msg": nodelist}
 
     @controller_error_handler
     def service_list(self) -> dict:

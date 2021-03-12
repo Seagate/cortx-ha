@@ -28,6 +28,13 @@ class ClusterController(ElementController):
         """
         super(ClusterController, self).__init__()
 
+    def initialize(self, controllers):
+        """
+        Initialize the cluster controller
+        """
+        raise HAUnimplemented("This operation is not implemented.")
+
+
     @controller_error_handler
     def start(self) -> dict:
         """
