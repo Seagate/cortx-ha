@@ -21,6 +21,7 @@ from cortx.utils.log import Log
 from ha.execute import SimpleCommand
 from ha import const
 from ha.cli.exec.commandExecutor import CommandExecutor
+from ha.core.error import HAClusterStart
 
 class ClusterStartExecutor(CommandExecutor):
 
@@ -82,7 +83,7 @@ class ClusterStartExecutor(CommandExecutor):
             if(_err.find("No such file or directory: 'pcs'") != -1):
                 Log.error("Cluster failed to start; pcs not installed")
                 #print("Cluster failed to start; pcs not installed")
-                raise Exception("Cluster failed to start; pcs not installed")
+                raise HAClusterStart("Cluster failed to start; pcs not installed")
             # if cluster is not running; start cluster
             elif(_err.find("cluster is not currently running on this node") != -1):
                 self._execute.run_cmd(const.PCS_CLUSTER_START, check_error=False)
@@ -112,7 +113,7 @@ class ClusterStartExecutor(CommandExecutor):
         if _rc != 0:
             # cluster could not be started.
             Log.error("Cluster failed to start")
-            raise Exception("Cluster failed to start")
+            raise HAClusterStart("Cluster failed to start")
         else:
             # confirm that at least one node is active
             self.get_nodes_status()
@@ -122,7 +123,7 @@ class ClusterStartExecutor(CommandExecutor):
                 self.get_nodes_status()
                 if self.active_nodes == False:
                     Log.info("Cluster started; nodes not online")
-                    raise Exception("Cluster started; nodes not online")
+                    raise HAClusterStart("Cluster started; nodes not online")
 
         Log.info("Cluster started successfully")
 

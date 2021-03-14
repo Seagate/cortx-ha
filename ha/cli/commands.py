@@ -18,17 +18,10 @@
 #from ha.core.error import HAUnimplemented
 #from  ha.cli import cluster
 
-import inspect
-
 from ha.core.error import HAInvalidCommand
 from ha.cli.command_factory import cmdFactory
 from ha.cli.exec.commandExecutor import CLIUsage
-from ha.cli.exec.permissions import Permissions
-from ha.cli.exec import clusterExecutor
-from ha.cli.exec import nodeExecutor
-from ha.cli.exec import commandExecutor
-from ha.cli.exec import serviceExecutor
-from ha.cli.exec import storagesetExecutor
+from ha.cli.exec.commandExecutor import CommandExecutor as cmdExecutor
 
 
 class Command:
@@ -38,9 +31,6 @@ class Command:
         self.operation_name = None
         self.options = None
         self.cmd_factory = cmdFactory()
-
-        # Modules where executor classes are defined
-        self.execute = [commandExecutor, clusterExecutor, nodeExecutor, serviceExecutor, storagesetExecutor]
 
 
     def parse(self, args):
@@ -61,32 +51,22 @@ class Command:
         return True
 
 
-    def get_class(self, commandExecutor):
-
-        for module in self.execute:
-            cmds = inspect.getmembers(module, inspect.isclass)
-            for name , cmd in cmds:
-                if name == commandExecutor:
-                    return cmd
-        return None
-
-
     def process(self, args):
         """ Process the command """
 
         # Raise exception if user does not have proper permissions
-        self.validate = Permissions()
-        self.validate.validate_permissions()
+        self.cmdExecutor = cmdExecutor()
+        self.cmdExecutor.validate_permissions()
 
         if self.parse(args) == True:
-            commandExecutor = self.cmd_factory.get_executor(self.module_name, self.operation_name)
+            commandExec = self.cmd_factory.get_executor(self.module_name, self.operation_name)
 
-            if commandExecutor == None:
+            if commandExec == None:
                 print(CLIUsage.usage())
                 raise HAInvalidCommand("Invalid parameters passed; refer to help for details")
 
-            classnm = self.get_class(commandExecutor)
-            executorClass = classnm()
+            # Call execute function of the appropriate executor class
+            executorClass = commandExec()
             executorClass.execute()
 
 """

@@ -20,7 +20,11 @@ import inspect
 from ha.cli import commands
 from ha.core.config.config_manager import ConfigManager
 #from cortx.utils.log import Log
-
+from ha.cli.exec.nodeExecutor import *
+from ha.cli.exec.clusterExecutor import *
+from ha.cli.exec.commandExecutor import *
+from ha.cli.exec.serviceExecutor import *
+from ha.cli.exec.storagesetExecutor import *
 
 class cmdFactory:
     def __init__(self):
@@ -32,49 +36,49 @@ class cmdFactory:
         # So the generated log file will be cortxcli.log
         ConfigManager.init("cortxcli")
 
-        # This dictionary contains the class names used by all HA CLIs
+        # This dictionary contains the classes used by all HA CLIs
         # In case of any modifications to the CLI,
         # this dictionary should be updated.
         self.cmd_dict = {
             "cluster": {
-                "start": "ClusterStartExecutor",
-                "stop": "ClusterStopExecutor",
-                "restart": "ClusterRestartExecutor",
-                "standby": "ClusterStandbyExecutor",
-                "active": "ClusterActiveExecutor",
-                "list": "ClusterListExecutor",
-                "status": "ClusterStatusExecutor",
-                "add": "ClusterAddExecutor",
-                "-h": "CLIUsage",
-                "--help": "CLIUsage"
+                "start": ClusterStartExecutor,
+                "stop": ClusterStopExecutor,
+                "restart": ClusterRestartExecutor,
+                "standby": ClusterStandbyExecutor,
+                "active": ClusterActiveExecutor,
+                "list": ClusterListExecutor,
+                "status": ClusterStatusExecutor,
+                "add": ClusterAddExecutor,
+                "-h": ClusterCLIUsage,
+                "--help": ClusterCLIUsage
             },
             "node": {
-                "start": "NodeStartExecutor",
-                "stop": "NodeStopExecutor",
-                "standby": "NodeStandbyExecutor",
-                "active": "NodeActiveExecutor",
-                "status": "NodeStatusExecutor",
-                "-h": "CLIUsage",
-                "--help": "CLIUsage"
+                "start": NodeStartExecutor,
+                "stop": NodeStopExecutor,
+                "standby": NodeStandbyExecutor,
+                "active": NodeActiveExecutor,
+                "status": NodeStatusExecutor,
+                "-h": NodeCLIUsage,
+                "--help": NodeCLIUsage
             },
             "storageset": {
-                "start": "StoragesetStartExecutor",
-                "stop": "StoragesetStopExecutor",
-                "standby": "StoragesetStandbyExecutor",
-                "active": "StoragesetActiveExecutor",
-                "status": "StoragesetStatusExecutor",
-                "-h": "CLIUsage",
-                "--help": "CLIUsage"
+                "start": StoragesetStartExecutor,
+                "stop": StoragesetStopExecutor,
+                "standby": StoragesetStandbyExecutor,
+                "active": StoragesetActiveExecutor,
+                "status": StoragesetStatusExecutor,
+                "-h": StoragesetCLIUsage,
+                "--help": StoragesetCLIUsage
             },
             "service": {
-                "start": "ServiceStartExecutor",
-                "stop": "ServiceStopExecutor",
-                "status": "ServiceStatusExecutor",
-                "-h": "CLIUsage",
-                "--help": "CLIUsage"
+                "start": ServiceStartExecutor,
+                "stop": ServiceStopExecutor,
+                "status": ServiceStatusExecutor,
+                "-h": ServiceCLIUsage,
+                "--help": ServiceCLIUsage
             },
-            "-h": "CLIUsage",
-            "--help": "CLIUsage"
+            "-h": CLIUsage,
+            "--help": CLIUsage
         }
 
     def get_executor(self, module_name, operation_name):

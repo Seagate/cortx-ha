@@ -20,10 +20,6 @@ import sys
 import argparse
 import pathlib
 
-#from cortx.utils.schema.conf import Conf
-#from cortx.utils.log import Log
-#from cortx.utils.schema.payload import *
-
 #if __name__ == '__main__':
 def main(argv):
     """
