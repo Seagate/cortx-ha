@@ -50,6 +50,13 @@ class Command:
                 return False
         return True
 
+    def get_class(self, cmd_exec ):
+        parts = cmd_exec.split('.')
+        module = ".".join(parts[:-1])
+        m = __import__( module )
+        for comp in parts[1:]:
+            m = getattr(m, comp)
+        return m
 
     def process(self, args):
         """ Process the command """
@@ -65,8 +72,10 @@ class Command:
                 print(CLIUsage.usage())
                 raise HAInvalidCommand("Invalid parameters passed; refer to help for details")
 
+
+            execClass = self.get_class(commandExec)
             # Call execute function of the appropriate executor class
-            executorClass = commandExec()
+            executorClass = execClass()
             executorClass.execute()
 
 """

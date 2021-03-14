@@ -19,11 +19,6 @@ import inspect
 
 from ha.cli import commands
 from ha.core.config.config_manager import ConfigManager
-from ha.cli.exec.nodeExecutor import *
-from ha.cli.exec.clusterExecutor import *
-from ha.cli.exec.commandExecutor import *
-from ha.cli.exec.serviceExecutor import *
-from ha.cli.exec.storagesetExecutor import *
 
 class cmdFactory:
     def __init__(self):
@@ -40,44 +35,44 @@ class cmdFactory:
         # this dictionary should be updated.
         self.cmd_dict = {
             "cluster": {
-                "start": ClusterStartExecutor,
-                "stop": ClusterStopExecutor,
-                "restart": ClusterRestartExecutor,
-                "standby": ClusterStandbyExecutor,
-                "active": ClusterActiveExecutor,
-                "list": ClusterListExecutor,
-                "status": ClusterStatusExecutor,
-                "add": ClusterAddExecutor,
-                "-h": ClusterCLIUsage,
-                "--help": ClusterCLIUsage
+                "start": "ha.cli.exec.clusterExecutor.ClusterStartExecutor",
+                "stop": "ha.cli.exec.clusterExecutor.ClusterStopExecutor",
+                "restart": "ha.cli.exec.clusterExecutor.ClusterRestartExecutor",
+                "standby": "ha.cli.exec.clusterExecutor.ClusterStandbyExecutor",
+                "active": "ha.cli.exec.clusterExecutor.ClusterActiveExecutor",
+                "list": "ha.cli.exec.clusterExecutor.ClusterListExecutor",
+                "status": "ha.cli.exec.clusterExecutor.ClusterStatusExecutor",
+                "add": "ha.cli.exec.clusterExecutor.ClusterAddExecutor",
+                "-h": "ha.cli.exec.commandExecutor.ClusterCLIUsage",
+                "--help": "ha.cli.exec.commandExecutor.ClusterCLIUsage"
             },
             "node": {
-                "start": NodeStartExecutor,
-                "stop": NodeStopExecutor,
-                "standby": NodeStandbyExecutor,
-                "active": NodeActiveExecutor,
-                "status": NodeStatusExecutor,
-                "-h": NodeCLIUsage,
-                "--help": NodeCLIUsage
+                "start": "ha.cli.exec.nodeExecutor.NodeStartExecutor",
+                "stop": "ha.cli.exec.nodeExecutor.NodeStopExecutor",
+                "standby": "ha.cli.exec.nodeExecutor.NodeStandbyExecutor",
+                "active": "ha.cli.exec.nodeExecutor.NodeActiveExecutor",
+                "status": "ha.cli.exec.nodeExecutor.NodeStatusExecutor",
+                "-h": "ha.cli.exec.commandExecutor.NodeCLIUsage",
+                "--help": "ha.cli.exec.commandExecutor.NodeCLIUsage"
             },
             "storageset": {
-                "start": StoragesetStartExecutor,
-                "stop": StoragesetStopExecutor,
-                "standby": StoragesetStandbyExecutor,
-                "active": StoragesetActiveExecutor,
-                "status": StoragesetStatusExecutor,
-                "-h": StoragesetCLIUsage,
-                "--help": StoragesetCLIUsage
+                "start": "ha.cli.exec.storagesetExecutor.StoragesetStartExecutor",
+                "stop": "ha.cli.exec.storagesetExecutor.StoragesetStopExecutor",
+                "standby": "ha.cli.exec.storagesetExecutor.StoragesetStandbyExecutor",
+                "active": "ha.cli.exec.storagesetExecutor.StoragesetActiveExecutor",
+                "status": "ha.cli.exec.storagesetExecutor.StoragesetStatusExecutor",
+                "-h": "ha.cli.exec.commandExecutor.StoragesetCLIUsage",
+                "--help": "ha.cli.exec.commandExecutor.StoragesetCLIUsage"
             },
             "service": {
-                "start": ServiceStartExecutor,
-                "stop": ServiceStopExecutor,
-                "status": ServiceStatusExecutor,
-                "-h": ServiceCLIUsage,
-                "--help": ServiceCLIUsage
+                "start": "ha.cli.exec.serviceExecutor.ServiceStartExecutor",
+                "stop": "ha.cli.exec.serviceExecutor.ServiceStopExecutor",
+                "status": "ha.cli.exec.serviceExecutor.ServiceStatusExecutor",
+                "-h": "ha.cli.exec.commandExecutor.ServiceCLIUsage",
+                "--help": "ha.cli.exec.commandExecutor.ServiceCLIUsage"
             },
-            "-h": CLIUsage,
-            "--help": CLIUsage
+            "-h": "ha.cli.exec.commandExecutor.CLIUsage",
+            "--help": "ha.cli.exec.commandExecutor.CLIUsage"
         }
 
     def get_executor(self, module_name, operation_name):
