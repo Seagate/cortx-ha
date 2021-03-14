@@ -16,7 +16,6 @@
 # cortx-questions@seagate.com.
 
 
-#from cortx.utils.log import Log
 import grp
 import getpass
 import os

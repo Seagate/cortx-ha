@@ -16,8 +16,6 @@
 # cortx-questions@seagate.com.
 
 
-#from cortx.utils.log import Log
-#from ha.execute import SimpleCommand
 from ha.cli.exec.commandExecutor import CommandExecutor
 
 class NodeStartExecutor(CommandExecutor):

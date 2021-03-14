@@ -19,7 +19,6 @@ import inspect
 
 from ha.cli import commands
 from ha.core.config.config_manager import ConfigManager
-#from cortx.utils.log import Log
 from ha.cli.exec.nodeExecutor import *
 from ha.cli.exec.clusterExecutor import *
 from ha.cli.exec.commandExecutor import *

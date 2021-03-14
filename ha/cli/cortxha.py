@@ -20,7 +20,6 @@ import sys
 import argparse
 import pathlib
 
-#if __name__ == '__main__':
 def main(argv):
     """
     Entry point for cortx CLI

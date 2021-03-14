@@ -15,8 +15,6 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-#from cortx.utils.log import Log
-#from ha.execute import SimpleCommand
 from ha.cli.exec.commandExecutor import CommandExecutor
 
 class ServiceStartExecutor(CommandExecutor):
