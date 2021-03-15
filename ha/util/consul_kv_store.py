@@ -16,74 +16,64 @@
 # cortx-questions@seagate.com.
 
 import consul
-import errno
 import socket
-from urllib.parse import urlparse
 
 class ConsulKvStore:
     """ Represents a Consul kv Store """
 
-    name = "consul"
     version = "/v1"
 
-    def __init__(self, url: str):
+    def __init__(self, prefix: str, host: str="localhost", port: int=8500):
         """
         Consul KV store.
 
         Args:
-            url (str): Consul url with prefix
+            prefix (str): Consul prefix
+            host (str): consul host
+            port (str): consul port
 
         Example:
-            ConsulKvStore("consul://localhost:8500/cortx/ha/system/config")
-            ConsulKvStore("consul:///v1/cortx/ha/system/config")
+            ConsulKvStore("cortx/ha/system/config", host="consul.srv", port=3000)
+            ConsulKvStore("cortx/ha/system/config")
         Here localhost:8500 is connection and cortx/ha/system/config is prefix.
         """
-        url_spec = urlparse(url)
-        store_type = url_spec.scheme
-        store_loc = url_spec.netloc
-        store_path = url_spec.path
-        self._prefix: str = None
-        self._verify(store_type=store_type, store_loc=store_loc, store_path=store_path)
-        self._consul = self._get_connection(store_loc=store_loc, store_path=store_path)
+        self._prefix: str = prefix + ConsulKvStore.version
+        self._verify(prefix, host, port)
+        self._consul = self._get_connection(prefix, host, port)
         self._consul.kv.put(self._prepare_key(""), None)
 
-    def _verify(self, store_type: str, store_loc: str, store_path: str):
+    def _verify(self, prefix: str, host: str, port: int):
         """
         Verify connection detail.
 
         Args:
-            store_type (str): Type of connection or DB name.
-            store_loc (str): Connection detail like host and port.
-            store_path (str): Prefix for connection.
+            prefix (str): Consul prefix
+            host (str): consul host
+            port (str): consul port
         """
-        if store_type != ConsulKvStore.name:
-            raise Exception(f"Invalid storage type {store_type}. Correct one is {ConsulKvStore.name}")
-        if store_path == "":
+        if prefix == "":
             raise Exception("Invalid prefix. It cannot be empty.")
-        if store_loc != "":
+        if host != "localhost":
             try:
-                socket.gethostbyname(store_loc.split(":")[0])
-                int(store_loc.split(":")[1])
+                socket.gethostbyname(host)
+                int(port)
             except Exception as e:
                 raise Exception(f"Invalid host or port name. Refused connection to {store_loc}. Error: {e}")
 
-    def _get_connection(self, store_loc: str, store_path: str):
+    def _get_connection(self, prefix: str, host: str, port: int):
         """
         Prepare consul connection.
 
         Args:
-            store_type (str): Type of connection or DB name.
-            store_loc (str): Connection detail like host and port.
-            store_path (str): Prefix for connection.
+            prefix (str): Consul prefix
+            host (str): consul host
+            port (str): consul port
 
         Return:
             Object: Consul object.
         """
-        self._prefix = ConsulKvStore.version + store_path
-        if store_loc == "":
+        if host=="localhost" and port==8500:
             return consul.Consul()
-        host: str = store_loc.split(":")[0]
-        port: int = int(store_loc.split(":")[1])
         return consul.Consul(host=host, port=port)
 
     def _verify_data(self, *args):
@@ -114,12 +104,12 @@ class ConsulKvStore:
         Return:
             bool: True if key exists else False.
         """
-        index, data = self._consul.kv.get(self._prepare_key(key), recurse=True)
+        _, data = self._consul.kv.get(self._prepare_key(key), recurse=True)
         if data is None:
             return False
         return True
 
-    def set(self, key: str, val: str):
+    def set(self, key: str, val: str=None):
         """
         Set key-val pair in consul. If key already exists return exception.
 
@@ -130,7 +120,7 @@ class ConsulKvStore:
         Return:
             str: Return value.
         """
-        self._verify_data(key, val)
+        self._verify_data(key)
         if self.key_exists(key):
             raise Exception(f"Key {key} already exists in kv store.")
         self._consul.kv.put(self._prepare_key(key), val)
@@ -148,7 +138,7 @@ class ConsulKvStore:
         Return:
             str: Return value.
         """
-        self._verify_data(key, new_val)
+        self._verify_data(key)
         self._consul.kv.put(self._prepare_key(key), new_val)
         return new_val
 
@@ -162,12 +152,12 @@ class ConsulKvStore:
         Return:
             str: Return dictionary of all key val pair.
         """
-        index, data = self._consul.kv.get(self._prepare_key(key), recurse=True)
+        _, data = self._consul.kv.get(self._prepare_key(key), recurse=True)
         if data is None:
             return data
         key_val: dict = {}
         for key in data:
-            key_val[key['Key']] = key['Value'].decode("utf-8") if type(key['Value']) is bytes else key['Value']
+            key_val[key['Key']] = key['Value'].decode("utf-8") if isinstance(key['Value'], bytes) else key['Value']
         return key_val
 
     def delete(self, key: str = ""):

@@ -21,7 +21,7 @@ import pathlib
 import unittest
 
 sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..', '..'))
-from ha.core.config.consul_kv_store import ConsulKvStore
+from ha.util.consul_kv_store import ConsulKvStore
 
 class TestConsulKvStore(unittest.TestCase):
     """
@@ -32,14 +32,16 @@ class TestConsulKvStore(unittest.TestCase):
         """
         Setup consul connection.
         """
-        self._c1 = ConsulKvStore("consul://localhost:8500/cortx/ha/")
-        self._c2 = ConsulKvStore("consul:///cortx/ha/")
+        test_ha_prefix = "cortx/ha"
+        self._c1 = ConsulKvStore(test_ha_prefix, host="0.0.0.0", port=8500)
+        self._c2 = ConsulKvStore(test_ha_prefix)
 
     def test_c1(self):
         """
         Test connection c1
         """
         self._c1.delete()
+        self._c1.set("res")
         self._c1.set("cluster_name", "cortx_cluster")
         self._c1.set("cluster_user", "hacluster")
         print(self._c1.get("cluster_name"))
