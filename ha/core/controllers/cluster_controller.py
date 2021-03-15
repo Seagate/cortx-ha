@@ -125,7 +125,7 @@ class ClusterController(ElementController):
         raise HAUnimplemented("This operation is not implemented.")
 
     @controller_error_handler
-    def add_node(self, nodeid: str = None, descfile: str = None) -> dict:
+    def add_node(self, nodeid: str = None, descfile: str = None, *args) -> dict:
         """
         Add new node to cluster.
 

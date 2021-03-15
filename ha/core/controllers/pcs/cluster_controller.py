@@ -66,7 +66,7 @@ class PcsClusterController(ClusterController, PcsController):
         return _status
 
     @staticmethod
-    def load_json_file(self, json_file):
+    def load_json_file(json_file):
         """
         Load json file to read node & the cluster details to auth node
         :param json_file:
@@ -239,7 +239,7 @@ class PcsClusterController(ClusterController, PcsController):
         cluster_node_count = self.get_cluster_size()
         if cluster_node_count < 32:
             _output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_NODE_ADD.replace("<node>", node_id))
-            return {"status": "InProgress", "msg": f"Node {node_id} added successfully in the cluster"}
+            return {"status": "InProgress", "msg": f"Node {node_id} add operation started successfully in the cluster"}
         else:
             return {"status": "Failed", "msg": "Cluster size is already filled to 32, "
                                                "Please use add-remote node mechanism"}

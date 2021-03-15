@@ -22,8 +22,6 @@ from ha.execute import SimpleCommand
 from ha import const
 from ha.core.error import HAInvalidNode, ClusterManagerError
 from ha.const import NODE_STATUSES
-from cortx.utils.conf_store import Conf
-from cortx.utils.log import Log
 
 
 class PcsController(ElementController):
