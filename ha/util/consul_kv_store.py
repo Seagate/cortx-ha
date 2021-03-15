@@ -142,7 +142,8 @@ class ConsulKvStore:
 
     def get(self, key: str = ""):
         """
-        Get values. Default it will return all keys.
+        Get values. Default it will return all keys. It is block call,
+        will take some time if consul leader is not elected.
 
         Args:
             key (str): Key.
