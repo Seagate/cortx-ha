@@ -20,7 +20,7 @@ import inspect
 from ha.cli import commands
 from ha.core.config.config_manager import ConfigManager
 
-class cmdFactory:
+class CmdFactory:
     def __init__(self):
         """
         init of command factory

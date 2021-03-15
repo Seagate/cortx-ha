@@ -15,22 +15,20 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-#from ha.core.error import HAUnimplemented
-#from  ha.cli import cluster
 
 from ha.core.error import HAInvalidCommand
-from ha.cli.command_factory import cmdFactory
+from ha.cli.command_factory import CmdFactory
 from ha.cli.exec.commandExecutor import CLIUsage
 from ha.cli.exec.commandExecutor import CommandExecutor as cmdExecutor
 
 
 class Command:
-
+    """  Parse the CLI and call appropriate executor """
     def __init__(self):
         self.module_name = None
         self.operation_name = None
         self.options = None
-        self.cmd_factory = cmdFactory()
+        self.cmd_factory = CmdFactory()
 
 
     def parse(self, args):
@@ -50,35 +48,37 @@ class Command:
                 return False
         return True
 
-    def get_class(self, cmd_exec ):
+    def get_class(self, cmd_exec):
+        """ get class object for the appropriate executor """
+
         parts = cmd_exec.split('.')
         module = ".".join(parts[:-1])
-        m = __import__( module )
+        exec_mod = __import__(module)
         for comp in parts[1:]:
-            m = getattr(m, comp)
-        return m
+            exec_mod = getattr(exec_mod, comp)
+        return exec_mod
 
     def process(self, args):
         """ Process the command """
 
         # Raise exception if user does not have proper permissions
-        self.cmdExecutor = cmdExecutor()
-        self.cmdExecutor.validate_permissions()
+        self.cmd_executor = cmdExecutor()
+        self.cmd_executor.validate_permissions()
 
-        if self.parse(args) == True:
-            commandExec = self.cmd_factory.get_executor(self.module_name, self.operation_name)
+        if self.parse(args):
+            command_executor = self.cmd_factory.get_executor(self.module_name, self.operation_name)
 
-            if commandExec == None:
+            if command_executor is None:
                 print(CLIUsage.usage())
                 raise HAInvalidCommand("Invalid parameters passed; refer to help for details")
 
 
-            execClass = self.get_class(commandExec)
+            exec_class = self.get_class(command_executor)
             # Call execute function of the appropriate executor class
-            executorClass = execClass()
-            executorClass.execute()
+            executor_class = exec_class()
+            executor_class.execute()
 
 """
 SupportBundleCommand is currently broken, so removed the code.
-This will be added when the support bundle user story is started 
+This will be added when the support bundle user story [ EOS-17931 ] is started
 """
