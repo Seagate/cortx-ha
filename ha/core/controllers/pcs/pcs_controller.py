@@ -22,6 +22,7 @@ from ha.execute import SimpleCommand
 from ha import const
 from ha.core.error import HAInvalidNode, ClusterManagerError
 from ha.const import NODE_STATUSES
+from cortx.utils.log import Log
 
 
 class PcsController(ElementController):
@@ -80,7 +81,8 @@ class PcsController(ElementController):
                                                        .replace("<username>", cluster_user)
                                                        .replace("<password>", cluster_password))
         except Exception as e:
-            raise ClusterManagerError(f"Failed to authenticate node : {node_id} with reason : {e}")
+            Log.error(f"Failed to authenticate node : {node_id} with reason : {e}")
+            raise ClusterManagerError(f"Failed to authenticate node : {node_id}, Please check username or password")
 
     def _get_cluster_size(self):
         """
