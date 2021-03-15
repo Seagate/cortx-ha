@@ -208,8 +208,8 @@ class PcsClusterController(ClusterController, PcsController):
         raise HAUnimplemented("This operation is not implemented.")
 
     @controller_error_handler
-    def add_node(self, node_id: str = None, cluster_user: str = None,
-                 cluster_password: str = None, desc_file: str = None) -> dict:
+    def add_node(self, node_id: str = None, desc_file: str = None, cluster_user: str = None,
+                 cluster_password: str = None) -> dict:
         """
         Add new node to cluster.
         :param cluster_user:
