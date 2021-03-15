@@ -23,7 +23,7 @@ from cortx.utils.ssh import SSHChannel
 from ha.const import RA_LOG_DIR
 from ha.core.error import RemoteExecutorError
 from ha.remote_execution.remote_executor import RemoteExecutor
-import sys
+
 
 class SSHRemoteExecutor(RemoteExecutor):
     '''class which enables remote communication using SSH'''
@@ -55,25 +55,31 @@ class SSHRemoteExecutor(RemoteExecutor):
         '''
         ret_code = 0
         res = None
-        Log.info(f'Execting command: {command} on a remote host {self._hostname}')
+        Log.info(f'Executing command: {command} on a remote host: {self._hostname}')
         try:
             ret_code, res = self._ssh_client.execute(command)
             if ret_code:
-                raise RemoteExecutorError(f'Failed to execute command {command} on a \
-                                        remote node with error: {res}')
+                raise RemoteExecutorError(f'Error:{ret_code}, Failed to \
+                                            execute command {command} on a \
+                                            remote node: {self._hostname} with \
+                                            error: {res}')
         except Exception as err:
-            raise RemoteExecutorError(f"Failed to execute command {command} \
-                                        on a remote node") from err
-        return ret_code
+            raise RemoteExecutorError(f"Some problem occured while executing \
+                                        command {command} on a remote node: \
+                                        {self._hostname}") from err
 
-if __name__ == '__main__':
-    Log.init(service_name="SSHRemoteExecutor", log_path=RA_LOG_DIR, level="INFO")
-
-    print(sys.path)
+def parse_args():
     parser = argparse.ArgumentParser(description="RemoteExecutor using SSH")
     parser.add_argument("--hostname", help="Remote system host-name", required=True)
     parser.add_argument("--command", help="command to be executed", required=True)
     args = parser.parse_args()
+    return args
 
+def main():
+    args = parse_args()
     remote_executor = SSHRemoteExecutor(args.hostname)
     remote_executor.execute(args.command)
+
+if __name__ == '__main__':
+    Log.init(service_name="SSHRemoteExecutor", log_path=RA_LOG_DIR, level="INFO")
+    main()
