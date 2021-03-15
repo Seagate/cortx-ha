@@ -17,7 +17,6 @@
 import json
 import time
 
-import json
 from ha.core.error import HAUnimplemented, ClusterManagerError
 from ha.core.controllers.pcs.pcs_controller import PcsController
 from ha.core.controllers.cluster_controller import ClusterController
@@ -208,7 +207,7 @@ class PcsClusterController(ClusterController, PcsController):
         raise HAUnimplemented("This operation is not implemented.")
 
     @controller_error_handler
-    def add_node(self, node_id: str = None, desc_file: str = None, cluster_user: str = None,
+    def add_node(self, nodeid: str = None, descfile: str = None, cluster_user: str = None,
                  cluster_password: str = None) -> dict:
         """
         Add new node to cluster.
@@ -217,29 +216,31 @@ class PcsClusterController(ClusterController, PcsController):
         :param node_id:
         :param desc_file:
         Args:
-            node_id (str, optional): Provide node_id. Defaults to None.
+            nodeid (str, optional): Provide node_id. Defaults to None.
             filename (str, optional): Provide desc_file. Defaults to None.
+            cluster_user (str, optional): Provide cluster_user. Defaults to None.
+            cluster_password (str, optional): Provide cluster_password. Defaults to None.
 
         Returns:
             ([dict]): Return dictionary. {"status": "", "msg":""}
                 status: Succeeded, Failed, InProgress
         """
-        if not node_id and not desc_file:
+        if not nodeid and not descfile:
             return {"status": "Failed", "msg": "Either node_id or desc_file is required to add node"}
 
-        if desc_file:
-            _json_data = PcsClusterController.load_json_file(desc_file)
-            node_id = _json_data.get("node_id")
+        if descfile:
+            _json_data = PcsClusterController.load_json_file(descfile)
+            nodeid = _json_data.get("nodeid")
             cluster_user = _json_data.get("cluster_user")
             cluster_password = _json_data.get("cluster_password")
-        elif node_id and not(cluster_user or cluster_password):
+        elif nodeid and not(cluster_user or cluster_password):
             return {"status": "Failed", "msg": "Missing parameters (cluster_user or cluster_password) for node_id"}
 
-        self.auth_node(node_id, cluster_user, cluster_password)
+        self.auth_node(nodeid, cluster_user, cluster_password)
         cluster_node_count = self.get_cluster_size()
         if cluster_node_count < 32:
-            _output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_NODE_ADD.replace("<node>", node_id))
-            return {"status": "InProgress", "msg": f"Node {node_id} add operation started successfully in the cluster"}
+            _output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_NODE_ADD.replace("<node>", nodeid))
+            return {"status": "InProgress", "msg": f"Node {nodeid} add operation started successfully in the cluster"}
         else:
             return {"status": "Failed", "msg": "Cluster size is already filled to 32, "
                                                "Please use add-remote node mechanism"}
