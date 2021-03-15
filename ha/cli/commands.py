@@ -21,6 +21,11 @@ from ha.cli.command_factory import CmdFactory
 from ha.cli.exec.commandExecutor import CLIUsage
 from ha.cli.exec.commandExecutor import CommandExecutor as cmdExecutor
 
+# These imports are needed by get_class function
+from ha.cli.exec import clusterExecutor
+from ha.cli.exec import nodeExecutor
+from ha.cli.exec import serviceExecutor
+from ha.cli.exec import storagesetExecutor
 
 class Command:
     """  Parse the CLI and call appropriate executor """
