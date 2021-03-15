@@ -58,7 +58,7 @@ class ConsulKvStore:
                 socket.gethostbyname(host)
                 int(port)
             except Exception as e:
-                raise Exception(f"Invalid host or port name. Refused connection to {store_loc}. Error: {e}")
+                raise Exception(f"Invalid host or port name. Refused connection to {host}. Error: {e}")
 
     def _get_connection(self, prefix: str, host: str, port: int):
         """
