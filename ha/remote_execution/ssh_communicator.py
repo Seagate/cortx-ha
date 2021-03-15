@@ -23,19 +23,19 @@ from cortx.utils.ssh import SSHChannel
 from ha.const import RA_LOG_DIR
 from ha.core.error import RemoteExecutorError
 from ha.remote_execution.remote_executor import RemoteExecutor
-
+import sys
 
 class SSHRemoteExecutor(RemoteExecutor):
     '''class which enables remote communication using SSH'''
 
     def __init__(self, hostname, username=None, port=22, password=None):
         '''init method'''
-        super().__init__(SSHRemoteExecutor, hostname, port)
+        super(SSHRemoteExecutor, self).__init__(hostname, port)
         self._username = username
         self._password = password
         try:
-            self._ssh_client = SSHChannel(self._hostname, self._port, \
-                                            self._username, self._password)
+            self._ssh_client = SSHChannel(self._hostname, self._username, \
+                                            self._password, self._port)
         except Exception as err:
             Log.error(f'SSHRemoteExecutor, some error occured while connecting \
                         to SSH channel {err}')
@@ -62,13 +62,14 @@ class SSHRemoteExecutor(RemoteExecutor):
                 raise RemoteExecutorError(f'Failed to execute command {command} on a \
                                         remote node with error: {res}')
         except Exception as err:
-            raise RemoteExecutorError("Failed to execute command {command} \
+            raise RemoteExecutorError(f"Failed to execute command {command} \
                                         on a remote node") from err
         return ret_code
 
 if __name__ == '__main__':
     Log.init(service_name="SSHRemoteExecutor", log_path=RA_LOG_DIR, level="INFO")
 
+    print(sys.path)
     parser = argparse.ArgumentParser(description="RemoteExecutor using SSH")
     parser.add_argument("--hostname", help="Remote system host-name", required=True)
     parser.add_argument("--command", help="command to be executed", required=True)
