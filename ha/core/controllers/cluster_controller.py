@@ -138,16 +138,14 @@ class ClusterController(ElementController):
         raise HAUnimplemented("This operation is not implemented.")
 
     @controller_error_handler
-    def add_node(self, nodeid: str = None, descfile: str = None, cluster_user: str = None,
-                 cluster_password: str = None) -> dict:
+    def add_node(self, nodeid: str, cluster_user: str, cluster_password: str) -> dict:
         """
         Add new node to cluster.
 
         Args:
-            nodeid (str, optional): Provide nodeid. Defaults to None.
-            filename (str, optional): Provide descfile. Defaults to None.
-            cluster_user (str, optional): Provide cluster_user. Defaults to None.
-            cluster_password (str, optional): Provide cluster_password. Defaults to None.
+            nodeid (str, required): Provide nodeid.
+            cluster_user (str, required): Provide cluster_user.
+            cluster_password (str, required): Provide cluster_password.
 
         Returns:
             ([dict]): Return dictionary. {"status": "", "msg":""}

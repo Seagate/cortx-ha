@@ -195,34 +195,29 @@ class PcsClusterController(ClusterController, PcsController):
         raise HAUnimplemented("This operation is not implemented.")
 
     @controller_error_handler
-    def add_node(self, nodeid: str = None, descfile: str = None, cluster_user: str = None,
-                 cluster_password: str = None) -> dict:
+    def add_node(self, nodeid: str, cluster_user: str, cluster_password: str) -> dict:
         """
         Add new node to cluster.
         :param cluster_user:
         :param cluster_password:
         :param nodeid:
-        :param descfile:
         Args:
-            nodeid (str, optional): Provide node_id. Defaults to None.
-            filename (str, optional): Provide desc_file. Defaults to None.
-            cluster_user (str, optional): Provide cluster_user. Defaults to None.
-            cluster_password (str, optional): Provide cluster_password. Defaults to None.
+            nodeid (str, required): Provide node_id.
+            cluster_user (str, required): Provide cluster_user.
+            cluster_password (str, required): Provide cluster_password.
 
         Returns:
             ([dict]): Return dictionary. {"status": "", "msg":""}
                 status: Succeeded, Failed, InProgress
         """
-        if not nodeid and not descfile:
-            return {"status": "Failed", "msg": "Either node_id or desc_file is required to add node"}
+        if not nodeid:
+            return {"status": "Failed", "msg": "Node_id is missing or empty to add node"}
 
-        if descfile:
-            _json_data = ClusterController.load_json_file(descfile)
-            nodeid = _json_data.get("nodeid")
-            cluster_user = _json_data.get("cluster_user")
-            cluster_password = _json_data.get("cluster_password")
-        elif nodeid and not(cluster_user or cluster_password):
-            return {"status": "Failed", "msg": "Missing parameters (cluster_user or cluster_password) for node_id"}
+        if not cluster_user:
+            return {"status": "Failed", "msg": "Cluster username is missing or empty to add node"}
+
+        if not cluster_password:
+            return {"status": "Failed", "msg": "Cluster password is missing or empty to add node"}
 
         self._auth_node(nodeid, cluster_user, cluster_password)
         cluster_node_count = self._get_cluster_size()
