@@ -21,8 +21,6 @@ import socket
 class ConsulKvStore:
     """ Represents a Consul kv Store """
 
-    version = "/v1"
-
     def __init__(self, prefix: str, host: str="localhost", port: int=8500):
         """
         Consul KV store.
@@ -37,7 +35,7 @@ class ConsulKvStore:
             ConsulKvStore("cortx/ha/system/config")
         Here localhost:8500 is connection and cortx/ha/system/config is prefix.
         """
-        self._prefix: str = prefix + ConsulKvStore.version
+        self._prefix: str = prefix
         self._verify(prefix, host, port)
         self._consul = self._get_connection(prefix, host, port)
         self._consul.kv.put(self._prepare_key(""), None)
