@@ -28,6 +28,12 @@ class StorageSetController(ElementController):
         """
         super(StorageSetController, self).__init__()
 
+    def initialize(self, controllers):
+        """
+        Initialize the storageset controller
+        """
+        raise HAUnimplemented("This operation is not implemented.")
+
     @controller_error_handler
     def start(self, storagesetid) -> dict:
         """
