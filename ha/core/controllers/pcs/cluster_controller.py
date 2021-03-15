@@ -213,8 +213,8 @@ class PcsClusterController(ClusterController, PcsController):
         Add new node to cluster.
         :param cluster_user:
         :param cluster_password:
-        :param node_id:
-        :param desc_file:
+        :param nodeid:
+        :param descfile:
         Args:
             nodeid (str, optional): Provide node_id. Defaults to None.
             filename (str, optional): Provide desc_file. Defaults to None.
