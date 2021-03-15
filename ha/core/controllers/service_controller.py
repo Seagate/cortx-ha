@@ -28,6 +28,12 @@ class ServiceController(ElementController):
         """
         super(ServiceController, self).__init__()
 
+    def initialize(self, controllers):
+        """
+        Initialize the service controller
+        """
+        raise HAUnimplemented("This operation is not implemented.")
+
     @controller_error_handler
     def start(self, service: str, nodeids: list = None) -> dict:
         """

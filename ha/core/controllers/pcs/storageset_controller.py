@@ -29,6 +29,12 @@ class PcsStorageSetController(StorageSetController, PcsController):
         """
         super(PcsStorageSetController, self).__init__()
 
+    def initialize(self, controllers):
+        """
+        Initialize the storageset controller
+        """
+        self._controllers = controllers
+
     @controller_error_handler
     def start(self, storagesetid) -> dict:
         """
