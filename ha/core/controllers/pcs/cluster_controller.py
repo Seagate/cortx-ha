@@ -17,7 +17,7 @@
 import json
 import time
 
-from ha.core.error import HAUnimplemented, ClusterManagerError
+from ha.core.error import HAUnimplemented
 from ha.core.controllers.pcs.pcs_controller import PcsController
 from ha.core.controllers.cluster_controller import ClusterController
 from ha.core.controllers.controller_annotation import controller_error_handler
@@ -63,18 +63,6 @@ class PcsClusterController(ClusterController, PcsController):
                 break
             Log.info(f"Pcs cluster start retry index : {retry_index}")
         return _status
-
-    @staticmethod
-    def load_json_file(json_file):
-        """
-        Load json file to read node & the cluster details to auth node
-        :param json_file:
-        """
-        try:
-            with open(json_file) as f:
-                return json.load(f)
-        except Exception as e:
-            raise ClusterManagerError(f"Error in reading desc_file, reason : {e}")
 
     @controller_error_handler
     def start(self) -> dict:
@@ -229,15 +217,15 @@ class PcsClusterController(ClusterController, PcsController):
             return {"status": "Failed", "msg": "Either node_id or desc_file is required to add node"}
 
         if descfile:
-            _json_data = PcsClusterController.load_json_file(descfile)
+            _json_data = ClusterController.load_json_file(descfile)
             nodeid = _json_data.get("nodeid")
             cluster_user = _json_data.get("cluster_user")
             cluster_password = _json_data.get("cluster_password")
         elif nodeid and not(cluster_user or cluster_password):
             return {"status": "Failed", "msg": "Missing parameters (cluster_user or cluster_password) for node_id"}
 
-        self.auth_node(nodeid, cluster_user, cluster_password)
-        cluster_node_count = self.get_cluster_size()
+        self._auth_node(nodeid, cluster_user, cluster_password)
+        cluster_node_count = self._get_cluster_size()
         if cluster_node_count < 32:
             _output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_NODE_ADD.replace("<node>", nodeid))
             return {"status": "InProgress", "msg": f"Node {nodeid} add operation started successfully in the cluster"}

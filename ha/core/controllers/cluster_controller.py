@@ -15,9 +15,11 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-from ha.core.error import HAUnimplemented
+import json
+from ha.core.error import HAUnimplemented, ClusterManagerError
 from ha.core.controllers.element_controller import ElementController
 from ha.core.controllers.controller_annotation import controller_error_handler
+
 
 class ClusterController(ElementController):
     """ Pcs cluster controller to perform pcs cluster level operation. """
@@ -34,6 +36,17 @@ class ClusterController(ElementController):
         """
         raise HAUnimplemented("This operation is not implemented.")
 
+    @staticmethod
+    def load_json_file(json_file):
+        """
+        Load json file to read node & the cluster details to auth node
+        :param json_file:
+        """
+        try:
+            with open(json_file) as f:
+                return json.load(f)
+        except Exception as e:
+            raise ClusterManagerError(f"Error in reading desc_file, reason : {e}")
 
     @controller_error_handler
     def start(self) -> dict:

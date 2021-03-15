@@ -71,7 +71,7 @@ class PcsController(ElementController):
         _output, _err, _rc = self._execute.run_cmd(const.PCS_NODE_CLEANUP.replace("<node>", node_id),
                                                    check_error=False)
 
-    def auth_node(self, node_id, cluster_user, cluster_password):
+    def _auth_node(self, node_id, cluster_user, cluster_password):
         """
         Auth node to add
         """
@@ -82,7 +82,7 @@ class PcsController(ElementController):
         except Exception as e:
             raise ClusterManagerError(f"Failed to authenticate node : {node_id} with reason : {e}")
 
-    def get_cluster_size(self):
+    def _get_cluster_size(self):
         """
         Auth node to add
         """
