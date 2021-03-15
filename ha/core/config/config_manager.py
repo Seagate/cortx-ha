@@ -35,7 +35,7 @@ class ConfigManager:
     """
 
     _conf = []
-    cluster_confstore = None
+    _cluster_confstore = None
 
     # TODO: create separate function for log and conf file
     @staticmethod
@@ -49,8 +49,8 @@ class ConfigManager:
         ConfigManager._safe_load(const.HA_GLOBAL_INDEX, f"yaml://{const.HA_CONFIG_FILE}")
         ConfigManager._safe_load(const.RESOURCE_GLOBAL_INDEX, f"json://{const.RESOURCE_SCHEMA}")
         ConfigManager._init_log(log_name)
-        if cluster_confstore is None:
-            cluster_confstore = ConsulKvStore(prefix=const.CLUSTER_CONFSTORE_PREFIX)
+        if ConfigManager._cluster_confstore is None:
+            ConfigManager._cluster_confstore = ConsulKvStore(prefix=const.CLUSTER_CONFSTORE_PREFIX)
 
     @staticmethod
     def _init_log(log_name: str):
