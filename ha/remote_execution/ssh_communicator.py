@@ -16,8 +16,8 @@
 """Module for remote communication over SSH channel"""
 
 
-import os
 import argparse
+import sys
 
 from cortx.utils.log import Log
 from cortx.utils.ssh import SSHChannel
