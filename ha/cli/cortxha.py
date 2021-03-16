@@ -92,7 +92,7 @@ class HACli:
                 argParser.print_help(sys.stderr)
             else:
                 output = Output()
-                if self._version == const.CORTX_VERSION_1:
+                if self._version == const.CORTX_VERSION_2:
                     cluster = CortxClusterManager()
                 else:
                     cluster = PcsClusterManager()

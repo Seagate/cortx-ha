@@ -29,6 +29,7 @@ from ha import const
 from ha.core.config.config_manager import ConfigManager
 from ha.core.controllers.element_controller_factory import ElementControllerFactory
 
+
 # Note: This class is used by version 1
 class PcsClusterManager:
     def __init__(self):
@@ -265,6 +266,7 @@ class PcsClusterManager:
     def shutdown(self):
         raise HAUnimplemented("This feature is not supported...")
 
+
 # Note: This class is used by version 2
 class CortxClusterManager:
     def __init__(self):
@@ -272,6 +274,12 @@ class CortxClusterManager:
         Manage cluster operation
         """
         # TODO: Update Config manager if log utility changes.
+        super(CortxClusterManager, self).__init__()
+
+        # get version from ha.conf
+        self._version = ConfigManager.get_major_version()
+        self._output = None
+
         ConfigManager.init("cluster_manager")
         self._cluster_type = Conf.get(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.cluster_type")
         self._env = Conf.get(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.env")
@@ -293,3 +301,18 @@ class CortxClusterManager:
             [list]: list of controllers.
         """
         return list(self._controllers.keys())
+
+    def process_request(self, action, args, output):
+        """
+        Generic method to handle process request
+
+        Args:
+            action ([string]): Take cluster action for each request.
+            args ([dict]): Parameter pass to request to process.
+        """
+        self._output = output
+        # TODO Add validater
+        if action == const.CLUSTER_COMMAND:
+            self._controllers[const.CLUSTER_CONTROLLER].getattr(self, args.cluster_action)()
+        else:
+            raise HAUnimplemented("This feature is not supported...")
