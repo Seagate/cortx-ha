@@ -21,16 +21,27 @@ import os
 import re
 import yaml
 
+def import_list(ha_path, walk_path):
+    import_list = []
+    for root, directories, filenames in os.walk(walk_path):
+        for filename in filenames:
+            if re.match(r'.*.\.py$', filename) and filename != '__init__.py':
+                file = os.path.join(root, filename).rsplit('.', 1)[0]\
+                    .replace(ha_path + "/", "").replace("/", ".")
+                import_list.append('ha.' + file)
+    return import_list
+
 block_cipher = None
 
 ha_path="<HA_PATH>"
+product_module_list = import_list(ha_path, ha_path + "/ha/core")
 
 # Analysis
 cortxha =  Analysis([ha_path + '/ha/cli/cortxha.py'],
         pathex=[ha_path],
         binaries=[],
         datas=[],
-        hiddenimports=[],
+        hiddenimports=product_module_list,
         hookspath=[],
         runtime_hooks=[],
         excludes=['numpy', 'matplotlib'],
