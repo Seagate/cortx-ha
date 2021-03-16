@@ -94,13 +94,13 @@ class RemoteExecutorError(HAError):
     '''
     Remote Node Execution Exception handling
     '''
-    def __init__(self, desc=None):
+    def __init__(self, desc=None, retcode=-1):
         """
         Init method.
         """
         _desc = f'{"Failed to execute opeartion on a remote node"}' if desc is None else desc
         _message_id = HA_REMOTE_EXECUTOR_FAILED
-        _rc = 1
+        _rc = retcode
         super(RemoteExecutorError, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
 
 class SupportBundleError(HAError):

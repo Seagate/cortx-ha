@@ -16,6 +16,7 @@
 """Module for remote communication over SSH channel"""
 
 
+import os
 import argparse
 
 from cortx.utils.log import Log
@@ -40,7 +41,7 @@ class SSHRemoteExecutor(RemoteExecutor):
             Log.error(f'SSHRemoteExecutor, some error occured while connecting \
                         to SSH channel {err}')
 
-    def execute(self, command: str) -> int:
+    def execute(self, command: str) -> None:
         '''
         Communicates to remote node by code execution
 
@@ -59,27 +60,37 @@ class SSHRemoteExecutor(RemoteExecutor):
         try:
             ret_code, res = self._ssh_client.execute(command)
             if ret_code:
-                raise RemoteExecutorError(f'Error:{ret_code}, Failed to \
+                raise RemoteExecutorError(f'Error: Failed to \
                                             execute command {command} on a \
                                             remote node: {self._hostname} with \
-                                            error: {res}')
+                                            error: {res}', ret_code)
+        except RemoteExecutorError as ree:
+            raise ree
         except Exception as err:
-            raise RemoteExecutorError(f"Some problem occured while executing \
+            raise RemoteExecutorError(f"Error: {err}.Some problem occured while executing \
                                         command {command} on a remote node: \
-                                        {self._hostname}") from err
+                                        {self._hostname}", ret_code)
 
-def parse_args():
+def _parse_args():
     parser = argparse.ArgumentParser(description="RemoteExecutor using SSH")
     parser.add_argument("--hostname", help="Remote system host-name", required=True)
     parser.add_argument("--command", help="command to be executed", required=True)
     args = parser.parse_args()
     return args
 
-def main():
-    args = parse_args()
+def main() -> None:
+    args = _parse_args()
     remote_executor = SSHRemoteExecutor(args.hostname)
     remote_executor.execute(args.command)
 
 if __name__ == '__main__':
     Log.init(service_name="SSHRemoteExecutor", log_path=RA_LOG_DIR, level="INFO")
-    main()
+    try:
+        main()
+    except RemoteExecutorError as re:
+        print(re.error())
+        sys.exit(re.rc())
+    except Exception as exc:
+        print(exc)
+        sys.exit(1)
+
