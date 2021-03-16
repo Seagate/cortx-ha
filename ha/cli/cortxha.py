@@ -115,7 +115,7 @@ if __name__ == '__main__':
     from ha.cli.command_factory import CommandFactory
     ha_cli = HACli()
 
-    if ha_cli._version == const.CORTX_VERSION_1:
+    if ha_cli._version == const.CORTX_VERSION_2:
         from ha.core.cluster.cluster_manager import CortxClusterManager
     else:
         from ha.core.cluster.cluster_manager import PcsClusterManager

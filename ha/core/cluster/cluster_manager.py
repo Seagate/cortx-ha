@@ -274,13 +274,6 @@ class CortxClusterManager:
         Manage cluster operation
         """
         # TODO: Update Config manager if log utility changes.
-        super(CortxClusterManager, self).__init__()
-
-        # get version from ha.conf
-        self._version = ConfigManager.get_major_version()
-        self._output = None
-
-        ConfigManager.init("cluster_manager")
         self._cluster_type = Conf.get(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.cluster_type")
         self._env = Conf.get(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.env")
         ConfigManager.load_controller_schema()
