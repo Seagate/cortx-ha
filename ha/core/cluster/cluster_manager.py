@@ -306,10 +306,12 @@ class CortxClusterManager:
         self._output = output
         # TODO Add validater
         if action == const.CLUSTER_COMMAND:
-            print(self._controllers )
-            if getattr(self, args.cluster_action) == "start":
-                self._controllers[const.CLUSTER_CONTROLLER].start()
+            if args.cluster_action == const.CLUSTER_ACTIONS.START.value:
+                Log.debug("Executing cortxha cluster start")
+                self._output.output(self._controllers[const.CLUSTER_CONTROLLER].start())
             else:
-                Log.error("Invalid action")
+                self._output.output("Invalid cluster action")
+                self._output.rc(1)
+                Log.error("Invalid cluster action")
         else:
             raise HAUnimplemented("This feature is not supported...")

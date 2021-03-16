@@ -121,6 +121,10 @@ CLUSTER_RETRY_COUNT = 6
 BASE_WAIT_TIME = 5
 
 
+class CLUSTER_ACTIONS(Enum):
+    START = "start"
+
+
 class STATUSES(Enum):
     IN_PROGRESS = "InProgress"
     SUCCEEDED = "Succeeded"
