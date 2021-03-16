@@ -29,6 +29,12 @@ class PcsServiceController(ServiceController, PcsController):
         """
         super(PcsServiceController, self).__init__()
 
+    def initialize(self, controllers):
+        """
+        Initialize the service controller
+        """
+        self._controllers = controllers
+
     @controller_error_handler
     def start(self, service: str, nodeids: list = None) -> dict:
         """

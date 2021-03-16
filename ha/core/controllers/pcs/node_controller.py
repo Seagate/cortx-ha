@@ -33,14 +33,18 @@ class PcsNodeController(NodeController, PcsController):
         """
         super(PcsNodeController, self).__init__()
 
+    def initialize(self, controllers):
+        """
+        Initialize the node controller
+        """
+        raise HAUnimplemented("This operation is not implemented.")
+
     @controller_error_handler
     def start(self, nodeid: str) -> dict:
         """
         Start node with nodeid.
-
         Args:
             nodeid (str): Node ID from cluster nodes.
-
         Returns:
             ([dict]): Return dictionary. {"status": "", "msg":""}
                 status: Succeeded, Failed, InProgress
@@ -51,10 +55,8 @@ class PcsNodeController(NodeController, PcsController):
     def stop(self, nodeid: str) -> dict:
         """
         Stop node with nodeid.
-
         Args:
             nodeid (str): Node ID from cluster nodes.
-
         Returns:
             ([dict]): Return dictionary. {"status": "", "msg":""}
                 status: Succeeded, Failed, InProgress
@@ -65,10 +67,8 @@ class PcsNodeController(NodeController, PcsController):
     def standby(self, nodeid: str) -> dict:
         """
         Standby node with nodeid.
-
         Args:
             nodeid (str): Node ID from cluster nodes.
-
         Returns:
             ([dict]): Return dictionary. {"status": "", "msg":""}
                 status: Succeeded, Failed, InProgress
@@ -79,10 +79,8 @@ class PcsNodeController(NodeController, PcsController):
     def active(self, nodeid: str) -> dict:
         """
         Activate node with nodeid.
-
         Args:
             nodeid (str): Node ID from cluster nodes.
-
         Returns:
             ([dict]): Return dictionary. {"status": "", "msg":""}
                 status: Succeeded, Failed, InProgress
@@ -93,12 +91,10 @@ class PcsNodeController(NodeController, PcsController):
     def status(self, nodeids: list = None) -> dict:
         """
         Get status of nodes.
-
         Args:
             nodeids (list): List of Node IDs from cluster nodes.
                 Default provide list of all node status.
                 if 'local' then provide local node status.
-
         Returns:
             ([dict]): Return dictionary. {"status": "", "msg":{}}}
                 status: Succeeded, Failed, InProgress
@@ -107,14 +103,18 @@ class PcsNodeController(NodeController, PcsController):
 
 
 class PcsVMNodeController(PcsNodeController):
+    def initialize(self, controllers):
+        """
+        Initialize the node controller
+        """
+        self._controllers = controllers
+
     @controller_error_handler
     def start(self, nodeid: str) -> dict:
         """
         Start node with nodeid.
-
         Args:
             nodeid (str): Node ID from cluster nodes.
-
         Returns:
             ([dict]): Return dictionary. {"status": "", "msg":""}
                 status: Succeeded, Failed, InProgress
@@ -149,10 +149,8 @@ class PcsVMNodeController(PcsNodeController):
     def stop(self, nodeid: str) -> dict:
         """
         Stop node with nodeid.
-
         Args:
             nodeid (str): Node ID from cluster nodes.
-
         Returns:
             ([dict]): Return dictionary. {"status": "", "msg":""}
                 status: Succeeded, Failed, InProgress
@@ -161,14 +159,18 @@ class PcsVMNodeController(PcsNodeController):
 
 
 class PcsHWNodeController(PcsNodeController):
+    def initialize(self, controllers):
+        """
+        Initialize the storageset controller
+        """
+        self._controllers = controllers
+
     @controller_error_handler
     def start(self, nodeid: str) -> dict:
         """
         Start node with nodeid.
-
         Args:
             nodeid (str): Node ID from cluster nodes.
-
         Returns:
             ([dict]): Return dictionary. {"status": "", "msg":""}
                 status: Succeeded, Failed, InProgress
@@ -179,10 +181,8 @@ class PcsHWNodeController(PcsNodeController):
     def stop(self, nodeid: str) -> dict:
         """
         Stop node with nodeid.
-
         Args:
             nodeid (str): Node ID from cluster nodes.
-
         Returns:
             ([dict]): Return dictionary. {"status": "", "msg":""}
                 status: Succeeded, Failed, InProgress
