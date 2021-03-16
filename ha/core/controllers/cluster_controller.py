@@ -15,7 +15,7 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-from ha.core.error import HAUnimplemented, ClusterManagerError
+from ha.core.error import HAUnimplemented
 from ha.core.controllers.element_controller import ElementController
 from ha.core.controllers.controller_annotation import controller_error_handler
 
