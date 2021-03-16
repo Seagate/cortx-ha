@@ -16,6 +16,7 @@
 # cortx-questions@seagate.com.
 
 import time
+import json
 
 from ha.core.controllers.element_controller import ElementController
 from ha.execute import SimpleCommand
@@ -34,6 +35,18 @@ class PcsController(ElementController):
         """
         super(PcsController, self).__init__()
         self._execute = SimpleCommand()
+
+    @staticmethod
+    def load_json_file(json_file):
+        """
+        Load json file to read node & the cluster details to auth node
+        :param json_file:
+        """
+        try:
+            with open(json_file) as f:
+                return json.load(f)
+        except Exception as e:
+            raise ClusterManagerError(f"Error in reading desc_file, reason : {e}")
 
     def heal_resource(self, node_id):
         """
