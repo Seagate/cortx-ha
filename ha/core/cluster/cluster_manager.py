@@ -305,6 +305,7 @@ class CortxClusterManager:
         """
         self._output = output
         # TODO Add validater
+        # NOTE: This is temporary and it will change as the framework of cli going to be changed
         if action == const.CLUSTER_COMMAND:
             if args.cluster_action == const.CLUSTER_ACTIONS.START.value:
                 Log.debug("Executing cortxha cluster start")
