@@ -49,8 +49,6 @@ class ConfigManager:
         ConfigManager._safe_load(const.HA_GLOBAL_INDEX, f"yaml://{const.HA_CONFIG_FILE}")
         ConfigManager._safe_load(const.RESOURCE_GLOBAL_INDEX, f"json://{const.RESOURCE_SCHEMA}")
         ConfigManager._init_log(log_name)
-        if ConfigManager._cluster_confstore is None:
-            ConfigManager._cluster_confstore = ConsulKvStore(prefix=const.CLUSTER_CONFSTORE_PREFIX)
 
     @staticmethod
     def _init_log(log_name: str):
@@ -60,6 +58,16 @@ class ConfigManager:
         log_path = Conf.get(const.HA_GLOBAL_INDEX, "LOG.path")
         log_level = Conf.get(const.HA_GLOBAL_INDEX, "LOG.level")
         Log.init(service_name=log_name, log_path=log_path, level=log_level)
+
+    @staticmethod
+    def _get_confstore():
+        """
+        Initalize and get confstore if not _cluster_confstore is None.
+        Used by config manager methods to check and initalize confstore if needed.
+        """
+        if ConfigManager._cluster_confstore is None:
+            ConfigManager._cluster_confstore = ConsulKvStore(prefix=const.CLUSTER_CONFSTORE_PREFIX)
+        return ConfigManager._cluster_confstore
 
     @staticmethod
     def load_controller_schema():
