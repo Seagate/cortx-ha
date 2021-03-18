@@ -16,13 +16,14 @@
 # cortx-questions@seagate.com.
 
 import time
+import json
 
 from ha.core.controllers.element_controller import ElementController
 from ha.execute import SimpleCommand
 from ha import const
 from ha.core.error import HAInvalidNode, ClusterManagerError
 from ha.const import NODE_STATUSES
-
+from cortx.utils.log import Log
 
 
 class PcsController(ElementController):
@@ -30,10 +31,22 @@ class PcsController(ElementController):
 
     def __init__(self):
         """
-        Initalize pcs controller
+        Initialize pcs controller
         """
         super(PcsController, self).__init__()
         self._execute = SimpleCommand()
+
+    @staticmethod
+    def load_json_file(json_file):
+        """
+        Load json file to read node & the cluster details to auth node
+        :param json_file:
+        """
+        try:
+            with open(json_file) as f:
+                return json.load(f)
+        except Exception as e:
+            raise ClusterManagerError(f"Error in reading desc_file, reason : {e}")
 
     def heal_resource(self, node_id):
         """
@@ -71,6 +84,28 @@ class PcsController(ElementController):
         """
         _output, _err, _rc = self._execute.run_cmd(const.PCS_NODE_CLEANUP.replace("<node>", node_id),
                                                    check_error=False)
+
+    def _auth_node(self, node_id, cluster_user, cluster_password):
+        """
+        Auth node to add
+        """
+        try:
+            _output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_NODE_AUTH.replace("<node>", node_id)
+                                                       .replace("<username>", cluster_user)
+                                                       .replace("<password>", cluster_password))
+        except Exception as e:
+            Log.error(f"Failed to authenticate node : {node_id} with reason : {e}")
+            raise ClusterManagerError(f"Failed to authenticate node : {node_id}, Please check username or password")
+
+    def _get_cluster_size(self):
+        """
+        Auth node to add
+        """
+        try:
+            _output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_PCSD_STATUS)
+            return len(_output.split("\n"))
+        except Exception as e:
+            raise ClusterManagerError(f"Unable to get cluster : with reason : {e}")
 
     def nodes_status(self, nodeids: list) -> dict:
         """

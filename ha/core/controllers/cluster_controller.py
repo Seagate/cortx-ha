@@ -19,6 +19,7 @@ from ha.core.error import HAUnimplemented
 from ha.core.controllers.element_controller import ElementController
 from ha.core.controllers.controller_annotation import controller_error_handler
 
+
 class ClusterController(ElementController):
     """ Pcs cluster controller to perform pcs cluster level operation. """
 
@@ -33,7 +34,6 @@ class ClusterController(ElementController):
         Initialize the cluster controller
         """
         raise HAUnimplemented("This operation is not implemented.")
-
 
     @controller_error_handler
     def start(self) -> dict:
@@ -125,13 +125,14 @@ class ClusterController(ElementController):
         raise HAUnimplemented("This operation is not implemented.")
 
     @controller_error_handler
-    def add_node(self, nodeid: str = None, descfile: str = None) -> dict:
+    def add_node(self, nodeid: str, cluster_user: str, cluster_password: str) -> dict:
         """
         Add new node to cluster.
 
         Args:
-            nodeid (str, optional): Provide nodeid. Defaults to None.
-            filename (str, optional): Provide descfile. Defaults to None.
+            nodeid (str, required): Provide nodeid.
+            cluster_user (str, required): Provide cluster_user.
+            cluster_password (str, required): Provide cluster_password.
 
         Returns:
             ([dict]): Return dictionary. {"status": "", "msg":""}
