@@ -18,6 +18,7 @@
 import consul
 import socket
 
+#TODO: Update set/get/update function to provide blocking and non blocking function
 class ConsulKvStore:
     """ Represents a Consul kv Store """
 
@@ -31,9 +32,9 @@ class ConsulKvStore:
             port (str): consul port
 
         Example:
-            ConsulKvStore("cortx/ha/system/config", host="consul.srv", port=3000)
-            ConsulKvStore("cortx/ha/system/config")
-        Here localhost:8500 is connection and cortx/ha/system/config is prefix.
+            ConsulKvStore("cortx/ha", host="consul.srv", port=3000)
+            ConsulKvStore("cortx/ha")
+        Here (localhost:8500) is consul connection and cortx/ha is prefix.
         """
         self._prefix: str = prefix
         self._verify(prefix, host, port)

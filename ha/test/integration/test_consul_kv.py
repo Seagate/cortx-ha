@@ -32,7 +32,7 @@ class TestConsulKvStore(unittest.TestCase):
         """
         Setup consul connection.
         """
-        test_ha_prefix = "cortx/ha"
+        test_ha_prefix = "cortx/ha/"
         self._c1 = ConsulKvStore(test_ha_prefix, host="0.0.0.0", port=8500)
         self._c2 = ConsulKvStore(test_ha_prefix)
 
@@ -44,32 +44,49 @@ class TestConsulKvStore(unittest.TestCase):
         self._c1.set("res")
         self._c1.set("cluster_name", "cortx_cluster")
         self._c1.set("cluster_user", "hacluster")
-        print(self._c1.get("cluster_name"))
-        print(self._c1.get())
+        _output: dict = {'cortx/ha/cluster_name': 'cortx_cluster'}
+        self.assertEqual(self._c1.get("cluster_name"), _output)
+        _output: dict = {'cortx/ha/cluster_name': 'cortx_cluster',
+                    'cortx/ha/cluster_user': 'hacluster',
+                    'cortx/ha/res': None}
+        self.assertEqual(self._c1.get(), _output)
         self._c1.update("cluster_name", "cortx_cluster1")
         self._c1.update("cluster_user", "hacluster1")
-        print(self._c1.get())
+        _output: dict = {'cortx/ha/cluster_name': 'cortx_cluster1',
+                    'cortx/ha/cluster_user': 'hacluster1',
+                    'cortx/ha/res': None}
+        self.assertEqual(self._c1.get(), _output)
         self._c1.delete("cluster_name")
-        print(self._c1.get())
+        _output: dict = {'cortx/ha/cluster_user': 'hacluster1', 'cortx/ha/res': None}
+        self.assertEqual(self._c1.get(), _output)
         self._c1.delete()
-        print(self._c1.get())
+        self.assertEqual(self._c1.get(), None)
 
     def test_c2(self):
         """
         Test connection c2
         """
         self._c2.delete()
+        self._c2.set("res")
         self._c2.set("cluster_name", "cortx_cluster")
         self._c2.set("cluster_user", "hacluster")
-        print(self._c2.get("cluster_name"))
-        print(self._c2.get())
+        _output: dict = {'cortx/ha/cluster_name': 'cortx_cluster'}
+        self.assertEqual(self._c2.get("cluster_name"), _output)
+        _output: dict = {'cortx/ha/cluster_name': 'cortx_cluster',
+                    'cortx/ha/cluster_user': 'hacluster',
+                    'cortx/ha/res': None}
+        self.assertEqual(self._c2.get(), _output)
         self._c2.update("cluster_name", "cortx_cluster1")
         self._c2.update("cluster_user", "hacluster1")
-        print(self._c2.get())
+        _output: dict = {'cortx/ha/cluster_name': 'cortx_cluster1',
+                    'cortx/ha/cluster_user': 'hacluster1',
+                    'cortx/ha/res': None}
+        self.assertEqual(self._c2.get(), _output)
         self._c2.delete("cluster_name")
-        print(self._c2.get())
+        _output: dict = {'cortx/ha/cluster_user': 'hacluster1', 'cortx/ha/res': None}
+        self.assertEqual(self._c2.get(), _output)
         self._c2.delete()
-        print(self._c2.get())
+        self.assertEqual(self._c2.get(), None)
 
     def tearDown(self):
         """
