@@ -42,7 +42,11 @@ class CmdFactory:
                 "active": "ha.cli.exec.clusterExecutor.ClusterActiveExecutor",
                 "list": "ha.cli.exec.clusterExecutor.ClusterListExecutor",
                 "status": "ha.cli.exec.clusterExecutor.ClusterStatusExecutor",
-                "add": "ha.cli.exec.clusterExecutor.ClusterAddExecutor",
+                "add":
+                    {
+                        "node": "ha.cli.exec.clusterExecutor.ClusterNodeAddExecutor",
+                        "storageset": "ha.cli.exec.clusterExecutor.ClusterStoragesetAddExecutor"
+                    },
                 "-h": "ha.cli.exec.commandExecutor.ClusterCLIUsage",
                 "--help": "ha.cli.exec.commandExecutor.ClusterCLIUsage"
             },
@@ -75,11 +79,15 @@ class CmdFactory:
             "--help": "ha.cli.exec.commandExecutor.CLIUsage"
         }
 
-    def get_executor(self, module_name, operation_name):
+    def get_executor(self, module_name, operation_name, options=None):
         """ return the appropriate class name from the dictionary"""
 
         try:
-            executor = self.cmd_dict.get(module_name).get(operation_name)
+            if options[0] is not None:
+                executor = self.cmd_dict.get(module_name).get(operation_name).get(options[0])
+                print(f'executor $$$$$$ {executor}')
+            else:
+                executor = self.cmd_dict.get(module_name).get(operation_name)
         except Exception:
             return None
         return executor

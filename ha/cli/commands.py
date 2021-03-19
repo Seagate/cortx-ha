@@ -71,7 +71,7 @@ class Command:
         self.cmd_executor.validate_permissions()
 
         if self.parse(args):
-            command_executor = self.cmd_factory.get_executor(self.module_name, self.operation_name)
+            command_executor = self.cmd_factory.get_executor(self.module_name, self.operation_name, self.options)
 
             if command_executor is None:
                 print(CLIUsage.usage())

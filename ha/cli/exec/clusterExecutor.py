@@ -15,13 +15,17 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
+import argparse
 import time
 
 from cortx.utils.log import Log
 from ha.execute import SimpleCommand
 from ha import const
+from ha.cli.displayOutput import Output
 from ha.cli.exec.commandExecutor import CommandExecutor
 from ha.core.error import HAClusterStart
+from ha.core.controllers.pcs.cluster_controller import PcsClusterController
+
 
 class ClusterStartExecutor(CommandExecutor):
 
@@ -176,3 +180,45 @@ class ClusterAddExecutor(CommandExecutor):
 
     def execute(self):
         print("Placeholder:  execute for ", self.__class__.__name__)
+
+class ClusterNodeAddExecutor(ClusterAddExecutor):
+
+    def __init__(self):
+        '''Init Method'''
+        super(ClusterNodeAddExecutor, self).__init__()
+        self._pcs_cluster_controller = PcsClusterController()
+        self._op = Output()
+
+    def parse_cluster_args(self):
+        '''Parses the command line args'''
+
+        parser = argparse.ArgumentParser(prog='cluster add node')
+        parser.add_argument("cluster", help="Module")
+        parser.add_argument("add", help="action to be performed")
+        parser.add_argument("node", help="component on which action to be performed")
+        group = parser.add_mutually_exclusive_group(required='True')
+        group.add_argument('--nodeid', action='store', \
+                            help='ID of a node which needs to be added in a cluster')
+        group.add_argument('--descfile', action='store', \
+                            help='A file which describes the node to be added in a cluster', \
+                            type=argparse.FileType('r'))
+        parser.add_argument('--json', help='Required output fomat', action='store_true')
+        args = parser.parse_args()
+        return args
+
+    def validate(self):
+        print("Placeholder: validate for ", self.__class__.__name__)
+        if not self.is_ha_user():
+            raise Exception('Not an HA user')
+        args = self.parse_cluster_args()
+        return args
+
+    def execute(self):
+        '''Execute CLI request by passing it to ClusterManager'''
+        args = self.validate()
+        print(args.nodeid)
+        print("Placeholder:  execute for ", self.__class__.__name__)
+        # TODO: Proper password to be sent
+        add_node_result_message = self._pcs_cluster_controller.add_node(args.nodeid, const.USER_HA_INTERNAL, 'abc')
+        if args.json:
+           self._op.print_json(add_node_result_message)

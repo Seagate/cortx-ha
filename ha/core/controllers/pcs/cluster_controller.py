@@ -210,6 +210,7 @@ class PcsClusterController(ClusterController, PcsController):
             ([dict]): Return dictionary. {"status": "", "msg":""}
                 status: Succeeded, Failed, InProgress
         """
+        print(f'inside add_node {nodeid} {cluster_user} {cluster_password}')
         if not nodeid:
             return {"status": "Failed", "msg": "Node_id is missing or empty to add node"}
 
@@ -227,6 +228,7 @@ class PcsClusterController(ClusterController, PcsController):
         else:
             return {"status": "Failed", "msg": "Cluster size is already filled to 32, "
                                                "Please use add-remote node mechanism"}
+
 
     @controller_error_handler
     def add_storageset(self, nodeid: str = None, descfile: str = None) -> dict:
