@@ -14,6 +14,8 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
+import json
+
 class SystemHealthManager:
     """
     System Health Manager. This class provides low level get/put methods
@@ -26,13 +28,13 @@ class SystemHealthManager:
         """
         self._store = store
 
-    def get_key(self, key):
+    def get_key(self, key: str):
         """
         Get key method.
         """
         return self.store.get(key)
 
-    def set_key(self, key, value):
+    def set_key(self, key: str, value: json):
         """
         Set key method.
         """

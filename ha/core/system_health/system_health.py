@@ -18,14 +18,17 @@ import os
 import sys
 import pathlib
 import re
+import time
+import json
 
 from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
 sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..', '..'))
 from ha import const
 from ha.core.system_health import system_health_metadata
+from ha.core.system_health.system_health_metadata import SystemHealthComponents, SystemHealthHierarchy
 from ha.core.system_health.model.health_event import HealthEvent
-from ha.core.system_health.model.entity_health import EntityHealth
+from ha.core.system_health.model.entity_health import EntityEvent, EntityAction, EntityHealth
 from ha.core.system_health.status_mapper import StatusMapper
 from ha.core.system_health.system_health_manager import SystemHealthManager
 from ha.core.error import HaSystemHealthException
@@ -45,14 +48,14 @@ class SystemHealth:
         self.statusmapper = StatusMapper()
         self.healthmanager = SystemHealthManager(store)
 
-    def _prepare_key(self, component, **kwargs) -> str:
+    def _prepare_key(self, component: str, **kwargs) -> str:
         """
         Prepare Key. This is an internal method for preparing component status key.
         This will be used when updating/querying a component status.
         """
 
         # Get the key template.
-        key = system_health_metadata.SYSTEM_HEALTH_KEYS[component]
+        key = SystemHealthComponents.get_key(component)
         # Check what all substitutions with actual values passed in kwargs to be done.
         subs = re.findall("\$\w+", key)
         # Check if the related argument present in kwargs, if yes substitute the same.
@@ -67,7 +70,7 @@ class SystemHealth:
                 break
         return key
 
-    def get_status(self, component, component_id, **kwargs):
+    def get_status(self, component: str, component_id: str, **kwargs):
         """
         get status method. This is a generic method which can return status of any component(s).
         """
@@ -99,7 +102,7 @@ class SystemHealth:
         """
         get cluster status method. This method is for returning a status of a cluster.
         """
-    def _update(self, component, comp_type, comp_id, healthvalue, next_component=None):
+    def _update(self, component: str, comp_type: str, comp_id: str, healthvalue: json, next_component: str=None):
         """
         update method. This is an internal method for updating the system health.
         """
@@ -127,27 +130,16 @@ class SystemHealth:
 
         try:
             status = self.statusmapper.map_event(healthevent.event_type)
-            # Get system health component from the resource type in the event
-            component = None
-            for key in system_health_metadata.SYSTEM_HEALTH_COMPONENTS:
-                for item in system_health_metadata.SYSTEM_HEALTH_COMPONENTS[key][const.RESOURCE_LIST]:
-                    if item in healthevent.resource_type:
-                        component = key
-                        self.update_hierarchy = system_health_metadata.SYSTEM_HEALTH_COMPONENTS[key][const.UPDATE_HIERARCHY]
-                        break
-                if component:
-                    break
+            component = SystemHealthComponents.get_component(healthevent.resource_type)
 
-            if component is None:
-                # System health does not support ths component.
-                Log.error(f"System health does not support health update for component: {component}")
-                raise HaSystemHealthException(f"Health update for an unsupported component: {component}")
-
-            # Get the component type and id received in the event.
+            # Get the health update hierarchy
+            self.update_hierarchy = SystemHealthHierarchy.get_hierarchy(component)
             if (len(self.update_hierarchy) - 1) > self.update_hierarchy.index(component):
                 next_component = self.update_hierarchy[self.update_hierarchy.index(component) + 1]
             else:
                 next_component = None
+
+            # Get the component type and id received in the event.
             component_type = healthevent.resource_type.split(':')[-1]
             component_id = healthevent.resource_id
             # Read the currently stored health value
@@ -156,15 +148,29 @@ class SystemHealth:
                                         rack_id=healthevent.rack_id, storageset_id=healthevent.storageset_id,
                                         node_id=healthevent.node_id, server_id=healthevent.node_id,
                                         storage_id=healthevent.node_id)
+            if current_health:
+                # Update the current health value itself.
+                updated_health = EntityHealth.read(current_health)
+            else:
+                # Health value not present in the store currently, create now.
+                updated_health = EntityHealth()
 
-            # Get the updated health value
-            updated_health = EntityHealth(healthevent.timestamp, status, const.ACTION_STATUS.PENDING.value,
-                                          previous_health=current_health)
+            # Create a new event and action
+            current_timestamp = str(int(time.time()))
+            entity_event = EntityEvent(healthevent.timestamp, current_timestamp, status, healthevent.specific_info)
+            entity_action = EntityAction(current_timestamp, const.ACTION_STATUS.PENDING.value)
+            # Add the new event and action to the health value
+            updated_health.add_event(entity_event)
+            updated_health.set_action(entity_action)
+            # Convert the health value as appropriate for writing to the store.
+            updated_health = EntityHealth.write(updated_health)
+
             # Update the node map
             self.node_id = healthevent.node_id
             self.node_map = {'cluster_id':healthevent.cluster_id, 'site_id':healthevent.site_id,
                              'rack_id':healthevent.rack_id, 'storageset_id':healthevent.storageset_id}
 
+            # Update in the store.
             self._update(component, component_type, component_id, updated_health, next_component=next_component)
             Log.info(f"Updated health for component: {component}, Type: {component_type}, Id: {component_id}")
 

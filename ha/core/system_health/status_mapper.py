@@ -38,7 +38,7 @@ class StatusMapper:
         """
         super(StatusMapper, self).__init__()
 
-    def map_event(self, event_type):
+    def map_event(self, event_type: str) -> str:
         """Returns the status by mapping it against the event type"""
         try:
             status = self.EVENT_TO_STATUS_MAPPING[event_type]

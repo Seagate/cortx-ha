@@ -128,8 +128,22 @@ class NODE_STATUSES(Enum):
 
 # System Health
 # Constants
+class COMPONENTS(Enum):
+    SERVER_HARDWARE = "server_hardware"
+    SERVER_SERVICE = "server_service"
+    SERVER = "server"
+    STORAGE_COMPONENT = "storage_component"
+    STORAGE = "storage"
+    NODE = "node"
+    RACK = "rack"
+    SITE = "site"
+    STORAGESET = "storageset"
+    CLUSTER = "cluster"
+    AGG_SERVICE = "agg_service"
+    NODE_MAP = "node_map"
+
 RESOURCE_LIST = "resource_list"
-UPDATE_HIERARCHY = "update_hierarchy"
+KEY = "key"
 
 # Health update HA action status
 class ACTION_STATUS(Enum):

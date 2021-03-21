@@ -14,14 +14,54 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
-import time
 import json
 
 from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
 from ha import const
-from ha.core.system_health import system_health_metadata
 from ha.core.error import HaEntityHealthException
+
+class EntityEvent:
+    """
+    Entity Event. This class implements an entity event object,
+    which will be stored in the entity health.
+    """
+
+    def __init__(self, event_timestamp: str, created_timestamp: str, status: str, specific_info: dict=None):
+        """
+        Init method.
+        """
+
+        self.event_timestamp = event_timestamp
+        self.created_timestamp = created_timestamp
+        self.status = status
+        self.specific_info = specific_info
+
+    def ret_dict(self):
+        """
+        Return dictionary attribute.
+        """
+
+        return vars(self)
+
+class EntityAction:
+    """
+    This class implements an action object stored in the entity health.
+    """
+
+    def __init__(self, modified_timestamp: str, status: str):
+        """
+        Init method.
+        """
+        self.modified_timestamp = modified_timestamp
+        self.status = status
+
+    def ret_dict(self):
+        """
+        Return dictionary attribute.
+        """
+
+        return vars(self)
 
 class EntityHealth:
     """
@@ -29,51 +69,92 @@ class EntityHealth:
     for every component.
     """
 
-    def __init__(self, event_timestamp, health_status, action_status,
-                 is_fru=None, previous_health: json=None, **kwargs):
+    def __init__(self):
         """
         Init method.
         """
-        self.event_timestamp = event_timestamp
-        self.health_status = health_status
-        self.action_status = action_status
-        self.is_fru = is_fru
-        self.previous_health = previous_health
-        self.specific_info = kwargs
 
-    def __str__(self):
+        self.events: list = []
+        self.action: EntityAction = {}
+        self.attributes: dict = {}
+
+    def add_event(self, event: EntityEvent):
+        """
+        Adds a new event to the entity health.
+        """
+
+        # Insert the new event as a first element in th events array
+        self.events.insert(0, event)
+        # Keep the history of events as per the configuration
+        num_events = Conf.get(const.HA_GLOBAL_INDEX, "SYSTEM_HEALTH.num_entity_health_events")
+        if len(self.events) > num_events:
+            # Delete the last event entry
+            del self.events[len(self.events) - 1]
+
+    def set_action(self, action: EntityAction):
+        """
+        Sets action to a specified value.
+        """
+
+        self.action = action
+
+    def add_attributes(self, attributes: dict):
+        """
+        Add attibutes to the existing attributes.
+        """
+
+        for key, value in attributes.items():
+            self.attibutes[key] = value
+
+    def ret_dict(self):
+        """
+        Return dictionary attribute.
+        """
+
+        return vars(self)
+
+    @staticmethod
+    def write(entity_health) -> json:
+        """
+        Converts the entity health object into a json string which then
+        could be written to the store.
+        """
+
+        return json.dumps(entity_health, default=lambda o: o.ret_dict(), indent=None)
+
+    @staticmethod  
+    def read(current_health: json):
+        """
+        Converts the entity health json into an object of this class.
+        """
+
         try:
-            epoch_time = str(int(time.time()))
-            # If previous health is passed, the we need to modity and return.
-            if self.previous_health:
-                healthvalue = json.loads(self.previous_health)
-                # Keep the history of events as per the configuration
-                num_events = Conf.get(const.HA_GLOBAL_INDEX, "SYSTEM_HEALTH.num_entity_health_events") - 1
-                while num_events:
-                    healthvalue['events'][num_events] = healthvalue['events'][num_events - 1]
-                    num_events = num_events - 1
-            else:
-                healthvalue = system_health_metadata.ENTITY_HEALTH
+            # TODO: Check and optimize below code.
+            # Load the current health json.
+            current_health_dict = json.loads(current_health)
 
-            # Update health status
-            healthvalue['events'][0] = {"event_timestamp": self.event_timestamp,
-                                        "created_timestamp": epoch_time, "status": self.health_status}
-            # Update action
-            healthvalue['action']['modified_timestamp'] = epoch_time
-            healthvalue['action']['status'] = self.action_status
-
-            # Update properties if present.
-            if self.is_fru is not None:
-                healthvalue['properties']['IsFru'] = self.is_fru
-            # Add any additional key/values to the specific info
-            specific_info_temp = dict(healthvalue['specific_info'])
-            for key, value in self.specific_info.items():
-                specific_info_temp[key] = value
-            healthvalue['specific_info'] = specific_info_temp
-
-            # Dump the entiry health into json string and return the same.
-            return json.dumps(healthvalue)
+            # Create, populate and return the object.
+            entity_health = EntityHealth()
+            for key in current_health_dict.keys():
+                if key == "events":
+                    num_events = len(current_health_dict[key])
+                    while num_events:
+                        num_events = num_events - 1
+                        entity_event = EntityEvent(current_health_dict[key][num_events]["event_timestamp"],
+                                                   current_health_dict[key][num_events]["created_timestamp"],
+                                                   current_health_dict[key][num_events]["status"],
+                                                   current_health_dict[key][num_events]["specific_info"])
+                        entity_health.add_event(entity_event)
+                elif key == "action":
+                    entity_action = EntityAction(current_health_dict[key]["modified_timestamp"], current_health_dict[key]["status"])
+                    entity_health.set_action(entity_action)
+                elif key == "attributes":
+                    entity_health.add_attributes(current_health_dict[key])
+                else:
+                    Log.error(f"Unrecognized key found in entity health in store: {key}")
+                    raise HaEntityHealthException("Unrecognized key found in entity health in store")
+            return entity_health
 
         except Exception as e:
-            Log.error(f"Failed populating entiry health with Error: {e}")
-            raise HaEntityHealthException("Failed populating entity health")
+            Log.error(f"Failed converting Entity Health json into an object with Error: {e}")
+            raise HaSystemHealthException("Failed converting Entity Health json into an object")

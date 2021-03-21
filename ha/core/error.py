@@ -162,7 +162,7 @@ class HaCleanupException(SetupError):
     """
     pass
 
-class SystemHealth(HAError):
+class SystemHealthError(HAError):
     def __init__(self, desc=None):
         """
         Handle system health exceptions.
@@ -170,21 +170,33 @@ class SystemHealth(HAError):
         _desc = "HA System Health failure." if desc is None else desc
         _message_id = HA_SYSTEM_HEALTH_FAILED
         _rc = 1
-        super(SystemHealth, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
+        super(SystemHealthError, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
 
-class HaEntityHealthException(SystemHealth):
+class HaEntityHealthException(SystemHealthError):
     """
     Exception to indicate that some error happened when populating entity health.
     """
     pass
 
-class HaStatusMapperException(SystemHealth):
+class HaStatusMapperException(SystemHealthError):
     """
     Exception to indicate that some error happened when mapping an event to system health status.
     """
     pass
 
-class HaSystemHealthException(SystemHealth):
+class HaSystemHealthComponentsException(SystemHealthError):
+    """
+    Exception to indicate that the system health does not support health/some error for the component.
+    """
+    pass
+
+class HaSystemHealthHierarchyException(SystemHealthError):
+    """
+    Exception to indicate that the some error happened when searching health update hierarchy for a component.
+    """
+    pass
+
+class HaSystemHealthException(SystemHealthError):
     """
     Exception to indicate that some error happened during HA System Health processing.
     """

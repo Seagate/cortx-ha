@@ -14,54 +14,98 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
+from cortx.utils.log import Log
 from ha import const
+from ha.core.error import HaSystemHealthComponentsException, HaSystemHealthHierarchyException
 
-# Components health update hierarchy
-CLUSTER_UPDATE_HIERARCHY = ["cluster"]
-SITE_UPDATE_HIERARCHY = ["site"] + CLUSTER_UPDATE_HIERARCHY
-RACK_UPDATE_HIERARCHY = ["rack"] + SITE_UPDATE_HIERARCHY
-STORAGESET_UPDATE_HIERARCHY = ["storageset"] + RACK_UPDATE_HIERARCHY
-NODE_UPDATE_HIERARCHY = ["node"] + STORAGESET_UPDATE_HIERARCHY
-SERVER_UPDATE_HIERARCHY = ["server"] + NODE_UPDATE_HIERARCHY
-SERVER_HW_UPDATE_HIERARCHY = ["server_hw"] + SERVER_UPDATE_HIERARCHY
-SERVER_SERVICE_UPDATE_HIERARCHY = ["server_service", "agg_service"] + SERVER_UPDATE_HIERARCHY
-STORAGE_UPDATE_HIERARCHY = ["storage"] + NODE_UPDATE_HIERARCHY
-STORAGE_COMPONENT_UPDATE_HIERARCHY = ["storage_component"] + STORAGE_UPDATE_HIERARCHY
+class SystemHealthComponents:
+    """
+    System Health Components. This class provides a method for fetching component/key
+    associated with the resource type received in the health event.
+    """
 
-# Components/resources maintained by System Health module. Note: Do not change the order.
-SYSTEM_HEALTH_COMPONENTS = {"server_hw": {const.RESOURCE_LIST: ["node:fru", "node:sensor", "node:os", "node:interface"],
-                                          const.UPDATE_HIERARCHY: SERVER_HW_UPDATE_HIERARCHY},
-                            "server_service": {const.RESOURCE_LIST: ["node:sw"],
-                                               const.UPDATE_HIERARCHY: SERVER_SERVICE_UPDATE_HIERARCHY},
-                            "storage_component": {const.RESOURCE_LIST: ["enclosure"],
-                                                  const.UPDATE_HIERARCHY: STORAGE_COMPONENT_UPDATE_HIERARCHY},
-                            "storageset": {const.RESOURCE_LIST: ["storageset"], const.UPDATE_HIERARCHY: STORAGESET_UPDATE_HIERARCHY},
-                            "server": {const.RESOURCE_LIST: ["server"], const.UPDATE_HIERARCHY: SERVER_UPDATE_HIERARCHY},
-                            "storage": {const.RESOURCE_LIST: ["storage"], const.UPDATE_HIERARCHY: STORAGE_UPDATE_HIERARCHY},
-                            "node": {const.RESOURCE_LIST: ["node"], const.UPDATE_HIERARCHY: NODE_UPDATE_HIERARCHY},
-                            "rack": {const.RESOURCE_LIST: ["rack"], const.UPDATE_HIERARCHY: RACK_UPDATE_HIERARCHY},
-                            "site": {const.RESOURCE_LIST: ["site"], const.UPDATE_HIERARCHY: SITE_UPDATE_HIERARCHY},
-                            "cluster": {const.RESOURCE_LIST: ["cluster"],  const.UPDATE_HIERARCHY: CLUSTER_UPDATE_HIERARCHY}}
+    # Components/resources maintained by System Health module. Note: Do not change the order.
+    _components = {const.COMPONENTS.SERVER_HARDWARE.value: {const.RESOURCE_LIST: ["node:fru", "node:sensor", "node:os", "node:interface"],
+                                                            const.KEY: "/cortx/ha/system/cluster/$cluster_id/site/$site_id/rack/$rack_id/node/$node_id/server/$server_id/hw/$comp_type/$comp_id/health"},
+                   const.COMPONENTS.SERVER_SERVICE.value: {const.RESOURCE_LIST: ["node:sw"],
+                                                           const.KEY: "/cortx/ha/system/cluster/$cluster_id/site/$site_id/rack/$rack_id/node/$node_id/server/$server_id/service/$comp_type/$comp_id/health"},
+                   const.COMPONENTS.SERVER.value: {const.RESOURCE_LIST: ["server"],
+                                                   const.KEY: "/cortx/ha/system/cluster/$cluster_id/site/$site_id/rack/$rack_id/node/$node_id/server/$server_id/health"},
+                   const.COMPONENTS.STORAGESET.value: {const.RESOURCE_LIST: ["storageset"],
+                                                       const.KEY: "/cortx/ha/system/cluster/$cluster_id/storageset/$storageset_id/health"},
+                   const.COMPONENTS.STORAGE_COMPONENT.value: {const.RESOURCE_LIST: ["enclosure"],
+                                                              const.KEY: "/cortx/ha/system/cluster/$cluster_id/site/$site_id/rack/$rack_id/node/$node_id/storage/$storage_id/hw/$comp_type/$comp_id/health"},
+                   const.COMPONENTS.STORAGE.value: {const.RESOURCE_LIST: ["storage"],
+                                                    const.KEY: "/cortx/ha/system/cluster/$cluster_id/site/$site_id/rack/$rack_id/node/$node_id/storage/$storage_id/health"},
+                   const.COMPONENTS.NODE.value: {const.RESOURCE_LIST: ["node"],
+                                                 const.KEY: "/cortx/ha/system/cluster/$cluster_id/site/$site_id/rack/$rack_id/node/$node_id/health"},
+                   const.COMPONENTS.RACK.value: {const.RESOURCE_LIST: ["rack"],
+                                                 const.KEY: "/cortx/ha/system/cluster/$cluster_id/site/$site_id/rack/$rack_id/health"},
+                   const.COMPONENTS.SITE.value: {const.RESOURCE_LIST: ["site"],
+                                                 const.KEY: "/cortx/ha/system/cluster/$cluster_id/site/$site_id/health"},
+                   const.COMPONENTS.CLUSTER.value: {const.RESOURCE_LIST: ["cluster"],
+                                                    const.KEY: "/cortx/ha/system/cluster/$cluster_id/health"},
+                   const.COMPONENTS.AGG_SERVICE.value: {const.RESOURCE_LIST: [],
+                                                        const.KEY: "/cortx/ha/system/cluster/$cluster_id/service/$comp_type/$comp_id/health"},
+                   const.COMPONENTS.NODE_MAP.value: {const.RESOURCE_LIST: [],
+                                                     const.KEY: "/cortx/ha/system/cluster/node_map/$node_id"}}
 
-# Health keys
-SYSTEM_HEALTH_KEYS = {
-    "cluster": "/cortx/ha/system/cluster/$cluster_id/health",
-    "site": "/cortx/ha/system/cluster/$cluster_id/site/$site_id/health",
-    "rack": "/cortx/ha/system/cluster/$cluster_id/site/$site_id/rack/$rack_id/health",
-    "storageset": "/cortx/ha/system/cluster/$cluster_id/storageset/$storageset_id/health",
-    "node": "/cortx/ha/system/cluster/$cluster_id/site/$site_id/rack/$rack_id/node/$node_id/health",
-    "server": "/cortx/ha/system/cluster/$cluster_id/site/$site_id/rack/$rack_id/node/$node_id/server/$server_id/health",
-    "server_hw": "/cortx/ha/system/cluster/$cluster_id/site/$site_id/rack/$rack_id/node/$node_id/server/$server_id/hw/$comp_type/$comp_id/health",
-    "server_service": "/cortx/ha/system/cluster/$cluster_id/site/$site_id/rack/$rack_id/node/$node_id/server/$server_id/service/$comp_type/$comp_id/health",
-    "storage": "/cortx/ha/system/cluster/$cluster_id/site/$site_id/rack/$rack_id/node/$node_id/storage/$storage_id/health",
-    "storage_component": "/cortx/ha/system/cluster/$cluster_id/site/$site_id/rack/$rack_id/node/$node_id/storage/$storage_id/hw/$comp_type/$comp_id/health",
-    "agg_service": "/cortx/ha/system/cluster/$cluster_id/service/$comp_type/$comp_id/health",
-    "node_map": "/cortx/ha/system/cluster/node_map/$node_id"
-}
+    @staticmethod
+    def get_component(resource_type: str) -> str:
+        try:
+            # Get system health component using the resource type
+            for key in SystemHealthComponents._components:
+                for item in SystemHealthComponents._components[key][const.RESOURCE_LIST]:
+                    if item in resource_type:
+                        return key
 
-# Entity health value
-ENTITY_HEALTH = {"events": [{"event_timestamp": "", "created_timestamp": "", "status": ""},
-                           {"event_timestamp": "", "created_timestamp": "", "status": ""}],
-                 "specific_info": "",
-                 "action": {"modified_timestamp": "", "status": ""},
-                 "properties": {"IsFru": ""}}
+            # System health does not support this component.
+            Log.error(f"System health does not support health update for resource type: {resource_type}")
+            raise HaSystemHealthComponentsException(f"Health update for an unsupported resource type: {resource_type}")
+
+        except Exception as e:
+            Log.error(f"Failed to get component with Error: {e}")
+            raise HaSystemHealthComponentsException("Failed to get component")
+
+    @staticmethod
+    def get_key(component: str) -> str:
+        try:
+            # return the key of the component
+            return SystemHealthComponents._components[component][const.KEY]
+
+        except KeyError as e:
+            Log.error(f"Key is not available for the component: {component}")
+            raise HaSystemHealthComponentsException("Key is not available for the component")
+
+        except Exception as e:
+            Log.error(f"Failed to get component with Error: {e}")
+            raise HaSystemHealthComponentsException("Failed to get component")
+
+class SystemHealthHierarchy:
+    """
+    System Health Hierarchy. This class provides system health component health update hierarchy.
+    """
+
+    _common_hierarchy = [const.COMPONENTS.NODE.value, const.COMPONENTS.RACK.value, const.COMPONENTS.SITE.value,
+                         const.COMPONENTS.STORAGESET.value, const.COMPONENTS.CLUSTER.value]
+    _server = [const.COMPONENTS.SERVER.value] + _common_hierarchy
+    _server_service = [const.COMPONENTS.SERVER_SERVICE.value, const.COMPONENTS.AGG_SERVICE.value] + _server
+    _server_hw = [const.COMPONENTS.SERVER_HARDWARE.value] + _server
+    _storage = [const.COMPONENTS.STORAGE_COMPONENT.value,  const.COMPONENTS.STORAGE.value] + _common_hierarchy
+
+    @staticmethod
+    def get_hierarchy(component: str) -> dict:
+        try:
+            if component in SystemHealthHierarchy._server_hw:
+                return SystemHealthHierarchy._server_hw[SystemHealthHierarchy._server_hw.index(component):]
+            elif component in SystemHealthHierarchy._server_service:
+                return SystemHealthHierarchy._server_service[SystemHealthHierarchy._server_service.index(component):]
+            elif component in SystemHealthHierarchy._storage:
+                return SystemHealthHierarchy._storage[SystemHealthHierarchy._storage.index(component) : ]
+            else:
+                Log.error(f"Health update hierarchy not present for component: {component}")
+                raise HaSystemHealthHierarchyException("Health update hierarchy not present for the component")
+
+        except Exception as e:
+            Log.error(f"Failed to get health update hierarchy for component with Error: {e}")
+            raise HaSystemHealthHierarchyException("Failed to get health update hierarchy")

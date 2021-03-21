@@ -20,8 +20,8 @@ class HealthEvent:
     required by System Health module for updating the health.
     """
 
-    def __init__(self, event_id, event_type, severity, site_id, rack_id, cluster_id, storageset_id,
-                 node_id, host_id, resource_type, timestamp, resource_id, specific_info=None):
+    def __init__(self, event_id: str, event_type: str, severity: str, site_id: int, rack_id: int, cluster_id: str, storageset_id: int,
+                 node_id: int, host_id: str, resource_type: str, timestamp: str, resource_id: str, specific_info: dict=None):
         """
         Init method.
         """
