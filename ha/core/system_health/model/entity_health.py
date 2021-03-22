@@ -27,6 +27,8 @@ class EntityEvent:
     which will be stored in the entity health.
     """
 
+    VERSION = "v1"
+
     def __init__(self, event_timestamp: str, created_timestamp: str, status: str, specific_info: dict=None):
         """
         Init method.
@@ -49,6 +51,8 @@ class EntityAction:
     This class implements an action object stored in the entity health.
     """
 
+    VERSION = "v1"
+
     def __init__(self, modified_timestamp: str, status: str):
         """
         Init method.
@@ -68,6 +72,8 @@ class EntityHealth:
     Entity Health. This class implements a health object, which will be stored in store
     for every component.
     """
+
+    VERSION = "v1"
 
     def __init__(self):
         """
@@ -114,7 +120,7 @@ class EntityHealth:
         return vars(self)
 
     @staticmethod
-    def write(entity_health) -> json:
+    def write(entity_health) -> str:
         """
         Converts the entity health object into a json string which then
         could be written to the store.
@@ -122,8 +128,8 @@ class EntityHealth:
 
         return json.dumps(entity_health, default=lambda o: o.ret_dict(), indent=None)
 
-    @staticmethod  
-    def read(current_health: json):
+    @staticmethod
+    def read(current_health: str):
         """
         Converts the entity health json into an object of this class.
         """
@@ -156,5 +162,5 @@ class EntityHealth:
             return entity_health
 
         except Exception as e:
-            Log.error(f"Failed converting Entity Health json into an object with Error: {e}")
-            raise HaSystemHealthException("Failed converting Entity Health json into an object")
+            Log.error(f"Failed converting Entity Health json string into an object with Error: {e}")
+            raise HaEntityHealthException("Failed converting Entity Health json string into an object")

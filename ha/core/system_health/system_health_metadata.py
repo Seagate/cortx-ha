@@ -52,6 +52,11 @@ class SystemHealthComponents:
 
     @staticmethod
     def get_component(resource_type: str) -> str:
+        """
+        This method returns a component associated with a resource type,
+        received in the health event.
+        """
+
         try:
             # Get system health component using the resource type
             for key in SystemHealthComponents._components:
@@ -69,16 +74,21 @@ class SystemHealthComponents:
 
     @staticmethod
     def get_key(component: str) -> str:
+        """
+        This method returns a key for a component, this key is used for storing/retrieving
+        the component health value in the store.
+        """
+
         try:
             # return the key of the component
             return SystemHealthComponents._components[component][const.KEY]
 
         except KeyError as e:
-            Log.error(f"Key is not available for the component: {component}")
+            Log.error(f"Key is not available for the {component} with Error: {e}")
             raise HaSystemHealthComponentsException("Key is not available for the component")
 
         except Exception as e:
-            Log.error(f"Failed to get component with Error: {e}")
+            Log.error(f"Failed to get {component} with Error: {e}")
             raise HaSystemHealthComponentsException("Failed to get component")
 
 class SystemHealthHierarchy:
@@ -95,6 +105,10 @@ class SystemHealthHierarchy:
 
     @staticmethod
     def get_hierarchy(component: str) -> dict:
+        """
+        This method returns a component health update hierarchy.
+        """
+
         try:
             if component in SystemHealthHierarchy._server_hw:
                 return SystemHealthHierarchy._server_hw[SystemHealthHierarchy._server_hw.index(component):]

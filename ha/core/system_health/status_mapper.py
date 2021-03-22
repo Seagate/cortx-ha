@@ -44,8 +44,8 @@ class StatusMapper:
             status = self.EVENT_TO_STATUS_MAPPING[event_type]
             return status
         except KeyError as e:
-            Log.error('StatusMapper, map_event, No equivalent event type found: %s' % e)
-            raise HaStatusMapperException('StatusMapper, map_event, No equivalent event type found: %s' % e)
+            Log.error(f"StatusMapper, map_event, No equivalent event type found: {e}")
+            raise HaStatusMapperException(f"StatusMapper, map_event, No equivalent event type found: {e}")
         except Exception as e:
-            Log.error('StatusMapper, map_event, Exception occured while mapping event_type to status: %s' % e)
-            raise HaStatusMapperException('StatusMapper, map_event, Exception while mapping event: %s' % e)
+            Log.error(f"StatusMapper, map_event, Exception occured while mapping event_type to status: {e}")
+            raise HaStatusMapperException(f"StatusMapper, map_event, Exception while mapping event: {e}")

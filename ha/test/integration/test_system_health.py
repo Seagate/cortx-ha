@@ -14,26 +14,24 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
-class SystemHealthManager:
-    """
-    System Health Manager. This class provides low level get/put methods
-    for storing/reading health keys to/from the store.
-    """
+import os
+import sys
+import pathlib
 
-    def __init__(self, store):
-        """
-        Init method.
-        """
-        self._store = store
+from cortx.utils.conf_store import Conf
+from cortx.utils.log import Log
+sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..', '..'))
+from ha import const
 
-    def get_key(self, key: str):
-        """
-        Get key method.
-        """
-        return self.store.get(key)
+def main(argv: dict):
+    # TODO: Add test cases.
+    pass
 
-    def set_key(self, key: str, value: str):
-        """
-        Set key method.
-        """
-        self.store.put(value, key)
+if __name__ == '__main__':
+    # TODO: Import and use config_manager.py
+    Conf.init(delim='.')
+    Conf.load(const.HA_GLOBAL_INDEX, f"yaml://{const.SOURCE_CONFIG_FILE}")
+    log_path = Conf.get(const.HA_GLOBAL_INDEX, "LOG.path")
+    log_level = Conf.get(const.HA_GLOBAL_INDEX, "LOG.level")
+    Log.init(service_name='ha_system_health', log_path=log_path, level=log_level)
+    sys.exit(main(sys.argv))

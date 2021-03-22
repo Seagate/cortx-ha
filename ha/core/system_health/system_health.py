@@ -14,18 +14,11 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
-import os
-import sys
-import pathlib
 import re
 import time
-import json
 
-from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
-sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..', '..'))
 from ha import const
-from ha.core.system_health import system_health_metadata
 from ha.core.system_health.system_health_metadata import SystemHealthComponents, SystemHealthHierarchy
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.system_health.model.entity_health import EntityEvent, EntityAction, EntityHealth
@@ -102,7 +95,7 @@ class SystemHealth:
         """
         get cluster status method. This method is for returning a status of a cluster.
         """
-    def _update(self, component: str, comp_type: str, comp_id: str, healthvalue: json, next_component: str=None):
+    def _update(self, component: str, comp_type: str, comp_id: str, healthvalue: str, next_component: str=None):
         """
         update method. This is an internal method for updating the system health.
         """
@@ -177,15 +170,3 @@ class SystemHealth:
         except Exception as e:
             Log.error(f"Failed processing system health event with Error: {e}")
             raise HaSystemHealthException("Failed processing system health event")
-
-def main(argv: dict):
-    pass
-
-if __name__ == '__main__':
-    # TODO: Import and use config_manager.py
-    Conf.init(delim='.')
-    Conf.load(const.HA_GLOBAL_INDEX, f"yaml://{const.SOURCE_CONFIG_FILE}")
-    log_path = Conf.get(const.HA_GLOBAL_INDEX, "LOG.path")
-    log_level = Conf.get(const.HA_GLOBAL_INDEX, "LOG.level")
-    Log.init(service_name='ha_system_health', log_path=log_path, level=log_level)
-    sys.exit(main(sys.argv))
