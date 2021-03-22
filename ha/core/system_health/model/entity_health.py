@@ -27,7 +27,7 @@ class EntityEvent:
     which will be stored in the entity health.
     """
 
-    VERSION = "v1"
+    VERSION = const.DATASTORE_VERSION
 
     def __init__(self, event_timestamp: str, created_timestamp: str, status: str, specific_info: dict=None):
         """
@@ -51,7 +51,7 @@ class EntityAction:
     This class implements an action object stored in the entity health.
     """
 
-    VERSION = "v1"
+    VERSION = const.DATASTORE_VERSION
 
     def __init__(self, modified_timestamp: str, status: str):
         """
@@ -73,7 +73,7 @@ class EntityHealth:
     for every component.
     """
 
-    VERSION = "v1"
+    VERSION = const.DATASTORE_VERSION
 
     def __init__(self):
         """

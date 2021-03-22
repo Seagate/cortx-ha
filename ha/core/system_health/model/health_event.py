@@ -14,13 +14,15 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
+from ha import const
+
 class HealthEvent:
     """
     Health Event. This class implements an event object,
     required by System Health module for updating the health.
     """
 
-    VERSION = "v1"
+    VERSION = const.DATASTORE_VERSION
 
     def __init__(self, event_id: str, event_type: str, severity: str, site_id: int, rack_id: int, cluster_id: str, storageset_id: int,
                  node_id: int, host_id: str, resource_type: str, timestamp: str, resource_id: str, specific_info: dict=None):
