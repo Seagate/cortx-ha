@@ -21,16 +21,18 @@ import inspect
 import traceback
 import os
 import shutil
+import json
 
 from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
 from cortx.utils.validator.v_pkg import PkgV
 from cortx.utils.security.cipher import Cipher
+
 from ha.execute import SimpleCommand
 from ha import const
 from ha.setup.create_pacemaker_resources import create_all_resources
 from ha.core.cluster.cluster_manager import CortxClusterManager
-#from ha.setup.create_cluster import cluster_auth, cluster_create
+from ha.core.config.config_manager import ConfigManager
 from ha.core.error import HaPrerequisiteException
 from ha.core.error import HaConfigException
 from ha.core.error import HaInitException
@@ -195,38 +197,25 @@ class ConfigCmd(Cmd):
             Log.error(f"Found {s3_instances} which is invalid s3 instance count. Error: {e}")
             raise HaConfigException(f"Found {s3_instances} which is invalid s3 instance count.")
 
-        # Check if the cluster exists already, if yes skip creating the cluster.
-        Log.info(f"Creating cluster: {cluster_name} with node: {minion_name}")
-        output: str = self._cluster_manager.cluster_controller.create_cluster(cluster_name,
-                    cluster_user, cluster_secret, minion_name)
-
-
-        output, err, rc = self._execute.run_cmd(const.PCS_CLUSTER_STATUS, check_error=False)
-        Log.info(f"Cluster status. Output: {output}, Err: {err}, RC: {rc}")
-        if rc != 0:
-            if(err.find("No such file or directory: 'pcs'") != -1):
-                Log.error("Cluster config failed; pcs not installed")
-                raise HaConfigException("Cluster config failed; pcs not installed")
-            # If cluster is not created; create a cluster.
-            elif(err.find("cluster is not currently running on this node") != -1):
-                try:
-                    #cluster_auth(cluster_user, cluster_secret, nodelist)
-                    #cluster_create(cluster_name, nodelist)
-                    Log.info(f"Created cluster: {cluster_name} successfully")
-                    Log.info("Creating pacemaker resources")
-                    create_all_resources(s3_instances=s3_instances)
-                    Log.info("Created pacemaker resources successfully")
-                except Exception as e:
-                    Log.error(f"Cluster creation failed; destroying the cluster. Error: {e}")
-                    output = self._execute.run_cmd(const.PCS_CLUSTER_DESTROY, check_error=True)
-                    Log.info(f"Cluster destroyed. Output: {output}")
-                    raise HaConfigException("Cluster creation failed")
+        try:
+            # Check if the cluster exists already, if yes skip creating the cluster.
+            Log.info(f"Creating cluster: {cluster_name} with node: {minion_name}")
+            output: str = self._cluster_manager.cluster_controller.create_cluster(cluster_name,
+                                    cluster_user, cluster_secret, minion_name)
+            Log.info(f"Cluster creation output: {output}")
+            output = json.loads(output)
+            # TODO: Handle race condition cluster and resource create with global check.
+            if output.get("status") == const.STATUSES.SUCCEEDED.value:
+                Log.info("Creating pacemaker resources")
+                create_all_resources(s3_instances=s3_instances)
+                Log.info("Created pacemaker resources successfully")
             else:
-                pass # Nothing to do
-        else:
-            # Cluster exists already, check if it is a new node and add it to the existing cluster.
-             Log.info("The cluster exists already, check and add new node")
-        Log.info("config command is successful")
+                raise HaConfigException(f"Cluster creation failed. Error: {output.get('msg')}")
+        except Exception as e:
+            Log.error(f"Cluster creation failed; destroying the cluster. Error: {e}")
+            output = self._execute.run_cmd(const.PCS_CLUSTER_DESTROY, check_error=True)
+            Log.info(f"Cluster destroyed. Output: {output}")
+            raise HaConfigException("Cluster creation failed")
 
 class InitCmd(Cmd):
     """
@@ -394,9 +383,19 @@ class RestoreCmd(Cmd):
 
 def main(argv: dict):
     try:
+        if sys.argv[1] == "post_install":
+            Conf.init(delim='.')
+            Conf.load(const.HA_GLOBAL_INDEX, f"yaml://{const.SOURCE_CONFIG_FILE}")
+            log_path = Conf.get(const.HA_GLOBAL_INDEX, "LOG.path")
+            log_level = Conf.get(const.HA_GLOBAL_INDEX, "LOG.level")
+            Log.init(service_name='ha_setup', log_path=log_path, level=log_level)
+        else:
+            ConfigManager.init("ha_setup")
+
         desc = "HA Setup command"
         command = Cmd.get_command(desc, argv[1:])
         command.process()
+
         sys.stdout.write(f"Mini Provisioning {sys.argv[1]} configured sussesfully.\n")
     except Exception:
         Log.error("%s\n" % traceback.format_exc())
@@ -404,10 +403,4 @@ def main(argv: dict):
         return errno.EINVAL
 
 if __name__ == '__main__':
-    # TBD: Import and use config_manager.py
-    Conf.init(delim='.')
-    Conf.load(const.HA_GLOBAL_INDEX, f"yaml://{const.SOURCE_CONFIG_FILE}")
-    log_path = Conf.get(const.HA_GLOBAL_INDEX, "LOG.path")
-    log_level = Conf.get(const.HA_GLOBAL_INDEX, "LOG.level")
-    Log.init(service_name='ha_setup', log_path=log_path, level=log_level)
     sys.exit(main(sys.argv))

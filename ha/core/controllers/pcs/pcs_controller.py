@@ -36,6 +36,17 @@ class PcsController(ElementController):
         super(PcsController, self).__init__()
         self._execute = SimpleCommand()
 
+    def _check_non_empty(self, **kwargs):
+        """
+        Check if params are not empty.
+
+        Raises:
+            ClusterManagerError: [description]
+        """
+        for key in kwargs.keys():
+            if kwargs[key] is None or kwargs[key] == "":
+                raise ClusterManagerError(f"Failed: Invalid parameter, {key} cannot be empty.")
+
     @staticmethod
     def load_json_file(json_file):
         """
@@ -90,10 +101,10 @@ class PcsController(ElementController):
         Auth node to add
         """
         try:
-            _output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_NODE_AUTH.replace("<node>", node_id)
-                                                       .replace("<username>", cluster_user)
-                                                       .replace("<password>", cluster_password),
-                                                       is_secret=True, error=f"Auth to {node_id} failed.")
+            self._execute.run_cmd(const.PCS_CLUSTER_NODE_AUTH.replace("<node>", node_id)
+                    .replace("<username>", cluster_user).replace("<password>", cluster_password),
+                    is_secret=True, error=f"Auth to {node_id} failed.")
+            Log.info(f"Node {node_id} authenticated with {cluster_user} Successfully.")
         except Exception as e:
             Log.error(f"Failed to authenticate node : {node_id} with reason : {e}")
             raise ClusterManagerError(f"Failed to authenticate node : {node_id}, Please check username or password")
