@@ -26,26 +26,64 @@ from cortx.utils.log import Log
 from cortx.utils.conf_store.conf_store import Conf
 
 from ha import const
+from ha.util.consul_kv_store import ConsulKvStore
 
 # TODO: redefine class as per config manager module design
 class ConfigManager:
     """
     HA configuration to provide central ha configuration
     """
+
+    _conf = []
+    _cluster_confstore = None
+
     # TODO: create separate function for log and conf file
     @staticmethod
-    def init(log_name) -> None:
+    def init(log_name):
         """
         Initialize ha conf and log
         Args:
-            log_name ([str]): service_name for log init.
+            log_name (str): service_name for log init.
         """
         Conf.init(delim='.')
-        Conf.load(const.HA_GLOBAL_INDEX, f"yaml://{const.HA_CONFIG_FILE}")
-        Conf.load(const.RESOURCE_GLOBAL_INDEX, f"json://{const.RESOURCE_SCHEMA}")
+        ConfigManager._safe_load(const.HA_GLOBAL_INDEX, f"yaml://{const.HA_CONFIG_FILE}")
+        ConfigManager._safe_load(const.RESOURCE_GLOBAL_INDEX, f"json://{const.RESOURCE_SCHEMA}")
+        ConfigManager._init_log(log_name)
+
+    @staticmethod
+    def _init_log(log_name: str):
+        """
+        Log initalize
+        """
         log_path = Conf.get(const.HA_GLOBAL_INDEX, "LOG.path")
         log_level = Conf.get(const.HA_GLOBAL_INDEX, "LOG.level")
         Log.init(service_name=log_name, log_path=log_path, level=log_level)
+
+    @staticmethod
+    def _get_confstore():
+        """
+        Initalize and get confstore if not _cluster_confstore is None.
+        Used by config manager methods to check and initalize confstore if needed.
+        """
+        if ConfigManager._cluster_confstore is None:
+            ConfigManager._cluster_confstore = ConsulKvStore(prefix=const.CLUSTER_CONFSTORE_PREFIX)
+        return ConfigManager._cluster_confstore
+
+    @staticmethod
+    def load_controller_schema():
+        """
+        Load controller interface schema for cluster management.
+        """
+        ConfigManager._safe_load(const.CM_CONTROLLER_INDEX, f"json://{const.CM_CONTROLLER_SCHEMA}")
+
+    @staticmethod
+    def _safe_load(index: str, url: str):
+        """
+        Load config if not loaded
+        """
+        if index not in ConfigManager._conf:
+            Conf.load(index, url)
+            ConfigManager._conf.append(index)
 
     @staticmethod
     def get_major_version():
@@ -58,10 +96,3 @@ class ConfigManager:
         version = Conf.get(const.HA_GLOBAL_INDEX, "VERSION.version")
         major_version = version.split('.')
         return major_version[0]
-
-    @staticmethod
-    def load_controller_schema() -> None:
-        """
-        Load controller interface schema for cluster management.
-        """
-        Conf.load(const.CM_CONTROLLER_INDEX, f"json://{const.CM_CONTROLLER_SCHEMA}")
