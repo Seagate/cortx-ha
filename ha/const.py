@@ -44,6 +44,7 @@ SOURCE_CONFIG_FILE="{}/ha.conf".format(SOURCE_CONFIG_PATH)
 BACKUP_DEST_DIR="/opt/seagate/cortx/ha_backup"
 BACKUP_DEST_DIR_CONF = "{}/conf".format(BACKUP_DEST_DIR)
 BACKUP_DEST_DIR_CONSUL = "{}/Consul".format(BACKUP_DEST_DIR)
+COMPONENTS_CONFIG_DIR = "{}/components".format(CONFIG_DIR)
 
 # Mini-provisioning
 CLUSTER_CONFSTORE_NODES_KEY="nodes"
