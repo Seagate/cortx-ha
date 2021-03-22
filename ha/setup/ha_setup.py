@@ -28,8 +28,9 @@ from cortx.utils.validator.v_pkg import PkgV
 from cortx.utils.security.cipher import Cipher
 from ha.execute import SimpleCommand
 from ha import const
-from ha.setup.create_cluster import cluster_auth, cluster_create
 from ha.setup.create_pacemaker_resources import create_all_resources
+from ha.core.cluster.cluster_manager import CortxClusterManager
+#from ha.setup.create_cluster import cluster_auth, cluster_create
 from ha.core.error import HaPrerequisiteException
 from ha.core.error import HaConfigException
 from ha.core.error import HaInitException
@@ -160,6 +161,7 @@ class ConfigCmd(Cmd):
         Init method.
         """
         super().__init__(args)
+        self._cluster_manager = CortxClusterManager()
 
     def process(self):
         """
@@ -171,7 +173,7 @@ class ConfigCmd(Cmd):
         nodelist = []
         minion_name = self.get_minion_name()
         nodelist.append(minion_name)
-        # The config step will be called from primary node alwasys,
+        # The config step will be called from primary node always,
         # see how to get and use the node name then.
 
         # Read cluster name and cluster user
@@ -194,6 +196,11 @@ class ConfigCmd(Cmd):
             raise HaConfigException(f"Found {s3_instances} which is invalid s3 instance count.")
 
         # Check if the cluster exists already, if yes skip creating the cluster.
+        Log.info(f"Creating cluster: {cluster_name} with node: {minion_name}")
+        output: str = self._cluster_manager.cluster_controller.create_cluster(cluster_name,
+                    cluster_user, cluster_secret, minion_name)
+
+
         output, err, rc = self._execute.run_cmd(const.PCS_CLUSTER_STATUS, check_error=False)
         Log.info(f"Cluster status. Output: {output}, Err: {err}, RC: {rc}")
         if rc != 0:
@@ -203,9 +210,8 @@ class ConfigCmd(Cmd):
             # If cluster is not created; create a cluster.
             elif(err.find("cluster is not currently running on this node") != -1):
                 try:
-                    Log.info(f"Creating cluster: {cluster_name} with node: {minion_name}")
-                    cluster_auth(cluster_user, cluster_secret, nodelist)
-                    cluster_create(cluster_name, nodelist)
+                    #cluster_auth(cluster_user, cluster_secret, nodelist)
+                    #cluster_create(cluster_name, nodelist)
                     Log.info(f"Created cluster: {cluster_name} successfully")
                     Log.info("Creating pacemaker resources")
                     create_all_resources(s3_instances=s3_instances)

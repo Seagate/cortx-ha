@@ -92,7 +92,8 @@ class PcsController(ElementController):
         try:
             _output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_NODE_AUTH.replace("<node>", node_id)
                                                        .replace("<username>", cluster_user)
-                                                       .replace("<password>", cluster_password))
+                                                       .replace("<password>", cluster_password),
+                                                       is_secret=True, error=f"Auth to {node_id} failed.")
         except Exception as e:
             Log.error(f"Failed to authenticate node : {node_id} with reason : {e}")
             raise ClusterManagerError(f"Failed to authenticate node : {node_id}, Please check username or password")

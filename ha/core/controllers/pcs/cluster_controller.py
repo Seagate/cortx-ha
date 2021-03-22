@@ -14,6 +14,7 @@
 # with this program. If not, see <https://www.gnu.org/licenses/>. For any questions
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
+
 import json
 import time
 
@@ -23,7 +24,6 @@ from ha.core.controllers.cluster_controller import ClusterController
 from ha.core.controllers.controller_annotation import controller_error_handler
 from ha import const
 from cortx.utils.log import Log
-
 
 class PcsClusterController(ClusterController, PcsController):
     """ Pcs cluster controller to perform pcs cluster level operation. """
@@ -40,15 +40,6 @@ class PcsClusterController(ClusterController, PcsController):
         """
         self._controllers = controllers
 
-    def _is_pcs_cluster_running(self):
-        """
-        Check pcs cluster status
-        """
-        _, _, _rc = self._execute.run_cmd(const.PCS_CLUSTER_STATUS, check_error=False)
-        if _rc != 0:
-            return False
-        return True
-
     def _pcs_cluster_start(self):
         """
         Start pcs cluster
@@ -63,6 +54,15 @@ class PcsClusterController(ClusterController, PcsController):
                 break
             Log.info(f"Pcs cluster start retry index : {retry_index}")
         return _status
+
+    def _is_pcs_cluster_running(self):
+        """
+        Check pcs cluster status
+        """
+        _, _, _rc = self._execute.run_cmd(const.PCS_CLUSTER_STATUS, check_error=False)
+        if _rc != 0:
+            return False
+        return True
 
     @controller_error_handler
     def start(self) -> dict:
@@ -103,7 +103,6 @@ class PcsClusterController(ClusterController, PcsController):
         else:
             msg = _res.get("msg")
             return {"status": _res.get("status"), "msg": f"Cluster start operation failed, {msg}"}
-
 
     @controller_error_handler
     def stop(self) -> dict:
@@ -211,21 +210,21 @@ class PcsClusterController(ClusterController, PcsController):
                 status: Succeeded, Failed, InProgress
         """
         if not nodeid:
-            return {"status": "Failed", "msg": "Node_id is missing or empty to add node"}
+            return {"status": const.STATUSES.FAILED.value, "msg": "Node_id is missing or empty to add node"}
 
         if not cluster_user:
-            return {"status": "Failed", "msg": "Cluster username is missing or empty to add node"}
+            return {"status": const.STATUSES.FAILED.value, "msg": "Cluster username is missing or empty to add node"}
 
         if not cluster_password:
-            return {"status": "Failed", "msg": "Cluster password is missing or empty to add node"}
+            return {"status": const.STATUSES.FAILED.value, "msg": "Cluster password is missing or empty to add node"}
 
         self._auth_node(nodeid, cluster_user, cluster_password)
         cluster_node_count = self._get_cluster_size()
         if cluster_node_count < 32:
             _output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_NODE_ADD.replace("<node>", nodeid))
-            return {"status": "InProgress", "msg": f"Node {nodeid} add operation started successfully in the cluster"}
+            return {"status": const.IN_PROGRESS.FAILED.value, "msg": f"Node {nodeid} add operation started successfully in the cluster"}
         else:
-            return {"status": "Failed", "msg": "Cluster size is already filled to 32, "
+            return {"status": const.STATUSES.FAILED.value, "msg": "Cluster size is already filled to 32, "
                                                "Please use add-remote node mechanism"}
 
     @controller_error_handler
@@ -242,3 +241,29 @@ class PcsClusterController(ClusterController, PcsController):
                 status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
+
+    @controller_error_handler
+    def create_cluster(self, name: str, user: str, secret: str, nodeid: str) -> dict:
+        """
+        Create cluster if not created.
+
+        Args:
+            name (str): Cluster name.
+            user (str): Cluster User.
+            secret (str): Cluster passward.
+            nodeid (str): Node name.
+
+        Returns:
+            dict: Return dictionary. {"status": "", "msg":""}
+        """
+        if not self._is_pcs_cluster_running():
+            self._auth_node(nodeid, user, secret)
+            self._execute.run_cmd(const.PCS_SETUP_CLUSTER.replace("<cluster_name>", name)
+                                    .replace("<nodeid>", nodeid), is_secret=True,
+                                    error="Cluster setup failed.")
+            self._execute.run_cmd(const.PCS_CLUSTER_START_NODE)
+            self._execute.run_cmd(const.PCS_CLUSTER_ENABLE.replace("<nodeid>", nodeid))
+            self._execute.run_cmd(const.PCS_STONITH_DISABLE)
+            # Put node in standby mode
+        return {"status": const.STATUSES.SUCCEEDED.value, "msg": "Cluster size is already filled to 32, "
+                                               "Please use add-remote node mechanism"}
