@@ -28,6 +28,12 @@ class NodeController(ElementController):
         """
         super(NodeController, self).__init__()
 
+    def initialize(self, controllers):
+        """
+        Initialize the node controller
+        """
+        raise HAUnimplemented("This operation is not implemented.")
+
     @controller_error_handler
     def start(self, nodeid: str) -> dict:
         """

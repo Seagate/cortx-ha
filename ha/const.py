@@ -25,6 +25,9 @@ SUPPORT_BUNDLE_ERR="{}/support_bundle.err".format(RA_LOG_DIR)
 SUPPORT_BUNDLE_LOGS=[RA_LOG_DIR, PCSD_LOG, PACEMAKER_LOG, COROSYNC_LOG]
 CORTX_SUPPORT_BUNDLE_LOGS=[RA_LOG_DIR]
 
+# Cluster Manager
+DATASTORE_VERSION="v1"
+CLUSTER_CONFSTORE_PREFIX = "cortx/ha/{}/".format(DATASTORE_VERSION)
 HA_INIT_DIR="/var/cortx/ha/"
 CONFIG_DIR="/etc/cortx/ha"
 SOURCE_CONFIG_PATH="/opt/seagate/cortx/ha/conf/etc"
@@ -94,8 +97,12 @@ HARE_FID_MAPPING_FILE="/var/lib/hare/consul-server-conf/consul-server-conf.json"
 CORTX_VERSION_1="1"
 CORTX_VERSION_2="2"
 PCS_CLUSTER_START="pcs cluster start --all"
+PCS_CLUSTER_START_NODE="pcs cluster start"
 PCS_CLUSTER_STATUS="pcs cluster status"
 PCS_CLUSTER_UNSTANDBY="pcs cluster unstandby --all"
+PCS_CLUSTER_NODE_AUTH="pcs cluster auth <node> -u <username> -p <password>"
+PCS_CLUSTER_NODE_ADD="pcs cluster node add <node> --start --enable"
+PCS_CLUSTER_PCSD_STATUS="pcs status pcsd"
 PCS_STATUS_NODES="pcs status nodes"
 PCS_NODE_UNSTANDBY="pcs node unstandby <node>"
 PCS_NODE_CLEANUP= PCS_CLEANUP + " --node <node>"
@@ -110,6 +117,10 @@ CONTROLLER_SUCCESS="Success"
 CONTROLLER_INPROGRESS="InProgress"
 NO_FAILCOUNT = "No failcounts"
 RETRY_COUNT = 2
+PCS_NODE_START_GROUP_SIZE = 3
+NODE_CONTROLLER = "node_controller"
+CLUSTER_RETRY_COUNT = 6
+BASE_WAIT_TIME = 5
 
 
 class STATUSES(Enum):

@@ -29,7 +29,8 @@ HA_SUPPORT_BUNDLE_FAILED        = 0x0005
 HA_CLUSTER_MANAGER_FAILED       = 0x0006
 HA_PRE_UPGRADE_FAILED           = 0x0007
 HA_SETUP_FAILED                 = 0x0008
-HA_SYSTEM_HEALTH_FAILED         = 0x0009
+HA_REMOTE_EXECUTOR_FAILED       = 0x0009
+HA_SYSTEM_HEALTH_FAILED         = 0x000A
 
 class HAError(BaseError):
     def __init__(self, rc=1, desc=None, message_id=HA_BASIC_ERROR, message_args=None):
@@ -89,6 +90,19 @@ class HATestFailedError(HAError):
         _message_id = HA_TEST_FAILED
         _rc = 1
         super(HATestFailedError, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
+
+class RemoteExecutorError(HAError):
+    '''
+    Remote Node Execution Exception handling
+    '''
+    def __init__(self, desc=None, retcode=-1):
+        """
+        Init method.
+        """
+        _desc = f'{"Failed to execute opeartion on a remote node"}' if desc is None else desc
+        _message_id = HA_REMOTE_EXECUTOR_FAILED
+        _rc = retcode
+        super(RemoteExecutorError, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
 
 class SupportBundleError(HAError):
     def __init__(self, desc=None):
