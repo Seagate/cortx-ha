@@ -23,7 +23,7 @@ from ha.execute import SimpleCommand
 from ha import const
 from ha.cli.displayOutput import Output
 from ha.cli.exec.commandExecutor import CommandExecutor
-from ha.core.error import HAClusterStart
+from ha.core.error import HAClusterStart, HAInvalidPermission
 from ha.core.controllers.pcs.cluster_controller import PcsClusterController
 
 
@@ -190,8 +190,10 @@ class ClusterNodeAddExecutor(ClusterAddExecutor):
         self._op = Output()
 
     def parse_cluster_args(self):
-        '''Parses the command line args'''
-
+        '''
+           Parses the command line args.
+           Return: argparse
+        '''
         parser = argparse.ArgumentParser(prog='cluster add node')
         parser.add_argument("cluster", help="Module")
         parser.add_argument("add", help="action to be performed")
@@ -207,17 +209,23 @@ class ClusterNodeAddExecutor(ClusterAddExecutor):
         return args
 
     def validate(self):
+        '''
+           Validates permission and command line arguments.
+           Exception: HAInvalidPermission
+           Return: argparse
+        '''
         print("Placeholder: validate for ", self.__class__.__name__)
         if not self.is_ha_user():
-            raise Exception('Not an HA user')
+            raise HAInvalidPermission('Not enough permissions to invoke this command')
         args = self.parse_cluster_args()
         return args
 
-    def execute(self):
-        '''Execute CLI request by passing it to ClusterManager'''
+    def execute(self) -> None:
+        '''
+           Execute CLI request by passing it to ClusterManager and
+           also displays an output
+        '''
         args = self.validate()
-        print(args.nodeid)
-        print("Placeholder:  execute for ", self.__class__.__name__)
         # TODO: Proper password to be sent
         add_node_result_message = self._pcs_cluster_controller.add_node(args.nodeid, const.USER_HA_INTERNAL, 'abc')
         if args.json:
