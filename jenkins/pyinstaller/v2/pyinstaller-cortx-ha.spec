@@ -78,10 +78,24 @@ pre_disruptive_upgrade =  Analysis([ha_path + '/ha/setup/pre_disruptive_upgrade.
         cipher=block_cipher,
         noarchive=False)
 
+remote_execution =  Analysis([ha_path + '/ha/remote_execution/ssh_communicator.py', ha_path + '/ha/remote_execution/remote_executor.py'],
+        pathex=[ha_path],
+        binaries=[],
+        datas=[],
+        hiddenimports=[],
+        hookspath=[],
+        runtime_hooks=[],
+        excludes=['numpy', 'matplotlib'],
+        win_no_prefer_redirects=False,
+        win_private_assemblies=False,
+        cipher=block_cipher,
+        noarchive=False)
+
 MERGE((cortxha, 'cortxha', 'cortxha'),
         (dynamic_fid_service_ra, 'dynamic_fid_service_ra', 'dynamic_fid_service_ra'),
         (ha_setup, 'ha_setup', 'ha_setup'),
         (pre_disruptive_upgrade, 'pre_disruptive_upgrade', 'pre_disruptive_upgrade'),
+        (remote_execution, 'remote_execution', 'remote_execution'),
         )
 
 # cortxha
@@ -144,6 +158,21 @@ pre_disruptive_upgrade_exe = EXE(pre_disruptive_upgrade_pyz,
         upx=True,
         console=True )
 
+# remote_execution
+remote_execution_pyz = PYZ(remote_execution.pure, remote_execution.zipped_data,
+        cipher=block_cipher)
+
+remote_execution_exe = EXE(remote_execution_pyz,
+        remote_execution.scripts,
+        [],
+        exclude_binaries=True,
+        name='remote_execution',
+        debug=False,
+        bootloader_ignore_signals=False,
+        strip=False,
+        upx=True,
+        console=True )
+
 coll = COLLECT(
         # cortxha
         cortxha_exe,
@@ -168,6 +197,12 @@ coll = COLLECT(
         pre_disruptive_upgrade.binaries,
         pre_disruptive_upgrade.zipfiles,
         pre_disruptive_upgrade.datas,
+
+        # remote_execution
+        remote_execution_exe,
+        remote_execution.binaries,
+        remote_execution.zipfiles,
+        remote_execution.datas,
 
         strip=False,
         upx=True,

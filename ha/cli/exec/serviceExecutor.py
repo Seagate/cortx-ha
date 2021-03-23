@@ -15,22 +15,28 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-import os
-import sys
-import argparse
-import pathlib
+from ha.cli.exec.commandExecutor import CommandExecutor
 
-def main(argv):
-    """
-    Entry point for cortx CLI
-    """
+class ServiceStartExecutor(CommandExecutor):
 
-    sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..'))
+    def validate(self):
+        print("Placeholder: validate for ", self.__class__.__name__)
 
-    from ha.cli.commands import Command
-    command = Command()
-    command.process(argv[1:])
+    def execute(self):
+        print("Placeholder:  execute for ", self.__class__.__name__)
 
 
-if __name__ == '__main__':
-    sys.exit(main(sys.argv))
+class ServiceStopExecutor(CommandExecutor):
+    def validate(self):
+        print("Placeholder: validate for ", self.__class__.__name__)
+
+    def execute(self):
+        print("Placeholder:  execute for ", self.__class__.__name__)
+
+class ServiceStatusExecutor(CommandExecutor):
+
+    def validate(self):
+        print("Placeholder: validate for ", self.__class__.__name__)
+
+    def execute(self):
+        print("Placeholder:  execute for ", self.__class__.__name__)
