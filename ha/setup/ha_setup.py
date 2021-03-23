@@ -175,8 +175,6 @@ class ConfigCmd(Cmd):
         nodelist = []
         minion_name = self.get_minion_name()
         nodelist.append(minion_name)
-        # The config step will be called from primary node always,
-        # see how to get and use the node name then.
 
         # Read cluster name and cluster user
         cluster_name = Conf.get(self._index, 'corosync-pacemaker.cluster_name')
@@ -187,15 +185,7 @@ class ConfigCmd(Cmd):
         cluster_secret = Conf.get(self._index, 'corosync-pacemaker.secret')
         key = Cipher.generate_key(cluster_id, 'corosync-pacemaker')
         cluster_secret = Cipher.decrypt(key, cluster_secret.encode('ascii')).decode()
-
-        # Get s3 instance count
-        try:
-            s3_instances = Conf.get(self._index, f"cluster.{minion_name}.s3_instances")
-            if int(s3_instances) < 1:
-                raise HaConfigException(f"Found {s3_instances} which is invalid s3 instance count.")
-        except Exception as e:
-            Log.error(f"Found {s3_instances} which is invalid s3 instance count. Error: {e}")
-            raise HaConfigException(f"Found {s3_instances} which is invalid s3 instance count.")
+        s3_instances = self._get_s3_instance(minion_name)
 
         try:
             # Check if the cluster exists already, if yes skip creating the cluster.
@@ -216,6 +206,25 @@ class ConfigCmd(Cmd):
             output = self._execute.run_cmd(const.PCS_CLUSTER_DESTROY, check_error=True)
             Log.info(f"Cluster destroyed. Output: {output}")
             raise HaConfigException("Cluster creation failed")
+
+    def _get_s3_instance(self, nodeid: str) -> int:
+        """
+        Return s3 instance
+
+        Raises:
+            HaConfigException: Raise exception for in-valide s3 count.
+
+        Returns:
+            [int]: Return s3 count.
+        """
+        try:
+            s3_instances = Conf.get(self._index, f"cluster.{nodeid}.s3_instances")
+            if int(s3_instances) < 1:
+                raise HaConfigException(f"Found {s3_instances} which is invalid s3 instance count.")
+            return int(s3_instances)
+        except Exception as e:
+            Log.error(f"Found {s3_instances} which is invalid s3 instance count. Error: {e}")
+            raise HaConfigException(f"Found {s3_instances} which is invalid s3 instance count.")
 
 class InitCmd(Cmd):
     """
