@@ -135,3 +135,27 @@ class NODE_STATUSES(Enum):
     STANDBY_WITH_RESOURCES_RUNNING = "Standby with resource(s) running"
     MAINTENANCE = "Maintenance"
     UNKNOWN = "Unknown"
+
+# System Health
+# Constants
+class COMPONENTS(Enum):
+    SERVER_HARDWARE = "server_hardware"
+    SERVER_SERVICE = "server_service"
+    SERVER = "server"
+    STORAGE_COMPONENT = "storage_component"
+    STORAGE = "storage"
+    NODE = "node"
+    RACK = "rack"
+    SITE = "site"
+    STORAGESET = "storageset"
+    CLUSTER = "cluster"
+    AGG_SERVICE = "agg_service"
+    NODE_MAP = "node_map"
+
+RESOURCE_LIST = "resource_list"
+KEY = "key"
+
+# Health update HA action status
+class ACTION_STATUS(Enum):
+    PENDING = "pending"
+    COMPLETE = "complete"
