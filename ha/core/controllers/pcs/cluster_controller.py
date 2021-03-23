@@ -66,6 +66,19 @@ class PcsClusterController(ClusterController, PcsController):
             Log.info(f"Pcs cluster start retry index : {retry_index}")
         return _status
 
+    def _auth_node(self, node_id, cluster_user, cluster_password):
+        """
+        Auth node to add
+        """
+        try:
+            self._execute.run_cmd(const.PCS_CLUSTER_NODE_AUTH.replace("<node>", node_id)
+                    .replace("<username>", cluster_user).replace("<password>", cluster_password),
+                    is_secret=True, error=f"Auth to {node_id} failed.")
+            Log.info(f"Node {node_id} authenticated with {cluster_user} Successfully.")
+        except Exception as e:
+            Log.error(f"Failed to authenticate node : {node_id} with reason : {e}")
+            raise ClusterManagerError(f"Failed to authenticate node : {node_id}, Please check username or password")
+
     @controller_error_handler
     def start(self) -> dict:
         """

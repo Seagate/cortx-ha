@@ -77,16 +77,8 @@ BUNDLE_COMMAND="support_bundle"
 PCS_CLUSTER_PACKAGES=["pacemaker", "corosync", "pcs"]
 CIB_FILE="/var/log/seagate/cortx/ha/cortx-r2-cib.xml"
 
-
 NODE_DISCONNECTED="Disconnected"
 NODE_ONLINE="Online"
-
-# hctl commands
-HCTL_START="hctl start"
-HCTL_STOP="hctl shutdown"
-HCTL_STATUS="hctl status"
-HCTL_STARTED_STATUS="Online"
-HCTL_STOPPED_STATUS="Offline"
 
 # Systemd wrapper resource agent
 HARE_FID_MAPPING_FILE="/var/lib/hare/consul-server-conf/consul-server-conf.json"
