@@ -15,46 +15,47 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
+from ha.core.error import HAUnimplemented
 from ha.cli.exec.commandExecutor import CommandExecutor
 
 class StoragesetStartExecutor(CommandExecutor):
 
-    def validate(self):
-        print("Placeholder: validate for ", self.__class__.__name__)
+    def validate(self) -> str:
+        raise HAUnimplemented("This operation is not implemented.")
 
-    def execute(self):
-        print("Placeholder:  execute for ", self.__class__.__name__)
+    def execute(self) -> str:
+        raise HAUnimplemented("This operation is not implemented.")
 
 
 class StoragesetStopExecutor(CommandExecutor):
 
-    def validate(self):
-        print("Placeholder: validate for ", self.__class__.__name__)
+    def validate(self) -> str:
+        raise HAUnimplemented("This operation is not implemented.")
 
-    def execute(self):
-        print("Placeholder:  execute for ", self.__class__.__name__)
+    def execute(self) -> str:
+        raise HAUnimplemented("This operation is not implemented.")
 
 class StoragesetStandbyExecutor(CommandExecutor):
 
-    def validate(self):
-        print("Placeholder: validate for ", self.__class__.__name__)
+    def validate(self) -> str:
+        raise HAUnimplemented("This operation is not implemented.")
 
-    def execute(self):
-        print("Placeholder:  execute for ", self.__class__.__name__)
+    def execute(self) -> str:
+        raise HAUnimplemented("This operation is not implemented.")
 
 class StoragesetActiveExecutor(CommandExecutor):
 
-    def validate(self):
-        print("Placeholder: validate for ", self.__class__.__name__)
+    def validate(self) -> str:
+        raise HAUnimplemented("This operation is not implemented.")
 
-    def execute(self):
-        print("Placeholder:  execute for ", self.__class__.__name__)
+    def execute(self) -> str:
+        raise HAUnimplemented("This operation is not implemented.")
 
 class StoragesetStatusExecutor(CommandExecutor):
 
-    def validate(self):
-        print("Placeholder: validate for ", self.__class__.__name__)
+    def validate(self) -> str:
+        raise HAUnimplemented("This operation is not implemented.")
 
-    def execute(self):
-        print("Placeholder:  execute for ", self.__class__.__name__)
+    def execute(self) -> str:
+        raise HAUnimplemented("This operation is not implemented.")
 
