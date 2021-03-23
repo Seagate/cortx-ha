@@ -25,6 +25,9 @@ SUPPORT_BUNDLE_ERR="{}/support_bundle.err".format(RA_LOG_DIR)
 SUPPORT_BUNDLE_LOGS=[RA_LOG_DIR, PCSD_LOG, PACEMAKER_LOG, COROSYNC_LOG]
 CORTX_SUPPORT_BUNDLE_LOGS=[RA_LOG_DIR]
 
+# Cluster Manager
+DATASTORE_VERSION="v1"
+CLUSTER_CONFSTORE_PREFIX = "cortx/ha/{}/".format(DATASTORE_VERSION)
 HA_INIT_DIR="/var/cortx/ha/"
 CONFIG_DIR="/etc/cortx/ha"
 SOURCE_CONFIG_PATH="/opt/seagate/cortx/ha/conf/etc"
@@ -136,3 +139,27 @@ class NODE_STATUSES(Enum):
     STANDBY_WITH_RESOURCES_RUNNING = "Standby with resource(s) running"
     MAINTENANCE = "Maintenance"
     UNKNOWN = "Unknown"
+
+# System Health
+# Constants
+class COMPONENTS(Enum):
+    SERVER_HARDWARE = "server_hardware"
+    SERVER_SERVICE = "server_service"
+    SERVER = "server"
+    STORAGE_COMPONENT = "storage_component"
+    STORAGE = "storage"
+    NODE = "node"
+    RACK = "rack"
+    SITE = "site"
+    STORAGESET = "storageset"
+    CLUSTER = "cluster"
+    AGG_SERVICE = "agg_service"
+    NODE_MAP = "node_map"
+
+RESOURCE_LIST = "resource_list"
+KEY = "key"
+
+# Health update HA action status
+class ACTION_STATUS(Enum):
+    PENDING = "pending"
+    COMPLETE = "complete"
