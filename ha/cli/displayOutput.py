@@ -15,22 +15,25 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-import os
-import sys
-import argparse
-import pathlib
-
-def main(argv):
-    """
-    Entry point for cortx CLI
-    """
-
-    sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..'))
-
-    from ha.cli.commands import Command
-    command = Command()
-    command.process(argv[1:])
+import json
+#import sys
 
 
-if __name__ == '__main__':
-    sys.exit(main(sys.argv))
+class Output():
+    """Class representing a generic framework for output handling. """
+
+    #def __init__(self, rc, desc):
+        #self.output_string = "output"
+
+    # print the output in json format
+    def print_json(self, output_data):
+        # we should be okay with using print instead of sys.stdout.write
+        # since print writes to stdout only.
+        print(json.dumps(output_data, indent=4, sort_keys=False))
+
+        # TBD check if exit required at this point
+        #sys.exit()
+
+    # TBD print in  tabular format
+    def print_string(self, output_data):
+        print(json.dumps(output_data, indent=4, sort_keys=False))
