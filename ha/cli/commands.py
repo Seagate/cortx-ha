@@ -21,12 +21,6 @@ from ha.cli.command_factory import CmdFactory
 from ha.cli.exec.commandExecutor import CLIUsage
 from ha.cli.exec.commandExecutor import CommandExecutor as cmdExecutor
 
-# These imports are needed by get_class function
-from ha.cli.exec import clusterExecutor
-from ha.cli.exec import nodeExecutor
-from ha.cli.exec import serviceExecutor
-from ha.cli.exec import storagesetExecutor
-
 class Command:
     """  Parse the CLI and call appropriate executor """
     def __init__(self):
@@ -36,7 +30,7 @@ class Command:
         self.cmd_factory = CmdFactory()
 
 
-    def parse(self, args):
+    def parse(self, args: list):
         """ Parse the CLI string to identify parameters"""
 
         try:
@@ -53,7 +47,7 @@ class Command:
                 return False
         return True
 
-    def get_class(self, cmd_exec):
+    def get_class(self, cmd_exec: cmdExecutor):
         """ get class object for the appropriate executor """
 
         parts = cmd_exec.split('.')
@@ -63,7 +57,7 @@ class Command:
             exec_mod = getattr(exec_mod, comp)
         return exec_mod
 
-    def process(self, args):
+    def process(self, args: list):
         """ Process the command """
 
         # Raise exception if user does not have proper permissions
