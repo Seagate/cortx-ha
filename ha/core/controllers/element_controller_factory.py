@@ -44,4 +44,8 @@ class ElementControllerFactory:
             module = import_module(f"{'.'.join(class_path_list)}")
             element_instace = getattr(module, controller["interface"].split('.')[-1])()
             ElementControllerFactory._controllers[controller["element"]] = element_instace
+        # Pass the controllers instance list to each controller. So, dependent controller can use interface if needed
+        for controller in ElementControllerFactory._controllers.keys():
+            ElementControllerFactory._controllers[controller].initialize(ElementControllerFactory._controllers)
+
         return ElementControllerFactory._controllers
