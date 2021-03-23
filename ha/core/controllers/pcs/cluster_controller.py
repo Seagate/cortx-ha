@@ -263,7 +263,6 @@ class PcsClusterController(ClusterController, PcsController):
         Returns:
             dict: Return dictionary. {"status": "", "msg":""}
         """
-        status = ""
         try:
             self._check_non_empty(name=name, user=user, secret=secret, nodeid=nodeid)
             if not self._is_pcs_cluster_running():
@@ -277,23 +276,11 @@ class PcsClusterController(ClusterController, PcsController):
                 Log.info("Node started and enabled successfully.")
                 # TODO: Divide class into vm, hw when stonith is needed.
                 self._execute.run_cmd(const.PCS_STONITH_DISABLE)
-                time.sleep(const.BASE_WAIT_TIME)
-
-            # Check node status
-            node_status = self.nodes_status([nodeid]).get(nodeid).lower()
-            if node_status == NODE_STATUSES.STANDBY.value.lower():
-                Log.info(f"{nodeid} already running in standby mode")
-                status = "Cluster is already running in standby mode."
-            else:
-                self._execute.run_cmd(const.PCS_NODE_STANDBY.replace("<node>", nodeid))
-                Log.info(f"Waiting to standby {nodeid} node.")
                 time.sleep(const.BASE_WAIT_TIME * 2)
-                node_status = self.nodes_status([nodeid]).get(nodeid).lower()
-                if node_status == NODE_STATUSES.STANDBY.value.lower():
-                    Log.info(f"Created cluster: {name} successfully")
-                    status = "Cluster created successfully and running in standby mode."
-                else:
-                    raise ClusterManagerError(f"Failed: Node is not standby. Status {node_status}")
-            return {"status": const.STATUSES.SUCCEEDED.value, "msg": status}
+            if self._is_pcs_cluster_running():
+                return {"status": const.STATUSES.SUCCEEDED.value,
+                        "msg": "Cluster created successfully."}
+            else:
+                raise ClusterManagerError("Cluster is not started.")
         except Exception as e:
             raise ClusterManagerError(f"Failed to create cluster. Error: {e}")

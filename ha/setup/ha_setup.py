@@ -30,6 +30,7 @@ from cortx.utils.security.cipher import Cipher
 
 from ha.execute import SimpleCommand
 from ha import const
+from ha.const import STATUSES
 from ha.setup.create_pacemaker_resources import create_all_resources
 from ha.core.cluster.cluster_manager import CortxClusterManager
 from ha.core.config.config_manager import ConfigManager
@@ -188,19 +189,24 @@ class ConfigCmd(Cmd):
         s3_instances = self._get_s3_instance(minion_name)
 
         try:
-            # Check if the cluster exists already, if yes skip creating the cluster.
+            # Create cluster
             Log.info(f"Creating cluster: {cluster_name} with node: {minion_name}")
-            output: str = self._cluster_manager.cluster_controller.create_cluster(cluster_name,
-                                    cluster_user, cluster_secret, minion_name)
-            Log.info(f"Cluster creation output: {output}")
-            output = json.loads(output)
+            cluster_output: str = self._cluster_manager.cluster_controller.create_cluster(
+                cluster_name, cluster_user, cluster_secret, minion_name)
+            Log.info(f"Cluster creation output: {cluster_output}")
             # TODO: Handle race condition cluster and resource create with global check.
-            if output.get("status") == const.STATUSES.SUCCEEDED.value:
-                Log.info("Creating pacemaker resources")
-                create_all_resources(s3_instances=s3_instances)
-                Log.info("Created pacemaker resources successfully")
+            if json.loads(cluster_output).get("status") == STATUSES.SUCCEEDED.value:
+                # Put cluster in standby mode
+                standby_output: str = self._cluster_manager.node_controller.standby(minion_name)
+                Log.info(f"Put node in standby output: {standby_output}")
+                if json.loads(standby_output).get("status") != STATUSES.FAILED.value:
+                    Log.info("Creating pacemaker resources")
+                    create_all_resources(s3_instances=s3_instances)
+                    Log.info("Created pacemaker resources successfully")
+                else:
+                    raise HaConfigException(f"Failed to put cluster in standby mode. Error: {standby_output}")
             else:
-                raise HaConfigException(f"Cluster creation failed. Error: {output.get('msg')}")
+                raise HaConfigException(f"Cluster creation failed. Error: {cluster_output}")
         except Exception as e:
             Log.error(f"Cluster creation failed; destroying the cluster. Error: {e}")
             output = self._execute.run_cmd(const.PCS_CLUSTER_DESTROY, check_error=True)
