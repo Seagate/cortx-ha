@@ -1,6 +1,9 @@
 cluster:
   TMPL_CLUSTER_ID:
     name: TMPL_NAME
+    network:
+      management:
+        virtual_host: TMPL_VIRTUAL_HOST
 cortx:
   software:
     corosync:
@@ -12,5 +15,8 @@ server_node:
     network:
       data:
         private_fqdn: TMPL_PRIVATE_FQDN
+      management:
+        interfaces: TMPL_INTERFACES
+        netmask: TMPL_NETMASK
     s3_instances: TMPL_S3_INSTANCES
     type: TMPL_TYPE
