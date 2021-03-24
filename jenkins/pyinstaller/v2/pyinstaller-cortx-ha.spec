@@ -21,16 +21,29 @@ import os
 import re
 import yaml
 
+def import_list(ha_path, walk_path):
+    import_list = []
+    for root, directories, filenames in os.walk(walk_path):
+        for filename in filenames:
+            if re.match(r'.*.\.py$', filename) and filename != '__init__.py':
+                file = os.path.join(root, filename).rsplit('.', 1)[0]\
+                    .replace(ha_path + "/", "").replace("/", ".")
+                import_list.append(file)
+    return import_list
+
 block_cipher = None
 
 ha_path="<HA_PATH>"
+cmd_hidden_import = ["ha.cli.exec.clusterExecutor", "ha.cli.exec.nodeExecutor", "ha.cli.exec.serviceExecutor", "ha.cli.exec.storagesetExecutor"]
+product_module_list = import_list(ha_path, ha_path + "/ha/core/controllers")
+product_module_list.extend(cmd_hidden_import)
 
 # Analysis
 cortxha =  Analysis([ha_path + '/ha/cli/cortxha.py'],
         pathex=[ha_path],
         binaries=[],
         datas=[],
-        hiddenimports=[],
+        hiddenimports=product_module_list,
         hookspath=[],
         runtime_hooks=[],
         excludes=['numpy', 'matplotlib'],
@@ -43,7 +56,7 @@ dynamic_fid_service_ra =  Analysis([ha_path + '/ha/resource/dynamic_fid_service_
         pathex=[ha_path],
         binaries=[],
         datas=[],
-        hiddenimports=[],
+        hiddenimports=product_module_list,
         hookspath=[],
         runtime_hooks=[],
         excludes=['numpy', 'matplotlib'],
@@ -56,7 +69,7 @@ ha_setup =  Analysis([ha_path + '/ha/setup/ha_setup.py'],
         pathex=[ha_path],
         binaries=[],
         datas=[],
-        hiddenimports=[],
+        hiddenimports=product_module_list,
         hookspath=[],
         runtime_hooks=[],
         excludes=['numpy', 'matplotlib'],
@@ -69,7 +82,7 @@ pre_disruptive_upgrade =  Analysis([ha_path + '/ha/setup/pre_disruptive_upgrade.
         pathex=[ha_path],
         binaries=[],
         datas=[],
-        hiddenimports=[],
+        hiddenimports=product_module_list,
         hookspath=[],
         runtime_hooks=[],
         excludes=['numpy', 'matplotlib'],
@@ -82,7 +95,7 @@ remote_execution =  Analysis([ha_path + '/ha/remote_execution/ssh_communicator.p
         pathex=[ha_path],
         binaries=[],
         datas=[],
-        hiddenimports=[],
+        hiddenimports=product_module_list,
         hookspath=[],
         runtime_hooks=[],
         excludes=['numpy', 'matplotlib'],

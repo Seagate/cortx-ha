@@ -22,6 +22,7 @@ from ha.execute import SimpleCommand
 from ha import const
 from ha.cli.exec.commandExecutor import CommandExecutor
 from ha.core.error import HAClusterStart
+from ha.core.error import HAUnimplemented
 
 class ClusterStartExecutor(CommandExecutor):
 
@@ -30,8 +31,8 @@ class ClusterStartExecutor(CommandExecutor):
         # To be removed once the "cortx cluster start" user story [EOS-16248] is started
         self._execute = SimpleCommand()
 
-    def validate(self):
-        print("Placeholder: validate for ", self.__class__.__name__)
+    def validate(self) -> str:
+        raise HAUnimplemented("This operation is not implemented.")
 
     def get_nodes_status(self):
         """
@@ -127,52 +128,51 @@ class ClusterStartExecutor(CommandExecutor):
 
         Log.info("Cluster started successfully")
 
-
 class ClusterStopExecutor(CommandExecutor):
-    def validate(self):
-        print("Placeholder: validate for ", self.__class__.__name__)
+    def validate(self) -> str:
+        raise HAUnimplemented("This operation is not implemented.")
 
-    def execute(self):
-        print("Placeholder:  execute for ", self.__class__.__name__)
+    def execute(self) -> str:
+        raise HAUnimplemented("This operation is not implemented.")
 
 class ClusterRestartExecutor(CommandExecutor):
-    def validate(self):
-        print("Placeholder: validate for ", self.__class__.__name__)
+    def validate(self) -> str:
+        raise HAUnimplemented("This operation is not implemented.")
 
-    def execute(self):
-        print("Placeholder:  execute for ", self.__class__.__name__)
+    def execute(self) -> str:
+        raise HAUnimplemented("This operation is not implemented.")
 
 class ClusterStandbyExecutor(CommandExecutor):
-    def validate(self):
-        print("Placeholder: validate for ", self.__class__.__name__)
+    def validate(self) -> str:
+        raise HAUnimplemented("This operation is not implemented.")
 
-    def execute(self):
-        print("Placeholder:  execute for ", self.__class__.__name__)
+    def execute(self) -> str:
+        raise HAUnimplemented("This operation is not implemented.")
 
 class ClusterActiveExecutor(CommandExecutor):
-    def validate(self):
-        print("Placeholder: validate for ", self.__class__.__name__)
+    def validate(self) -> str:
+        raise HAUnimplemented("This operation is not implemented.")
 
-    def execute(self):
-        print("Placeholder:  execute for ", self.__class__.__name__)
+    def execute(self) -> str:
+        raise HAUnimplemented("This operation is not implemented.")
 
 class ClusterListExecutor(CommandExecutor):
-    def validate(self):
-        print("Placeholder: validate for ", self.__class__.__name__)
+    def validate(self) -> str:
+        raise HAUnimplemented("This operation is not implemented.")
 
-    def execute(self):
-        print("Placeholder:  execute for ", self.__class__.__name__)
+    def execute(self) -> str:
+        raise HAUnimplemented("This operation is not implemented.")
 
 class ClusterStatusExecutor(CommandExecutor):
-    def validate(self):
-        print("Placeholder: validate for ", self.__class__.__name__)
+    def validate(self) -> str:
+        raise HAUnimplemented("This operation is not implemented.")
 
-    def execute(self):
-        print("Placeholder:  execute for ", self.__class__.__name__)
+    def execute(self) -> str:
+        raise HAUnimplemented("This operation is not implemented.")
 
 class ClusterAddExecutor(CommandExecutor):
-    def validate(self):
-        print("Placeholder: validate for ", self.__class__.__name__)
+    def validate(self) -> str:
+        raise HAUnimplemented("This operation is not implemented.")
 
-    def execute(self):
-        print("Placeholder:  execute for ", self.__class__.__name__)
+    def execute(self) -> str:
+        raise HAUnimplemented("This operation is not implemented.")

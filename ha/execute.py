@@ -24,7 +24,7 @@ class SimpleCommand:
     def __init__(self):
         pass
 
-    def run_cmd(self, cmd, check_error=True):
+    def run_cmd(self, cmd, check_error=True, is_secret=False, error=""):
         """
         Run command and throw error if cmd failed
 
@@ -44,9 +44,17 @@ class SimpleCommand:
             _output, _err, _rc = _proc.run(universal_newlines=True)
             Log.debug(f"cmd: {cmd}, output: {_output}, err: {_err}, rc: {_rc}")
             if _rc != 0 and check_error:
-                Log.error(f"cmd: {cmd}, output: {_output}, err: {_err}, rc: {_rc}")
-                raise Exception(f"Failed to execute {cmd}")
+                if is_secret is True:
+                    Log.error(f"Failed to execute command. Error: {error}")
+                    raise Exception(f"Failed to execute {error}")
+                else:
+                    Log.error(f"cmd: {cmd}, output: {_output}, err: {_err}, rc: {_rc}")
+                    raise Exception(f"Failed to execute {cmd}")
             return _output, _err, _rc
         except Exception as e:
-            Log.error("Failed to execute  %s Error: %s %s" %(cmd,e,_err))
-            raise HACommandTerminated("Failed to execute %s Error: %s %s" %(cmd,e,_err))
+            if is_secret is True:
+                Log.error(f"Failed to execute command. Error: {error}")
+                raise HACommandTerminated(f"Failed to execute command. Error: {error}")
+            else:
+                Log.error(f"Failed to execute  {cmd} Error: {e}. {error}")
+                raise HACommandTerminated(f"Failed to execute  {cmd} Error: {e}. {error}")

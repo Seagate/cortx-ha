@@ -21,15 +21,19 @@ import inspect
 import traceback
 import os
 import shutil
+import json
 
 from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
 from cortx.utils.validator.v_pkg import PkgV
 from cortx.utils.security.cipher import Cipher
+
 from ha.execute import SimpleCommand
 from ha import const
-from ha.setup.create_cluster import cluster_auth, cluster_create
+from ha.const import STATUSES
 from ha.setup.create_pacemaker_resources import create_all_resources
+from ha.core.cluster.cluster_manager import CortxClusterManager
+from ha.core.config.config_manager import ConfigManager
 from ha.core.error import HaPrerequisiteException
 from ha.core.error import HaConfigException
 from ha.core.error import HaInitException
@@ -106,12 +110,17 @@ class Cmd:
         if os.path.exists(file):
             os.remove(file)
 
-    def get_minion_name(self):
+    def get_machine_id(self):
         command = "cat /etc/machine-id"
         machine_id, err, rc = self._execute.run_cmd(command, check_error=True)
         Log.info(f"Read machine-id. Output: {machine_id}, Err: {err}, RC: {rc}")
-        minion_name = Conf.get(self._index, f"cluster.server_nodes.{machine_id.strip()}")
-        return minion_name
+        return machine_id.strip()
+
+    def get_node_name(self):
+        machine_id = self.get_machine_id()
+        node_name = Conf.get(self._index, f"server_node.{machine_id}.network.data.private_fqdn")
+        Log.info(f"Read node name: {node_name}")
+        return node_name
 
 class PostInstallCmd(Cmd):
     """
@@ -160,6 +169,7 @@ class ConfigCmd(Cmd):
         Init method.
         """
         super().__init__(args)
+        self._cluster_manager = CortxClusterManager()
 
     def process(self):
         """
@@ -169,58 +179,64 @@ class ConfigCmd(Cmd):
         # Read machine-id and using machine-id read minion name from confstore
         # This minion name will be used for adding the node to the cluster.
         nodelist = []
-        minion_name = self.get_minion_name()
-        nodelist.append(minion_name)
-        # The config step will be called from primary node alwasys,
-        # see how to get and use the node name then.
+        node_name = self.get_node_name()
+        nodelist.append(node_name)
 
         # Read cluster name and cluster user
-        cluster_name = Conf.get(self._index, 'corosync-pacemaker.cluster_name')
-        cluster_user = Conf.get(self._index, 'corosync-pacemaker.user')
+        machine_id = self.get_machine_id()
+        cluster_id = Conf.get(self._index, f"server_node.{machine_id}.cluster_id")
+        cluster_name = Conf.get(self._index, f"cluster.{cluster_id}.name")
+        cluster_user = Conf.get(self._index, 'cortx.software.corosync.user')
 
         # Read cluster user password and decrypt the same
-        cluster_id = Conf.get(self._index, 'cluster.cluster_id')
-        cluster_secret = Conf.get(self._index, 'corosync-pacemaker.secret')
+        cluster_secret = Conf.get(self._index, 'cortx.software.corosync.secret')
         key = Cipher.generate_key(cluster_id, 'corosync-pacemaker')
         cluster_secret = Cipher.decrypt(key, cluster_secret.encode('ascii')).decode()
+        s3_instances = self._get_s3_instance(machine_id)
 
-        # Get s3 instance count
         try:
-            s3_instances = Conf.get(self._index, f"cluster.{minion_name}.s3_instances")
-            if int(s3_instances) < 1:
-                raise HaConfigException(f"Found {s3_instances} which is invalid s3 instance count.")
-        except Exception as e:
-            Log.error(f"Found {s3_instances} which is invalid s3 instance count. Error: {e}")
-            raise HaConfigException(f"Found {s3_instances} which is invalid s3 instance count.")
-
-        # Check if the cluster exists already, if yes skip creating the cluster.
-        output, err, rc = self._execute.run_cmd(const.PCS_CLUSTER_STATUS, check_error=False)
-        Log.info(f"Cluster status. Output: {output}, Err: {err}, RC: {rc}")
-        if rc != 0:
-            if(err.find("No such file or directory: 'pcs'") != -1):
-                Log.error("Cluster config failed; pcs not installed")
-                raise HaConfigException("Cluster config failed; pcs not installed")
-            # If cluster is not created; create a cluster.
-            elif(err.find("cluster is not currently running on this node") != -1):
-                try:
-                    Log.info(f"Creating cluster: {cluster_name} with node: {minion_name}")
-                    cluster_auth(cluster_user, cluster_secret, nodelist)
-                    cluster_create(cluster_name, nodelist)
-                    Log.info(f"Created cluster: {cluster_name} successfully")
+            # Create cluster
+            Log.info(f"Creating cluster: {cluster_name} with node: {node_name}")
+            cluster_output: str = self._cluster_manager.cluster_controller.create_cluster(
+                cluster_name, cluster_user, cluster_secret, node_name)
+            Log.info(f"Cluster creation output: {cluster_output}")
+            # TODO: Handle race condition cluster and resource create with global check.
+            if json.loads(cluster_output).get("status") == STATUSES.SUCCEEDED.value:
+                # Put cluster in standby mode
+                standby_output: str = self._cluster_manager.node_controller.standby(node_name)
+                Log.info(f"Put node in standby output: {standby_output}")
+                if json.loads(standby_output).get("status") != STATUSES.FAILED.value:
                     Log.info("Creating pacemaker resources")
                     create_all_resources(s3_instances=s3_instances)
                     Log.info("Created pacemaker resources successfully")
-                except Exception as e:
-                    Log.error(f"Cluster creation failed; destroying the cluster. Error: {e}")
-                    output = self._execute.run_cmd(const.PCS_CLUSTER_DESTROY, check_error=True)
-                    Log.info(f"Cluster destroyed. Output: {output}")
-                    raise HaConfigException("Cluster creation failed")
+                else:
+                    raise HaConfigException(f"Failed to put cluster in standby mode. Error: {standby_output}")
             else:
-                pass # Nothing to do
-        else:
-            # Cluster exists already, check if it is a new node and add it to the existing cluster.
-             Log.info("The cluster exists already, check and add new node")
-        Log.info("config command is successful")
+                raise HaConfigException(f"Cluster creation failed. Error: {cluster_output}")
+        except Exception as e:
+            Log.error(f"Cluster creation failed; destroying the cluster. Error: {e}")
+            output = self._execute.run_cmd(const.PCS_CLUSTER_DESTROY, check_error=True)
+            Log.info(f"Cluster destroyed. Output: {output}")
+            raise HaConfigException("Cluster creation failed")
+
+    def _get_s3_instance(self, machine_id: str) -> int:
+        """
+        Return s3 instance
+
+        Raises:
+            HaConfigException: Raise exception for in-valide s3 count.
+
+        Returns:
+            [int]: Return s3 count.
+        """
+        try:
+            s3_instances = Conf.get(self._index, f"server_node.{machine_id}.s3_instances")
+            if int(s3_instances) < 1:
+                raise HaConfigException(f"Found {s3_instances} which is invalid s3 instance count.")
+            return int(s3_instances)
+        except Exception as e:
+            Log.error(f"Found {s3_instances} which is invalid s3 instance count. Error: {e}")
+            raise HaConfigException(f"Found {s3_instances} which is invalid s3 instance count.")
 
 class InitCmd(Cmd):
     """
@@ -242,11 +258,11 @@ class InitCmd(Cmd):
         Log.info("Processing init command")
         Log.info("INIT: Update ha configuration files")
         Conf.load(self._ha_conf_index, f"yaml://{const.HA_CONFIG_FILE}")
-        minion_name = self.get_minion_name()
+        machine_id = self.get_machine_id()
         if "corosync-pacemaker" in Conf.get_keys(self._index):
             raise HaInitException("Init: failed to find cluster type.")
         cluster_type = "corosync-pacemaker"
-        node_type = Conf.get(self._index, f"cluster.{minion_name}.node_type").strip()
+        node_type = Conf.get(self._index, f"server_node.{machine_id}.type").strip()
         # Set env for cluster manager
         self._update_env(node_type, cluster_type)
         Log.info("INIT: HA configuration updated successfully.")
@@ -388,9 +404,19 @@ class RestoreCmd(Cmd):
 
 def main(argv: dict):
     try:
+        if sys.argv[1] == "post_install":
+            Conf.init(delim='.')
+            Conf.load(const.HA_GLOBAL_INDEX, f"yaml://{const.SOURCE_CONFIG_FILE}")
+            log_path = Conf.get(const.HA_GLOBAL_INDEX, "LOG.path")
+            log_level = Conf.get(const.HA_GLOBAL_INDEX, "LOG.level")
+            Log.init(service_name='ha_setup', log_path=log_path, level=log_level)
+        else:
+            ConfigManager.init("ha_setup")
+
         desc = "HA Setup command"
         command = Cmd.get_command(desc, argv[1:])
         command.process()
+
         sys.stdout.write(f"Mini Provisioning {sys.argv[1]} configured sussesfully.\n")
     except Exception:
         Log.error("%s\n" % traceback.format_exc())
@@ -398,10 +424,4 @@ def main(argv: dict):
         return errno.EINVAL
 
 if __name__ == '__main__':
-    # TBD: Import and use config_manager.py
-    Conf.init(delim='.')
-    Conf.load(const.HA_GLOBAL_INDEX, f"yaml://{const.SOURCE_CONFIG_FILE}")
-    log_path = Conf.get(const.HA_GLOBAL_INDEX, "LOG.path")
-    log_level = Conf.get(const.HA_GLOBAL_INDEX, "LOG.level")
-    Log.init(service_name='ha_setup', log_path=log_path, level=log_level)
     sys.exit(main(sys.argv))

@@ -17,6 +17,7 @@
 
 import inspect
 
+from cortx.utils.log import Log
 from ha.cli import commands
 from ha.core.config.config_manager import ConfigManager
 
@@ -75,11 +76,12 @@ class CmdFactory:
             "--help": "ha.cli.exec.commandExecutor.CLIUsage"
         }
 
-    def get_executor(self, module_name, operation_name):
+    def get_executor(self, module_name: str, operation_name: str) -> str:
         """ return the appropriate class name from the dictionary"""
 
         try:
             executor = self.cmd_dict.get(module_name).get(operation_name)
         except Exception:
+            Log.error(f"Failed to get executor Module Name: {module_name}, Operation Name: {operation_name}")
             return None
         return executor

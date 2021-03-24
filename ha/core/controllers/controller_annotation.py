@@ -24,7 +24,7 @@ def controller_error_handler(func):
             result: dict = func(*args, **kwargs)
             return json.dumps(result)
         except Exception as e:
-            result: dict = {"status": const.CONTROLLER_FAILED,
+            result: dict = {"status": const.STATUSES.FAILED.value,
                 "msg": f"ClusterManagerException. {func.__name__} failed. Error: {e}"}
             return json.dumps(result)
     return inner_function

@@ -28,7 +28,7 @@ class CommandExecutor:
     def __init__(self):
         self._is_hauser = False
 
-    def validate(self):
+    def validate(self) -> str:
         print("validate for ")
         print(self.__class__.__name__)
 
@@ -40,7 +40,7 @@ class CommandExecutor:
     Routine used by executors to confirm acess permissions.
     Used to differentiate between external and internal CLIs
     """
-    def is_ha_user(self):
+    def is_ha_user(self) -> bool:
         return self._is_hauser
 
     def validate_permissions(self):
@@ -77,7 +77,7 @@ class CommandExecutor:
 class CLIUsage:
 
     @staticmethod
-    def usage():
+    def usage() -> str:
         usage_string = ("\t[-h]\n"
                         "\tcluster start [all|server] [--json]\n"
                         "\tcluster stop [all|server] [--json]\n"
@@ -111,7 +111,7 @@ class CLIUsage:
 class ClusterCLIUsage(CLIUsage):
 
     @staticmethod
-    def usage():
+    def usage() -> str:
         usage_string = ("\t[-h]\n"
                         "\tcluster start [all|server] [--json]\n"
                         "\tcluster stop [all|server] [--json]\n"
@@ -131,7 +131,7 @@ class ClusterCLIUsage(CLIUsage):
 class NodeCLIUsage(CLIUsage):
 
     @staticmethod
-    def usage():
+    def usage() -> str:
         usage_string = ("\t[-h]\n"
                         "\tnode start <Node> [all|server] [--json]\n"
                         "\tnode stop <Node> [all|server] [--json]\n"
@@ -147,7 +147,7 @@ class NodeCLIUsage(CLIUsage):
 class StoragesetCLIUsage(CLIUsage):
 
     @staticmethod
-    def usage():
+    def usage() -> str:
         usage_string = ("\t[-h]\n"
                         "\tstorageset status [all|hw|services] <storageset_id>\n"
                         "\tstorageset start <storageset_id>\n"
@@ -164,7 +164,7 @@ class StoragesetCLIUsage(CLIUsage):
 class ServiceCLIUsage(CLIUsage):
 
     @staticmethod
-    def usage():
+    def usage() -> str:
         usage_string = ("\t[-h]\n"
                         "\tservice start <service> [--node <Node>] [--json]\n"
                         "\tservice stop <service> [--node <Node>] [--json]\n"
