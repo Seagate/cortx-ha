@@ -25,7 +25,6 @@ from ha.core.error import ClusterManagerError
 from ha.core.controllers.cluster_controller import ClusterController
 from ha.core.controllers.controller_annotation import controller_error_handler
 from ha import const
-from ha.const import NODE_STATUSES
 
 class PcsClusterController(ClusterController, PcsController):
     """ Pcs cluster controller to perform pcs cluster level operation. """
