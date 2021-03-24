@@ -23,9 +23,9 @@ from ha.execute import SimpleCommand
 from ha import const
 from ha.cli.displayOutput import Output
 from ha.cli.exec.commandExecutor import CommandExecutor
-from ha.core.error import HAClusterStart, HAInvalidPermission
+from ha.core.error import HAClusterStart
 from ha.core.controllers.pcs.cluster_controller import PcsClusterController
-from ha.core.error import HAUnimplemented
+# from ha.core.error import HAUnimplemented
 
 class ClusterStartExecutor(CommandExecutor):
 
