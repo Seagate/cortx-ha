@@ -28,13 +28,11 @@ class CommandExecutor:
     def __init__(self):
         self._is_hauser = False
 
-    def validate(self) -> str:
-        print("validate for ")
-        print(self.__class__.__name__)
+    def validate(self) -> bool:
+        raise HAUnimplemented("This operation is not implemented.")
 
-    def execute(self):
-        print("execute")
-        print(self.__class__.__name__)
+    def execute(self) -> None:
+        raise HAUnimplemented("This operation is not implemented.")
 
     """
     Routine used by executors to confirm acess permissions.
@@ -43,7 +41,7 @@ class CommandExecutor:
     def is_ha_user(self) -> bool:
         return self._is_hauser
 
-    def validate_permissions(self):
+    def validate_permissions(self) -> None:
 
         # confirm that user is root or part of haclient group"
 
@@ -64,8 +62,10 @@ class CommandExecutor:
             # The user name "hauser"; which is part of the "haclient" group;
             # is used by HA.
             # internal commands are allowed only if the user is "hauser"
-            if user == const.USER_HA_INTERNAL:
-                self._is_hauser = True
+            # As of now, every HA CLI will be internal command. So, we
+            # do not need this change. We can revisit this if needed in future
+            #if user == const.USER_HA_INTERNAL:
+            #    self._is_hauser = True
 
 
         # TBD : If required raise seperate exception  for root and haclient
@@ -73,6 +73,10 @@ class CommandExecutor:
             Log.error("Group root / haclient is not defined")
             raise HAInvalidPermission("Group root / haclient is not defined ")
 
+        def parse_node_desc_file(self, node_desc_file):
+            # TODO: parse node description file and extract its contents
+            # Same function can be used in case of parsing storage_set
+            # desc file
 
 class CLIUsage:
 
