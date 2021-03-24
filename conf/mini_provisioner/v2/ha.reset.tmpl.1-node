@@ -18,5 +18,5 @@ server_node:
       management:
         interfaces: TMPL_INTERFACES
         netmask: TMPL_NETMASK
-    s3_instances: '11'
+    s3_instances: '1'
     type: TMPL_TYPE
