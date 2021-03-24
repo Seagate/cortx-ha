@@ -15,22 +15,29 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-import os
-import sys
-import argparse
-import pathlib
+from ha.core.error import HAUnimplemented
+from ha.cli.exec.commandExecutor import CommandExecutor
 
-def main(argv):
-    """
-    Entry point for cortx CLI
-    """
+class ServiceStartExecutor(CommandExecutor):
 
-    sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..'))
+    def validate(self) -> str:
+        raise HAUnimplemented("This operation is not implemented.")
 
-    from ha.cli.commands import Command
-    command = Command()
-    command.process(argv[1:])
+    def execute(self) -> str:
+        raise HAUnimplemented("This operation is not implemented.")
 
 
-if __name__ == '__main__':
-    sys.exit(main(sys.argv))
+class ServiceStopExecutor(CommandExecutor):
+    def validate(self) -> str:
+        raise HAUnimplemented("This operation is not implemented.")
+
+    def execute(self) -> str:
+        raise HAUnimplemented("This operation is not implemented.")
+
+class ServiceStatusExecutor(CommandExecutor):
+
+    def validate(self) -> str:
+        raise HAUnimplemented("This operation is not implemented.")
+
+    def execute(self) -> str:
+        raise HAUnimplemented("This operation is not implemented.")

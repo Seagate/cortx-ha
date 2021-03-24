@@ -73,6 +73,9 @@ CLUSTER_COMMAND="cluster"
 NODE_COMMAND="node"
 SERVICE_COMMAND="service"
 BUNDLE_COMMAND="support_bundle"
+USER_GROUP_HACLIENT="haclient"
+USER_GROUP_ROOT="root"
+USER_HA_INTERNAL="hauser"
 
 PCS_CLUSTER_PACKAGES=["pacemaker", "corosync", "pcs"]
 PCS_CLEANUP="pcs resource cleanup"
