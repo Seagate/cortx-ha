@@ -1,6 +1,4 @@
-#!/usr/bin/env python3
-
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
 #
 # This program is free software: you can redistribute it and/or modify it under the
 # terms of the GNU Affero General Public License as published by the Free Software
@@ -15,22 +13,23 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-import os
-import sys
-import argparse
-import pathlib
+"""Module for remote communication over SSH channel"""
 
-def main(argv):
-    """
-    Entry point for cortx CLI
-    """
-
-    sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..'))
-
-    from ha.cli.commands import Command
-    command = Command()
-    command.process(argv[1:])
+import abc
 
 
-if __name__ == '__main__':
-    sys.exit(main(sys.argv))
+class RemoteExecutor:
+    '''An abstract Base class for all the remote node
+       execution'''
+
+    __metaclass__ = abc.ABCMeta
+
+    def __init__(self, hostname, port):
+        '''Init method'''
+        self._hostname = hostname
+        self._port = port
+
+    @abc.abstractmethod
+    def execute(self, command):
+        '''Communicates to remote node by code execution'''
+        raise NotImplementedError
