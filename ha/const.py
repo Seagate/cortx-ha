@@ -110,6 +110,8 @@ PCS_STATUS_NODES="pcs status nodes"
 PCS_NODE_UNSTANDBY="pcs node unstandby <node>"
 PCS_NODE_CLEANUP= PCS_CLEANUP + " --node <node>"
 PCS_NODE_FAILCOUNT_STATUS= PCS_FAILCOUNT_STATUS + " --node <node>"
+PCS_STOP_NODE="pcs cluster stop <node>"
+PCS_STOP_CLUSTER="pcs cluster stop --all"
 
 # Cluster manager
 CM_CONTROLLER_INDEX="controller_interface"

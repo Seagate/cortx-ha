@@ -21,9 +21,9 @@ from ha.core.error import HAUnimplemented
 from ha.core.controllers.pcs.pcs_controller import PcsController
 from ha.core.controllers.cluster_controller import ClusterController
 from ha.core.controllers.controller_annotation import controller_error_handler
+from ha.core.error import ClusterManagerError
 from ha import const
 from cortx.utils.log import Log
-
 
 class PcsClusterController(ClusterController, PcsController):
     """ Pcs cluster controller to perform pcs cluster level operation. """
@@ -63,6 +63,23 @@ class PcsClusterController(ClusterController, PcsController):
                 break
             Log.info(f"Pcs cluster start retry index : {retry_index}")
         return _status
+
+    def _get_node_group(self) -> list:
+        """
+        Get node_group
+        """
+        if self._is_pcs_cluster_running() is False:
+            raise ClusterManagerError("Cluster is not running on current node.")
+        res = json.loads(self.node_list())
+        if res.get("status") != const.STATUSES.SUCCEEDED.value:
+            raise ClusterManagerError("Failed to get node list.")
+        else:
+            node_list: list = res.get("msg")
+            Log.info(f"Node List : {node_list}")
+            if node_list is not None:
+                node_group: list = [ node_list[i:i + const.PCS_NODE_START_GROUP_SIZE]
+                        for i in range(0, len(node_list), const.PCS_NODE_START_GROUP_SIZE)]
+        return node_group
 
     @controller_error_handler
     def start(self) -> dict:
@@ -104,7 +121,6 @@ class PcsClusterController(ClusterController, PcsController):
             msg = _res.get("msg")
             return {"status": _res.get("status"), "msg": f"Cluster start operation failed, {msg}"}
 
-
     @controller_error_handler
     def stop(self) -> dict:
         """
@@ -114,7 +130,28 @@ class PcsClusterController(ClusterController, PcsController):
             ([dict]): Return dictionary. {"status": "", "msg":""}
                 status: Succeeded, Failed, InProgress
         """
-        raise HAUnimplemented("This operation is not implemented.")
+        status: str = ""
+        node_group: list = self._get_node_group()
+        first_group: list = node_group[0]
+        other_group: list = node_group.remove(first_group)
+        # Stop cluster for other group
+        for node_subgroup in other_group:
+            for nodeid in node_subgroup:
+                if self.heal_resource(nodeid):
+                    time.sleep(const.BASE_WAIT_TIME)
+                res = json.load(self._controllers[const.NODE_CONTROLLER].stop(nodeid))
+                if res.get("status") == const.STATUSES.FAILED.value:
+                    raise ClusterManagerError(f"Cluster Stop failed. Unable to stop {nodeid}")
+                # Wait till resource will ge stop.
+                time.sleep(const.BASE_WAIT_TIME * const.PCS_NODE_START_GROUP_SIZE)
+        # Stop first group of cluster
+        try:
+            self._execute.run_cmd(const.PCS_STOP_CLUSTER)
+            time.sleep(const.BASE_WAIT_TIME * const.PCS_NODE_START_GROUP_SIZE)
+        except Exception as e:
+            raise ClusterManagerError(f"Cluster stop failed. Error: {e}")
+        status = "Cluster stop is in progress."
+        return {"status": const.STATUSES.IN_PROGRESS.value, "msg": status}
 
     @controller_error_handler
     def status(self) -> dict:
