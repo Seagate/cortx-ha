@@ -1,6 +1,7 @@
 
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/383b33b872f84967903a9098039cff87)](https://app.codacy.com/gh/Seagate/cortx-ha?utm_source=github.com&utm_medium=referral&utm_content=Seagate/cortx-ha&utm_campaign=Badge_Grade) [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://github.com/Seagate/cortx-ha/blob/main/LICENSE) [![Slack](https://img.shields.io/badge/chat-on%20Slack-blue")](https://cortx.link/join-slack)
-[![YouTube](https://img.shields.io/badge/Video-YouTube-red)](https://cortx.link/videos)
+[![YouTube](https://img.shields.io/badge/Video-YouTube-red)](https://cortx.link/videos) [![GitHub contributors](https://img.shields.io/github/contributors/Seagate/cortx-ha)](https://github.com/Seagate/cortx-ha/graphs/contributors/)
+
 
 # CORTX-HA
 
