@@ -21,15 +21,19 @@ import inspect
 import traceback
 import os
 import shutil
+import json
 
 from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
 from cortx.utils.validator.v_pkg import PkgV
 from cortx.utils.security.cipher import Cipher
+
 from ha.execute import SimpleCommand
 from ha import const
-from ha.setup.create_cluster import cluster_auth, cluster_create
+from ha.const import STATUSES
 from ha.setup.create_pacemaker_resources import create_all_resources
+from ha.core.cluster.cluster_manager import CortxClusterManager
+from ha.core.config.config_manager import ConfigManager
 from ha.core.error import HaPrerequisiteException
 from ha.core.error import HaConfigException
 from ha.core.error import HaInitException
@@ -165,6 +169,7 @@ class ConfigCmd(Cmd):
         Init method.
         """
         super().__init__(args)
+        self._cluster_manager = CortxClusterManager()
 
     def process(self):
         """
@@ -176,8 +181,6 @@ class ConfigCmd(Cmd):
         nodelist = []
         node_name = self.get_node_name()
         nodelist.append(node_name)
-        # The config step will be called from primary node alwasys,
-        # see how to get and use the node name then.
 
         # Read cluster name and cluster user
         machine_id = self.get_machine_id()
@@ -189,44 +192,51 @@ class ConfigCmd(Cmd):
         cluster_secret = Conf.get(self._index, 'cortx.software.corosync.secret')
         key = Cipher.generate_key(cluster_id, 'corosync-pacemaker')
         cluster_secret = Cipher.decrypt(key, cluster_secret.encode('ascii')).decode()
+        s3_instances = self._get_s3_instance(machine_id)
 
-        # Get s3 instance count
+        try:
+            # Create cluster
+            Log.info(f"Creating cluster: {cluster_name} with node: {node_name}")
+            cluster_output: str = self._cluster_manager.cluster_controller.create_cluster(
+                cluster_name, cluster_user, cluster_secret, node_name)
+            Log.info(f"Cluster creation output: {cluster_output}")
+            # TODO: Handle race condition cluster and resource create with global check.
+            if json.loads(cluster_output).get("status") == STATUSES.SUCCEEDED.value:
+                # Put cluster in standby mode
+                standby_output: str = self._cluster_manager.node_controller.standby(node_name)
+                Log.info(f"Put node in standby output: {standby_output}")
+                if json.loads(standby_output).get("status") != STATUSES.FAILED.value:
+                    Log.info("Creating pacemaker resources")
+                    create_all_resources(s3_instances=s3_instances)
+                    Log.info("Created pacemaker resources successfully")
+                else:
+                    raise HaConfigException(f"Failed to put cluster in standby mode. Error: {standby_output}")
+            else:
+                raise HaConfigException(f"Cluster creation failed. Error: {cluster_output}")
+        except Exception as e:
+            Log.error(f"Cluster creation failed; destroying the cluster. Error: {e}")
+            output = self._execute.run_cmd(const.PCS_CLUSTER_DESTROY, check_error=True)
+            Log.info(f"Cluster destroyed. Output: {output}")
+            raise HaConfigException("Cluster creation failed")
+
+    def _get_s3_instance(self, machine_id: str) -> int:
+        """
+        Return s3 instance
+
+        Raises:
+            HaConfigException: Raise exception for in-valide s3 count.
+
+        Returns:
+            [int]: Return s3 count.
+        """
         try:
             s3_instances = Conf.get(self._index, f"server_node.{machine_id}.s3_instances")
             if int(s3_instances) < 1:
                 raise HaConfigException(f"Found {s3_instances} which is invalid s3 instance count.")
+            return int(s3_instances)
         except Exception as e:
             Log.error(f"Found {s3_instances} which is invalid s3 instance count. Error: {e}")
             raise HaConfigException(f"Found {s3_instances} which is invalid s3 instance count.")
-
-        # Check if the cluster exists already, if yes skip creating the cluster.
-        output, err, rc = self._execute.run_cmd(const.PCS_CLUSTER_STATUS, check_error=False)
-        Log.info(f"Cluster status. Output: {output}, Err: {err}, RC: {rc}")
-        if rc != 0:
-            if(err.find("No such file or directory: 'pcs'") != -1):
-                Log.error("Cluster config failed; pcs not installed")
-                raise HaConfigException("Cluster config failed; pcs not installed")
-            # If cluster is not created; create a cluster.
-            elif(err.find("cluster is not currently running on this node") != -1):
-                try:
-                    Log.info(f"Creating cluster: {cluster_name} with node: {node_name}")
-                    cluster_auth(cluster_user, cluster_secret, nodelist)
-                    cluster_create(cluster_name, nodelist)
-                    Log.info(f"Created cluster: {cluster_name} successfully")
-                    Log.info("Creating pacemaker resources")
-                    create_all_resources(s3_instances=s3_instances)
-                    Log.info("Created pacemaker resources successfully")
-                except Exception as e:
-                    Log.error(f"Cluster creation failed; destroying the cluster. Error: {e}")
-                    output = self._execute.run_cmd(const.PCS_CLUSTER_DESTROY, check_error=True)
-                    Log.info(f"Cluster destroyed. Output: {output}")
-                    raise HaConfigException("Cluster creation failed")
-            else:
-                pass # Nothing to do
-        else:
-            # Cluster exists already, check if it is a new node and add it to the existing cluster.
-             Log.info("The cluster exists already, check and add new node")
-        Log.info("config command is successful")
 
 class InitCmd(Cmd):
     """
@@ -394,9 +404,19 @@ class RestoreCmd(Cmd):
 
 def main(argv: dict):
     try:
+        if sys.argv[1] == "post_install":
+            Conf.init(delim='.')
+            Conf.load(const.HA_GLOBAL_INDEX, f"yaml://{const.SOURCE_CONFIG_FILE}")
+            log_path = Conf.get(const.HA_GLOBAL_INDEX, "LOG.path")
+            log_level = Conf.get(const.HA_GLOBAL_INDEX, "LOG.level")
+            Log.init(service_name='ha_setup', log_path=log_path, level=log_level)
+        else:
+            ConfigManager.init("ha_setup")
+
         desc = "HA Setup command"
         command = Cmd.get_command(desc, argv[1:])
         command.process()
+
         sys.stdout.write(f"Mini Provisioning {sys.argv[1]} configured sussesfully.\n")
     except Exception:
         Log.error("%s\n" % traceback.format_exc())
@@ -404,10 +424,4 @@ def main(argv: dict):
         return errno.EINVAL
 
 if __name__ == '__main__':
-    # TBD: Import and use config_manager.py
-    Conf.init(delim='.')
-    Conf.load(const.HA_GLOBAL_INDEX, f"yaml://{const.SOURCE_CONFIG_FILE}")
-    log_path = Conf.get(const.HA_GLOBAL_INDEX, "LOG.path")
-    log_level = Conf.get(const.HA_GLOBAL_INDEX, "LOG.level")
-    Log.init(service_name='ha_setup', log_path=log_path, level=log_level)
     sys.exit(main(sys.argv))

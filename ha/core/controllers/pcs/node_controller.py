@@ -15,6 +15,8 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
+import time
+
 from ha.core.error import HAUnimplemented, ClusterManagerError
 from ha.core.controllers.pcs.pcs_controller import PcsController
 from ha.core.controllers.node_controller import NodeController
@@ -73,7 +75,25 @@ class PcsNodeController(NodeController, PcsController):
             ([dict]): Return dictionary. {"status": "", "msg":""}
                 status: Succeeded, Failed, InProgress
         """
-        raise HAUnimplemented("This operation is not implemented.")
+        status: str = ""
+        # Check node status
+        node_status = self.nodes_status([nodeid]).get(nodeid).lower()
+        Log.info(f"Current {nodeid} status is {node_status}")
+        if node_status == NODE_STATUSES.STANDBY.value.lower():
+            status = f"Node {nodeid} is already running in standby mode."
+        elif node_status.lower() != NODE_STATUSES.ONLINE.value.lower():
+            return {"status": const.STATUSES.FAILED.value,
+                    "msg": f"Failed to put node in standby as node is in {node_status}"}
+        else:
+            if self.heal_resource(nodeid):
+                time.sleep(const.BASE_WAIT_TIME)
+            self._execute.run_cmd(const.PCS_NODE_STANDBY.replace("<node>", nodeid))
+            Log.info(f"Waiting to standby {nodeid} node.")
+            time.sleep(const.BASE_WAIT_TIME * 2)
+            node_status = self.nodes_status([nodeid]).get(nodeid).lower()
+            Log.info(f"After standby, current {nodeid} status is {node_status}")
+            status = f"Waiting for resource to stop, {nodeid} standby is in progress"
+        return {"status": const.STATUSES.IN_PROGRESS.value, "msg": status}
 
     @controller_error_handler
     def active(self, nodeid: str) -> dict:

@@ -15,7 +15,9 @@
 
 from enum import Enum
 
-#LOGS
+#LOGS and config
+CORTX_VERSION_1="1"
+CORTX_VERSION_2="2"
 RA_LOG_DIR="/var/log/seagate/cortx/ha"
 PACEMAKER_LOG="/var/log/pacemaker.log"
 PCSD_LOG="/var/log/pcsd/pcsd.log"
@@ -24,8 +26,6 @@ COROSYNC_LOG="/var/log/cluster"
 SUPPORT_BUNDLE_ERR="{}/support_bundle.err".format(RA_LOG_DIR)
 SUPPORT_BUNDLE_LOGS=[RA_LOG_DIR, PCSD_LOG, PACEMAKER_LOG, COROSYNC_LOG]
 CORTX_SUPPORT_BUNDLE_LOGS=[RA_LOG_DIR]
-
-# Cluster Manager
 DATASTORE_VERSION="v1"
 CLUSTER_CONFSTORE_PREFIX = "cortx/ha/{}/".format(DATASTORE_VERSION)
 HA_INIT_DIR="/var/cortx/ha/"
@@ -78,46 +78,39 @@ USER_GROUP_ROOT="root"
 USER_HA_INTERNAL="hauser"
 
 PCS_CLUSTER_PACKAGES=["pacemaker", "corosync", "pcs"]
-PCS_CLEANUP="pcs resource cleanup"
-PCS_FAILCOUNT_STATUS="pcs resource failcount show"
-PCS_STATUS = "pcs status"
-PCS_CLUSTER_DESTROY="pcs cluster destroy"
 CIB_FILE="/var/log/seagate/cortx/ha/cortx-r2-cib.xml"
-
 
 NODE_DISCONNECTED="Disconnected"
 NODE_ONLINE="Online"
 
-HCTL_START="hctl start"
-HCTL_STOP="hctl shutdown"
-HCTL_STATUS="hctl status"
-HCTL_STARTED_STATUS="Online"
-HCTL_STOPPED_STATUS="Offline"
-
 # Systemd wrapper resource agent
 HARE_FID_MAPPING_FILE="/var/lib/hare/consul-server-conf/consul-server-conf.json"
 
-CORTX_VERSION_1="1"
-CORTX_VERSION_2="2"
+# PCS Commands
 PCS_CLUSTER_START="pcs cluster start --all"
 PCS_CLUSTER_START_NODE="pcs cluster start"
+PCS_CLUSTER_ENABLE="pcs cluster enable <node>"
 PCS_CLUSTER_STATUS="pcs cluster status"
 PCS_CLUSTER_UNSTANDBY="pcs cluster unstandby --all"
+PCS_SETUP_CLUSTER="pcs cluster setup --start --name <cluster_name> <node>"
 PCS_CLUSTER_NODE_AUTH="pcs cluster auth <node> -u <username> -p <password>"
 PCS_CLUSTER_NODE_ADD="pcs cluster node add <node> --start --enable"
 PCS_CLUSTER_PCSD_STATUS="pcs status pcsd"
 PCS_STATUS_NODES="pcs status nodes"
 PCS_NODE_UNSTANDBY="pcs node unstandby <node>"
+PCS_CLEANUP="pcs resource cleanup"
+PCS_FAILCOUNT_STATUS="pcs resource failcount show"
 PCS_NODE_CLEANUP= PCS_CLEANUP + " --node <node>"
 PCS_NODE_FAILCOUNT_STATUS= PCS_FAILCOUNT_STATUS + " --node <node>"
+PCS_STATUS = "pcs status"
+PCS_CLUSTER_DESTROY="pcs cluster destroy"
+PCS_NODE_STANDBY="pcs node standby <node>"
+PCS_STONITH_DISABLE="pcs property set stonith-enabled=False"
 
 # Cluster manager
 CM_CONTROLLER_INDEX="controller_interface"
 CM_CONTROLLER_SCHEMA="{}/controller_interface.json".format(CONFIG_DIR)
 CM_ELEMENT=["cluster", "node", "service", "storageset"]
-CONTROLLER_FAILED="Failed"
-CONTROLLER_SUCCESS="Success"
-CONTROLLER_INPROGRESS="InProgress"
 NO_FAILCOUNT = "No failcounts"
 RETRY_COUNT = 2
 PCS_NODE_START_GROUP_SIZE = 3
@@ -125,12 +118,10 @@ NODE_CONTROLLER = "node_controller"
 CLUSTER_RETRY_COUNT = 6
 BASE_WAIT_TIME = 5
 
-
 class STATUSES(Enum):
     IN_PROGRESS = "InProgress"
     SUCCEEDED = "Succeeded"
     FAILED = "Failed"
-
 
 class NODE_STATUSES(Enum):
     OFFLINE = "Offline"
