@@ -110,12 +110,17 @@ class Cmd:
         if os.path.exists(file):
             os.remove(file)
 
-    def get_minion_name(self):
+    def get_machine_id(self):
         command = "cat /etc/machine-id"
         machine_id, err, rc = self._execute.run_cmd(command, check_error=True)
         Log.info(f"Read machine-id. Output: {machine_id}, Err: {err}, RC: {rc}")
-        minion_name = Conf.get(self._index, f"cluster.server_nodes.{machine_id.strip()}")
-        return minion_name
+        return machine_id.strip()
+
+    def get_node_name(self):
+        machine_id = self.get_machine_id()
+        node_name = Conf.get(self._index, f"server_node.{machine_id}.network.data.private_fqdn")
+        Log.info(f"Read node name: {node_name}")
+        return node_name
 
 class PostInstallCmd(Cmd):
     """
@@ -174,30 +179,32 @@ class ConfigCmd(Cmd):
         # Read machine-id and using machine-id read minion name from confstore
         # This minion name will be used for adding the node to the cluster.
         nodelist = []
-        minion_name = self.get_minion_name()
-        nodelist.append(minion_name)
+        node_name = self.get_node_name()
+        nodelist.append(node_name)
+
 
         # Read cluster name and cluster user
-        cluster_name = Conf.get(self._index, 'corosync-pacemaker.cluster_name')
-        cluster_user = Conf.get(self._index, 'corosync-pacemaker.user')
+        machine_id = self.get_machine_id()
+        cluster_id = Conf.get(self._index, f"server_node.{machine_id}.cluster_id")
+        cluster_name = Conf.get(self._index, f"cluster.{cluster_id}.name")
+        cluster_user = Conf.get(self._index, 'cortx.software.corosync.user')
 
         # Read cluster user password and decrypt the same
-        cluster_id = Conf.get(self._index, 'cluster.cluster_id')
-        cluster_secret = Conf.get(self._index, 'corosync-pacemaker.secret')
+        cluster_secret = Conf.get(self._index, 'cortx.software.corosync.secret')
         key = Cipher.generate_key(cluster_id, 'corosync-pacemaker')
         cluster_secret = Cipher.decrypt(key, cluster_secret.encode('ascii')).decode()
-        s3_instances = self._get_s3_instance(minion_name)
+        s3_instances = self._get_s3_instance(machine_id)
 
         try:
             # Create cluster
-            Log.info(f"Creating cluster: {cluster_name} with node: {minion_name}")
+            Log.info(f"Creating cluster: {cluster_name} with node: {node_name}")
             cluster_output: str = self._cluster_manager.cluster_controller.create_cluster(
-                cluster_name, cluster_user, cluster_secret, minion_name)
+                cluster_name, cluster_user, cluster_secret, node_name)
             Log.info(f"Cluster creation output: {cluster_output}")
             # TODO: Handle race condition cluster and resource create with global check.
             if json.loads(cluster_output).get("status") == STATUSES.SUCCEEDED.value:
                 # Put cluster in standby mode
-                standby_output: str = self._cluster_manager.node_controller.standby(minion_name)
+                standby_output: str = self._cluster_manager.node_controller.standby(node_name)
                 Log.info(f"Put node in standby output: {standby_output}")
                 if json.loads(standby_output).get("status") != STATUSES.FAILED.value:
                     Log.info("Creating pacemaker resources")
@@ -213,7 +220,7 @@ class ConfigCmd(Cmd):
             Log.info(f"Cluster destroyed. Output: {output}")
             raise HaConfigException("Cluster creation failed")
 
-    def _get_s3_instance(self, nodeid: str) -> int:
+    def _get_s3_instance(self, machine_id: str) -> int:
         """
         Return s3 instance
 
@@ -224,7 +231,7 @@ class ConfigCmd(Cmd):
             [int]: Return s3 count.
         """
         try:
-            s3_instances = Conf.get(self._index, f"cluster.{nodeid}.s3_instances")
+            s3_instances = Conf.get(self._index, f"server_node.{machine_id}.s3_instances")
             if int(s3_instances) < 1:
                 raise HaConfigException(f"Found {s3_instances} which is invalid s3 instance count.")
             return int(s3_instances)
@@ -252,11 +259,11 @@ class InitCmd(Cmd):
         Log.info("Processing init command")
         Log.info("INIT: Update ha configuration files")
         Conf.load(self._ha_conf_index, f"yaml://{const.HA_CONFIG_FILE}")
-        minion_name = self.get_minion_name()
+        machine_id = self.get_machine_id()
         if "corosync-pacemaker" in Conf.get_keys(self._index):
             raise HaInitException("Init: failed to find cluster type.")
         cluster_type = "corosync-pacemaker"
-        node_type = Conf.get(self._index, f"cluster.{minion_name}.node_type").strip()
+        node_type = Conf.get(self._index, f"server_node.{machine_id}.type").strip()
         # Set env for cluster manager
         self._update_env(node_type, cluster_type)
         Log.info("INIT: HA configuration updated successfully.")
