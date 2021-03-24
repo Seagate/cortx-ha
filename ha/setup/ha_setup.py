@@ -182,7 +182,6 @@ class ConfigCmd(Cmd):
         node_name = self.get_node_name()
         nodelist.append(node_name)
 
-
         # Read cluster name and cluster user
         machine_id = self.get_machine_id()
         cluster_id = Conf.get(self._index, f"server_node.{machine_id}.cluster_id")
