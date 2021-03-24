@@ -155,7 +155,7 @@ then
 else
      cp -rf $BASE_DIR/conf/etc/v2/* $HA_DIR/conf/etc/
      cp -rf $BASE_DIR/conf/script/v2/* $HA_DIR/conf/script/
-     cp -rf $BASE_DIR/conf/mini_provisioner/v2/ha_setup.yaml $HA_DIR/conf/setup.yaml
+     cp -rf $BASE_DIR/conf/mini_provisioner/v2/* $HA_DIR/conf/
      # pcswrap will only present in v1, hence removing it from v2
      rm -rf ${TMPHA}/pcswrap
 fi
