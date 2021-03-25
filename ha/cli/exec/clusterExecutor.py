@@ -17,6 +17,7 @@
 
 import argparse
 import os
+import re
 import socket
 import time
 
@@ -205,6 +206,8 @@ class ClusterNodeAddExecutor(CommandExecutor):
         group.add_argument('--descfile', action='store', \
                             help='A file which describes the node to be added in a cluster', \
                             type=self._is_file_extension_valid)
+        parser.add_argument('--username', help='cluster username', required=True)
+        parser.add_argument('--password', help='cluster password', required=True)
         parser.add_argument('--json', help='Required output fomat', action='store_true')
         self._args = parser.parse_args()
         return True
@@ -240,14 +243,20 @@ class ClusterNodeAddExecutor(CommandExecutor):
            Returns: bool
            Exception: socket.gaierror, socket.herror
         '''
-        try:
-            resolved_ip = socket.gethostbyname(node_id)
-        except socket.gaierror as se:
-            raise Exception(f'{node_id} not a valid node_id: {se}')
-        except socket.herror as he:
-            raise Exception(f'{node_id} not a valid node_id: {he}')
-        except Exception as err:
-            raise Exception(f'{node_id} not a valid node_id: {err}')
+        ip_validator_regex = "^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])$"
+        if node_id.find('.') >= 0:
+            if re.search(ip_validator_regex, node_id):
+                return True
+            raise Exception(f'{node_id} not a valid node_id')
+        else:
+            try:
+                resolved_ip = socket.gethostbyname(node_id)
+            except socket.gaierror as se:
+                raise Exception(f'{node_id} not a valid node_id: {se}')
+            except socket.herror as he:
+                raise Exception(f'{node_id} not a valid node_id: {he}')
+            except Exception as err:
+                raise Exception(f'{node_id} not a valid node_id: {err}')
         return True
 
     def execute(self) -> None:
@@ -255,12 +264,10 @@ class ClusterNodeAddExecutor(CommandExecutor):
            Execute CLI request by passing it to ClusterManager and
            also displays an output
         '''
-        # args = self.validate()
         # TODO: Proper password to be sent
-        # TODO: Validate node_id and node description file by some means
         node_id = None or self._args.nodeid
-        cluster_uname = None
-        cluster_pwd = None
+        cluster_uname = self._args.username
+        cluster_pwd = self._args.password
         if self._args.descfile:
             node_id, cluster_uname, cluster_pwd = self.parse_node_desc_file(self._args.descfile)
         if self._is_valid_node_id(node_id):
