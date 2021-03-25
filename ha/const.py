@@ -132,6 +132,7 @@ class NODE_STATUSES(Enum):
     STANDBY_WITH_RESOURCES_RUNNING = "Standby with resource(s) running"
     MAINTENANCE = "Maintenance"
     UNKNOWN = "Unknown"
+    POWEROFF = "Poweroff or Disconnected"
 
 # System Health
 # Constants

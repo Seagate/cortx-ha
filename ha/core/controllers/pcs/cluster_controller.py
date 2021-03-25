@@ -25,8 +25,8 @@ from ha.core.controllers.pcs.pcs_controller import PcsController
 from ha.core.error import ClusterManagerError
 from ha.core.controllers.cluster_controller import ClusterController
 from ha.core.controllers.controller_annotation import controller_error_handler
-from ha.core.error import ClusterManagerError
 from ha import const
+from ha.const import NODE_STATUSES
 
 class PcsClusterController(ClusterController, PcsController):
     """ Pcs cluster controller to perform pcs cluster level operation. """
@@ -147,6 +147,9 @@ class PcsClusterController(ClusterController, PcsController):
                 status: Succeeded, Failed, InProgress
         """
         status: str = ""
+        if not self._is_pcs_cluster_running():
+            raise ClusterManagerError("Cluster not running on current node."
+                        "To stop cluster, It should be running on current node.")
         node_group: list = self._get_node_group()
         local_node: str = ConfigManager.get_local_node()
         Log.info(f"Node group for cluster start {node_group}, local node {local_node}")
@@ -159,16 +162,21 @@ class PcsClusterController(ClusterController, PcsController):
                     time.sleep(const.BASE_WAIT_TIME)
                 res = json.loads(self._controllers[const.NODE_CONTROLLER].stop(nodeid))
                 Log.info(f"Stopping node {nodeid}, output {res}")
-                if res.get("status") == const.STATUSES.FAILED.value:
+                if NODE_STATUSES.POWEROFF.value.lower() in res.get("msg"):
+                    Log.info(f"Node {nodeid}, is in offline or lost from network.")
+                elif res.get("status") == const.STATUSES.FAILED.value:
                     raise ClusterManagerError(f"Cluster Stop failed. Unable to stop {nodeid}")
-                # Wait till resource will ge stop.
+                else:
+                    Log.info(f"Node {nodeid} stop is in progress.")
+            # Wait till resource will get stop.
+            Log.info(f"Waiting, for {str(node_subgroup)} to stop is in progress.")
             time.sleep(const.BASE_WAIT_TIME * const.PCS_NODE_START_GROUP_SIZE)
         # Stop self group of cluster
         try:
             Log.info(f"Trying to stop self node group: {self_group}")
             self._execute.run_cmd(const.PCS_STOP_CLUSTER)
-            Log.info(f"Cluster stop completed, waiting to stop resources.")
-            time.sleep(const.BASE_WAIT_TIME * const.PCS_NODE_START_GROUP_SIZE)
+            Log.info("Cluster stop completed, waiting to stop resources.")
+            time.sleep(const.BASE_WAIT_TIME)
         except Exception as e:
             raise ClusterManagerError(f"Cluster stop failed. Error: {e}")
         status = "Cluster stop is in progress."

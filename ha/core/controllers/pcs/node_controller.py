@@ -64,10 +64,12 @@ class PcsNodeController(NodeController, PcsController):
                 status: Succeeded, Failed, InProgress
         """
         node_status = self.nodes_status([nodeid]).get(nodeid)
-        # TODO: node_status should give diff between poweroff and offline
         if node_status.lower() == NODE_STATUSES.OFFLINE.value.lower():
             Log.info(f"For stop {nodeid}, Node already in offline state.")
             status = f"Node {nodeid} is already in offline state."
+        elif node_status.lower() == NODE_STATUSES.POWEROFF.value.lower():
+            raise ClusterManagerError(f"Failed to stop {nodeid}."
+                f"node is in {node_status.lower()}.")
         else:
             if self.heal_resource(nodeid):
                 time.sleep(const.BASE_WAIT_TIME)
@@ -185,10 +187,10 @@ class PcsVMNodeController(PcsNodeController):
                 return {"status": const.STATUSES.FAILED.value, "msg": f"Node {nodeid} is in standby mode: Resource "
                                                    f"failcount found on the node cleanup not worked after 2 retries"}
 
-        elif _node_status.lower() == NODE_STATUSES.OFFLINE.value.lower():
+        elif _node_status.lower() == NODE_STATUSES.POWEROFF.value.lower():
             # start node not in scope of VM
             Log.error("Operation not available for node type VM")
-            raise ClusterManagerError(f"Node {nodeid} : Node was in offline mode, "
+            raise ClusterManagerError(f"Node {nodeid} : Node was in poweroff mode, "
                                       "Node start : Operation not available for VM")
 
 class PcsHWNodeController(PcsNodeController):

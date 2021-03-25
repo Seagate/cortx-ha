@@ -142,4 +142,11 @@ class PcsController(ElementController):
                     all_nodes_status[nodeid] = NODE_STATUSES.UNKNOWN.value
             else:
                 raise HAInvalidNode(f"Node {nodeid} is not a part of cluster")
+        for node in all_nodes_status.keys():
+            status = all_nodes_status[node]
+            if status.lower() == NODE_STATUSES.OFFLINE.value.lower() or \
+                status.lower() == NODE_STATUSES.UNKNOWN.value.lower():
+                _output, _err, _rc = self._execute.run_cmd(f"ping -c 1 {node}", check_error=False)
+                if _rc != 0:
+                    all_nodes_status[node] = NODE_STATUSES.POWEROFF.value
         return all_nodes_status
