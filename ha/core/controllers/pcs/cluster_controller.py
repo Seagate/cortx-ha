@@ -14,16 +14,19 @@
 # with this program. If not, see <https://www.gnu.org/licenses/>. For any questions
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
+
 import json
 import time
+from cortx.utils.log import Log
 
 from ha.core.error import HAUnimplemented
+from ha.core.config.config_manager import ConfigManager
 from ha.core.controllers.pcs.pcs_controller import PcsController
+from ha.core.error import ClusterManagerError
 from ha.core.controllers.cluster_controller import ClusterController
 from ha.core.controllers.controller_annotation import controller_error_handler
 from ha.core.error import ClusterManagerError
 from ha import const
-from cortx.utils.log import Log
 
 class PcsClusterController(ClusterController, PcsController):
     """ Pcs cluster controller to perform pcs cluster level operation. """
@@ -63,6 +66,19 @@ class PcsClusterController(ClusterController, PcsController):
                 break
             Log.info(f"Pcs cluster start retry index : {retry_index}")
         return _status
+
+    def _auth_node(self, node_id, cluster_user, cluster_password):
+        """
+        Auth node to add
+        """
+        try:
+            self._execute.run_cmd(const.PCS_CLUSTER_NODE_AUTH.replace("<node>", node_id)
+                    .replace("<username>", cluster_user).replace("<password>", cluster_password),
+                    is_secret=True, error=f"Auth to {node_id} failed.")
+            Log.info(f"Node {node_id} authenticated with {cluster_user} Successfully.")
+        except Exception as e:
+            Log.error(f"Failed to authenticate node : {node_id} with reason : {e}")
+            raise ClusterManagerError(f"Failed to authenticate node : {node_id}, Please check username or password")
 
     def _get_node_group(self) -> list:
         """
@@ -132,21 +148,26 @@ class PcsClusterController(ClusterController, PcsController):
         """
         status: str = ""
         node_group: list = self._get_node_group()
-        first_group: list = node_group[0]
-        other_group: list = node_group.remove(first_group)
+        local_node: str = ConfigManager.get_local_node()
+        Log.info(f"Node group for cluster start {node_group}, local node {local_node}")
+        self_group: list = list(filter(lambda group: (local_node in group), node_group))[0]
+        node_group.remove(self_group)
         # Stop cluster for other group
-        for node_subgroup in other_group:
+        for node_subgroup in node_group:
             for nodeid in node_subgroup:
                 if self.heal_resource(nodeid):
                     time.sleep(const.BASE_WAIT_TIME)
-                res = json.load(self._controllers[const.NODE_CONTROLLER].stop(nodeid))
+                res = json.loads(self._controllers[const.NODE_CONTROLLER].stop(nodeid))
+                Log.info(f"Stopping node {nodeid}, output {res}")
                 if res.get("status") == const.STATUSES.FAILED.value:
                     raise ClusterManagerError(f"Cluster Stop failed. Unable to stop {nodeid}")
                 # Wait till resource will ge stop.
-                time.sleep(const.BASE_WAIT_TIME * const.PCS_NODE_START_GROUP_SIZE)
-        # Stop first group of cluster
+            time.sleep(const.BASE_WAIT_TIME * const.PCS_NODE_START_GROUP_SIZE)
+        # Stop self group of cluster
         try:
+            Log.info(f"Trying to stop self node group: {self_group}")
             self._execute.run_cmd(const.PCS_STOP_CLUSTER)
+            Log.info(f"Cluster stop completed, waiting to stop resources.")
             time.sleep(const.BASE_WAIT_TIME * const.PCS_NODE_START_GROUP_SIZE)
         except Exception as e:
             raise ClusterManagerError(f"Cluster stop failed. Error: {e}")
@@ -247,22 +268,14 @@ class PcsClusterController(ClusterController, PcsController):
             ([dict]): Return dictionary. {"status": "", "msg":""}
                 status: Succeeded, Failed, InProgress
         """
-        if not nodeid:
-            return {"status": "Failed", "msg": "Node_id is missing or empty to add node"}
-
-        if not cluster_user:
-            return {"status": "Failed", "msg": "Cluster username is missing or empty to add node"}
-
-        if not cluster_password:
-            return {"status": "Failed", "msg": "Cluster password is missing or empty to add node"}
-
+        self._check_non_empty(nodeid=nodeid, cluster_user=cluster_user, cluster_password=cluster_password)
         self._auth_node(nodeid, cluster_user, cluster_password)
         cluster_node_count = self._get_cluster_size()
         if cluster_node_count < 32:
             _output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_NODE_ADD.replace("<node>", nodeid))
-            return {"status": "InProgress", "msg": f"Node {nodeid} add operation started successfully in the cluster"}
+            return {"status": const.IN_PROGRESS.FAILED.value, "msg": f"Node {nodeid} add operation started successfully in the cluster"}
         else:
-            return {"status": "Failed", "msg": "Cluster size is already filled to 32, "
+            return {"status": const.STATUSES.FAILED.value, "msg": "Cluster size is already filled to 32, "
                                                "Please use add-remote node mechanism"}
 
     @controller_error_handler
@@ -279,3 +292,39 @@ class PcsClusterController(ClusterController, PcsController):
                 status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
+
+    @controller_error_handler
+    def create_cluster(self, name: str, user: str, secret: str, nodeid: str) -> dict:
+        """
+        Create cluster if not created.
+
+        Args:
+            name (str): Cluster name.
+            user (str): Cluster User.
+            secret (str): Cluster passward.
+            nodeid (str): Node name, nodeid of current node.
+
+        Returns:
+            dict: Return dictionary. {"status": "", "msg":""}
+        """
+        try:
+            self._check_non_empty(name=name, user=user, secret=secret, nodeid=nodeid)
+            if not self._is_pcs_cluster_running():
+                self._auth_node(nodeid, user, secret)
+                self._execute.run_cmd(const.PCS_SETUP_CLUSTER.replace("<cluster_name>", name)
+                                        .replace("<node>", nodeid), is_secret=True,
+                                        error="Cluster setup failed.")
+                Log.info("Pacmaker cluster created, waiting to start node.")
+                self._execute.run_cmd(const.PCS_CLUSTER_START_NODE)
+                self._execute.run_cmd(const.PCS_CLUSTER_ENABLE.replace("<node>", nodeid))
+                Log.info("Node started and enabled successfully.")
+                # TODO: Divide class into vm, hw when stonith is needed.
+                self._execute.run_cmd(const.PCS_STONITH_DISABLE)
+                time.sleep(const.BASE_WAIT_TIME * 2)
+            if self._is_pcs_cluster_running():
+                return {"status": const.STATUSES.SUCCEEDED.value,
+                        "msg": "Cluster created successfully."}
+            else:
+                raise ClusterManagerError("Cluster is not started.")
+        except Exception as e:
+            raise ClusterManagerError(f"Failed to create cluster. Error: {e}")

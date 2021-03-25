@@ -16,14 +16,20 @@
 # cortx-questions@seagate.com.
 
 import os
-import pathlib
 import sys
+import pathlib
+import traceback
 
 # Test case for Cluster management
 if __name__ == '__main__':
     sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..'))
     from ha.core.cluster.cluster_manager import CortxClusterManager
-    import traceback
+    try:
+        cm = CortxClusterManager()
+        print(cm.cluster_controller.stop())
+    except Exception as e:
+        print(f"{traceback.format_exc()}, {e}")
+    sys.exit(0)
     try:
         cm = CortxClusterManager()
         print(cm.controller_list)

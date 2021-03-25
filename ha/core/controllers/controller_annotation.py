@@ -16,7 +16,9 @@
 # cortx-questions@seagate.com.
 
 import json
+import traceback
 from ha import const
+from cortx.utils.log import Log
 
 def controller_error_handler(func):
     def inner_function(*args, **kwargs) -> str:
@@ -24,7 +26,8 @@ def controller_error_handler(func):
             result: dict = func(*args, **kwargs)
             return json.dumps(result)
         except Exception as e:
-            result: dict = {"status": const.CONTROLLER_FAILED,
+            Log.error(f"ClusterManagerException. {func.__name__} failed. {traceback.format_exc()}, {e}")
+            result: dict = {"status": const.STATUSES.FAILED.value,
                 "msg": f"ClusterManagerException. {func.__name__} failed. Error: {e}"}
             return json.dumps(result)
     return inner_function
