@@ -264,7 +264,7 @@ class ClusterNodeAddExecutor(CommandExecutor):
         if self._args.descfile:
             node_id, cluster_uname, cluster_pwd = self.parse_node_desc_file(self._args.descfile)
         if self._is_valid_node_id(node_id):
-            add_node_result_message = self._pcs_cluster_controller.add_node(self._args.nodeid, \
+            add_node_result_message = self._pcs_cluster_controller.add_node(node_id, \
                                     cluster_uname, cluster_pwd)
             if self._args.json:
                 self._op.print_json(add_node_result_message)
