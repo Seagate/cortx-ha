@@ -23,7 +23,7 @@ import os
 
 from ha import const
 from cortx.utils.log import Log
-from ha.core.error import HAInvalidPermission
+from ha.core.error import HAInvalidPermission, HAClusterCLIError
 
 class CommandExecutor:
     def __init__(self):
@@ -78,12 +78,10 @@ class CommandExecutor:
         with open(node_desc_file) as nf:
             try:
                 node_data = json.load(nf)
-                node_id = node_data.get('node_id', None)
-                cluster_uname = node_data.get('cluster_username', None)
-                cluster_pwd = node_data.get('cluster_password')
+                node_id = node_data.get('node_id')
             except KeyError:
-                raise Exception('Please provide details for node_id, cluster_uname and cluster_pwd')
-        return node_id, cluster_uname, cluster_pwd
+                raise HAClusterCLIError('node_id can not be None')
+        return node_id
 
 
 class CLIUsage:
