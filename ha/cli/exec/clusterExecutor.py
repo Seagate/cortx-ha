@@ -16,6 +16,8 @@
 # cortx-questions@seagate.com.
 
 import argparse
+import os
+import socket
 import time
 
 from cortx.utils.log import Log
@@ -26,6 +28,7 @@ from ha.cli.exec.commandExecutor import CommandExecutor
 from ha.core.error import HAClusterStart
 from ha.core.controllers.pcs.cluster_controller import PcsClusterController
 # from ha.core.error import HAUnimplemented
+
 
 class ClusterStartExecutor(CommandExecutor):
 
@@ -201,16 +204,27 @@ class ClusterNodeAddExecutor(CommandExecutor):
                             help='ID of a node which needs to be added in a cluster')
         group.add_argument('--descfile', action='store', \
                             help='A file which describes the node to be added in a cluster', \
-                            type=argparse.FileType('r'))
+                            type=self._is_file_extension_valid)
         parser.add_argument('--json', help='Required output fomat', action='store_true')
         self._args = parser.parse_args()
         return True
+
+    def _is_file_extension_valid(self, filename) -> str:
+        '''
+           Checks if file extension which is passed is correct or not
+           Returns: str
+           Exception: ArgumentTypeError
+        '''
+        base, ext = os.path.splitext(filename)
+        if ext.lower() not in ('.json'):
+            raise argparse.ArgumentTypeError('File must have a json extension')
+        return filename
 
     def validate(self) -> bool:
         '''
            Validates permission and command line arguments.
            Exception: HAInvalidPermission
-           Return: argparse
+           Return: bool
         '''
         # Every CLI command will be an internal command now. So,
         # we do not need this change. If required, can be revisited later.
@@ -220,6 +234,22 @@ class ClusterNodeAddExecutor(CommandExecutor):
             return True
         return False
 
+    def _is_valid_node_id(self, node_id) -> bool:
+        '''
+           Checks if node id gets resolved to some IP address or not
+           Returns: bool
+           Exception: socket.gaierror, socket.herror
+        '''
+        try:
+            resolved_ip = socket.gethostbyname(node_id)
+        except socket.gaierror as se:
+            raise Exception(f'{node_id} not a valid node_id: {se}')
+        except socket.herror as he:
+            raise Exception(f'{node_id} not a valid node_id: {he}')
+        except Exception as err:
+            raise Exception(f'{node_id} not a valid node_id: {err}')
+        return True
+
     def execute(self) -> None:
         '''
            Execute CLI request by passing it to ClusterManager and
@@ -228,9 +258,13 @@ class ClusterNodeAddExecutor(CommandExecutor):
         # args = self.validate()
         # TODO: Proper password to be sent
         # TODO: Validate node_id and node description file by some means
+        node_id = None or self._args.nodeid
+        cluster_uname = None
+        cluster_pwd = None
         if self._args.descfile:
-            self.parse_node_desc_file(self._args.descfile)
-        add_node_result_message = self._pcs_cluster_controller.add_node(self._args.nodeid, \
-                                    const.USER_HA_INTERNAL, 'abc')
-        if self._args.json:
-           self._op.print_json(add_node_result_message)
+            node_id, cluster_uname, cluster_pwd = self.parse_node_desc_file(self._args.descfile)
+        if self._is_valid_node_id(node_id):
+            add_node_result_message = self._pcs_cluster_controller.add_node(self._args.nodeid, \
+                                    cluster_uname, cluster_pwd)
+            if self._args.json:
+                self._op.print_json(add_node_result_message)

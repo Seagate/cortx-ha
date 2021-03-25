@@ -18,6 +18,7 @@
 
 import grp
 import getpass
+import json
 import os
 
 from ha import const
@@ -73,10 +74,17 @@ class CommandExecutor:
             Log.error("Group root / haclient is not defined")
             raise HAInvalidPermission("Group root / haclient is not defined ")
 
-        def parse_node_desc_file(self, node_desc_file):
-            # TODO: parse node description file and extract its contents
-            # Same function can be used in case of parsing storage_set
-            # desc file
+    def parse_node_desc_file(self, node_desc_file):
+        with open(node_desc_file) as nf:
+            try:
+                node_data = json.load(nf)
+                node_id = node_data.get('node_id', None)
+                cluster_uname = node_data.get('cluster_username', None)
+                cluster_pwd = node_data.get('cluster_password')
+            except KeyError:
+                raise Exception('Please provide details for node_id, cluster_uname and cluster_pwd')
+        return node_id, cluster_uname, cluster_pwd
+
 
 class CLIUsage:
 
