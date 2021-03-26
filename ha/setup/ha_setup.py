@@ -248,8 +248,8 @@ class ConfigCmd(Cmd):
                     remote_executor.execute(const.PCS_NODE_STANDBY.replace("<node>", node_name))
                     # Add this node to the cluster nodes list in the store.
                     self._confstore.set(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
-                    node_added = True
                     Log.info(f"Added new node: {node_name}")
+                    node_added = True
                     break
                 except Exception as e:
                     Log.error(f"Adding {node_name} using remote node {remote_node} failed with error: {e}, \
@@ -417,8 +417,8 @@ class CleanupCmd(Cmd):
                     try:
                         # TODO: Change following PCS command to CLI when available.
                         remote_executor.execute(const.PCS_CLUSTER_NODE_REMOVE.replace("<node>", node_name))
-                        node_removed = True
                         Log.info(f"Removed {node_name} from the cluster")
+                        node_removed = True
                         break
                     except Exception as e:
                         Log.error(f"Removing {node_name} using remote node {remote_node} failed with error: {e}, \
