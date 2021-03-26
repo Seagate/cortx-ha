@@ -96,7 +96,7 @@ class CLIUsage:
                         "\tcluster active [--json]\n"
                         "\tcluster list [nodes|storagesets|services]\n"
                         "\tcluster status [all|hw|services] [--json]\n"
-                        "\tcluster add node [<node id>] [ --descfile <node description file>] [--json]\n"
+                        "\tcluster add node [ --nodeid <node id> ] [ --descfile <node description file>] [ --username <cluster_username> ] [ --password <cluster_password> ] [--json]\n"
                         "\tcluster add storageset [<storageset id>] [ --descfile <storageset description file>] [--json]\n"
                         "\tnode start <Node> [all|server] [--json]\n"
                         "\tnode stop <Node> [all|server] [--json]\n"
