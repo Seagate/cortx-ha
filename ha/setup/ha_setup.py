@@ -53,6 +53,7 @@ class Cmd:
         Conf.load(self._index, self._url)
         self._args = args.args
         self._execute = SimpleCommand()
+        self._ha_conf_index = "ha_update_index"
 
     @property
     def args(self) -> str:
@@ -169,7 +170,6 @@ class ConfigCmd(Cmd):
         Init method.
         """
         super().__init__(args)
-        self._cluster_manager = CortxClusterManager()
         Conf.load(self._ha_conf_index, f"yaml://{const.HA_CONFIG_FILE}")
 
     def process(self):
@@ -187,20 +187,20 @@ class ConfigCmd(Cmd):
         machine_id = self.get_machine_id()
         cluster_id = Conf.get(self._index, f"server_node.{machine_id}.cluster_id")
         cluster_name = Conf.get(self._index, f"cluster.{cluster_id}.name")
-        cluster_user = Conf.get(self._index, 'cortx.software.corosync.user')
+        cluster_user = Conf.get(self._index, f"cortx.software.{const.HA_CLUSTER_SOFTWARE}.user")
         Log.info("INIT: Update ha configuration files")
-        cluster_type = "corosync"
         node_type = Conf.get(self._index, f"server_node.{machine_id}.type").strip()
-        self._update_node_env(node_type, cluster_type)
+        self._update_node_env(node_type, const.HA_CLUSTER_SOFTWARE)
         Log.info("INIT: HA configuration updated successfully.")
 
         # Read cluster user password and decrypt the same
-        cluster_secret = Conf.get(self._index, 'cortx.software.corosync.secret')
+        cluster_secret = Conf.get(self._index, f"cortx.software.{const.HA_CLUSTER_SOFTWARE}.secret")
         key = Cipher.generate_key(cluster_id, 'corosync-pacemaker')
         cluster_secret = Cipher.decrypt(key, cluster_secret.encode('ascii')).decode()
         s3_instances = self._get_s3_instance(machine_id)
 
         try:
+            self._cluster_manager = CortxClusterManager()
             # Create cluster
             Log.info(f"Creating cluster: {cluster_name} with node: {node_name}")
             cluster_output: str = self._cluster_manager.cluster_controller.create_cluster(
@@ -270,7 +270,6 @@ class InitCmd(Cmd):
         Init method.
         """
         super().__init__(args)
-        self._ha_conf_index = "ha_update_index"
 
     def process(self):
         """
