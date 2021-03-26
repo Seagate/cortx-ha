@@ -169,7 +169,7 @@ class ConfigCmd(Cmd):
         Init method.
         """
         super().__init__(args)
-        self._cluster_manager = CortxClusterManager()
+        pass
 
     def process(self):
         """
@@ -187,6 +187,8 @@ class ConfigCmd(Cmd):
         cluster_id = Conf.get(self._index, f"server_node.{machine_id}.cluster_id")
         cluster_name = Conf.get(self._index, f"cluster.{cluster_id}.name")
         cluster_user = Conf.get(self._index, f"cortx.software.{const.HA_CLUSTER_SOFTWARE}.user")
+        node_type = Conf.get(self._index, f"server_node.{machine_id}.type").strip()
+        self._update_env(node_type, const.HA_CLUSTER_SOFTWARE)
 
         # Read cluster user password and decrypt the same
         cluster_secret = Conf.get(self._index, f"cortx.software.{const.HA_CLUSTER_SOFTWARE}.secret")
@@ -195,6 +197,7 @@ class ConfigCmd(Cmd):
         s3_instances = self._get_s3_instance(machine_id)
 
         try:
+            self._cluster_manager = CortxClusterManager()
             # Create cluster
             Log.info(f"Creating cluster: {cluster_name} with node: {node_name}")
             cluster_output: str = self._cluster_manager.cluster_controller.create_cluster(
@@ -238,6 +241,20 @@ class ConfigCmd(Cmd):
             Log.error(f"Found {s3_instances} which is invalid s3 instance count. Error: {e}")
             raise HaConfigException(f"Found {s3_instances} which is invalid s3 instance count.")
 
+    def _update_env(self, node_type: str, cluster_type: str) -> None:
+        """
+        Update env like VM, HW
+        """
+        Log.info(f"Detected {node_type} env and cluster_type {cluster_type}.")
+        if "VM" == node_type.upper():
+            Conf.set(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.env", node_type.upper())
+        else:
+            # TODO: check if any env available other than vm, hw
+            Conf.set(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.env", "HW")
+        Conf.set(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.cluster_type", cluster_type)
+        Log.info("CONFIG: Update ha configuration files")
+        Conf.save(const.HA_GLOBAL_INDEX)
+
 class InitCmd(Cmd):
     """
     Init Setup Cmd
@@ -249,34 +266,14 @@ class InitCmd(Cmd):
         Init method.
         """
         super().__init__(args)
-        self._ha_conf_index = "ha_update_index"
+        pass
 
     def process(self):
         """
         Process init command.
         """
         Log.info("Processing init command")
-        Log.info("INIT: Update ha configuration files")
-        Conf.load(self._ha_conf_index, f"yaml://{const.HA_CONFIG_FILE}")
-        machine_id = self.get_machine_id()
-        node_type = Conf.get(self._index, f"server_node.{machine_id}.type").strip()
-        # Set env for cluster manager
-        self._update_env(node_type, const.HA_CLUSTER_SOFTWARE)
-        Log.info("INIT: HA configuration updated successfully.")
         Log.info("init command is successful")
-
-    def _update_env(self, node_type, cluster_type):
-        """
-        Update env like VM, HW
-        """
-        Log.info(f"Detected {node_type} env and cluster_type {cluster_type}.")
-        if "VM" == node_type.upper():
-            Conf.set(self._ha_conf_index, "CLUSTER_MANAGER.env", node_type.upper())
-        else:
-            # TODO: check if any env available other than vm, hw
-            Conf.set(self._ha_conf_index, "CLUSTER_MANAGER.env", "HW")
-        Conf.set(self._ha_conf_index, "CLUSTER_MANAGER.cluster_type", cluster_type)
-        Conf.save(self._ha_conf_index)
 
 class TestCmd(Cmd):
     """
