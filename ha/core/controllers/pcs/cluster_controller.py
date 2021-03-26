@@ -93,8 +93,8 @@ class PcsClusterController(ClusterController, PcsController):
             node_list: list = res.get("msg")
             Log.info(f"Node List : {node_list}")
             if node_list is not None:
-                node_group: list = [ node_list[i:i + const.PCS_NODE_START_GROUP_SIZE]
-                        for i in range(0, len(node_list), const.PCS_NODE_START_GROUP_SIZE)]
+                node_group: list = [ node_list[i:i + const.PCS_NODE_GROUP_SIZE]
+                        for i in range(0, len(node_list), const.PCS_NODE_GROUP_SIZE)]
         return node_group
 
     @controller_error_handler
@@ -118,7 +118,7 @@ class PcsClusterController(ClusterController, PcsController):
             _node_list = _res.get("msg")
             Log.info(f"Node List : {_node_list}")
             if _node_list is not None:
-                _node_group = [ _node_list[i:i + const.PCS_NODE_START_GROUP_SIZE] for i in range(0, len(_node_list), const.PCS_NODE_START_GROUP_SIZE)]
+                _node_group = [ _node_list[i:i + const.PCS_NODE_GROUP_SIZE] for i in range(0, len(_node_list), const.PCS_NODE_START_GROUP_SIZE)]
 
                 for _node_subgroup in _node_group:
                     for _node_id in _node_subgroup:
@@ -140,7 +140,7 @@ class PcsClusterController(ClusterController, PcsController):
     @controller_error_handler
     def stop(self) -> dict:
         """
-        Stop cluster and all service.
+        Stop cluster and all service. It is Blocking call.
 
         Returns:
             ([dict]): Return dictionary. {"status": "", "msg":""}
@@ -155,31 +155,37 @@ class PcsClusterController(ClusterController, PcsController):
         Log.info(f"Node group for cluster start {node_group}, local node {local_node}")
         self_group: list = list(filter(lambda group: (local_node in group), node_group))[0]
         node_group.remove(self_group)
+        offline_nodes = self._get_filtered_nodes([NODE_STATUSES.POWEROFF.value])
         # Stop cluster for other group
         for node_subgroup in node_group:
             for nodeid in node_subgroup:
-                if self.heal_resource(nodeid):
-                    time.sleep(const.BASE_WAIT_TIME)
-                res = json.loads(self._controllers[const.NODE_CONTROLLER].stop(nodeid))
-                Log.info(f"Stopping node {nodeid}, output {res}")
-                if NODE_STATUSES.POWEROFF.value.lower() in res.get("msg"):
-                    Log.info(f"Node {nodeid}, is in offline or lost from network.")
-                elif res.get("status") == const.STATUSES.FAILED.value:
-                    raise ClusterManagerError(f"Cluster Stop failed. Unable to stop {nodeid}")
+                if nodeid not in offline_nodes:
+                    if self.heal_resource(nodeid):
+                        time.sleep(const.BASE_WAIT_TIME)
+                    res = json.loads(self._controllers[const.NODE_CONTROLLER].stop(nodeid))
+                    Log.info(f"Stopping node {nodeid}, output {res}")
+                    if NODE_STATUSES.POWEROFF.value in res.get("msg"):
+                        offline_nodes.append(nodeid)
+                        Log.warn(f"Node {nodeid}, is in offline or lost from network.")
+                    elif res.get("status") == const.STATUSES.FAILED.value:
+                        raise ClusterManagerError(f"Cluster Stop failed. Unable to stop {nodeid}")
+                    else:
+                        Log.info(f"Node {nodeid} stop is in progress.")
                 else:
-                    Log.info(f"Node {nodeid} stop is in progress.")
+                    Log.info(f"Node {nodeid}, is in offline or lost from network.")
             # Wait till resource will get stop.
-            Log.info(f"Waiting, for {str(node_subgroup)} to stop is in progress.")
-            time.sleep(const.BASE_WAIT_TIME * const.PCS_NODE_START_GROUP_SIZE)
+            Log.info(f"Waiting, for {node_subgroup} to stop is in progress.")
         # Stop self group of cluster
         try:
-            Log.info(f"Trying to stop self node group: {self_group}")
-            self._execute.run_cmd(const.PCS_STOP_CLUSTER)
-            Log.info("Cluster stop completed, waiting to stop resources.")
-            time.sleep(const.BASE_WAIT_TIME)
+            Log.info(f"Please Wait, trying to stop self node group: {self_group}")
+            timeout = const.NODE_STOP_TIMEOUT * len(self_group)
+            self._execute.run_cmd(const.PCS_STOP_CLUSTER.replace("<seconds>", str(const.NODE_STOP_TIMEOUT)))
+            Log.info("Cluster stop completed.")
         except Exception as e:
             raise ClusterManagerError(f"Cluster stop failed. Error: {e}")
         status = "Cluster stop is in progress."
+        if len(offline_nodes) != 0:
+            status += f" Warning, Found {offline_nodes}, may be poweroff or not in network"
         return {"status": const.STATUSES.IN_PROGRESS.value, "msg": status}
 
     @controller_error_handler
@@ -225,18 +231,8 @@ class PcsClusterController(ClusterController, PcsController):
             ([dict]): Return dictionary. {"status": "", "msg":[]}
                 status: Succeeded, Failed, InProgress
         """
-        #TODO: This is temporary implementation and It should be removed once nodelist is available in the system health.
-        nodelist = []
-        _output, _err, _rc = self._execute.run_cmd(const.PCS_STATUS_NODES, check_error=False)
-
-        if _rc != 0:
-            return {"status": const.STATUSES.FAILED.value, "msg": "Failed to get nodes status"}
-        else:
-            for status in _output.split("\n"):
-                nodes = status.split(":")
-                if len(nodes) > 1:
-                    nodelist.extend(nodes[1].split())
-            return {"status": const.STATUSES.SUCCEEDED.value, "msg": nodelist}
+        nodelist: list = self._get_node_list()
+        return {"status": const.STATUSES.SUCCEEDED.value, "msg": nodelist}
 
     @controller_error_handler
     def service_list(self) -> dict:
