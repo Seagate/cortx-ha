@@ -115,14 +115,14 @@ class PcsController(ElementController):
         _output, _err, _rc = self._execute.run_cmd(const.PCS_STATUS_NODES, check_error=False)
 
         if _rc != 0:
-            raise ClusterManagerError(f"Failed to get nodes status")
+            raise ClusterManagerError("Failed to get nodes status")
         for status in _output.split("\n"):
             nodes = status.split(":")
             if len(nodes) > 1:
                 nodelist.extend(nodes[1].split())
         return nodelist
 
-    def nodes_status(self, nodeids: list = []) -> dict:
+    def nodes_status(self, nodeids: list = None) -> dict:
         """
         Get pcs status of nodes.
         Args:
@@ -134,7 +134,7 @@ class PcsController(ElementController):
             ([dict]): Return dictionary. {"node_id1": "status of node_id1",
                                           "node_id2": "status of node_id2"...}
         """
-        nodeids = self._get_node_list() if len(nodeids) == 0 else nodeids
+        nodeids = self._get_node_list() if len(nodeids) == 0 or nodeids == None else nodeids
         all_nodes_status = dict()
         _output, _err, _rc = self._execute.run_cmd(const.PCS_STATUS_NODES, check_error=False)
         if not isinstance(nodeids, list):

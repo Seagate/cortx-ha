@@ -54,7 +54,7 @@ class PcsNodeController(NodeController, PcsController):
         raise HAUnimplemented("This operation is not implemented.")
 
     @controller_error_handler
-    def stop(self, nodeid: str, timeout=const.NODE_STOP_TIMEOUT) -> dict:
+    def stop(self, nodeid: str, timeout: int = -1) -> dict:
         """
         Stop Cluster on node with nodeid.
         Args:
@@ -63,6 +63,7 @@ class PcsNodeController(NodeController, PcsController):
             ([dict]): Return dictionary. {"status": "", "msg":""}
                 status: Succeeded, Failed, InProgress
         """
+        timeout = const.NODE_STOP_TIMEOUT if timeout < 0 else timeout
         node_status = self.nodes_status([nodeid]).get(nodeid)
         if node_status == NODE_STATUSES.CLUSTER_OFFLINE.value:
             Log.info(f"For stop {nodeid}, Node already in offline state.")

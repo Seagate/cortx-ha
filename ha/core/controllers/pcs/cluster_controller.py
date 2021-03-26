@@ -179,7 +179,7 @@ class PcsClusterController(ClusterController, PcsController):
         try:
             Log.info(f"Please Wait, trying to stop self node group: {self_group}")
             timeout = const.NODE_STOP_TIMEOUT * len(self_group)
-            self._execute.run_cmd(const.PCS_STOP_CLUSTER.replace("<seconds>", str(const.NODE_STOP_TIMEOUT)))
+            self._execute.run_cmd(const.PCS_STOP_CLUSTER.replace("<seconds>", str(timeout)))
             Log.info("Cluster stop completed.")
         except Exception as e:
             raise ClusterManagerError(f"Cluster stop failed. Error: {e}")
