@@ -186,10 +186,10 @@ class ConfigCmd(Cmd):
         machine_id = self.get_machine_id()
         cluster_id = Conf.get(self._index, f"server_node.{machine_id}.cluster_id")
         cluster_name = Conf.get(self._index, f"cluster.{cluster_id}.name")
-        cluster_user = Conf.get(self._index, 'cortx.software.corosync.user')
+        cluster_user = Conf.get(self._index, f"cortx.software.{const.HA_CLUSTER_SOFTWARE}.user")
 
         # Read cluster user password and decrypt the same
-        cluster_secret = Conf.get(self._index, 'cortx.software.corosync.secret')
+        cluster_secret = Conf.get(self._index, f"cortx.software.{const.HA_CLUSTER_SOFTWARE}.secret")
         key = Cipher.generate_key(cluster_id, 'corosync-pacemaker')
         cluster_secret = Cipher.decrypt(key, cluster_secret.encode('ascii')).decode()
         s3_instances = self._get_s3_instance(machine_id)
@@ -259,12 +259,9 @@ class InitCmd(Cmd):
         Log.info("INIT: Update ha configuration files")
         Conf.load(self._ha_conf_index, f"yaml://{const.HA_CONFIG_FILE}")
         machine_id = self.get_machine_id()
-        if "corosync-pacemaker" in Conf.get_keys(self._index):
-            raise HaInitException("Init: failed to find cluster type.")
-        cluster_type = "corosync-pacemaker"
         node_type = Conf.get(self._index, f"server_node.{machine_id}.type").strip()
         # Set env for cluster manager
-        self._update_env(node_type, cluster_type)
+        self._update_env(node_type, const.HA_CLUSTER_SOFTWARE)
         Log.info("INIT: HA configuration updated successfully.")
         Log.info("init command is successful")
 
