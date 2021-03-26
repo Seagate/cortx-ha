@@ -169,7 +169,6 @@ class ConfigCmd(Cmd):
         Init method.
         """
         super().__init__(args)
-        pass
 
     def process(self):
         """
@@ -266,7 +265,6 @@ class InitCmd(Cmd):
         Init method.
         """
         super().__init__(args)
-        pass
 
     def process(self):
         """
