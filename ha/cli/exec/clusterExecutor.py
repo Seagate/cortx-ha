@@ -244,11 +244,26 @@ class ClusterNodeAddExecutor(CommandExecutor):
            Exception: socket.gaierror, socket.herror
         '''
         ip_validator_regex = "^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])$"
-        if node_id.find('.') >= 0:
+
+        # node_id can be passed as IP address or FQDN or
+        # some random number or just sequence of chars
+
+        # first seperate the string from dots.
+        splitted_node_id = node_id.replace('.', '')
+
+        # If string only contains numbers, means it can be just
+        # random number or can be an IP address. So, IP address
+        # validation can be done. else for random number, exception will be
+        # raised
+        if re.search('^[0-9]*$', splitted_node_id):
+            print(f'Validating the IP address: {node_id}')
             if re.search(ip_validator_regex, node_id):
                 return True
             raise HAClusterCLIError(f'{node_id} is not a valid node_id')
+        # else it can be combination of chars and numbers means hostname or just a
+        # random meaningless string
         else:
+            print(f'Validating the hostname: {node_id}')
             try:
                 resolved_ip = socket.gethostbyname(node_id)
             except socket.gaierror as se:
