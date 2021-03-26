@@ -76,7 +76,7 @@ class PcsNodeController(NodeController, PcsController):
             try:
                 Log.info(f"Please Wait, trying to stop node: {nodeid}")
                 self._execute.run_cmd(const.PCS_STOP_NODE.replace("<node>", nodeid)
-                        .replace("<seconds>", str(const.NODE_STOP_TIMEOUT)))
+                        .replace("<seconds>", str(timeout)))
                 Log.info(f"Executed node stop for {nodeid}, Waiting to stop resource")
                 time.sleep(const.BASE_WAIT_TIME)
                 status = f"Stop for {nodeid} is in progress, waiting to stop resource"

@@ -170,6 +170,7 @@ class ConfigCmd(Cmd):
         """
         super().__init__(args)
         self._cluster_manager = CortxClusterManager()
+        Conf.load(self._ha_conf_index, f"yaml://{const.HA_CONFIG_FILE}")
 
     def process(self):
         """
@@ -187,6 +188,11 @@ class ConfigCmd(Cmd):
         cluster_id = Conf.get(self._index, f"server_node.{machine_id}.cluster_id")
         cluster_name = Conf.get(self._index, f"cluster.{cluster_id}.name")
         cluster_user = Conf.get(self._index, 'cortx.software.corosync.user')
+        Log.info("INIT: Update ha configuration files")
+        cluster_type = "corosync"
+        node_type = Conf.get(self._index, f"server_node.{machine_id}.type").strip()
+        self._update_node_env(node_type, cluster_type)
+        Log.info("INIT: HA configuration updated successfully.")
 
         # Read cluster user password and decrypt the same
         cluster_secret = Conf.get(self._index, 'cortx.software.corosync.secret')
@@ -238,6 +244,21 @@ class ConfigCmd(Cmd):
             Log.error(f"Found {s3_instances} which is invalid s3 instance count. Error: {e}")
             raise HaConfigException(f"Found {s3_instances} which is invalid s3 instance count.")
 
+    def _update_node_env(self, node_type, cluster_type):
+        """
+        Update env like VM, HW
+        """
+        Log.info(f"Detected {node_type} env and cluster_type {cluster_type}.")
+        if "VM" == node_type.upper():
+            Conf.set(self._ha_conf_index, "CLUSTER_MANAGER.env", node_type.upper())
+        else:
+            # TODO: check if any env available other than vm, hw
+            Conf.set(self._ha_conf_index, "CLUSTER_MANAGER.env", "HW")
+        node_name = self.get_node_name()
+        Conf.set(self._ha_conf_index, "CLUSTER_MANAGER.local_node", node_name)
+        Conf.set(self._ha_conf_index, "CLUSTER_MANAGER.cluster_type", cluster_type)
+        Conf.save(self._ha_conf_index)
+
 class InitCmd(Cmd):
     """
     Init Setup Cmd
@@ -256,32 +277,7 @@ class InitCmd(Cmd):
         Process init command.
         """
         Log.info("Processing init command")
-        Log.info("INIT: Update ha configuration files")
-        Conf.load(self._ha_conf_index, f"yaml://{const.HA_CONFIG_FILE}")
-        machine_id = self.get_machine_id()
-        if "corosync-pacemaker" in Conf.get_keys(self._index):
-            raise HaInitException("Init: failed to find cluster type.")
-        cluster_type = "corosync-pacemaker"
-        node_type = Conf.get(self._index, f"server_node.{machine_id}.type").strip()
-        # Set env for cluster manager
-        self._update_node_env(node_type, cluster_type)
-        Log.info("INIT: HA configuration updated successfully.")
         Log.info("init command is successful")
-
-    def _update_node_env(self, node_type, cluster_type):
-        """
-        Update env like VM, HW
-        """
-        Log.info(f"Detected {node_type} env and cluster_type {cluster_type}.")
-        if "VM" == node_type.upper():
-            Conf.set(self._ha_conf_index, "CLUSTER_MANAGER.env", node_type.upper())
-        else:
-            # TODO: check if any env available other than vm, hw
-            Conf.set(self._ha_conf_index, "CLUSTER_MANAGER.env", "HW")
-        node_name = self.get_node_name()
-        Conf.set(self._ha_conf_index, "CLUSTER_MANAGER.local_node", node_name)
-        Conf.set(self._ha_conf_index, "CLUSTER_MANAGER.cluster_type", cluster_type)
-        Conf.save(self._ha_conf_index)
 
 class TestCmd(Cmd):
     """
