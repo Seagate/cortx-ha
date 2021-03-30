@@ -245,7 +245,7 @@ class ConfigCmd(Cmd):
                     Log.info(f"Adding {node_name} using remote node: {remote_node}")
                     remote_executor = SSHRemoteExecutor(remote_node)
                     try:
-                        remote_executor.execute(const.CORTX_CLUSTER_NODE_ADD.replace("<node>", node_name))
+                        remote_executor.execute(const.CORTX_CLUSTER_NODE_ADD.replace("<node>", node_name)
                                                                             .replace("<user>", cluster_user)
                                                                             .replace("<secret>", cluster_secret))
                         # TODO: Change following PCS command to CLI when available.
