@@ -150,12 +150,27 @@ class PostInstallCmd(Cmd):
                             const.CM_CONTROLLER_SCHEMA)
             Log.info(f"{self.name}: Copied HA configs file.")
             # Pre-requisite checks are done here.
-            # Make sure the pacemaker, corosync and pcs packages have been installed
-            PkgV().validate('rpms', const.PCS_CLUSTER_PACKAGES)
+            # Make sure that cortx necessary packages have been installed
+            PkgV().validate('rpms', const.CORTX_CLUSTER_PACKAGES)
             Log.info("Found required cluster packages installed.")
+
+            # Validate hacluster is part of the haclient group
+            _output, _err, _rc = self._execute.run_cmd(f"groups {const.CLUSTER_USER}", check_error=True)
+            if _rc == 0:
+                command_output = _output.split(":", 1)
+                username = command_output[0].strip().lower()
+                groups = command_output[1].strip().lower()
+                if username == const.CLUSTER_USER.lower() and const.USER_GROUP_HACLIENT.lower() in groups.split():
+                    Log.info("hacluster user is a part of the haclient group")
+                else:
+                    Log.error(f"Unexpected user or user is not a part of haclient group, UserName: {username}, groups: {groups}")
+            else:
+                Log.error("groups command failed, Error: {_err}, RC: {_rc}")
+
         except Exception as e:
             Log.error(f"Failed prerequisite with Error: {e}")
             raise HaPrerequisiteException("post_install command failed")
+
         Log.info("post_install command is successful")
 
 class ConfigCmd(Cmd):
