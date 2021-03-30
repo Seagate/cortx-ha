@@ -23,7 +23,7 @@ import os
 
 from ha import const
 from cortx.utils.log import Log
-from ha.core.error import HAInvalidPermission, HAClusterCLIError
+from ha.core.error import HAInvalidPermission, HAClusterCLIError, HAUnimplemented
 
 class CommandExecutor:
     def __init__(self):
