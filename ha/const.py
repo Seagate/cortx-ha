@@ -110,8 +110,8 @@ PCS_NODE_STANDBY="pcs node standby <node>"
 PCS_STONITH_DISABLE="pcs property set stonith-enabled=False"
 
 # Cluster manager
-CM_CONTROLLER_INDEX="controller_interface"
-CM_CONTROLLER_SCHEMA="{}/controller_interface.json".format(CONFIG_DIR)
+CM_CONTROLLER_INDEX="cluster_controller_interfaces"
+CM_CONTROLLER_SCHEMA="{}/cluster_controller_interfaces.json".format(CONFIG_DIR)
 CM_ELEMENT=["cluster", "node", "service", "storageset"]
 NO_FAILCOUNT = "No failcounts"
 RETRY_COUNT = 2

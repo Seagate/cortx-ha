@@ -188,7 +188,7 @@ class ConfigCmd(Cmd):
         cluster_user = Conf.get(self._index, f"cortx.software.{const.HA_CLUSTER_SOFTWARE}.user")
         node_type = Conf.get(self._index, f"server_node.{machine_id}.type").strip()
         self._update_env(node_type, const.HA_CLUSTER_SOFTWARE)
-        self._update_controller_interface()
+        self._update_cluster_manager_config()
 
         # Read cluster user password and decrypt the same
         cluster_secret = Conf.get(self._index, f"cortx.software.{const.HA_CLUSTER_SOFTWARE}.secret")
@@ -255,7 +255,7 @@ class ConfigCmd(Cmd):
         Log.info("CONFIG: Update ha configuration files")
         Conf.save(const.HA_GLOBAL_INDEX)
 
-    def _update_controller_interface(self) -> None:
+    def _update_cluster_manager_config(self) -> None:
         """
         Update HA_CLUSTER_SOFTWARE
         """
