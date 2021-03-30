@@ -28,7 +28,6 @@ from ha.cli.displayOutput import Output
 from ha.cli.exec.commandExecutor import CommandExecutor
 from ha.core.error import HAClusterStart, HAClusterCLIError
 from ha.core.controllers.pcs.cluster_controller import PcsClusterController
-# from ha.core.error import HAUnimplemented
 
 
 class ClusterStartExecutor(CommandExecutor):
@@ -84,13 +83,11 @@ class ClusterStartExecutor(CommandExecutor):
         # This is temporary code, copied from M0
         # To be removed once the "cortx cluster start" user story [EOS-16248] is started
         Log.info("Executing cortxha cluster start")
-        print("Executing cortxha cluster start")
 
         _output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_STATUS, check_error=False)
         if _rc != 0:
             if(_err.find("No such file or directory: 'pcs'") != -1):
                 Log.error("Cluster failed to start; pcs not installed")
-                #print("Cluster failed to start; pcs not installed")
                 raise HAClusterStart("Cluster failed to start; pcs not installed")
             # if cluster is not running; start cluster
             elif(_err.find("cluster is not currently running on this node") != -1):
@@ -180,7 +177,7 @@ class ClusterStatusExecutor(CommandExecutor):
 class ClusterNodeAddExecutor(CommandExecutor):
     '''
         Module which will accept the request for cluster add node
-        functinality and which is responsible for delegating that request
+        functionality and which is responsible for delegating that request
         to Cluster Manager
     '''
 
@@ -208,7 +205,7 @@ class ClusterNodeAddExecutor(CommandExecutor):
                             type=self._is_file_extension_valid)
         parser.add_argument('--username', help='cluster username', required=True)
         parser.add_argument('--password', help='cluster password', required=True)
-        parser.add_argument('--json', help='Required output fomat', action='store_true')
+        parser.add_argument('--json', help='Required output format', action='store_true')
         self._args = parser.parse_args()
         return True
 
@@ -231,6 +228,7 @@ class ClusterNodeAddExecutor(CommandExecutor):
         '''
         # Every CLI command will be an internal command now. So,
         # we do not need this change. If required, can be revisited later.
+        # from ha.core.error import HAUnimplemented
         #if not self.is_ha_user():
         #    raise HAInvalidPermission('Not enough permissions to invoke this command')
         if self.parse_cluster_args():
@@ -243,6 +241,9 @@ class ClusterNodeAddExecutor(CommandExecutor):
            Returns: bool
            Exception: socket.gaierror, socket.herror
         '''
+
+        # TODO: change this logic and validate the node_id from the
+        # list coming from system health
         ip_validator_regex = "^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])$"
 
         # node_id can be passed as IP address or FQDN or
@@ -256,20 +257,14 @@ class ClusterNodeAddExecutor(CommandExecutor):
         # validation can be done. else for random number, exception will be
         # raised
         if re.search('^[0-9]*$', splitted_node_id):
-            print(f'Validating the IP address: {node_id}')
             if re.search(ip_validator_regex, node_id):
                 return True
             raise HAClusterCLIError(f'{node_id} is not a valid node_id')
         # else it can be combination of chars and numbers means hostname or just a
         # random meaningless string
         else:
-            print(f'Validating the hostname: {node_id}')
             try:
                 resolved_ip = socket.gethostbyname(node_id)
-            except socket.gaierror as se:
-                raise HAClusterCLIError(f'{node_id} not a valid node_id: {se}')
-            except socket.herror as he:
-                raise HAClusterCLIError(f'{node_id} not a valid node_id: {he}')
             except Exception as err:
                 raise HAClusterCLIError(f'{node_id} not a valid node_id: {err}')
         return True
@@ -289,3 +284,4 @@ class ClusterNodeAddExecutor(CommandExecutor):
                                     cluster_uname, cluster_pwd)
             if self._args.json:
                 self._op.print_json(add_node_result_message)
+            print(add_node_result_message)
