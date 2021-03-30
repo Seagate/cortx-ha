@@ -43,7 +43,7 @@ class CmdFactory:
                 "active": "ha.cli.exec.clusterExecutor.ClusterActiveExecutor",
                 "list": "ha.cli.exec.clusterExecutor.ClusterListExecutor",
                 "status": "ha.cli.exec.clusterExecutor.ClusterStatusExecutor",
-                "add": "ha.cli.exec.clusterExecutor.ClusterAddExecutor",
+                "add": "ha.cli.exec.clusterExecutor.ClusterNodeAddExecutor",
                 "-h": "ha.cli.exec.commandExecutor.ClusterCLIUsage",
                 "--help": "ha.cli.exec.commandExecutor.ClusterCLIUsage"
             },
