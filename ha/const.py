@@ -19,7 +19,7 @@ from enum import Enum
 CORTX_VERSION_1="1"
 CORTX_VERSION_2="2"
 HA_CLUSTER_SOFTWARE="corosync"
-HACLUSTER_SECRET = "corosync-pacemaker"
+HACLUSTER_SECRET_KEY = "corosync-pacemaker"
 RA_LOG_DIR="/var/log/seagate/cortx/ha"
 PACEMAKER_LOG="/var/log/pacemaker.log"
 PCSD_LOG="/var/log/pcsd/pcsd.log"
