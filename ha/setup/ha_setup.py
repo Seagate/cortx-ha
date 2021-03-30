@@ -188,6 +188,7 @@ class ConfigCmd(Cmd):
         cluster_user = Conf.get(self._index, f"cortx.software.{const.HA_CLUSTER_SOFTWARE}.user")
         node_type = Conf.get(self._index, f"server_node.{machine_id}.type").strip()
         self._update_env(node_type, const.HA_CLUSTER_SOFTWARE)
+        self._update_controller_interface()
 
         # Read cluster user password and decrypt the same
         cluster_secret = Conf.get(self._index, f"cortx.software.{const.HA_CLUSTER_SOFTWARE}.secret")
@@ -253,6 +254,24 @@ class ConfigCmd(Cmd):
         Conf.set(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.cluster_type", cluster_type)
         Log.info("CONFIG: Update ha configuration files")
         Conf.save(const.HA_GLOBAL_INDEX)
+
+    def _update_controller_interface(self) -> None:
+        """
+        Update HA_CLUSTER_SOFTWARE
+
+        Raises:
+            HaCleanupException: Configuration Error.
+        """
+        Log.info(f"Update {const.CM_CONTROLLER_SCHEMA}")
+        with open(const.CM_CONTROLLER_SCHEMA, 'r') as fi:
+            controller_schema = json.load(fi)
+            for env in controller_schema:
+                for ha_tool in controller_schema[env]:
+                    if "<HA_CLUSTER_SOFTWARE>" == ha_tool:
+                        controller_schema[env][const.HA_CLUSTER_SOFTWARE] = controller_schema[env][ha_tool]
+                        del controller_schema[env]["<HA_CLUSTER_SOFTWARE>"]
+            with open(const.CM_CONTROLLER_SCHEMA, 'w') as fi:
+                json.dump(controller_schema, fi, indent=4)
 
 class InitCmd(Cmd):
     """

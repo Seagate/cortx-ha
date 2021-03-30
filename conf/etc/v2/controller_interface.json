@@ -1,6 +1,6 @@
 {
     "HW": {
-        "corosync": [
+        "<HA_CLUSTER_SOFTWARE>": [
             {
                 "element": "cluster_controller",
                 "interface": "ha.core.controllers.pcs.cluster_controller.PcsClusterController"
@@ -20,7 +20,7 @@
         ]
     },
     "VM": {
-        "corosync": [
+        "<HA_CLUSTER_SOFTWARE>": [
             {
                 "element": "cluster_controller",
                 "interface": "ha.core.controllers.pcs.cluster_controller.PcsClusterController"
