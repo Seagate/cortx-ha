@@ -28,6 +28,7 @@ from ha.cli.displayOutput import Output
 from ha.cli.exec.commandExecutor import CommandExecutor
 from ha.core.error import HAClusterStart, HAClusterCLIError
 from ha.core.controllers.pcs.cluster_controller import PcsClusterController
+from ha.core.error import HAUnimplemented
 
 
 class ClusterStartExecutor(CommandExecutor):
@@ -215,7 +216,7 @@ class ClusterNodeAddExecutor(CommandExecutor):
            Returns: str
            Exception: ArgumentTypeError
         '''
-        base, ext = os.path.splitext(filename)
+        _, ext = os.path.splitext(filename)
         if ext.lower() not in ('.json'):
             raise argparse.ArgumentTypeError('File must have a json extension')
         return filename
@@ -228,7 +229,6 @@ class ClusterNodeAddExecutor(CommandExecutor):
         '''
         # Every CLI command will be an internal command now. So,
         # we do not need this change. If required, can be revisited later.
-        # from ha.core.error import HAUnimplemented
         #if not self.is_ha_user():
         #    raise HAInvalidPermission('Not enough permissions to invoke this command')
         if self.parse_cluster_args():
@@ -264,7 +264,7 @@ class ClusterNodeAddExecutor(CommandExecutor):
         # random meaningless string
         else:
             try:
-                resolved_ip = socket.gethostbyname(node_id)
+                socket.gethostbyname(node_id)
             except Exception as err:
                 raise HAClusterCLIError(f'{node_id} not a valid node_id: {err}')
         return True
