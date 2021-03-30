@@ -206,7 +206,6 @@ class ConfigCmd(Cmd):
                 cluster_output: str = self._cluster_manager.cluster_controller.create_cluster(
                     cluster_name, cluster_user, cluster_secret, node_name)
                 Log.info(f"Cluster creation output: {cluster_output}")
-                # TODO: Handle race condition cluster and resource create with global check.
                 if json.loads(cluster_output).get("status") == STATUSES.SUCCEEDED.value:
                     # Put cluster in standby mode
                     standby_output: str = self._cluster_manager.node_controller.standby(node_name)
@@ -230,39 +229,44 @@ class ConfigCmd(Cmd):
                     self._confstore.delete(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
                 raise HaConfigException("Cluster creation failed")
         else:
-            # Cluster exists already, add this node to the existing cluster.
-            Log.info(f"The cluster exists already, adding new node: {node_name}")
-            # Get a list of current cluster nodes
-            cluster_nodes = self._confstore.get(const.CLUSTER_CONFSTORE_NODES_KEY)
-            # Try to connect to these nodes and add the current node.
             node_added = False
-            for key in cluster_nodes:
-                remote_node = key.split('/')[-1]
-                Log.info(f"Adding {node_name} using remote node: {remote_node}")
-                remote_executor = SSHRemoteExecutor(remote_node)
-                try:
-                    remote_executor.execute(const.CORTX_CLUSTER_NODE_ADD.replace("<node>", node_name)
-                                                                        .replace("<user>", cluster_user)
-                                                                        .replace("<secret>", cluster_secret))
-                    # TODO: Change following PCS command to CLI when available.
-                    remote_executor.execute(const.PCS_NODE_STANDBY.replace("<node>", node_name))
-                    # Add this node to the cluster nodes list in the store.
-                    self._confstore.set(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
-                    Log.info(f"Added new node: {node_name}")
-                    node_added = True
-                    break
-                except Exception as e:
-                    Log.error(f"Adding {node_name} using remote node {remote_node} failed with error: {e}, \
-                              if available, will try with other node")
-                    # Try removing the node, it might be partially added.
+            # If this node in cluster already.
+            if self._confstore.key_exists(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}"):
+                node_added = True
+                Log.info(f"The node {node_name} present in the cluster already")                
+            else:
+                # Cluster exists already, add this node to the existing cluster.
+                Log.info(f"The cluster exists already, adding new node: {node_name}")
+                # Get a list of current cluster nodes
+                cluster_nodes = self._confstore.get(const.CLUSTER_CONFSTORE_NODES_KEY)
+                # Try to connect to these nodes and add the current node.
+                for key in cluster_nodes:
+                    remote_node = key.split('/')[-1]
+                    Log.info(f"Adding {node_name} using remote node: {remote_node}")
+                    remote_executor = SSHRemoteExecutor(remote_node)
                     try:
+                        remote_executor.execute(const.CORTX_CLUSTER_NODE_ADD.replace("<node>", node_name))
+                                                                            .replace("<user>", cluster_user)
+                                                                            .replace("<secret>", cluster_secret))
                         # TODO: Change following PCS command to CLI when available.
-                        remote_executor.execute(const.PCS_CLUSTER_NODE_REMOVE.replace("<node>", node_name))
+                        remote_executor.execute(const.PCS_NODE_STANDBY.replace("<node>", node_name))
+                        # Add this node to the cluster nodes list in the store.
+                        self._confstore.set(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
+                        Log.info(f"Added new node: {node_name}")
+                        node_added = True
+                        break
                     except Exception as e:
-                        Log.error(f"Node remove failed with Error: {e}")
-                    # Delete the node from nodelist if it was added in the store
-                    if self._confstore.key_exists(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}"):
-                        self._confstore.delete(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
+                        Log.error(f"Adding {node_name} using remote node {remote_node} failed with error: {e}, \
+                                if available, will try with other node")
+                        # Try removing the node, it might be partially added.
+                        try:
+                            # TODO: Change following PCS command to CLI when available.
+                            remote_executor.execute(const.PCS_CLUSTER_NODE_REMOVE.replace("<node>", node_name))
+                        except Exception as e:
+                            Log.error(f"Node remove failed with Error: {e}")
+                        # Delete the node from nodelist if it was added in the store
+                        if self._confstore.key_exists(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}"):
+                            self._confstore.delete(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
 
             if node_added == False:
                 Log.error(f"Adding {node_name} failed")
@@ -409,28 +413,30 @@ class CleanupCmd(Cmd):
             cluster_nodes = self._confstore.get(const.CLUSTER_CONFSTORE_NODES_KEY)
             # Try to connect to these nodes and remove the current node.
             node_removed = False
-            for key in cluster_nodes:
-                remote_node = key.split('/')[-1]
-                if remote_node != node_name:
-                    Log.info(f"Removing {node_name} using remote node: {remote_node}")
-                    remote_executor = SSHRemoteExecutor(remote_node)
-                    try:
-                        # TODO: Change following PCS command to CLI when available.
-                        remote_executor.execute(const.PCS_CLUSTER_NODE_REMOVE.replace("<node>", node_name))
-                        Log.info(f"Removed {node_name} from the cluster")
-                        node_removed = True
-                        break
-                    except Exception as e:
-                        Log.error(f"Removing {node_name} using remote node {remote_node} failed with error: {e}, \
-                                if available, will try with other node")
+            if cluster_nodes is not None:
+                for key in cluster_nodes:
+                    remote_node = key.split('/')[-1]
+                    if remote_node != node_name:
+                        Log.info(f"Removing {node_name} using remote node: {remote_node}")
+                        remote_executor = SSHRemoteExecutor(remote_node)
+                        try:
+                            # TODO: Change following PCS command to CLI when available.
+                            remote_executor.execute(const.PCS_CLUSTER_NODE_REMOVE.replace("<node>", node_name))
+                            Log.info(f"Removed {node_name} from the cluster")
+                            node_removed = True
+                            break
+                        except Exception as e:
+                            Log.error(f"Removing {node_name} using remote node {remote_node} failed with error: {e}, \
+                                    if available, will try with other node")
 
             if node_removed == False:
                 Log.info(f"{node_name} remove failed/last node in the cluster, destroy the cluster")
                 output = self._execute.run_cmd(const.PCS_CLUSTER_DESTROY, check_error=True)
                 Log.info(f"Cluster destroyed. Output: {output}")
 
-            # Delete the node from nodelist in the store
-            self._confstore.delete(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
+            # Delete the node from nodelist if it is present the store
+            if self._confstore.key_exists(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}"):
+                self._confstore.delete(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
             # Delete the config file
             if os.path.exists(const.HA_CONFIG_FILE):
                 os.remove(const.HA_CONFIG_FILE)
