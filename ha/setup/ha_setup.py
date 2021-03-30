@@ -258,9 +258,6 @@ class ConfigCmd(Cmd):
     def _update_controller_interface(self) -> None:
         """
         Update HA_CLUSTER_SOFTWARE
-
-        Raises:
-            HaCleanupException: Configuration Error.
         """
         Log.info(f"Update {const.CM_CONTROLLER_SCHEMA}")
         with open(const.CM_CONTROLLER_SCHEMA, 'r') as fi:
