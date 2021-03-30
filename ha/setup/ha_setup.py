@@ -233,7 +233,7 @@ class ConfigCmd(Cmd):
             # If this node in cluster already.
             if self._confstore.key_exists(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}"):
                 node_added = True
-                Log.info(f"The node {node_name} present in the cluster already")                
+                Log.info(f"The node {node_name} present in the cluster already")       
             else:
                 # Cluster exists already, add this node to the existing cluster.
                 Log.info(f"The cluster exists already, adding new node: {node_name}")
