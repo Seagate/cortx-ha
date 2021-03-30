@@ -188,14 +188,13 @@ class ConfigCmd(Cmd):
         cluster_id = Conf.get(self._index, f"server_node.{machine_id}.cluster_id")
         cluster_name = Conf.get(self._index, f"cluster.{cluster_id}.name")
         cluster_user = Conf.get(self._index, f"cortx.software.{const.HA_CLUSTER_SOFTWARE}.user")
-        Log.info("INIT: Update ha configuration files")
         node_type = Conf.get(self._index, f"server_node.{machine_id}.type").strip()
-        self._update_node_env(node_type, const.HA_CLUSTER_SOFTWARE)
-        Log.info("INIT: HA configuration updated successfully.")
+        self._update_env(node_type, const.HA_CLUSTER_SOFTWARE)
+        self._update_cluster_manager_config()
 
         # Read cluster user password and decrypt the same
         cluster_secret = Conf.get(self._index, f"cortx.software.{const.HA_CLUSTER_SOFTWARE}.secret")
-        key = Cipher.generate_key(cluster_id, 'corosync-pacemaker')
+        key = Cipher.generate_key(cluster_id, const.HACLUSTER_KEY)
         cluster_secret = Cipher.decrypt(key, cluster_secret.encode('ascii')).decode()
         s3_instances = self._get_s3_instance(machine_id)
 
@@ -244,20 +243,34 @@ class ConfigCmd(Cmd):
             Log.error(f"Found {s3_instances} which is invalid s3 instance count. Error: {e}")
             raise HaConfigException(f"Found {s3_instances} which is invalid s3 instance count.")
 
-    def _update_node_env(self, node_type, cluster_type):
+    def _update_env(self, node_type: str, cluster_type: str) -> None:
         """
         Update env like VM, HW
         """
         Log.info(f"Detected {node_type} env and cluster_type {cluster_type}.")
         if "VM" == node_type.upper():
-            Conf.set(self._ha_conf_index, "CLUSTER_MANAGER.env", node_type.upper())
+            Conf.set(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.env", node_type.upper())
         else:
             # TODO: check if any env available other than vm, hw
-            Conf.set(self._ha_conf_index, "CLUSTER_MANAGER.env", "HW")
-        node_name = self.get_node_name()
-        Conf.set(self._ha_conf_index, "CLUSTER_MANAGER.local_node", node_name)
-        Conf.set(self._ha_conf_index, "CLUSTER_MANAGER.cluster_type", cluster_type)
-        Conf.save(self._ha_conf_index)
+            Conf.set(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.env", "HW")
+        Conf.set(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.cluster_type", cluster_type)
+        Log.info("CONFIG: Update ha configuration files")
+        Conf.save(const.HA_GLOBAL_INDEX)
+
+    def _update_cluster_manager_config(self) -> None:
+        """
+        Update HA_CLUSTER_SOFTWARE
+        """
+        Log.info(f"Update {const.CM_CONTROLLER_SCHEMA}")
+        with open(const.CM_CONTROLLER_SCHEMA, 'r') as fi:
+            controller_schema = json.load(fi)
+            for env in controller_schema:
+                for ha_tool in controller_schema[env]:
+                    if "<HA_CLUSTER_SOFTWARE>" == ha_tool:
+                        controller_schema[env][const.HA_CLUSTER_SOFTWARE] = controller_schema[env][ha_tool]
+                        del controller_schema[env]["<HA_CLUSTER_SOFTWARE>"]
+            with open(const.CM_CONTROLLER_SCHEMA, 'w') as fi:
+                json.dump(controller_schema, fi, indent=4)
 
 class InitCmd(Cmd):
     """

@@ -19,6 +19,7 @@ from enum import Enum
 CORTX_VERSION_1="1"
 CORTX_VERSION_2="2"
 HA_CLUSTER_SOFTWARE="corosync"
+HACLUSTER_KEY = "corosync-pacemaker"
 RA_LOG_DIR="/var/log/seagate/cortx/ha"
 PACEMAKER_LOG="/var/log/pacemaker.log"
 PCSD_LOG="/var/log/pcsd/pcsd.log"
@@ -111,8 +112,8 @@ PCS_NODE_STANDBY="pcs node standby <node>"
 PCS_STONITH_DISABLE="pcs property set stonith-enabled=False"
 
 # Cluster manager
-CM_CONTROLLER_INDEX="controller_interface"
-CM_CONTROLLER_SCHEMA="{}/controller_interface.json".format(CONFIG_DIR)
+CM_CONTROLLER_INDEX="cluster_controller_interfaces"
+CM_CONTROLLER_SCHEMA="{}/cluster_controller_interfaces.json".format(CONFIG_DIR)
 CM_ELEMENT=["cluster", "node", "service", "storageset"]
 NO_FAILCOUNT = "No failcounts"
 RETRY_COUNT = 2
