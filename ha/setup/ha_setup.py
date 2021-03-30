@@ -192,7 +192,7 @@ class ConfigCmd(Cmd):
 
         # Read cluster user password and decrypt the same
         cluster_secret = Conf.get(self._index, f"cortx.software.{const.HA_CLUSTER_SOFTWARE}.secret")
-        key = Cipher.generate_key(cluster_id, 'corosync-pacemaker')
+        key = Cipher.generate_key(cluster_id, const.HACLUSTER_SECRET)
         cluster_secret = Cipher.decrypt(key, cluster_secret.encode('ascii')).decode()
         s3_instances = self._get_s3_instance(machine_id)
 
