@@ -123,14 +123,16 @@ class PcsClusterController(ClusterController, PcsController):
                         Log.error(f"Node {node_id} : {msg}")
                         failed_node_list.append(node_id)
                 # Wait till all the resources get started in the sub group
-                time.sleep(const.BASE_WAIT_TIME * const.PCS_NODE_START_GROUP_SIZE)
+                time.sleep(const.BASE_WAIT_TIME * const.PCS_NODE_GROUP_SIZE)
         except Exception as e:
-            return {"status": const.STATUSES.FAILED.value, "msg": f"Failed to start cluster. Error: {e}"}
+            raise ClusterManagerError(f"Failed to start Cluster. Error: {e}")
         status = "Cluster start is in process."
         if len(failed_node_list) != 0 and len(failed_node_list) != len(json.loads(self.node_list()).get("msg")):
             status += f"Warning, Some of nodes failed to start are {failed_node_list}"
-        else:
+        elif len(failed_node_list) != 0:
             raise ClusterManagerError(f"Failed to start all nodes {failed_node_list}")
+        else:
+            status += "All node started successfully, resource start in progress."
         return {"status": const.STATUSES.IN_PROGRESS.value, "msg": "Cluster start operation performed"}
 
     @controller_error_handler
@@ -155,6 +157,7 @@ class PcsClusterController(ClusterController, PcsController):
         # Stop cluster for other group
         for node_subgroup in node_group:
             for nodeid in node_subgroup:
+                # Offline node can not be started without stonith.
                 if nodeid not in offline_nodes:
                     if self.heal_resource(nodeid):
                         time.sleep(const.BASE_WAIT_TIME)

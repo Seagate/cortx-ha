@@ -91,6 +91,7 @@ HARE_FID_MAPPING_FILE="/var/lib/hare/consul-server-conf/consul-server-conf.json"
 # PCS Commands
 PCS_CLUSTER_START="pcs cluster start --all"
 PCS_CLUSTER_START_NODE="pcs cluster start"
+PCS_NODE_START="pcs cluster start <node>"
 PCS_CLUSTER_ENABLE="pcs cluster enable <node>"
 PCS_CLUSTER_STATUS="pcs cluster status"
 PCS_CLUSTER_UNSTANDBY="pcs cluster unstandby --all"

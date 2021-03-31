@@ -25,7 +25,6 @@ from ha import const
 from ha.const import NODE_STATUSES
 from cortx.utils.log import Log
 
-
 class PcsNodeController(NodeController, PcsController):
     """ Controller to manage node. """
 
@@ -170,8 +169,7 @@ class PcsVMNodeController(PcsNodeController):
             ([dict]): Return dictionary. {"status": "", "msg":""}
                 status: Succeeded, Failed, InProgress
         """
-        _res = self.nodes_status([nodeid])
-        _node_status = _res.get(nodeid)
+        _node_status = self.nodes_status([nodeid])[nodeid]
         if _node_status == NODE_STATUSES.ONLINE.value:
             return {"status": const.STATUSES.SUCCEEDED.value, "msg": f"Node {nodeid}, is already in Online status"}
         elif _node_status == NODE_STATUSES.STANDBY_WITH_RESOURCES_RUNNING.value:
@@ -189,12 +187,20 @@ class PcsVMNodeController(PcsNodeController):
                           f"cleanup not worked after 2 retries")
                 return {"status": const.STATUSES.FAILED.value, "msg": f"Node {nodeid} is in standby mode: Resource "
                                                    f"failcount found on the node cleanup not worked after 2 retries"}
-
+        elif _node_status == NODE_STATUSES.CLUSTER_OFFLINE.value:
+            _output, _err, _rc = self._execute.run_cmd(const.PCS_NODE_START.replace("<node>", nodeid), check_error=False)
+            if _rc != 0:
+                raise ClusterManagerError(f"Failed to start node {nodeid}")
+            return {"status": const.STATUSES.IN_PROGRESS.value, "msg": f"Node {nodeid} : Node was in cluster_offline mode, "
+                                                       f"Cluster started on node successfully"}
         elif _node_status == NODE_STATUSES.POWEROFF.value:
             # start node not in scope of VM
             Log.error("Operation not available for node type VM")
             raise ClusterManagerError(f"Node {nodeid} : Node was in poweroff mode, "
                                       "Node start : Operation not available for VM")
+        else:
+            Log.error(f"{nodeid} status is {_node_status}, node may not be started.")
+            raise ClusterManagerError(f"Failed to start {nodeid} as found unhandled status {_node_status}")
 
 class PcsHWNodeController(PcsNodeController):
     def initialize(self, controllers):

@@ -189,7 +189,7 @@ class ConfigCmd(Cmd):
         cluster_name = Conf.get(self._index, f"cluster.{cluster_id}.name")
         cluster_user = Conf.get(self._index, f"cortx.software.{const.HA_CLUSTER_SOFTWARE}.user")
         node_type = Conf.get(self._index, f"server_node.{machine_id}.type").strip()
-        self._update_env(node_type, const.HA_CLUSTER_SOFTWARE)
+        self._update_env(node_name, node_type, const.HA_CLUSTER_SOFTWARE)
         self._update_cluster_manager_config()
 
         # Read cluster user password and decrypt the same
@@ -243,7 +243,7 @@ class ConfigCmd(Cmd):
             Log.error(f"Found {s3_instances} which is invalid s3 instance count. Error: {e}")
             raise HaConfigException(f"Found {s3_instances} which is invalid s3 instance count.")
 
-    def _update_env(self, node_type: str, cluster_type: str) -> None:
+    def _update_env(self, node_name: str, node_type: str, cluster_type: str) -> None:
         """
         Update env like VM, HW
         """
@@ -254,6 +254,7 @@ class ConfigCmd(Cmd):
             # TODO: check if any env available other than vm, hw
             Conf.set(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.env", "HW")
         Conf.set(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.cluster_type", cluster_type)
+        Conf.set(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.local_node", node_name)
         Log.info("CONFIG: Update ha configuration files")
         Conf.save(const.HA_GLOBAL_INDEX)
 
