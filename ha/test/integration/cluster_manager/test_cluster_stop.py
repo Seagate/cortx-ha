@@ -25,27 +25,27 @@ sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..'
 from ha import const
 from ha.core.cluster.cluster_manager import CortxClusterManager
 
-class TestConsulKvStore(unittest.TestCase):
+class TestClusterStop(unittest.TestCase):
     """
-    Integration test ConsulKvStore
+    Integration test for cluster stop
     """
 
     def setUp(self):
         """
-        Setup consul connection.
+        Setup.
         """
         self._cluster_manager = CortxClusterManager()
 
     def test_cluster_stop(self):
         """
-        Test connection c1
+        Test cluster stop.
         """
         output = json.loads(self._cluster_manager.cluster_controller.stop())
         self.assertEqual(output.get("status"), const.STATUSES.IN_PROGRESS.value)
 
     def tearDown(self):
         """
-        Clear all consul key.
+        Clear setup
         """
         pass
 

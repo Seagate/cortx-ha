@@ -53,7 +53,6 @@ class Cmd:
         Conf.load(self._index, self._url)
         self._args = args.args
         self._execute = SimpleCommand()
-        self._ha_conf_index = "ha_update_index"
 
     @property
     def args(self) -> str:
@@ -170,7 +169,6 @@ class ConfigCmd(Cmd):
         Init method.
         """
         super().__init__(args)
-        Conf.load(self._ha_conf_index, f"yaml://{const.HA_CONFIG_FILE}")
 
     def process(self):
         """
