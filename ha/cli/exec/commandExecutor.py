@@ -24,10 +24,15 @@ import os
 from ha import const
 from cortx.utils.log import Log
 from ha.core.error import HAInvalidPermission, HAClusterCLIError, HAUnimplemented
+from ha.core.cluster.cluster_manager import CortxClusterManager
+from ha.cli.displayOutput import Output
+
 
 class CommandExecutor:
     def __init__(self):
         self._is_hauser = False
+        self._cluster_manager = CortxClusterManager()
+        self._op = Output()
 
     def validate(self) -> bool:
         raise HAUnimplemented("This operation is not implemented.")
