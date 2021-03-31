@@ -18,23 +18,22 @@
 
 import grp
 import getpass
+import json
 import os
 
 from ha import const
 from cortx.utils.log import Log
-from ha.core.error import HAInvalidPermission
+from ha.core.error import HAInvalidPermission, HAClusterCLIError, HAUnimplemented
 
 class CommandExecutor:
     def __init__(self):
         self._is_hauser = False
 
-    def validate(self) -> str:
-        print("validate for ")
-        print(self.__class__.__name__)
+    def validate(self) -> bool:
+        raise HAUnimplemented("This operation is not implemented.")
 
-    def execute(self):
-        print("execute")
-        print(self.__class__.__name__)
+    def execute(self) -> None:
+        raise HAUnimplemented("This operation is not implemented.")
 
     """
     Routine used by executors to confirm acess permissions.
@@ -43,7 +42,7 @@ class CommandExecutor:
     def is_ha_user(self) -> bool:
         return self._is_hauser
 
-    def validate_permissions(self):
+    def validate_permissions(self) -> None:
 
         # confirm that user is root or part of haclient group"
 
@@ -64,14 +63,25 @@ class CommandExecutor:
             # The user name "hauser"; which is part of the "haclient" group;
             # is used by HA.
             # internal commands are allowed only if the user is "hauser"
-            if user == const.USER_HA_INTERNAL:
-                self._is_hauser = True
+            # As of now, every HA CLI will be internal command. So, we
+            # do not need this change. We can revisit this if needed in future
+            #if user == const.USER_HA_INTERNAL:
+            #    self._is_hauser = True
 
 
         # TBD : If required raise seperate exception  for root and haclient
         except KeyError:
             Log.error("Group root / haclient is not defined")
             raise HAInvalidPermission("Group root / haclient is not defined ")
+
+    def parse_node_desc_file(self, node_desc_file):
+        with open(node_desc_file) as nf:
+            try:
+                node_data = json.load(nf)
+                node_id = node_data.get('node_id')
+            except KeyError:
+                raise HAClusterCLIError('node_id can not be None')
+        return node_id
 
 
 class CLIUsage:
@@ -86,7 +96,7 @@ class CLIUsage:
                         "\tcluster active [--json]\n"
                         "\tcluster list [nodes|storagesets|services]\n"
                         "\tcluster status [all|hw|services] [--json]\n"
-                        "\tcluster add node [<node id>] [ --descfile <node description file>] [--json]\n"
+                        "\tcluster add node [ --nodeid <node id> ] [ --descfile <node description file>] [ --username <cluster_username> ] [ --password <cluster_password> ] [--json]\n"
                         "\tcluster add storageset [<storageset id>] [ --descfile <storageset description file>] [--json]\n"
                         "\tnode start <Node> [all|server] [--json]\n"
                         "\tnode stop <Node> [all|server] [--json]\n"
