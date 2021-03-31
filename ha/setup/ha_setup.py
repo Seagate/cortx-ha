@@ -159,7 +159,7 @@ class PostInstallCmd(Cmd):
             gid = pwd.getpwnam(const.CLUSTER_USER).pw_gid
             groups.append(grp.getgrgid(gid).gr_name)
             if not const.USER_GROUP_HACLIENT in groups:
-                Log.error(f"hacluster is not a part of the haclient group")
+                Log.error("hacluster is not a part of the haclient group")
                 raise HaPrerequisiteException("post_install command failed")
             else:
                 Log.info("hacluster is a part of the haclient group")
