@@ -84,8 +84,9 @@ BUNDLE_COMMAND="support_bundle"
 USER_GROUP_HACLIENT="haclient"
 USER_GROUP_ROOT="root"
 USER_HA_INTERNAL="hauser"
+CLUSTER_USER="hacluster"
 
-PCS_CLUSTER_PACKAGES=["pacemaker", "corosync", "pcs"]
+CORTX_CLUSTER_PACKAGES=["pacemaker", "corosync", "pcs", "cortx-py-utils", "cortx-csm", "cortx-motr", "cortx-hare", "cortx-s3server", "cortx-sspl"]
 CIB_FILE="/var/log/seagate/cortx/ha/cortx-r2-cib.xml"
 
 NODE_DISCONNECTED="Disconnected"
