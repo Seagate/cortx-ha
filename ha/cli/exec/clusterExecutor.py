@@ -77,11 +77,51 @@ class ClusterStartExecutor(CommandExecutor):
 
 
 class ClusterStopExecutor(CommandExecutor):
+
+    def __init__(self):
+        '''Init method'''
+        super(ClusterStopExecutor, self).__init__()
+        self._pcs_cluster_controller = PcsClusterController()
+        self._op = Output()
+        self._args = None
+
+    def parse_args(self) -> None:
+        '''
+           Parses the command line args.
+           Return: argparse
+        '''
+        parser = argparse.ArgumentParser(description="cluster stop")
+        parser.add_argument("cluster", help="Module")
+        parser.add_argument("stop", help="action to be performed")
+        group = parser.add_mutually_exclusive_group()
+        group.add_argument('--all', action='store_true', \
+                            help='Server and storage stop')
+        group.add_argument('--server', action='store_false', \
+                            help='server stop')
+        parser.add_argument('--json', help='Required output format', action='store_true')
+        return parser.parse_args()
+
     def validate(self) -> bool:
-        raise HAUnimplemented("This operation is not implemented.")
+        '''
+           Validates permission and command line arguments.
+           Return: bool
+        '''
+        self._args = self.parse_args()
+        if self._args:
+            return True
+        return False
 
     def execute(self) -> None:
-        raise HAUnimplemented("This operation is not implemented.")
+        '''
+           Execute CLI request by passing it to ClusterManager and
+           also displays an output
+        '''
+        stop_cluster_message = None
+        # stop_cluster_message = self._pcs_cluster_controller.stop()
+        if self._args.json:
+            self._op.print_json(stop_cluster_message)
+        else:
+            print(stop_cluster_message)
 
 
 class ClusterRestartExecutor(CommandExecutor):
