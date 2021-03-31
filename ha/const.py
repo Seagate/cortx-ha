@@ -98,6 +98,7 @@ HARE_FID_MAPPING_FILE="/var/lib/hare/consul-server-conf/consul-server-conf.json"
 # PCS Commands
 PCS_CLUSTER_START="pcs cluster start --all"
 PCS_CLUSTER_START_NODE="pcs cluster start"
+PCS_NODE_START="pcs cluster start <node>"
 PCS_CLUSTER_ENABLE="pcs cluster enable <node>"
 PCS_CLUSTER_STATUS="pcs cluster status"
 PCS_CLUSTER_UNSTANDBY="pcs cluster unstandby --all"
@@ -112,6 +113,8 @@ PCS_CLEANUP="pcs resource cleanup"
 PCS_FAILCOUNT_STATUS="pcs resource failcount show"
 PCS_NODE_CLEANUP= PCS_CLEANUP + " --node <node>"
 PCS_NODE_FAILCOUNT_STATUS= PCS_FAILCOUNT_STATUS + " --node <node>"
+PCS_STOP_NODE="pcs cluster stop <node> --request-timeout=<seconds>"
+PCS_STOP_CLUSTER="pcs cluster stop --request-timeout=<seconds> --all"
 PCS_STATUS = "pcs status"
 PCS_CLUSTER_DESTROY="pcs cluster destroy"
 PCS_NODE_STANDBY="pcs node standby <node>"
@@ -123,10 +126,11 @@ CM_CONTROLLER_SCHEMA="{}/cluster_controller_interfaces.json".format(CONFIG_DIR)
 CM_ELEMENT=["cluster", "node", "service", "storageset"]
 NO_FAILCOUNT = "No failcounts"
 RETRY_COUNT = 2
-PCS_NODE_START_GROUP_SIZE = 3
+PCS_NODE_GROUP_SIZE = 3
 NODE_CONTROLLER = "node_controller"
 CLUSTER_RETRY_COUNT = 6
 BASE_WAIT_TIME = 5
+NODE_STOP_TIMEOUT = 300 # 300 sec to stop single node
 
 class STATUSES(Enum):
     IN_PROGRESS = "InProgress"
@@ -134,12 +138,14 @@ class STATUSES(Enum):
     FAILED = "Failed"
 
 class NODE_STATUSES(Enum):
-    OFFLINE = "Offline"
-    STANDBY = "Standby"
-    ONLINE = "Online"
-    STANDBY_WITH_RESOURCES_RUNNING = "Standby with resource(s) running"
-    MAINTENANCE = "Maintenance"
-    UNKNOWN = "Unknown"
+    CLUSTER_OFFLINE = "Offline".lower() # Cluster not running on current node.
+    STANDBY = "Standby".lower() # Cluster Running but resource are not running.
+    ONLINE = "Online".lower() # Cluster and resource Running on current node.
+    # STANDBY_WITH_RESOURCES_RUNNING: Cluster and few resource running, Unstable state.
+    STANDBY_WITH_RESOURCES_RUNNING = "Standby with resource(s) running".lower()
+    MAINTENANCE = "Maintenance".lower() # In maintenance mode, Resource not monitored.
+    UNKNOWN = "Unknown".lower() # Unknown or Network problem
+    POWEROFF = "Poweroff or Disconnected".lower() # Node is poweroff or disconnected from network.
 
 # System Health
 # Constants
