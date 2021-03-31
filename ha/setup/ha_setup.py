@@ -22,6 +22,7 @@ import traceback
 import os
 import shutil
 import json
+import grp, pwd
 
 from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
@@ -154,18 +155,14 @@ class PostInstallCmd(Cmd):
             PkgV().validate('rpms', const.CORTX_CLUSTER_PACKAGES)
             Log.info("Found required cluster packages installed.")
 
-            # Validate hacluster is part of the haclient group
-            _output, _err, _rc = self._execute.run_cmd(f"groups {const.CLUSTER_USER}", check_error=True)
-            if _rc == 0:
-                command_output = _output.split(":", 1)
-                username = command_output[0].strip().lower()
-                groups = command_output[1].strip().lower()
-                if username == const.CLUSTER_USER.lower() and const.USER_GROUP_HACLIENT.lower() in groups.split():
-                    Log.info("hacluster user is a part of the haclient group")
-                else:
-                    Log.error(f"Unexpected user or user is not a part of haclient group, UserName: {username}, groups: {groups}")
+            groups = [g.gr_name for g in grp.getgrall() if const.CLUSTER_USER in g.gr_mem]
+            gid = pwd.getpwnam(const.CLUSTER_USER).pw_gid
+            groups.append(grp.getgrgid(gid).gr_name)
+            if not const.USER_GROUP_HACLIENT in groups:
+                Log.error(f"hacluster is not a part of the haclient group")
+                raise HaPrerequisiteException("post_install command failed")
             else:
-                Log.error("groups command failed, Error: {_err}, RC: {_rc}")
+                Log.info("hacluster is a part of the haclient group")
 
         except Exception as e:
             Log.error(f"Failed prerequisite with Error: {e}")
