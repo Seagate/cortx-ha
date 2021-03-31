@@ -44,6 +44,12 @@ BACKUP_DEST_DIR="/opt/seagate/cortx/ha_backup"
 BACKUP_DEST_DIR_CONF = "{}/conf".format(BACKUP_DEST_DIR)
 BACKUP_DEST_DIR_CONSUL = "{}/Consul".format(BACKUP_DEST_DIR)
 
+# Mini-provisioning
+CLUSTER_CONFSTORE_NODES_KEY="nodes"
+
+# Cortx commands
+CORTX_CLUSTER_NODE_ADD="cortx cluster add node --nodeid <node> --username <user> --password <secret>"
+
 CURRENT_NODE_STATUS="self_node_status"
 OTHER_NODE_STATUS="other_node_status"
 CURRENT_NODE="self_node"
@@ -97,6 +103,7 @@ PCS_CLUSTER_UNSTANDBY="pcs cluster unstandby --all"
 PCS_SETUP_CLUSTER="pcs cluster setup --start --name <cluster_name> <node>"
 PCS_CLUSTER_NODE_AUTH="pcs cluster auth <node> -u <username> -p <password>"
 PCS_CLUSTER_NODE_ADD="pcs cluster node add <node> --start --enable"
+PCS_CLUSTER_NODE_REMOVE="pcs cluster node remove <node>"
 PCS_CLUSTER_PCSD_STATUS="pcs status pcsd"
 PCS_STATUS_NODES="pcs status nodes"
 PCS_NODE_UNSTANDBY="pcs node unstandby <node>"
