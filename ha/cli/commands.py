@@ -75,7 +75,8 @@ class Command:
             exec_class = self.get_class(command_executor)
             # Call execute function of the appropriate executor class
             executor_class = exec_class()
-            executor_class.execute()
+            if executor_class.validate():
+                executor_class.execute()
 
 """
 SupportBundleCommand is currently broken, so removed the code.

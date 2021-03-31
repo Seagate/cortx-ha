@@ -18,6 +18,8 @@ from enum import Enum
 #LOGS and config
 CORTX_VERSION_1="1"
 CORTX_VERSION_2="2"
+HA_CLUSTER_SOFTWARE="corosync"
+HACLUSTER_KEY = "corosync-pacemaker"
 RA_LOG_DIR="/var/log/seagate/cortx/ha"
 PACEMAKER_LOG="/var/log/pacemaker.log"
 PCSD_LOG="/var/log/pcsd/pcsd.log"
@@ -41,6 +43,12 @@ SOURCE_CONFIG_FILE="{}/ha.conf".format(SOURCE_CONFIG_PATH)
 BACKUP_DEST_DIR="/opt/seagate/cortx/ha_backup"
 BACKUP_DEST_DIR_CONF = "{}/conf".format(BACKUP_DEST_DIR)
 BACKUP_DEST_DIR_CONSUL = "{}/Consul".format(BACKUP_DEST_DIR)
+
+# Mini-provisioning
+CLUSTER_CONFSTORE_NODES_KEY="nodes"
+
+# Cortx commands
+CORTX_CLUSTER_NODE_ADD="cortx cluster add node --nodeid <node> --username <user> --password <secret>"
 
 CURRENT_NODE_STATUS="self_node_status"
 OTHER_NODE_STATUS="other_node_status"
@@ -96,6 +104,7 @@ PCS_CLUSTER_UNSTANDBY="pcs cluster unstandby --all"
 PCS_SETUP_CLUSTER="pcs cluster setup --start --name <cluster_name> <node>"
 PCS_CLUSTER_NODE_AUTH="pcs cluster auth <node> -u <username> -p <password>"
 PCS_CLUSTER_NODE_ADD="pcs cluster node add <node> --start --enable"
+PCS_CLUSTER_NODE_REMOVE="pcs cluster node remove <node>"
 PCS_CLUSTER_PCSD_STATUS="pcs status pcsd"
 PCS_STATUS_NODES="pcs status nodes"
 PCS_NODE_UNSTANDBY="pcs node unstandby <node>"
@@ -109,8 +118,8 @@ PCS_NODE_STANDBY="pcs node standby <node>"
 PCS_STONITH_DISABLE="pcs property set stonith-enabled=False"
 
 # Cluster manager
-CM_CONTROLLER_INDEX="controller_interface"
-CM_CONTROLLER_SCHEMA="{}/controller_interface.json".format(CONFIG_DIR)
+CM_CONTROLLER_INDEX="cluster_controller_interfaces"
+CM_CONTROLLER_SCHEMA="{}/cluster_controller_interfaces.json".format(CONFIG_DIR)
 CM_ELEMENT=["cluster", "node", "service", "storageset"]
 NO_FAILCOUNT = "No failcounts"
 RETRY_COUNT = 2
