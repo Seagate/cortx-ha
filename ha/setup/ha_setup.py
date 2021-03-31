@@ -196,7 +196,7 @@ class ConfigCmd(Cmd):
         cluster_secret = Cipher.decrypt(key, cluster_secret.encode('ascii')).decode()
         s3_instances = self._get_s3_instance(machine_id)
 
-        # Check if the cluster exists already, if not, create one.
+        Log.info("Checking if cluster exists already")
         cluster_exists = self._confstore.key_exists(const.CLUSTER_CONFSTORE_NODES_KEY)
         Log.info(f"Cluster exists? {cluster_exists}")
         if cluster_exists == False:
@@ -230,7 +230,7 @@ class ConfigCmd(Cmd):
                 raise HaConfigException("Cluster creation failed")
         else:
             node_added = False
-            # If this node in cluster already.
+            Log.info(f"Checking if node {node_name} is in cluster")
             if self._confstore.key_exists(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}"):
                 node_added = True
                 Log.info(f"The node {node_name} present in the cluster already")
