@@ -22,6 +22,7 @@ import traceback
 import os
 import shutil
 import json
+import grp, pwd
 
 from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
@@ -152,12 +153,23 @@ class PostInstallCmd(Cmd):
                             const.CM_CONTROLLER_SCHEMA)
             Log.info(f"{self.name}: Copied HA configs file.")
             # Pre-requisite checks are done here.
-            # Make sure the pacemaker, corosync and pcs packages have been installed
-            PkgV().validate('rpms', const.PCS_CLUSTER_PACKAGES)
+            # Make sure that cortx necessary packages have been installed
+            PkgV().validate('rpms', const.CORTX_CLUSTER_PACKAGES)
             Log.info("Found required cluster packages installed.")
+
+            groups = [g.gr_name for g in grp.getgrall() if const.CLUSTER_USER in g.gr_mem]
+            gid = pwd.getpwnam(const.CLUSTER_USER).pw_gid
+            groups.append(grp.getgrgid(gid).gr_name)
+            if not const.USER_GROUP_HACLIENT in groups:
+                Log.error("hacluster is not a part of the haclient group")
+                raise HaPrerequisiteException("post_install command failed")
+            else:
+                Log.info("hacluster is a part of the haclient group")
+
         except Exception as e:
             Log.error(f"Failed prerequisite with Error: {e}")
             raise HaPrerequisiteException("post_install command failed")
+
         Log.info("post_install command is successful")
 
 class ConfigCmd(Cmd):
