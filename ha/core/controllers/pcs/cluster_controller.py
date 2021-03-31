@@ -107,35 +107,31 @@ class PcsClusterController(ClusterController, PcsController):
                 status: Succeeded, Failed, InProgress
         """
         if self._is_pcs_cluster_running() is False:
-            _res = self._pcs_cluster_start()
-            if _res != const.STATUSES.SUCCEEDED.value:
-                return {"status": const.STATUSES.FAILED.value, "msg": "Cluster start operation failed"}
-
-        _res = self.node_list()
-        _res = json.loads(_res)
-
-        if _res.get("status") == const.STATUSES.SUCCEEDED.value:
-            _node_list = _res.get("msg")
-            Log.info(f"Node List : {_node_list}")
-            if _node_list is not None:
-                _node_group = [ _node_list[i:i + const.PCS_NODE_GROUP_SIZE] for i in range(0, len(_node_list), const.PCS_NODE_START_GROUP_SIZE)]
-
-                for _node_subgroup in _node_group:
-                    for _node_id in _node_subgroup:
-                        _res = self._controllers[const.NODE_CONTROLLER].start(_node_id)
-                        _res = json.loads(_res)
-                        if _res.get("status") == const.STATUSES.FAILED.value:
-                            msg = _res.get("msg")
-                            Log.error(f"Node {_node_id} : {msg}")
-                    # Wait till all the resources get started in the sub group
-                    time.sleep(const.BASE_WAIT_TIME * const.PCS_NODE_START_GROUP_SIZE)
-
-                return {"status": const.STATUSES.IN_PROGRESS.value, "msg": "Cluster start operation performed"}
-            else:
-                return {"status": const.STATUSES.FAILED.value, "msg": "Cluster start failed. Not able to verify node list."}
+            res = self._pcs_cluster_start()
+            time.sleep(const.BASE_WAIT_TIME)
+            if res != const.STATUSES.SUCCEEDED.value:
+                raise ClusterManagerError("Cluster start operation failed")
+        status = ""
+        failed_node_list: list = []
+        try:
+            node_group: list = self._get_node_group()
+            for node_subgroup in node_group:
+                for node_id in node_subgroup:
+                    res = json.loads(self._controllers[const.NODE_CONTROLLER].start(node_id))
+                    if res.get("status") == const.STATUSES.FAILED.value:
+                        msg = res.get("msg")
+                        Log.error(f"Node {node_id} : {msg}")
+                        failed_node_list.append(node_id)
+                # Wait till all the resources get started in the sub group
+                time.sleep(const.BASE_WAIT_TIME * const.PCS_NODE_START_GROUP_SIZE)
+        except Exception as e:
+            return {"status": const.STATUSES.FAILED.value, "msg": f"Failed to start cluster. Error: {e}"}
+        status = "Cluster start is in process."
+        if len(failed_node_list) != 0 and len(failed_node_list) != len(json.loads(self.node_list()).get("msg")):
+            status += f"Warning, Some of nodes failed to start are {failed_node_list}"
         else:
-            msg = _res.get("msg")
-            return {"status": _res.get("status"), "msg": f"Cluster start operation failed, {msg}"}
+            raise ClusterManagerError(f"Failed to start all nodes {failed_node_list}")
+        return {"status": const.STATUSES.IN_PROGRESS.value, "msg": "Cluster start operation performed"}
 
     @controller_error_handler
     def stop(self) -> dict:
