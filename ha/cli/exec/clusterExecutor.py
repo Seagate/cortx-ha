@@ -24,6 +24,7 @@ import time
 from cortx.utils.log import Log
 from ha.cli.exec.commandExecutor import CommandExecutor
 from ha.core.error import HAClusterStart, HAClusterCLIError
+from ha.core.cluster.cluster_manager import CortxClusterManager
 from ha.core.error import HAUnimplemented
 
 
@@ -81,7 +82,7 @@ class ClusterStopExecutor(CommandExecutor):
     def __init__(self):
         '''Init method'''
         super(ClusterStopExecutor, self).__init__()
-        self._pcs_cluster_controller = PcsClusterController()
+        self._cluster_manager = CortxClusterManager()
         self._op = Output()
         self._args = None
 
@@ -117,7 +118,7 @@ class ClusterStopExecutor(CommandExecutor):
            also displays an output
         '''
         stop_cluster_message = None
-        # stop_cluster_message = self._pcs_cluster_controller.stop()
+        stop_cluster_message = self._cluster_manager.cluster_controller.stop(self._args.all or self._args.server)
         if self._args.json:
             self._op.print_json(stop_cluster_message)
         else:
