@@ -276,7 +276,7 @@ class PcsClusterController(ClusterController, PcsController):
         cluster_node_count = self._get_cluster_size()
         if cluster_node_count < 32:
             _output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_NODE_ADD.replace("<node>", nodeid))
-            return {"status": const.IN_PROGRESS.FAILED.value, "msg": f"Node {nodeid} add operation started successfully in the cluster"}
+            return {"status": const.STATUSES.IN_PROGRESS.value, "msg": f"Node {nodeid} add operation started successfully in the cluster"}
         else:
             return {"status": const.STATUSES.FAILED.value, "msg": "Cluster size is already filled to 32, "
                                                "Please use add-remote node mechanism"}
