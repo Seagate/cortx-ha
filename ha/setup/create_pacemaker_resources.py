@@ -27,7 +27,6 @@ from ha import const
 # List of resource
 motr-free-space-mon
 io_group-clone
-    hax-consul
     hax
     motr-confd-1
     motr-ios-1
@@ -61,12 +60,6 @@ def cib_get(cib_xml):
 
 def hax(cib_xml, push=False, **kwargs):
     """Create resources that belong to hax and clone the group."""
-    # TODO cmd_hare_consul is temporary code and should be removed once fixed by hax/provisioner.
-    # hax-consul
-    process.run_cmd(f"pcs -f {cib_xml} resource create hax-consul systemd:hare-consul-agent \
-        op start timeout=100s interval=0s \
-        op monitor timeout=30s interval=30s \
-        op stop timeout=120s interval=0s --group io_group")
     # hax
     process.run_cmd(f"pcs -f {cib_xml} resource create hax systemd:hare-hax \
         op start timeout=100s interval=0s \
