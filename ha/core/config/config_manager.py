@@ -97,3 +97,10 @@ class ConfigManager:
         version = Conf.get(const.HA_GLOBAL_INDEX, "VERSION.version")
         major_version = version.split('.')
         return major_version[0]
+
+    @staticmethod
+    def get_local_node() -> str:
+        """
+        Get local node name.
+        """
+        return Conf.get(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.local_node")

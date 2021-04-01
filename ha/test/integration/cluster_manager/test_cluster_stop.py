@@ -15,19 +15,39 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
+import os
+import sys
+import pathlib
+import unittest
 import json
-import traceback
-from ha import const
-from cortx.utils.log import Log
 
-def controller_error_handler(func):
-    def inner_function(*args, **kwargs) -> str:
-        try:
-            result: dict = func(*args, **kwargs)
-            return json.dumps(result)
-        except Exception as e:
-            Log.error(f"ClusterManagerException. {func.__name__} failed. {traceback.format_exc()}, {e}")
-            result: dict = {"status": const.STATUSES.FAILED.value,
-                "msg": f"ClusterManagerException. {func.__name__} failed. Error: {e}"}
-            return json.dumps(result)
-    return inner_function
+sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..', '..', '..'))
+from ha import const
+from ha.core.cluster.cluster_manager import CortxClusterManager
+
+class TestClusterStop(unittest.TestCase):
+    """
+    Integration test for cluster stop
+    """
+
+    def setUp(self):
+        """
+        Setup.
+        """
+        self._cluster_manager = CortxClusterManager()
+
+    def test_cluster_stop(self):
+        """
+        Test cluster stop.
+        """
+        output = json.loads(self._cluster_manager.cluster_controller.stop())
+        self.assertEqual(output.get("status"), const.STATUSES.IN_PROGRESS.value)
+
+    def tearDown(self):
+        """
+        Clear setup
+        """
+        pass
+
+if __name__ == "__main__":
+    unittest.main()
