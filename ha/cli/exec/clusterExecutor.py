@@ -118,7 +118,7 @@ class ClusterStopExecutor(CommandExecutor):
            also displays an output
         '''
         stop_cluster_message = None
-        stop_cluster_message = self._cluster_manager.cluster_controller.stop(self._args.all or self._args.server)
+        stop_cluster_message = self._cluster_manager.cluster_controller.stop()
         if self._args.json:
             self._op.print_json(stop_cluster_message)
         else:
