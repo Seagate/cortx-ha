@@ -208,7 +208,7 @@ class ConfigCmd(Cmd):
         cluster_secret = Cipher.decrypt(key, cluster_secret.encode('ascii')).decode()
         s3_instances = self._get_s3_instance(machine_id)
 
-        self._update_env(node_type, const.HA_CLUSTER_SOFTWARE)
+        self._update_env(node_name, node_type, const.HA_CLUSTER_SOFTWARE)
         self._fetch_fids()
         self._update_cluster_manager_config()
         self._cluster_manager = CortxClusterManager()
@@ -331,12 +331,12 @@ class ConfigCmd(Cmd):
         try:
             Log.info("Fetch fids from hare and store in a conf file")
             fids_output, err, rc = self._execute.run_cmd(const.HCTL_FETCH_FIDS, check_error=True)
-            Log.info(f"Fetched fids:{fids_output}")
+            Log.info(f"Fetched fids: {fids_output}, Error: {err}, RC: {rc}")
             with open(const.FIDS_CONFIG_FILE, 'w') as fi:
                 json.dump(json.loads(fids_output), fi, indent=4)
         except Exception as e:
             Log.error(f"Failed fetching fids from hare. Error: {e}")
-            raise HaConfigException(f"Failed fetching fids from hare.")
+            raise HaConfigException("Failed fetching fids from hare.")
 
     def _update_cluster_manager_config(self) -> None:
         """
