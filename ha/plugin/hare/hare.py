@@ -40,10 +40,10 @@ class Hare:
         Returns:
             str: Return fid for hare service.
         """
-        with open(const.HARE_FID_MAPPING_FILE) as fi:
+        with open(const.FIDS_CONFIG_FILE) as fi:
             fid_schema = json.load(fi)
         fid: str = ""
-        if service_name == "s3service":
+        if service_name == "s3server":
             fid = Hare._get_s3server_fid(fid_schema, service_name, node_id, instance_id)
         else:
             fid = Hare._get_motr_fid(fid_schema, service_name, node_id, instance_id)
@@ -65,11 +65,9 @@ class Hare:
             str: Return fid for motr
         """
         motr_mapping: list = []
-        count: int = 0
-        for service in fid_schema["services"]:
-            if service["name"] == service_name:
-                count += 1
-                motr_mapping.append(service["checks"][0]["args"][2])
+        for element in fid_schema:
+            if element["name"] == service_name:
+                motr_mapping.append(element["fid"])
         motr_mapping.sort()
         fid: str = motr_mapping[instance_id - 1]
         return fid
@@ -89,11 +87,8 @@ class Hare:
             str: Return fid for s3service
         """
         s3service_li: list = []
-        fid: str = ""
-        for service in fid_schema["services"]:
-            if service["name"] == service_name:
-                service_fid = service["checks"][0]["args"][2]
-                fid = service_fid.split("@")[1]
-                s3service_li.append(fid)
+        for element in fid_schema:
+            if element["name"] == service_name:
+                s3service_li.append(element["fid"])
         s3service_li.sort()
         return s3service_li[instance_id - 1]
