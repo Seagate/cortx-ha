@@ -21,6 +21,7 @@ from ha.cli.command_factory import CmdFactory
 from ha.cli.exec.commandExecutor import CLIUsage
 from ha.cli.exec.commandExecutor import CommandExecutor as cmdExecutor
 
+
 class Command:
     """  Parse the CLI and call appropriate executor """
     def __init__(self):
@@ -28,7 +29,6 @@ class Command:
         self.operation_name = None
         self.options = None
         self.cmd_factory = CmdFactory()
-
 
     def parse(self, args: list):
         """ Parse the CLI string to identify parameters"""
@@ -71,12 +71,12 @@ class Command:
                 print(CLIUsage.usage())
                 raise HAInvalidCommand("Invalid parameters passed; refer to help for details")
 
-
             exec_class = self.get_class(command_executor)
             # Call execute function of the appropriate executor class
             executor_class = exec_class()
             if executor_class.validate():
                 executor_class.execute()
+
 
 """
 SupportBundleCommand is currently broken, so removed the code.

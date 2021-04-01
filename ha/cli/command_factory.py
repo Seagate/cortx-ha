@@ -21,6 +21,7 @@ from cortx.utils.log import Log
 from ha.cli import commands
 from ha.core.config.config_manager import ConfigManager
 
+
 class CmdFactory:
     def __init__(self):
         """

@@ -49,7 +49,7 @@ class NodeController(ElementController):
         raise HAUnimplemented("This operation is not implemented.")
 
     @controller_error_handler
-    def stop(self, nodeid: str) -> dict:
+    def stop(self, nodeid: str, timeout: int) -> dict:
         """
         Stop node with nodeid.
 
