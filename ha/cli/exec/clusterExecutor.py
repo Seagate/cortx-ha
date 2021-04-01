@@ -24,7 +24,6 @@ import time
 from cortx.utils.log import Log
 from ha.cli.exec.commandExecutor import CommandExecutor
 from ha.core.error import HAClusterStart, HAClusterCLIError
-from ha.core.cluster.cluster_manager import CortxClusterManager
 from ha.core.error import HAUnimplemented
 
 
@@ -67,13 +66,13 @@ class ClusterStartExecutor(CommandExecutor):
         Execute the cluster start for all or only cluster
         """
         Log.info("Executing cortxha cluster start")
-        _cluster_start_result = self._cluster_manager.cluster_controller.start()
+        _cluster_start_result = self.cluster_manager.cluster_controller.start()
         if self._args.all:
             Log.info("Executing storage start")
             # TODO : start storage enclosure
 
         if self._args.json:
-            self._op.print_json(_cluster_start_result)
+            self.op.print_json(_cluster_start_result)
         Log.info(_cluster_start_result)
 
 
@@ -82,8 +81,7 @@ class ClusterStopExecutor(CommandExecutor):
     def __init__(self):
         '''Init method'''
         super(ClusterStopExecutor, self).__init__()
-        self._cluster_manager = CortxClusterManager()
-        self._op = Output()
+        self.op = Output()
         self._args = None
 
     def parse_args(self) -> None:
@@ -118,9 +116,9 @@ class ClusterStopExecutor(CommandExecutor):
            also displays an output
         '''
         stop_cluster_message = None
-        stop_cluster_message = self._cluster_manager.cluster_controller.stop()
+        stop_cluster_message = self.cluster_manager.cluster_controller.stop()
         if self._args.json:
-            self._op.print_json(stop_cluster_message)
+            self.op.print_json(stop_cluster_message)
         else:
             print(stop_cluster_message)
 
@@ -267,8 +265,8 @@ class ClusterNodeAddExecutor(CommandExecutor):
         if self._args.descfile:
             node_id = self.parse_node_desc_file(self._args.descfile)
         if self._is_valid_node_id(node_id):
-            add_node_result_message = self._cluster_manager.cluster_controller.add_node(node_id, \
+            add_node_result_message = self.cluster_manager.cluster_controller.add_node(node_id, \
                                     cluster_uname, cluster_pwd)
             if self._args.json:
-                self._op.print_json(add_node_result_message)
+                self.op.print_json(add_node_result_message)
             print(add_node_result_message)

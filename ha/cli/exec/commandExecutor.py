@@ -31,8 +31,8 @@ from ha.cli.displayOutput import Output
 class CommandExecutor:
     def __init__(self):
         self._is_hauser = False
-        self._cluster_manager = CortxClusterManager()
-        self._op = Output()
+        self.cluster_manager = CortxClusterManager()
+        self.op = Output()
 
     def validate(self) -> bool:
         raise HAUnimplemented("This operation is not implemented.")
