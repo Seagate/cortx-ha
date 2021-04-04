@@ -81,7 +81,6 @@ class ClusterStopExecutor(CommandExecutor):
     def __init__(self):
         '''Init method'''
         super(ClusterStopExecutor, self).__init__()
-        self.op = Output()
         self._args = None
 
     def parse_args(self) -> None:
