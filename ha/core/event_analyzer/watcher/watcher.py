@@ -16,14 +16,15 @@
 # cortx-questions@seagate.com.
 
 import time
+import json
 from threading import Thread
 
 from cortx.utils.message_bus import MessageConsumer
 
+from ha.core.error import EventAnalyzer
 from ha.core.event_analyzer.filter.filter import Filter
 from ha.core.event_analyzer.parser.parser import Parser
 from ha.core.event_analyzer.subscriber import Subscriber
-import json
 
 class Watcher(Thread):
     """ Watch message bus to check in comming event. """
@@ -51,22 +52,38 @@ class Watcher(Thread):
         self._validate()
         self.consumer = self._get_connection()
 
-    def _validate(self):
-        pass
+    def _validate(self) -> None:
+        """
+        Validate watcher and raise exception.
 
-    def _get_connection(self):
+        Raises:
+            EventAnalyzer: event analyser exception.
+        """
+        if not issubclass(self.subscriber, Subscriber):
+            raise EventAnalyzer(f"Invaid subscriber {self.subscriber}")
+
+    def _get_connection(self) -> MessageConsumer:
+        """
+        Get message consumer connection.
+
+        Returns:
+            MessageConsumer: Return instance of MessageConsumer.
+        """
         return MessageConsumer(consumer_id=str(self.consumer_id),
             consumer_group=self.consumer_group,
             message_types=[self.message_type], auto_ack=True, offset='latest')
 
     def run(self):
+        """
+        Overloaded of Thread.
+        """
         while True:
             try:
                 message = json.loads(consumer.receive(timeout=0).decode('utf-8'))
                 if filter.filter_event(message):
                     event = self.parser.parse_event(message)
                     self.subscriber.process_event(event)
-                consumer.ack()
+                self.consumer.ack()
                 time.sleep(3)
             except Exception as e:
-                pass
+                print(e)
