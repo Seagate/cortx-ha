@@ -114,12 +114,19 @@ class ClusterStopExecutor(CommandExecutor):
            Execute CLI request by passing it to ClusterManager and
            also displays an output
         '''
+        Log.info("Executing cluster stop")
         stop_cluster_message = None
+        if self._args.all:
+            Log.info("Executing storageset stop")
+            # TODO: Perform storageset stop
+
+        # TODO: pass the argument parsed from command line. server or all
         stop_cluster_message = self.cluster_manager.cluster_controller.stop()
         if self._args.json:
             self.op.print_json(stop_cluster_message)
         else:
             print(stop_cluster_message)
+        Log.info(stop_cluster_message)
 
 
 class ClusterRestartExecutor(CommandExecutor):
@@ -258,6 +265,7 @@ class ClusterNodeAddExecutor(CommandExecutor):
            Execute CLI request by passing it to ClusterManager and
            also displays an output
         '''
+        Log.info("Executing cluster add node")
         node_id = None or self._args.nodeid
         cluster_uname = self._args.username
         cluster_pwd = self._args.password
@@ -268,4 +276,6 @@ class ClusterNodeAddExecutor(CommandExecutor):
                                     cluster_uname, cluster_pwd)
             if self._args.json:
                 self.op.print_json(add_node_result_message)
-            print(add_node_result_message)
+            else:
+                print(add_node_result_message)
+        Log.info(add_node_result_message)
