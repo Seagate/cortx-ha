@@ -120,7 +120,6 @@ class ClusterStopExecutor(CommandExecutor):
             Log.info("Executing storageset stop")
             # TODO: Perform storageset stop
 
-        # TODO: pass the argument parsed from command line. server or all
         stop_cluster_message = self.cluster_manager.cluster_controller.stop()
         if self._args.json:
             self.op.print_json(stop_cluster_message)
