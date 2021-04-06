@@ -38,6 +38,7 @@ RESOURCE_GLOBAL_INDEX="decision_monitor"
 RULE_ENGINE_SCHAMA="{}/rules_engine_schema.json".format(CONFIG_DIR)
 RULE_GLOBAL_INDEX="rules_engine"
 HA_CONFIG_FILE="{}/ha.conf".format(CONFIG_DIR)
+FIDS_CONFIG_FILE="{}/fids.json".format(CONFIG_DIR)
 HA_GLOBAL_INDEX="ha_conf"
 SOURCE_CONFIG_FILE="{}/ha.conf".format(SOURCE_CONFIG_PATH)
 BACKUP_DEST_DIR="/opt/seagate/cortx/ha_backup"
@@ -49,6 +50,9 @@ CLUSTER_CONFSTORE_NODES_KEY="nodes"
 
 # Cortx commands
 CORTX_CLUSTER_NODE_ADD="cortx cluster add node --nodeid <node> --username <user> --password <secret>"
+
+# hare commands
+HCTL_FETCH_FIDS="hctl fetch-fids --json"
 
 CURRENT_NODE_STATUS="self_node_status"
 OTHER_NODE_STATUS="other_node_status"
