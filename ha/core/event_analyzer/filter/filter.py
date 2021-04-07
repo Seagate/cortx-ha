@@ -20,6 +20,7 @@ import json
 from cortx.utils.log import Log
 from ha import const
 from ha.core.config.config_manager import ConfigManager
+from ha.core.error import EventAnalyzerError
 
 class Filter(metaclass=abc.ABCMeta):
     """ Base class to filter alert """
