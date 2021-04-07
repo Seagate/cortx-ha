@@ -66,22 +66,66 @@ class ClusterStartExecutor(CommandExecutor):
         Execute the cluster start for all or only cluster
         """
         Log.info("Executing cortxha cluster start")
-        _cluster_start_result = self._cluster_manager.cluster_controller.start()
+        _cluster_start_result = self.cluster_manager.cluster_controller.start()
         if self._args.all:
             Log.info("Executing storage start")
             # TODO : start storage enclosure
 
         if self._args.json:
-            self._op.print_json(_cluster_start_result)
+            self.op.print_json(_cluster_start_result)
         Log.info(_cluster_start_result)
 
 
 class ClusterStopExecutor(CommandExecutor):
+
+    def __init__(self):
+        '''Init method'''
+        super(ClusterStopExecutor, self).__init__()
+        self._args = None
+
+    def parse_args(self) -> None:
+        '''
+           Parses the command line args.
+           Return: argparse
+        '''
+        parser = argparse.ArgumentParser(description="cluster stop")
+        parser.add_argument("cluster", help="Module")
+        parser.add_argument("stop", help="action to be performed")
+        group = parser.add_mutually_exclusive_group()
+        group.add_argument('--all', action='store_true', \
+                            help='Server and storage stop')
+        group.add_argument('--server', action='store_false', \
+                            help='server stop')
+        parser.add_argument('--json', help='Required output format', action='store_true')
+        return parser.parse_args()
+
     def validate(self) -> bool:
-        raise HAUnimplemented("This operation is not implemented.")
+        '''
+           Validates permission and command line arguments.
+           Return: bool
+        '''
+        self._args = self.parse_args()
+        if self._args:
+            return True
+        return False
 
     def execute(self) -> None:
-        raise HAUnimplemented("This operation is not implemented.")
+        '''
+           Execute CLI request by passing it to ClusterManager and
+           also displays an output
+        '''
+        Log.info("Executing cluster stop")
+        stop_cluster_message = None
+        if self._args.all:
+            Log.info("Executing storageset stop")
+            # TODO: Perform storageset stop
+
+        stop_cluster_message = self.cluster_manager.cluster_controller.stop()
+        if self._args.json:
+            self.op.print_json(stop_cluster_message)
+        else:
+            print(stop_cluster_message)
+        Log.info(stop_cluster_message)
 
 
 class ClusterRestartExecutor(CommandExecutor):
@@ -220,14 +264,17 @@ class ClusterNodeAddExecutor(CommandExecutor):
            Execute CLI request by passing it to ClusterManager and
            also displays an output
         '''
+        Log.info("Executing cluster add node")
         node_id = None or self._args.nodeid
         cluster_uname = self._args.username
         cluster_pwd = self._args.password
         if self._args.descfile:
             node_id = self.parse_node_desc_file(self._args.descfile)
         if self._is_valid_node_id(node_id):
-            add_node_result_message = self._cluster_manager.cluster_controller.add_node(node_id, \
+            add_node_result_message = self.cluster_manager.cluster_controller.add_node(node_id, \
                                     cluster_uname, cluster_pwd)
             if self._args.json:
-                self._op.print_json(add_node_result_message)
-            print(add_node_result_message)
+                self.op.print_json(add_node_result_message)
+            else:
+                print(add_node_result_message)
+        Log.info(add_node_result_message)
