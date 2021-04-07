@@ -23,6 +23,7 @@ import pathlib
 # Test case for alert filter
 if __name__ == '__main__':
     sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..', '..', '..'))
+    from cortx.utils.conf_store.conf_store import Conf
     from ha import const
     from ha.core.config.config_manager import ConfigManager
     from ha.core.event_analyzer.filter.filter import AlertFilter
@@ -69,13 +70,14 @@ if __name__ == '__main__':
         }
 
         Expected_result = False
-        filter_type = ConfigManager.get_filter_type()
+        filter_type = Conf.get(const.ALERT_FILTER_INDEX, "alert.filter_type")
+        resource_types_list = Conf.get(const.ALERT_FILTER_INDEX, "alert.resource_type")
 
         if filter_type == const.INCLUSION:
-            if resource_type in ConfigManager.get_resource_types_list():
+            if resource_type in resource_types_list:
                 Expected_result = True
         elif filter_type == const.EXCLUSION:
-            if resource_type not in ConfigManager.get_resource_types_list():
+            if resource_type not in resource_types_list:
                 Expected_result = True
         else:
             print("Invalid filter type")

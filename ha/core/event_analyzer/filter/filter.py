@@ -17,6 +17,7 @@
 
 import abc
 import json
+from cortx.utils.conf_store.conf_store import Conf
 from cortx.utils.log import Log
 from ha import const
 from ha.core.config.config_manager import ConfigManager
@@ -51,8 +52,8 @@ class AlertFilter(Filter):
         ConfigManager.load_filter_rules()
 
         #Get filter type and resource types list from the alert rule file
-        self.filter_type = ConfigManager.get_filter_type()
-        self.resource_types_list = ConfigManager.get_resource_types_list()
+        self.filter_type = Conf.get(const.ALERT_FILTER_INDEX, "alert.filter_type")
+        self.resource_types_list = Conf.get(const.ALERT_FILTER_INDEX, "alert.resource_type")
 
     def filter_event(self, msg: str) -> bool:
         """

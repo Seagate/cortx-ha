@@ -85,20 +85,6 @@ class ConfigManager:
         ConfigManager._safe_load(const.ALERT_FILTER_INDEX, f"json://{const.ALERT_FILTER_RULES_FILE}")
 
     @staticmethod
-    def get_filter_type():
-        """
-        Gets filter type from the alert rules file.
-        """
-        return Conf.get(const.ALERT_FILTER_INDEX, "alert.filter_type")
-
-    @staticmethod
-    def get_resource_types_list():
-        """
-        Returns list of resource type mentioned in the alert rules file
-        """
-        return Conf.get(const.ALERT_FILTER_INDEX, "alert.resource_type")
-
-    @staticmethod
     def _safe_load(index: str, url: str):
         """
         Load config if not loaded
