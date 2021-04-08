@@ -482,6 +482,8 @@ class CleanupCmd(Cmd):
                 os.remove(const.CM_CONTROLLER_SCHEMA)
             if os.path.exists(const.FIDS_CONFIG_FILE):
                 os.remove(const.FIDS_CONFIG_FILE)
+            if os.path.exists(const.ALERT_FILTER_RULES_FILE):
+                os.remove(const.ALERT_FILTER_RULES_FILE)
         except Exception as e:
             Log.error(f"Cluster cleanup command failed. Error: {e}")
             raise HaCleanupException("Cluster cleanup failed")

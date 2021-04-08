@@ -28,7 +28,7 @@ class Filter(metaclass=abc.ABCMeta):
 
     def __init__(self):
         """
-        Initialize element controller.
+        Init method
         """
         pass
 
