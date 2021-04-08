@@ -64,6 +64,11 @@ class AlertFilter(Filter):
         try:
             Alert_required = False
             message = json.loads(msg)
+
+            msg_type = message.get("actuator_response_type")
+            if msg_type is not None:
+                return Alert_required
+
             msg_type = message.get("sensor_response_type")
             resource_type = msg_type["info"]["resource_type"]
 

@@ -73,14 +73,15 @@ if __name__ == '__main__':
         filter_type = Conf.get(const.ALERT_FILTER_INDEX, "alert.filter_type")
         resource_types_list = Conf.get(const.ALERT_FILTER_INDEX, "alert.resource_type")
 
-        if filter_type == const.INCLUSION:
-            if resource_type in resource_types_list:
-                Expected_result = True
-        elif filter_type == const.EXCLUSION:
-            if resource_type not in resource_types_list:
-                Expected_result = True
-        else:
-            print("Invalid filter type")
+        if "actuator_response_type" not in TestMsg.keys():
+            if filter_type == const.INCLUSION:
+                if resource_type in resource_types_list:
+                    Expected_result = True
+            elif filter_type == const.EXCLUSION:
+                if resource_type not in resource_types_list:
+                    Expected_result = True
+            else:
+                print("Invalid filter type")
 
         if Expected_result == AlertFilter.filter_event(json.dumps(TestMsg)):
             print("Alert filter test pass successfully")
