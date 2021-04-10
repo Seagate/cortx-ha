@@ -96,11 +96,13 @@ class CreateExecutor(CommandExecutor):
                 file.write(f"{_output}")
                 file.write(f"Error if any: {_err}\n\n\n")
 
-    def _check_files(self, ha_log_list=const.SUPPORT_BUNDLE_LOGS):
+    def _check_files(self, ha_log_list=None):
         """
         Check all support bundle file for HA
         and provide list of available file
         """
+        if ha_log_list == None:
+            ha_log_list = const.SUPPORT_BUNDLE_LOGS
         ha_logs = list(ha_log_list)
         with open(const.SUPPORT_BUNDLE_ERR, "w") as file:
             for _path in ha_log_list:
@@ -140,9 +142,11 @@ class CreateSupportBundleExecutor(CreateExecutor):
         """
         pass
 
-    def _check_files(self, ha_log_list=const.CORTX_SUPPORT_BUNDLE_LOGS):
+    def _check_files(self, ha_log_list=None):
         """
         Check all support bundle file for HA
         and provide list of available file
         """
+        if ha_log_list == None:
+            ha_log_list = const.CORTX_SUPPORT_BUNDLE_LOGS
         return super()._check_files(ha_log_list)
