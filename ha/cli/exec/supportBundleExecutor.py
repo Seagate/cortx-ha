@@ -17,9 +17,6 @@
 
 import argparse
 import os
-import re
-import socket
-import time
 
 from ha import const
 from ha.cli.exec.commandExecutor import CommandExecutor
