@@ -52,10 +52,10 @@ class ClusterStartExecutor(CommandExecutor):
         parser = argparse.ArgumentParser(prog='cluster start all|<server>')
         parser.add_argument("cluster", help="Module")
         parser.add_argument("start", help="action to be performed")
-        group = parser.add_mutually_exclusive_group(required='True')
+        group = parser.add_mutually_exclusive_group()
         group.add_argument('--all', action='store_true',
                            help='All servers to start in a cluster')
-        group.add_argument('--server', action='store_true',
+        group.add_argument('--server', action='store_false',
                            help='Server to start in a cluster')
         parser.add_argument('--json', help='Required output format', action='store_true')
         self._args = parser.parse_args()
