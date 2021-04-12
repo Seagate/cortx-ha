@@ -104,7 +104,9 @@ class CLIUsage:
         return True
 
     def execute(self):
-        print(self.usage())
+        output = Output()
+        output.set_output(self.usage())
+        output.dump_output()
 
 class ClusterCLIUsage(CLIUsage):
 
