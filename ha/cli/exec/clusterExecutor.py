@@ -25,7 +25,7 @@ from cortx.utils.log import Log
 from ha.cli.exec.commandExecutor import CommandExecutor
 from ha.core.error import HAClusterStart, HAClusterCLIError
 from ha.core.error import HAUnimplemented
-
+from ha.cli.cli_schema import CLISchema
 
 class ClusterStartExecutor(CommandExecutor):
 
@@ -49,7 +49,9 @@ class ClusterStartExecutor(CommandExecutor):
         Parses the command line args.
         Return: argparse
         """
-        parser = argparse.ArgumentParser(prog='cluster start all|<server>')
+        parser = argparse.ArgumentParser(prog='cluster start cli',
+                        usage = CLISchema.get_usage("cluster", "start"),
+                        formatter_class = argparse.RawDescriptionHelpFormatter)
         parser.add_argument("cluster", help="Module")
         parser.add_argument("start", help="action to be performed")
         group = parser.add_mutually_exclusive_group()
@@ -88,7 +90,9 @@ class ClusterStopExecutor(CommandExecutor):
            Parses the command line args.
            Return: argparse
         '''
-        parser = argparse.ArgumentParser(description="cluster stop")
+        parser = argparse.ArgumentParser(prog='cluster stop cli',
+                        usage = CLISchema.get_usage("cluster", "stop"),
+                        formatter_class = argparse.RawDescriptionHelpFormatter)
         parser.add_argument("cluster", help="Module")
         parser.add_argument("stop", help="action to be performed")
         group = parser.add_mutually_exclusive_group()
@@ -184,10 +188,11 @@ class ClusterNodeAddExecutor(CommandExecutor):
            Parses the command line args.
            Return: argparse
         '''
-        parser = argparse.ArgumentParser(prog='cluster add node')
+        parser = argparse.ArgumentParser(prog='cluster add_node cli',
+                        usage = CLISchema.get_usage("cluster", "add_node"),
+                        formatter_class = argparse.RawDescriptionHelpFormatter)
         parser.add_argument("cluster", help="Module")
-        parser.add_argument("add", help="action to be performed")
-        parser.add_argument("node", help="component on which action to be performed")
+        parser.add_argument("add_node", help="action to be performed")
         group = parser.add_mutually_exclusive_group(required='True')
         group.add_argument('--nodeid', action='store', \
                            help='ID of a node which needs to be added in a cluster')

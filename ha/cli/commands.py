@@ -15,12 +15,10 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-
 from ha.core.error import HAInvalidCommand
 from ha.cli.command_factory import CmdFactory
 from ha.cli.exec.commandExecutor import CLIUsage
 from ha.cli.exec.commandExecutor import CommandExecutor as cmdExecutor
-
 
 class Command:
     """  Parse the CLI and call appropriate executor """
@@ -39,7 +37,7 @@ class Command:
             self.options = args[2:]
 
         except Exception:
-            print(CLIUsage.usage())
+            CLIUsage().execute()
             if self.module_name != "-h" and self.module_name != "--help":
                 raise HAInvalidCommand("Invalid parameters passed; refer to help (-h or --help) for details")
             else:
@@ -67,7 +65,7 @@ class Command:
             command_executor = self.cmd_factory.get_executor(self.module_name, self.operation_name)
 
             if command_executor is None:
-                print(CLIUsage.usage())
+                CLIUsage().execute()
                 raise HAInvalidCommand("Invalid parameters passed; refer to help for details")
 
             exec_class = self.get_class(command_executor)

@@ -153,6 +153,8 @@ class PostInstallCmd(Cmd):
                             const.CM_CONTROLLER_SCHEMA)
             PostInstallCmd.remove_file(const.ALERT_FILTER_RULES_FILE)
             shutil.copyfile(const.SOURCE_ALERT_FILTER_RULES_FILE, const.ALERT_FILTER_RULES_FILE)
+            PostInstallCmd.remove_file(const.CLI_SCHEMA_FILE)
+            shutil.copyfile(const.SOURCE_CLI_SCHEMA_FILE, const.CLI_SCHEMA_FILE)
             Log.info(f"{self.name}: Copied HA configs file.")
             # Pre-requisite checks are done here.
             # Make sure that cortx necessary packages have been installed
@@ -476,14 +478,11 @@ class CleanupCmd(Cmd):
             if self._confstore.key_exists(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}"):
                 self._confstore.delete(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
             # Delete the config file
-            if os.path.exists(const.HA_CONFIG_FILE):
-                os.remove(const.HA_CONFIG_FILE)
-            if os.path.exists(const.CM_CONTROLLER_SCHEMA):
-                os.remove(const.CM_CONTROLLER_SCHEMA)
-            if os.path.exists(const.FIDS_CONFIG_FILE):
-                os.remove(const.FIDS_CONFIG_FILE)
-            if os.path.exists(const.ALERT_FILTER_RULES_FILE):
-                os.remove(const.ALERT_FILTER_RULES_FILE)
+            CleanupCmd.remove_file(const.HA_CONFIG_FILE)
+            CleanupCmd.remove_file(const.CM_CONTROLLER_SCHEMA)
+            CleanupCmd.remove_file(const.FIDS_CONFIG_FILE)
+            CleanupCmd.remove_file(const.ALERT_FILTER_RULES_FILE)
+            CleanupCmd.remove_file(const.CLI_SCHEMA_FILE)
         except Exception as e:
             Log.error(f"Cluster cleanup command failed. Error: {e}")
             raise HaCleanupException("Cluster cleanup failed")

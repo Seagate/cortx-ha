@@ -22,6 +22,7 @@ import json
 import os
 
 from ha import const
+from ha.cli.cli_schema import CLISchema
 from cortx.utils.log import Log
 from ha.core.error import HAInvalidPermission, HAClusterCLIError, HAUnimplemented
 from ha.core.cluster.cluster_manager import CortxClusterManager
@@ -88,106 +89,33 @@ class CommandExecutor:
                 raise HAClusterCLIError('node_id can not be None')
         return node_id
 
-
 class CLIUsage:
+
+    def usage(self) -> str:
+        return CLISchema.get_help()
 
     def validate(self):
         return True
 
-    @staticmethod
-    def usage() -> str:
-        usage_string = ("\t[-h]\n"
-                        "\tcluster start [all|server] [--json]\n"
-                        "\tcluster stop [all|server] [--json]\n"
-                        "\tcluster restart\n"
-                        "\tcluster standby [--json]\n"
-                        "\tcluster active [--json]\n"
-                        "\tcluster list [nodes|storagesets|services]\n"
-                        "\tcluster status [all|hw|services] [--json]\n"
-                        "\tcluster add node [ --nodeid <node id> ] [ --descfile <node description file>] [ --username <cluster_username> ] [ --password <cluster_password> ] [--json]\n"
-                        "\tcluster add storageset [<storageset id>] [ --descfile <storageset description file>] [--json]\n"
-                        "\tnode start <Node> [all|server] [--json]\n"
-                        "\tnode stop <Node> [all|server] [--json]\n"
-                        "\tnode standby <Node> [--json]\n"
-                        "\tnode active <Node> [--json]\n"
-                        "\tnode status <Node> [all|hw|services] [--json]\n"
-                        "\tstorageset status [all|hw|services] <storageset_id>\n"
-                        "\tstorageset start <storageset_id>\n"
-                        "\tstorageset stop <storageset_id>\n"
-                        "\tstorageset standby <storageset_id>\n"
-                        "\tstorageset active <storageset_id>\n"
-                        "\tservice start <service> [--node <Node>] [--json]\n"
-                        "\tservice stop <service> [--node <Node>] [--json]\n"
-                        "\tservice status <service> [--node <Node>] [--json]\n")
-        return usage_string
-
-
     def execute(self):
         print(self.usage())
-
 
 class ClusterCLIUsage(CLIUsage):
 
-    @staticmethod
-    def usage() -> str:
-        usage_string = ("\t[-h]\n"
-                        "\tcluster start [all|server] [--json]\n"
-                        "\tcluster stop [all|server] [--json]\n"
-                        "\tcluster restart\n"
-                        "\tcluster standby [--json]\n"
-                        "\tcluster active [--json]\n"
-                        "\tcluster list [nodes|storagesets|services]\n"
-                        "\tcluster status [all|hw|services] [--json]\n"
-                        "\tcluster add node [<node id>] [ --descfile <node description file>] [--json]\n"
-                        "\tcluster add storageset [<storageset id>] [ --descfile <storageset description file>] [--json]\n")
-        return usage_string
-
-
-    def execute(self):
-        print(self.usage())
+    def usage(self) -> str:
+        return CLISchema.get_help("cluster")
 
 class NodeCLIUsage(CLIUsage):
 
-    @staticmethod
-    def usage() -> str:
-        usage_string = ("\t[-h]\n"
-                        "\tnode start <Node> [all|server] [--json]\n"
-                        "\tnode stop <Node> [all|server] [--json]\n"
-                        "\tnode standby <Node> [--json]\n"
-                        "\tnode active <Node> [--json]\n"
-                        "\tnode status <Node> [all|hw|services] [--json]\n")
-        return usage_string
-
-
-    def execute(self):
-        print(self.usage())
+    def usage(self) -> str:
+        return CLISchema.get_help("node")
 
 class StoragesetCLIUsage(CLIUsage):
 
-    @staticmethod
-    def usage() -> str:
-        usage_string = ("\t[-h]\n"
-                        "\tstorageset status [all|hw|services] <storageset_id>\n"
-                        "\tstorageset start <storageset_id>\n"
-                        "\tstorageset stop <storageset_id>\n"
-                        "\tstorageset standby <storageset_id>\n"
-                        "\tstorageset active <storageset_id>\n")
-        return usage_string
-
-
-    def execute(self):
-        print(self.usage())
+    def usage(self) -> str:
+        return CLISchema.get_help("storageset")
 
 class ServiceCLIUsage(CLIUsage):
 
-    @staticmethod
-    def usage() -> str:
-        usage_string = ("\t[-h]\n"
-                        "\tservice start <service> [--node <Node>] [--json]\n"
-                        "\tservice stop <service> [--node <Node>] [--json]\n"
-                        "\tservice status <service> [--node <Node>] [--json]\n")
-        return usage_string
-
-
-    def execute(self):
-        print(self.usage())
+    def usage(self) -> str:
+        return CLISchema.get_help("service")
