@@ -22,6 +22,7 @@ import json
 import os
 
 from ha import const
+from ha.const import STATUSES
 from ha.cli.cli_schema import CLISchema
 from cortx.utils.log import Log
 from ha.core.error import HAInvalidPermission, HAClusterCLIError, HAUnimplemented
@@ -40,6 +41,11 @@ class CommandExecutor:
 
     def execute(self) -> None:
         raise HAUnimplemented("This operation is not implemented.")
+
+    def is_status_failed(self, output):
+        output = json.loads(output)
+        if STATUSES.FAILED.value == output.get("status"):
+            return True
 
     """
     Routine used by executors to confirm acess permissions.

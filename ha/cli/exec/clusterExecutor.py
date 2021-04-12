@@ -20,6 +20,7 @@ import os
 import re
 import socket
 import time
+import json
 
 from cortx.utils.log import Log
 from ha.cli.exec.commandExecutor import CommandExecutor
@@ -72,11 +73,13 @@ class ClusterStartExecutor(CommandExecutor):
         if self._args.all:
             Log.info("Executing storage start")
             # TODO : start storage enclosure
-
-        if self._args.json:
-            self.op.print_json(_cluster_start_result)
         Log.info(_cluster_start_result)
-
+        if self.is_status_failed(_cluster_start_result):
+            self.op.set_rc(1)
+        self.op.set_output(_cluster_start_result)
+        if self._args.json:
+            self.op.set_format(self.op.JSON)
+        self.op.dump_output()
 
 class ClusterStopExecutor(CommandExecutor):
 
@@ -125,12 +128,13 @@ class ClusterStopExecutor(CommandExecutor):
             # TODO: Perform storageset stop
 
         stop_cluster_message = self.cluster_manager.cluster_controller.stop()
-        if self._args.json:
-            self.op.print_json(stop_cluster_message)
-        else:
-            print(stop_cluster_message)
         Log.info(stop_cluster_message)
-
+        if self.is_status_failed(stop_cluster_message):
+            self.op.set_rc(1)
+        self.op.set_output(stop_cluster_message)
+        if self._args.json:
+            self.op.set_format(self.op.JSON)
+        self.op.dump_output()
 
 class ClusterRestartExecutor(CommandExecutor):
     def validate(self) -> bool:
@@ -278,8 +282,13 @@ class ClusterNodeAddExecutor(CommandExecutor):
         if self._is_valid_node_id(node_id):
             add_node_result_message = self.cluster_manager.cluster_controller.add_node(node_id, \
                                     cluster_uname, cluster_pwd)
+            Log.info(add_node_result_message)
             if self._args.json:
-                self.op.print_json(add_node_result_message)
-            else:
-                print(add_node_result_message)
-        Log.info(add_node_result_message)
+                self.op.set_format(self.op.JSON)
+            self.op.set_output(add_node_result_message)
+            if self.is_status_failed(add_node_result_message):
+                self.op.set_rc(1)
+        else:
+            self.op.set_output("Invalid node")
+            self.op.set_rc(1)
+        self.op.dump_output()
