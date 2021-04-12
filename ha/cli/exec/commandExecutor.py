@@ -91,6 +91,9 @@ class CommandExecutor:
 
 class CLIUsage:
 
+    def validate(self):
+        return True
+
     @staticmethod
     def usage() -> str:
         usage_string = ("\t[-h]\n"
@@ -174,7 +177,6 @@ class StoragesetCLIUsage(CLIUsage):
 
     def execute(self):
         print(self.usage())
-
 
 class ServiceCLIUsage(CLIUsage):
 

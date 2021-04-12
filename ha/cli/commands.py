@@ -39,10 +39,9 @@ class Command:
             self.options = args[2:]
 
         except Exception:
-
             print(CLIUsage.usage())
             if self.module_name != "-h" and self.module_name != "--help":
-                raise HAInvalidCommand("Invalid parameters passed; refer to help for details")
+                raise HAInvalidCommand("Invalid parameters passed; refer to help (-h or --help) for details")
             else:
                 return False
         return True
