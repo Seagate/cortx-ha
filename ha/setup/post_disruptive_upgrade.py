@@ -33,7 +33,7 @@ def check_for_any_resource_presence() -> None:
     resource_list.split('\n')
 
     if resource_list:
-        Log.error('Some resources are already present. \
+         Log.error('Some resources are already present. \
                     Perform Post-Upgrade again')
         return
 
@@ -41,7 +41,7 @@ def is_cluster_standby_on() -> None:
     '''Check if cluster is in standby mode. If not, make standby mode ON'''
 
     Log.info('Check cluster is in standby mode')
-    check_standby_mode = 'crm_standby --query | awk '{print $3}' | cut -d '=' -f 2'
+    check_standby_mode = 'crm_standby --query | awk \'{print $3}\' | cut -d \'=\' -f 2'
     value = SimpleCommand().run_cmd(check_standby_mode)
 
     if value.lower() != 'on':
@@ -53,8 +53,7 @@ def is_cluster_standby_on() -> None:
 def restore_consul_backup():
 
     Log.info('Restoring the consul backup')
-
-   # TODO
+    # TODO
 
 def restore_config(src_dir: str = BACKUP_DEST_DIR_CONF, dest_dir: str = CONFIG_DIR) -> None:
     '''Restores the config taken at the pre-upgrade step'''
@@ -64,6 +63,7 @@ def restore_config(src_dir: str = BACKUP_DEST_DIR_CONF, dest_dir: str = CONFIG_D
         if os.path.exists(src_dir) and os.listdir(src_dir):
             copytree(src_dir, dest_dir)
     except Exception as e:
+        pass
         Log.error(f'post upgrade failed at config restore phase: {e}')
 
 def create_resources() -> None:
