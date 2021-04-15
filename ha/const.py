@@ -141,6 +141,12 @@ ALERT_FILTER_INDEX = "alert_filter_rules"
 ALERT_FILTER_RULES_FILE = "{}/alert_filter_rules.json".format(CONFIG_DIR)
 SOURCE_ALERT_FILTER_RULES_FILE = "{}/alert_filter_rules.json".format(SOURCE_CONFIG_PATH)
 
+#Event Parser
+EVENT_PARSER_INDEX = "event_parser_interfaces"
+EVENT_PARSER_INTERFACES_FILE = "{}/event_parser_interfaces.json".format(CONFIG_DIR)
+SOURCE_EVENT_PARSER_INTERFACES_FILE = "{}/event_parser_interfaces.json".format(SOURCE_CONFIG_PATH)
+
+
 class STATUSES(Enum):
     IN_PROGRESS = "InProgress"
     SUCCEEDED = "Succeeded"

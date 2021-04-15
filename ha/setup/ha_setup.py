@@ -153,6 +153,8 @@ class PostInstallCmd(Cmd):
                             const.CM_CONTROLLER_SCHEMA)
             PostInstallCmd.remove_file(const.ALERT_FILTER_RULES_FILE)
             shutil.copyfile(const.SOURCE_ALERT_FILTER_RULES_FILE, const.ALERT_FILTER_RULES_FILE)
+            PostInstallCmd.remove_file(const.EVENT_PARSER_INTERFACES_FILE)
+            shutil.copyfile(const.SOURCE_EVENT_PARSER_INTERFACES_FILE, const.EVENT_PARSER_INTERFACES_FILE)
             Log.info(f"{self.name}: Copied HA configs file.")
             # Pre-requisite checks are done here.
             # Make sure that cortx necessary packages have been installed
@@ -484,6 +486,8 @@ class CleanupCmd(Cmd):
                 os.remove(const.FIDS_CONFIG_FILE)
             if os.path.exists(const.ALERT_FILTER_RULES_FILE):
                 os.remove(const.ALERT_FILTER_RULES_FILE)
+            if os.path.exists(const.EVENT_PARSER_INTERFACES_FILE):
+                os.remove(const.EVENT_PARSER_INTERFACES_FILE)
         except Exception as e:
             Log.error(f"Cluster cleanup command failed. Error: {e}")
             raise HaCleanupException("Cluster cleanup failed")

@@ -85,6 +85,13 @@ class ConfigManager:
         ConfigManager._safe_load(const.ALERT_FILTER_INDEX, f"json://{const.ALERT_FILTER_RULES_FILE}")
 
     @staticmethod
+    def load_event_parser_interfaces():
+        """
+        Loads event parser interfces.
+        """
+        ConfigManager._safe_load(const.EVENT_PARSER_INDEX, f"json://{const.EVENT_PARSER_INTERFACES_FILE}")
+
+    @staticmethod
     def _safe_load(index: str, url: str):
         """
         Load config if not loaded

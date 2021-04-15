@@ -1,0 +1,23 @@
+{
+    "version":"2.0.0",
+    "alert": {
+        "standard": {
+            "event_id":"alert.message.sensor_response_type.alert_id",
+            "event_type": "alert.message.sensor_response_type.alert_type", 
+            "severity": "alert.message.sensor_response_type.severity" 
+        },
+        "info": {
+            "site_id": "alert.message.sensor_response_type.info.site_id", 
+            "rack_id": "alert.message.sensor_response_type.info.rack_id", 
+            "cluster_id": "alert.message.sensor_response_type.info.cluster_id", 
+            "storageset_id": "TBD", 
+            "node_id": "alert.message.sensor_response_type.info.node_id", 
+            "host_id": "alert.message.sensor_response_type.host_id", 
+            "resource_type": "alert.message.sensor_response_type.info.resource_type", 
+            "timestamp": "alert.message.sensor_response_type.info.event_time", 
+            "resource_id": "alert.message.sensor_response_type.info.resource_id",
+            "specific_info":"alert.message.sensor_response_type.specific_info"
+        }
+    },
+    "iem": "TBD"
+}
