@@ -25,7 +25,7 @@ class NodeStartExecutor(CommandExecutor):
 
     def __init__(self):
         """
-        Init cluster start executor
+        Init node start executor
         """
         super(NodeStartExecutor, self).__init__()
         self._args = None
@@ -49,9 +49,9 @@ class NodeStartExecutor(CommandExecutor):
         parser.add_argument('--nodeid', help='Node to start', required=True)
         group = parser.add_mutually_exclusive_group(required='True')
         group.add_argument('--all', action='store_true',
-                           help='All servers to start in a cluster')
+                           help='All server & storage to start in a cluster')
         group.add_argument('--server', action='store_true',
-                           help='Server to start in a cluster')
+                           help='Only server to start in a cluster')
         parser.add_argument('--json', help='Required output format', action='store_true')
         self._args = parser.parse_args()
         return True
@@ -60,7 +60,7 @@ class NodeStartExecutor(CommandExecutor):
         """
         Execute the node start
         """
-        Log.info("Executing cortxha node start")
+        Log.info("Executing cortx node start")
         node_id = None or self._args.nodeid
         if self.is_valid_node_id(node_id):
             result = self.cluster_manager.node_controller.start(node_id)
