@@ -38,7 +38,7 @@ class CreateExecutor(CommandExecutor):
         self._args = None
 
 
-    def parse_cluster_args(self) -> bool:
+    def parse_bundle_args(self) -> bool:
         '''
            Parses the command line args.
            Return: argparse
@@ -54,9 +54,10 @@ class CreateExecutor(CommandExecutor):
         return True
 
 
-    def validate(self) -> str:
-        self.parse_cluster_args()
-        return True
+    def validate(self) -> bool:
+        if self.parse_bundle_args():
+            return True
+        return False
 
     def execute(self) -> str:
         self.process_request()
