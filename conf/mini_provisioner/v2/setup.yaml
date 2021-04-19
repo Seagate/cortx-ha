@@ -55,3 +55,4 @@ ha:
         args: --location $URL
 
 support_bundle:
+    - cortx support_bundle create
