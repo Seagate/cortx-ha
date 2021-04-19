@@ -15,26 +15,14 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-import inspect
-
 from cortx.utils.log import Log
-from ha.cli import commands
-from ha.core.config.config_manager import ConfigManager
 from ha.cli.cli_schema import CLISchema
 
 class CmdFactory:
-    def __init__(self):
-        """
-        init of command factory
-        """
-        # Initialize logging.
-        # Prefix of the log file name "cortxcli" is passed to the init function;
-        # So the generated log file will be cortxcli.log
-        ConfigManager.init("cortxcli")
 
-    def get_executor(self, module_name: str, operation_name: str) -> str:
+    @staticmethod
+    def get_executor(module_name: str, operation_name: str) -> str:
         """ return the appropriate class name from the dictionary"""
-
         try:
             executor = CLISchema.get_class(module_name, operation_name)
         except Exception:

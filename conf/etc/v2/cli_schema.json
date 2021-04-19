@@ -34,7 +34,7 @@
             "class": "ha.cli.exec.clusterExecutor.ClusterStatusExecutor"
         },
         "add_node": {
-            "usage": "cortx cluster add_node [ --nodeid <node id> ] [ --descfile <node description file>] [ --username <cluster_username> ] [ --password <cluster_password> ] [--json]",
+            "usage": "cortx cluster add_node [--nodeid <node id> | --descfile <node description file>] [ --username <cluster_username> ] [ --password <cluster_password> ] [--json]",
             "class": "ha.cli.exec.clusterExecutor.ClusterNodeAddExecutor"
         },
         "add_storageset": {
@@ -48,23 +48,23 @@
             "class": "ha.cli.exec.commandExecutor.NodeCLIUsage"
         },
         "start": {
-            "usage": "cortx node start <Node> [-h] [--all | --server] [--json]",
+            "usage": "cortx node start <nodeid> [-h] [--all | --server] [--json]",
             "class": "ha.cli.exec.nodeExecutor.NodeStartExecutor"
         },
         "stop": {
-            "usage": "cortx node stop <Node> [-h] [--all | --server] [--json]",
+            "usage": "cortx node stop <nodeid> [-h] [--all | --server] [--json]",
             "class": "ha.cli.exec.nodeExecutor.NodeStopExecutor"
         },
         "standby": {
-            "usage": "cortx node standby <Node> [--json]",
+            "usage": "cortx node standby <nodeid> [--json]",
             "class": "ha.cli.exec.nodeExecutor.NodeStandbyExecutor"
         },
         "active": {
-            "usage": "cortx node active <Node> [--json]",
+            "usage": "cortx node active <nodeid> [--json]",
             "class": "ha.cli.exec.nodeExecutor.NodeActiveExecutor"
         },
         "status": {
-            "usage": "cortx node status <Node> [all|hw|services] [--json]",
+            "usage": "cortx node status <nodeid> [--all| --hw| --services] [--json]",
             "class": "ha.cli.exec.nodeExecutor.NodeStatusExecutor"
         }
     },
@@ -74,7 +74,7 @@
             "class": "ha.cli.exec.commandExecutor.StoragesetCLIUsage"
         },
         "status": {
-            "usage": "cortx storageset status [all|hw|services] <storageset_id>",
+            "usage": "cortx storageset status <storagesetid> [all|hw|services]",
             "class": "ha.cli.exec.storagesetExecutor.StoragesetStatusExecutor"
         },
         "start": {
@@ -112,7 +112,7 @@
             "class": "ha.cli.exec.serviceExecutor.ServiceStatusExecutor"
         }
     },
-    "support bundle": {
+    "support_bundle": {
         "create": {
             "usage": "",
             "class": ""

@@ -49,7 +49,7 @@ class Output:
         sys.stdout.write(self.output)
 
     # TBD print in  tabular format
-    def print_string(self, output_data):
+    def print_string(self):
         parse = json.loads(self.output)
         sys.stdout.write(json.dumps(parse, indent=4, sort_keys=False))
 

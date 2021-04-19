@@ -53,7 +53,7 @@ class ClusterStartExecutor(CommandExecutor):
         group.add_argument('--all', action='store_true',
                            help='All servers to start in a cluster')
         group.add_argument('--server', action='store_false',
-                           help='Server to start in a cluster')
+                           help='Server to start in a cluster (Default: true)')
         parser.add_argument('--json', help='Required output format', action='store_true')
         self._args = parser.parse_args()
         return True
@@ -67,7 +67,7 @@ class ClusterStartExecutor(CommandExecutor):
         if self._args.all:
             Log.info("Executing storage start")
             # TODO : start storage enclosure
-        Log.info(_cluster_start_result)
+        Log.debug(_cluster_start_result)
         if self.is_status_failed(_cluster_start_result):
             self.op.set_rc(1)
         self.op.set_output(_cluster_start_result)
@@ -96,7 +96,7 @@ class ClusterStopExecutor(CommandExecutor):
         group.add_argument('--all', action='store_true', \
                             help='Server and storage stop')
         group.add_argument('--server', action='store_false', \
-                            help='server stop')
+                            help='server stop (Default: true)')
         parser.add_argument('--json', help='Required output format', action='store_true')
         return parser.parse_args()
 
@@ -168,7 +168,6 @@ class ClusterStatusExecutor(CommandExecutor):
 
     def execute(self) -> None:
         raise HAUnimplemented("This operation is not implemented.")
-
 
 class ClusterNodeAddExecutor(CommandExecutor):
     '''
@@ -248,7 +247,4 @@ class ClusterNodeAddExecutor(CommandExecutor):
             self.op.set_output(add_node_result_message)
             if self.is_status_failed(add_node_result_message):
                 self.op.set_rc(1)
-        else:
-            self.op.set_output("Invalid node")
-            self.op.set_rc(1)
-        self.op.dump_output()
+            self.op.dump_output()

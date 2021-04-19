@@ -15,6 +15,9 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
+import traceback
+from cortx.utils.log import Log
+from ha.core.config.config_manager import ConfigManager
 from ha.core.error import HAInvalidCommand
 from ha.cli.command_factory import CmdFactory
 from ha.cli.exec.commandExecutor import CLIUsage
@@ -23,6 +26,7 @@ from ha.cli.exec.commandExecutor import CommandExecutor as cmdExecutor
 class Command:
     """  Parse the CLI and call appropriate executor """
     def __init__(self):
+        ConfigManager.init("cortxcli")
         self.module_name = None
         self.operation_name = None
         self.options = None
@@ -62,7 +66,7 @@ class Command:
         self.cmd_executor.validate_permissions()
 
         if self.parse(args):
-            command_executor = self.cmd_factory.get_executor(self.module_name, self.operation_name)
+            command_executor = CmdFactory.get_executor(self.module_name, self.operation_name)
 
             if command_executor is None:
                 CLIUsage().execute()
@@ -72,7 +76,11 @@ class Command:
             # Call execute function of the appropriate executor class
             executor_class = exec_class()
             if executor_class.validate():
-                executor_class.execute()
+                try:
+                    executor_class.execute()
+                except Exception as err:
+                    Log.error(f"{traceback.format_exc()}, {err}")
+                    raise Exception(f"CLI execution failed, Error: {err}")
 
 
 """
