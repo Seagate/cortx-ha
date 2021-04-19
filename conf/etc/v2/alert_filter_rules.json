@@ -1,0 +1,14 @@
+{
+    "version": "2.0.0",
+    "alert": {
+        "filter_type":"inclusion",
+        "resource_type":[
+            "enclosure:fru:controller",
+            "enclosure:fru:fan"
+        ]
+    },
+    "iem": {
+        "filter_type":"inclusion",
+        "resource_type":"iem"
+    }
+}
