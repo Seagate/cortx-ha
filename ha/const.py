@@ -118,7 +118,6 @@ PCS_NODE_UNSTANDBY="pcs node unstandby <node>"
 PCS_CLEANUP="pcs resource cleanup"
 PCS_FAILCOUNT_STATUS="pcs resource failcount show"
 PCS_NODE_CLEANUP= PCS_CLEANUP + " --node <node>"
-PCS_NODE_FAILCOUNT_STATUS= PCS_FAILCOUNT_STATUS + " --node <node>"
 PCS_STOP_NODE="pcs cluster stop <node> --request-timeout=<seconds>"
 PCS_STOP_CLUSTER="pcs cluster stop --request-timeout=<seconds> --all"
 PCS_STATUS = "pcs status"
@@ -130,7 +129,6 @@ PCS_STONITH_DISABLE="pcs property set stonith-enabled=False"
 CM_CONTROLLER_INDEX="cluster_controller_interfaces"
 CM_CONTROLLER_SCHEMA="{}/cluster_controller_interfaces.json".format(CONFIG_DIR)
 CM_ELEMENT=["cluster", "node", "service", "storageset"]
-NO_FAILCOUNT = "No failcounts"
 RETRY_COUNT = 2
 PCS_NODE_GROUP_SIZE = 3
 NODE_CONTROLLER = "node_controller"
