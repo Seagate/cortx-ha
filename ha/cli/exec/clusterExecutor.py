@@ -17,14 +17,8 @@
 
 import argparse
 import os
-import re
-import socket
-import time
-import json
-
 from cortx.utils.log import Log
 from ha.cli.exec.commandExecutor import CommandExecutor
-from ha.core.error import HAClusterStart, HAClusterCLIError
 from ha.core.error import HAUnimplemented
 from ha.cli.cli_schema import CLISchema
 
@@ -234,40 +228,6 @@ class ClusterNodeAddExecutor(CommandExecutor):
             return True
         return False
 
-    def _is_valid_node_id(self, node_id) -> bool:
-        '''
-           Checks if node id gets resolved to some IP address or not
-           Returns: bool
-           Exception: socket.gaierror, socket.herror
-        '''
-
-        # TODO: change this logic and validate the node_id from the
-        # list coming from system health
-        ip_validator_regex = "^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])$"
-
-        # node_id can be passed as IP address or FQDN or
-        # some random number or just sequence of chars
-
-        # first seperate the string from dots.
-        splitted_node_id = node_id.replace('.', '')
-
-        # If string only contains numbers, means it can be just
-        # random number or can be an IP address. So, IP address
-        # validation can be done. else for random number, exception will be
-        # raised
-        if re.search('^[0-9]*$', splitted_node_id):
-            if re.search(ip_validator_regex, node_id):
-                return True
-            raise HAClusterCLIError(f'{node_id} is not a valid node_id')
-        # else it can be combination of chars and numbers means hostname or just a
-        # random meaningless string
-        else:
-            try:
-                socket.gethostbyname(node_id)
-            except Exception as err:
-                raise HAClusterCLIError(f'{node_id} not a valid node_id: {err}')
-        return True
-
     def execute(self) -> None:
         '''
            Execute CLI request by passing it to ClusterManager and
@@ -279,7 +239,7 @@ class ClusterNodeAddExecutor(CommandExecutor):
         cluster_pwd = self._args.password
         if self._args.descfile:
             node_id = self.parse_node_desc_file(self._args.descfile)
-        if self._is_valid_node_id(node_id):
+        if self.is_valid_node_id(node_id):
             add_node_result_message = self.cluster_manager.cluster_controller.add_node(node_id, \
                                     cluster_uname, cluster_pwd)
             Log.info(add_node_result_message)

@@ -15,16 +15,63 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
+import argparse
 from ha.core.error import HAUnimplemented
 from ha.cli.exec.commandExecutor import CommandExecutor
+from cortx.utils.log import Log
+
 
 class NodeStartExecutor(CommandExecutor):
 
-    def validate(self) -> str:
-        raise HAUnimplemented("This operation is not implemented.")
+    def __init__(self):
+        """
+        Init node start executor
+        """
+        super(NodeStartExecutor, self).__init__()
+        self._args = None
 
-    def execute(self) -> str:
-        raise HAUnimplemented("This operation is not implemented.")
+    def validate(self) -> bool:
+        """
+        Validate the command arguments
+        """
+        if self.parse_cluster_args():
+            return True
+        return False
+
+    def parse_cluster_args(self) -> bool:
+        """
+        Parses the command line args.
+        Return: argparse
+        """
+        parser = argparse.ArgumentParser(prog='node start <Node> [all|server] [--json]')
+        parser.add_argument("node", help="Module")
+        parser.add_argument("start", help="action to be performed")
+        parser.add_argument('--nodeid', help='Node to start', required=True)
+        group = parser.add_mutually_exclusive_group(required='True')
+        group.add_argument('--all', action='store_true',
+                           help='Start both server & storage in a node')
+        group.add_argument('--server', action='store_true',
+                           help='Start only server in a node')
+        parser.add_argument('--json', help='Required output format', action='store_true')
+        self._args = parser.parse_args()
+        return True
+
+    def execute(self) -> None:
+        """
+        Execute the node start
+        """
+        Log.info("Executing cortx node start")
+        node_id = None or self._args.nodeid
+        if self.is_valid_node_id(node_id):
+            result = self.cluster_manager.node_controller.start(node_id)
+            if self._args.all:
+                Log.info("Executing storage start")
+                # TODO : start storage enclosure
+            if self._args.json:
+                self.op.print_json(result)
+            else:
+                print(result)
+            Log.info(result)
 
 
 class NodeStopExecutor(CommandExecutor):
@@ -35,6 +82,7 @@ class NodeStopExecutor(CommandExecutor):
     def execute(self) -> str:
         raise HAUnimplemented("This operation is not implemented.")
 
+
 class NodeStandbyExecutor(CommandExecutor):
 
     def validate(self) -> str:
@@ -43,6 +91,7 @@ class NodeStandbyExecutor(CommandExecutor):
     def execute(self) -> str:
         raise HAUnimplemented("This operation is not implemented.")
 
+
 class NodeActiveExecutor(CommandExecutor):
 
     def validate(self) -> str:
@@ -50,6 +99,7 @@ class NodeActiveExecutor(CommandExecutor):
 
     def execute(self) -> str:
         raise HAUnimplemented("This operation is not implemented.")
+
 
 class NodeStatusExecutor(CommandExecutor):
 
