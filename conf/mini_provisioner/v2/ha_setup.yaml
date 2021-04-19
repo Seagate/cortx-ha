@@ -18,10 +18,6 @@ ha:
         cmd: ha_setup post_install
         args: --config $URL
 
-    prepare:
-        cmd: ha_setup prepare
-        args: --config $URL
-
     config:
         cmd: ha_setup config
         args: --config $URL
