@@ -17,9 +17,6 @@
 
 import abc
 import json
-from ha import const
-from cortx.utils.conf_store.conf_store import Conf
-from ha.core.config.config_manager import ConfigManager
 from ha.core.system_health.model.health_event import HealthEvent
 
 class Parser(metaclass=abc.ABCMeta):
