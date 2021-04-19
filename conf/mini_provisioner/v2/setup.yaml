@@ -14,6 +14,10 @@
 # cortx-questions@seagate.com.
 
 ha:
+    prepare:
+        cmd: /opt/seagate/cortx/ha/bin/ha_setup prepare
+        args: --config $URL
+
     post_install:
         cmd: /opt/seagate/cortx/ha/bin/ha_setup post_install
         args: --config $URL
