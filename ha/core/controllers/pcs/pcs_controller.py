@@ -82,12 +82,11 @@ class PcsController(ElementController):
         """
         Resource fail count check
         """
-        _output, _err, _rc = self._execute.run_cmd(const.PCS_NODE_FAILCOUNT_STATUS.replace("<node>", node_id),
-                                                   check_error=False)
-        if const.NO_FAILCOUNT in _output:
-            return False
-        else:
+        _output, _err, _rc = self._execute.run_cmd(const.PCS_FAILCOUNT_STATUS, check_error=False)
+        if node_id in _output:
             return True
+        else:
+            return False
 
     def clean_failure_count(self, node_id):
         """
