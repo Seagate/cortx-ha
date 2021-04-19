@@ -26,11 +26,6 @@ class Parser(metaclass=abc.ABCMeta):
     """
     Subscriber for event analyzer to pass msg.
     """
-    def __init__(self):
-        """
-        Init method
-        """
-        pass
 
     @abc.abstractmethod
     def parse_event(self, msg: str) -> HealthEvent:
@@ -46,13 +41,6 @@ class AlertParser(Parser):
     Subscriber for event analyzer to pass msg.
     """
 
-    def __init__(self):
-        """
-        Init method
-        """
-        #Loads event parser interfaces in the config
-        ConfigManager.load_event_parser_interfaces()
-
     def parse_event(self, msg: str) -> HealthEvent:
         """
         Parse event.
@@ -61,22 +49,21 @@ class AlertParser(Parser):
         """
         alert = json.loads(msg)
 
-        EventIdKeyList = Conf.get(const.EVENT_PARSER_INDEX, "alert.standard.event_id").split(".")
+        event = {
+            "event_id" : alert.get('sensor_response_type').get('alert_id'),
+            "event_type" : alert.get('sensor_response_type').get('alert_type'),
+            "severity" : alert.get('sensor_response_type').get('severity'),
+            "site_id" : alert.get('sensor_response_type').get('info').get('site_id'),
+            "rack_id" : alert.get('sensor_response_type').get('info').get('rack_id'),
+            "cluster_id" : alert.get('sensor_response_type').get('info').get('cluster_id'),
+            "storageset_id" : "TBD",
+            "node_id" : alert.get('sensor_response_type').get('info').get('node_id'),
+            "host_id" : alert.get('sensor_response_type').get('host_id'),
+            "resource_type" : alert.get('sensor_response_type').get('info').get('resource_type'),
+            "timestamp" : alert.get('sensor_response_type').get('info').get('event_time'),
+            "resource_id" : alert.get('sensor_response_type').get('info').get('resource_id'),
+            "specific_info" : alert.get('sensor_response_type').get('specific_info')
+        }
 
-        #Use Event id key list and access the dict
-        event_id = alert.get('sensor_response_type').get('alert_id')
-        event_type = None
-        severity = None
-        site_id = None
-        rack_id = None
-        cluster_id = None
-        storageset_id = None
-        node_id = None
-        host_id = None
-        resource_type = None
-        timestamp = None
-        resource_id = None
-        specific_info = None
-
-        health_event = HealthEvent(event_id, event_type, severity, site_id, rack_id, cluster_id, storageset_id, node_id, host_id, resource_type, timestamp, resource_id, specific_info)
+        health_event = HealthEvent.dict_to_object(event)
         return health_event

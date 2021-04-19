@@ -23,13 +23,10 @@ import pathlib
 # Test case for alert filter
 if __name__ == '__main__':
     sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..', '..', '..'))
-    #from cortx.utils.conf_store.conf_store import Conf
-    #from ha import const
-    from ha.core.config.config_manager import ConfigManager
     from ha.core.event_analyzer.parser.parser import AlertParser
+    from ha.core.system_health.model.health_event import HealthEvent
     import traceback
     try:
-        ConfigManager.init("test_event_parser")
         alert_parser = AlertParser()
         print("********Alert Parser********")
         resource_type = "enclosure:fru:fan"
@@ -70,8 +67,24 @@ if __name__ == '__main__':
         }
 
         health_event = alert_parser.parse_event(json.dumps(TestMsg))
-        print(f"resource type: {health_event.resource_type}")
-        print(f"Event id: {health_event.event_id}")
+
+        if isinstance(health_event, HealthEvent):
+            print(f"event_id : {health_event.event_id}")
+            print(f"event_type : {health_event.event_type}")
+            print(f"severity : {health_event.severity}")
+            print(f"site_id : {health_event.site_id}")
+            print(f"rack_id : {health_event.rack_id}")
+            print(f"cluster_id : {health_event.cluster_id}")
+            print(f"storageset_id : {health_event.storageset_id}")
+            print(f"node_id : {health_event.node_id}")
+            print(f"host_id : {health_event.host_id}")
+            print(f"resource_type : {health_event.resource_type}")
+            print(f"timestamp : {health_event.timestamp}")
+            print(f"resource_id : {health_event.resource_id}")
+            print(f"specific_info : {health_event.specific_info}")
+            print("Event alert parser test passed successfully")
+        else:
+            print("Event alert parser test failed")
 
     except Exception as e:
         print(f"{traceback.format_exc()}, {e}")
