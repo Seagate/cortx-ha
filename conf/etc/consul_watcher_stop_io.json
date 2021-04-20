@@ -1,0 +1,9 @@
+{
+    "watches": [
+          {
+            "type": "keyprefix",
+            "prefix": "cortx/base/ha/obj/node/",
+            "args": ["/etc/cortx/ha/ha_stop_io"]
+          }
+    ]
+}
