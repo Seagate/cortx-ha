@@ -19,7 +19,6 @@ import json
 import os
 import sys
 import pathlib
-import traceback
 
 sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..', '..', '..'))
 from ha.core.event_analyzer.parser.parser import AlertParser
