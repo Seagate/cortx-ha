@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
 #
 # This program is free software: you can redistribute it and/or modify it under the
 # terms of the GNU Affero General Public License as published by the Free Software
@@ -15,17 +15,26 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
+HA_LOG="/var/log/seagate/cortx/ha"
 
 # Extract keys matching to STR from consul that contain the string stop_io
 STR="cortx/base/ha/obj/node/"
 # search in consul for "action": "stop_io"
 OUTPUT=$( consul kv get -recurse $STR | grep "\"action\": \"stop_io\"" )
 
+# Add Log
+mkdir -p "${HA_LOG}"/
+exec &>> "${HA_LOG}"/${0##*/}.log
+exec &> >(stdbuf -oL gawk '{ print strftime("%Y-%m-%d %H:%M:%S"), $0 }')
 
 if [ "$OUTPUT" ]
 then
     #execute resource stop
+    pcs status
+    echo "IEM received, Stopping IO"
     pcs resource disable lnet-c1 lnet-c2
+    echo "Resource disable in progress."
+    pcs status
 fi
 
 
