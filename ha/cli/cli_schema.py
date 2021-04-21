@@ -17,15 +17,16 @@
 
 import json
 from ha import const
+from ha.core.error import HaConfigException
 
 class CLISchema:
 
     SCHEMA = None
 
     @staticmethod
-    def get_schama():
+    def get_schema():
         """
-        Schama initialization
+        Schema initialization
         """
         if CLISchema.SCHEMA is None:
             with open(const.CLI_SCHEMA_FILE, "r") as fi:
@@ -34,23 +35,26 @@ class CLISchema:
 
     @staticmethod
     def get_help(module = None):
-        schema = CLISchema.get_schama()
-        help_cli = ""
-        if module == None:
-            for module in schema:
-                if module != "version":
-                    help_cli += f"\n\nFor {module} Command:\n--------------------------\n"
-                    for action in schema[module]:
-                        help_cli += schema[module][action]["usage"] + "\n"
-        else:
-            help_cli += f"\n\nFor {module} Command:\n--------------------------\n"
-            for action in schema[module]:
-                help_cli += schema[module][action]["usage"] + "\n"
-        return help_cli
+        try:
+            schema = CLISchema.get_schema()
+            help_cli = ""
+            if module == None:
+                for module in schema:
+                    if module != "version":
+                        help_cli += f"\n\nFor {module} Command:\n--------------------------\n"
+                        for action in schema[module]:
+                            help_cli += schema[module][action]["usage"] + "\n"
+            else:
+                help_cli += f"\n\nFor {module} Command:\n--------------------------\n"
+                for action in schema[module]:
+                    help_cli += schema[module][action]["usage"] + "\n"
+            return help_cli
+        except Exception as e:
+            raise HaConfigException(f"Invalid cli configuration. Error: {e}")
 
     @staticmethod
     def get_class(module_name: str, operation_name: str):
-        schema = CLISchema.get_schama()
+        schema = CLISchema.get_schema()
         if operation_name in ["-h", "--help"]:
             return schema[module_name]["help"]["class"]
         else:
@@ -58,5 +62,5 @@ class CLISchema:
 
     @staticmethod
     def get_usage(module_name: str, operation_name: str):
-        schema = CLISchema.get_schama()
+        schema = CLISchema.get_schema()
         return schema[module_name][operation_name]["usage"]
