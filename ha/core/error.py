@@ -31,11 +31,9 @@ HA_PRE_UPGRADE_FAILED           = 0x0007
 HA_SETUP_FAILED                 = 0x0008
 HA_REMOTE_EXECUTOR_FAILED       = 0x0009
 HA_INVALID_PERMISSION_ERROR     = 0x000a
-# To be removed once the "cortx cluster start" user story [EOS-16248] is started
-HA_CLUSTER_START_ERROR          = 0x000b
-HA_SYSTEM_HEALTH_FAILED         = 0x000c
-HA_CLUSTER_CLI_FAILED           = 0x000d
-HA_EVENT_ANALYZER_ERROR         = 0x000e
+HA_SYSTEM_HEALTH_FAILED         = 0x000b
+HA_CLUSTER_CLI_FAILED           = 0x000c
+HA_EVENT_ANALYZER_ERROR         = 0x000d
 
 class HAError(BaseError):
     def __init__(self, rc=1, desc=None, message_id=HA_BASIC_ERROR, message_args=None):
@@ -200,17 +198,6 @@ class HAInvalidPermission(HAError):
         _rc = 1
         super(HAInvalidPermission, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
 
-# To be removed once the "cortx cluster start" user story [EOS-16248] is started
-class HAClusterStart(HAError):
-    def __init__(self, desc=None):
-        """
-        Handle cluster start error.
-        """
-        _desc = f"Cluster start error. stack: {inspect.stack()[1]}" if desc is None else desc
-        _message_id = HA_CLUSTER_START_ERROR
-        _rc = 1
-        super(HAClusterStart, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
-
 class SystemHealthError(HAError):
     def __init__(self, desc=None):
         """
@@ -267,6 +254,6 @@ class EventAnalyzer(HAError):
         Event Analyzer exceptions.
         """
         _desc = "Event analyser exception." if desc is None else desc
-        _message_id = HA_EVENT_ANALYSER_FAILED
+        _message_id = HA_EVENT_ANALYZER_ERROR
         _rc = 1
         super(EventAnalyzer, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)

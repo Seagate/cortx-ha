@@ -79,7 +79,7 @@ class Watcher(Thread):
         """
         while True:
             try:
-                message = json.loads(consumer.receive(timeout=0).decode('utf-8'))
+                message = json.loads(self.consumer.receive(timeout=0).decode('utf-8'))
                 if filter.filter_event(message):
                     event = self.parser.parse_event(message)
                     self.subscriber.process_event(event)

@@ -21,16 +21,21 @@ import sys
 import pathlib
 from cortx.utils.message_bus import MessageProducer
 from cortx.utils.message_bus import MessageBusAdmin
-sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..', '..', '..'))
+from cortx.utils.message_bus.error import MessageBusError
 
-MESSAGE_TYPE="alerts"
+MESSAGE_TYPE="Alerts"
 
 if __name__ == '__main__':
-    admin = MessageBusAdmin(admin_id='admin')
-    message_type_list = admin.list_message_types()
-    if MESSAGE_TYPE not in message_type_list:
-        admin.register_message_type(message_types=[MESSAGE_TYPE], partitions = 1)
-
-    producer = MessageProducer(producer_id="sspl_sensor", message_type="alerts")
+    admin = MessageBusAdmin(admin_id="admin")
+    try:
+        admin.register_message_type(message_types=MESSAGE_TYPE, partitions=1)
+    except MessageBusError as e:
+        print("\n\n\n\n" + e.desc + "\n\n\n\n")
+        if "ALREADY_EXISTS" not in e.desc:
+            raise e
+    producer = MessageProducer(producer_id="sspl-sensor", message_type=MESSAGE_TYPE,  method="Sync")
     message_list = ["This is test message 1",   "This is test message 2"]
     producer.send(message_list)
+
+    from threading import Event
+    producer_initialized = Event()
