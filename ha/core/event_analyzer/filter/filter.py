@@ -81,7 +81,8 @@ class AlertFilter(Filter):
             else:
                 Log.error("Invalid filter type in the event filter rules")
 
+            return Alert_required
+
         except Exception as e:
             raise EventAnalyzerError(f"Failed to filter event. Message: {msg}, Error: {e}")
 
-        return Alert_required
