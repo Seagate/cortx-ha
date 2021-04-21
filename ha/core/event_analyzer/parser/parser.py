@@ -66,7 +66,8 @@ class AlertParser(Parser):
 
             health_event = HealthEvent.dict_to_object(event)
 
+            return health_event
+
         except Exception as e:
             raise EventAnalyzerError(f"Failed to parse alert. Message: {msg}, Error: {e}")
 
-        return health_event
