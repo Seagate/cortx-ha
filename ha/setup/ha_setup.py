@@ -73,7 +73,7 @@ class Cmd:
         sys.stderr.write(
             f"usage: {prog} [-h] <cmd> <--config url> <args>...\n"
             f"where:\n"
-            f"cmd   post_install, config, init, test, upgrade, reset, cleanup, backup, restore\n"
+            f"cmd   post_install, prepare, config, init, test, upgrade, reset, cleanup, backup, restore\n"
             f"--config   Config URL")
 
     @staticmethod
@@ -185,6 +185,25 @@ class PostInstallCmd(Cmd):
             raise HaPrerequisiteException("post_install command failed")
 
         Log.info("post_install command is successful")
+
+class PrepareCmd(Cmd):
+    """
+    Prepare Setup Cmd
+    """
+    name = "prepare"
+
+    def __init__(self, args):
+        """
+        Init method.
+        """
+        super().__init__(args)
+
+    def process(self):
+        """
+        Process prepare command.
+        """
+        Log.info("Processing prepare command")
+        Log.info("prepare command is successful")
 
 class ConfigCmd(Cmd):
     """
