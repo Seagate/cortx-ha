@@ -27,7 +27,6 @@ from ha import const
 # List of resource
 motr-free-space-mon
 io_group-clone
-    hax-consul
     hax
     motr-confd-1
     motr-ios-1
@@ -61,12 +60,6 @@ def cib_get(cib_xml):
 
 def hax(cib_xml, push=False, **kwargs):
     """Create resources that belong to hax and clone the group."""
-    # TODO cmd_hare_consul is temporary code and should be removed once fixed by hax/provisioner.
-    # hax-consul
-    process.run_cmd(f"pcs -f {cib_xml} resource create hax-consul systemd:hare-consul-agent \
-        op start timeout=100s interval=0s \
-        op monitor timeout=30s interval=30s \
-        op stop timeout=120s interval=0s --group io_group")
     # hax
     process.run_cmd(f"pcs -f {cib_xml} resource create hax systemd:hare-hax \
         op start timeout=100s interval=0s \
@@ -86,7 +79,7 @@ def motr(cib_xml, push=False, **kwargs):
     else:
         ios_instances = 1
     for i in range(1, int(ios_instances)+1):
-        process.run_cmd(f"pcs -f {cib_xml} resource create motr-ios-{i} ocf:seagate:dynamic_fid_service_ra service=m0d fid_service_name=ios \
+        process.run_cmd(f"pcs -f {cib_xml} resource create motr-ios-{i} ocf:seagate:dynamic_fid_service_ra service=m0d fid_service_name=ioservice \
             op start timeout=100s interval=0s \
             op monitor timeout=30s interval=30s \
             op stop timeout=120s interval=0s --group io_group")
@@ -112,7 +105,7 @@ def s3servers(cib_xml, push=False, **kwargs):
     except Exception as e:
         raise CreateResourceConfigError(f"Invalid s3 instance. Error: {e}")
     for i in range(1, int(instance)+1):
-        process.run_cmd(f"pcs -f {cib_xml} resource create s3server-{i} ocf:seagate:dynamic_fid_service_ra service=s3server fid_service_name=s3service \
+        process.run_cmd(f"pcs -f {cib_xml} resource create s3server-{i} ocf:seagate:dynamic_fid_service_ra service=s3server fid_service_name=s3server \
             op start timeout=60s interval=0s \
             op monitor timeout=30s interval=30s \
             op stop timeout=60s interval=0s --group io_group")

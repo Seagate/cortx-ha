@@ -73,7 +73,7 @@ class Cmd:
         sys.stderr.write(
             f"usage: {prog} [-h] <cmd> <--config url> <args>...\n"
             f"where:\n"
-            f"cmd   post_install, config, init, test, upgrade, reset, cleanup, backup, restore\n"
+            f"cmd   post_install, prepare, config, init, test, upgrade, reset, cleanup, backup, restore\n"
             f"--config   Config URL")
 
     @staticmethod
@@ -151,6 +151,8 @@ class PostInstallCmd(Cmd):
             PostInstallCmd.remove_file(const.CM_CONTROLLER_SCHEMA)
             shutil.copyfile(f"{const.SOURCE_CONFIG_PATH}/{const.CM_CONTROLLER_INDEX}.json",
                             const.CM_CONTROLLER_SCHEMA)
+            PostInstallCmd.remove_file(const.ALERT_FILTER_RULES_FILE)
+            shutil.copyfile(const.SOURCE_ALERT_FILTER_RULES_FILE, const.ALERT_FILTER_RULES_FILE)
             Log.info(f"{self.name}: Copied HA configs file.")
             # Pre-requisite checks are done here.
             # Make sure that cortx necessary packages have been installed
@@ -171,6 +173,25 @@ class PostInstallCmd(Cmd):
             raise HaPrerequisiteException("post_install command failed")
 
         Log.info("post_install command is successful")
+
+class PrepareCmd(Cmd):
+    """
+    Prepare Setup Cmd
+    """
+    name = "prepare"
+
+    def __init__(self, args):
+        """
+        Init method.
+        """
+        super().__init__(args)
+
+    def process(self):
+        """
+        Process prepare command.
+        """
+        Log.info("Processing prepare command")
+        Log.info("prepare command is successful")
 
 class ConfigCmd(Cmd):
     """
@@ -201,8 +222,6 @@ class ConfigCmd(Cmd):
         cluster_name = Conf.get(self._index, f"cluster.{cluster_id}.name")
         cluster_user = Conf.get(self._index, f"cortx.software.{const.HA_CLUSTER_SOFTWARE}.user")
         node_type = Conf.get(self._index, f"server_node.{machine_id}.type").strip()
-        self._update_env(node_name, node_type, const.HA_CLUSTER_SOFTWARE)
-        self._update_cluster_manager_config()
 
         # Read cluster user password and decrypt the same
         cluster_secret = Conf.get(self._index, f"cortx.software.{const.HA_CLUSTER_SOFTWARE}.secret")
@@ -210,6 +229,9 @@ class ConfigCmd(Cmd):
         cluster_secret = Cipher.decrypt(key, cluster_secret.encode('ascii')).decode()
         s3_instances = self._get_s3_instance(machine_id)
 
+        self._update_env(node_name, node_type, const.HA_CLUSTER_SOFTWARE)
+        self._fetch_fids()
+        self._update_cluster_manager_config()
         self._cluster_manager = CortxClusterManager()
         Log.info("Checking if cluster exists already")
         cluster_exists = self._confstore.key_exists(const.CLUSTER_CONFSTORE_NODES_KEY)
@@ -322,6 +344,20 @@ class ConfigCmd(Cmd):
         Conf.set(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.local_node", node_name)
         Log.info("CONFIG: Update ha configuration files")
         Conf.save(const.HA_GLOBAL_INDEX)
+
+    def _fetch_fids(self) -> None:
+        """
+        Fetch fids from hare and store in a config file
+        """
+        try:
+            Log.info("Fetch fids from hare and store in a conf file")
+            fids_output, err, rc = self._execute.run_cmd(const.HCTL_FETCH_FIDS, check_error=True)
+            Log.info(f"Fetched fids: {fids_output}, Error: {err}, RC: {rc}")
+            with open(const.FIDS_CONFIG_FILE, 'w') as fi:
+                json.dump(json.loads(fids_output), fi, indent=4)
+        except Exception as e:
+            Log.error(f"Failed fetching fids from hare. Error: {e}")
+            raise HaConfigException("Failed fetching fids from hare.")
 
     def _update_cluster_manager_config(self) -> None:
         """
@@ -463,6 +499,10 @@ class CleanupCmd(Cmd):
                 os.remove(const.HA_CONFIG_FILE)
             if os.path.exists(const.CM_CONTROLLER_SCHEMA):
                 os.remove(const.CM_CONTROLLER_SCHEMA)
+            if os.path.exists(const.FIDS_CONFIG_FILE):
+                os.remove(const.FIDS_CONFIG_FILE)
+            if os.path.exists(const.ALERT_FILTER_RULES_FILE):
+                os.remove(const.ALERT_FILTER_RULES_FILE)
         except Exception as e:
             Log.error(f"Cluster cleanup command failed. Error: {e}")
             raise HaCleanupException("Cluster cleanup failed")

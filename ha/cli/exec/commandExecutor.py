@@ -20,20 +20,61 @@ import grp
 import getpass
 import json
 import os
+import re
+import socket
 
 from ha import const
 from cortx.utils.log import Log
 from ha.core.error import HAInvalidPermission, HAClusterCLIError, HAUnimplemented
+from ha.core.cluster.cluster_manager import CortxClusterManager
+from ha.cli.displayOutput import Output
+
 
 class CommandExecutor:
     def __init__(self):
         self._is_hauser = False
+        self.cluster_manager = CortxClusterManager()
+        self.op = Output()
 
     def validate(self) -> bool:
         raise HAUnimplemented("This operation is not implemented.")
 
     def execute(self) -> None:
         raise HAUnimplemented("This operation is not implemented.")
+
+    def is_valid_node_id(self, node_id) -> bool:
+        '''
+           Checks if node id gets resolved to some IP address or not
+           Returns: bool
+           Exception: socket.gaierror, socket.herror
+        '''
+
+        # TODO: change this logic and validate the node_id from the
+        # list coming from system health
+        ip_validator_regex = "^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])$"
+
+        # node_id can be passed as IP address or FQDN or
+        # some random number or just sequence of chars
+
+        # first seperate the string from dots.
+        splitted_node_id = node_id.replace('.', '')
+
+        # If string only contains numbers, means it can be just
+        # random number or can be an IP address. So, IP address
+        # validation can be done. else for random number, exception will be
+        # raised
+        if re.search('^[0-9]*$', splitted_node_id):
+            if re.search(ip_validator_regex, node_id):
+                return True
+            raise HAClusterCLIError(f'{node_id} is not a valid node_id')
+        # else it can be combination of chars and numbers means hostname or just a
+        # random meaningless string
+        else:
+            try:
+                socket.gethostbyname(node_id)
+            except Exception as err:
+                raise HAClusterCLIError(f'{node_id} not a valid node_id: {err}')
+        return True
 
     """
     Routine used by executors to confirm acess permissions.
