@@ -49,12 +49,12 @@ class NodeStartExecutor(CommandExecutor):
         parser.add_argument("node", help="Module")
         parser.add_argument("start", help="action to be performed")
         parser.add_argument("nodeid",
-            help="Provide node name to add it in cluster.", action="store")
+            help="Provide node to start in cluster.", action="store")
         group = parser.add_mutually_exclusive_group()
         group.add_argument('--all', action='store_true',
                            help='Start both server & storage in a node')
         group.add_argument('--server', action='store_false',
-                           help='Start only server in a node')
+                           help='Start only server in a node. (Default: true)')
         parser.add_argument('--json', help='Required output format', action='store_true')
         self._args = parser.parse_args()
         return True
