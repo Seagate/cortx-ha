@@ -42,3 +42,21 @@ class HealthEvent:
         self.timestamp = timestamp
         self.resource_id = resource_id
         self.specific_info = specific_info
+
+    @staticmethod
+    def dict_to_object(event):
+        return HealthEvent(
+            event_id = event["event_id"],
+            event_type = event["event_type"],
+            severity = event["severity"],
+            site_id = event["site_id"],
+            rack_id = event["rack_id"],
+            cluster_id = event["cluster_id"],
+            storageset_id = event["storageset_id"],
+            node_id = event["node_id"],
+            host_id = event["host_id"],
+            resource_type = event["resource_type"],
+            timestamp = event["timestamp"],
+            resource_id = event["resource_id"],
+            specific_info = event["specific_info"]
+        )
