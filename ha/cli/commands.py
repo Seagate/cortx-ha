@@ -15,130 +15,70 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-from ha.core.error import HAUnimplemented
+
+from ha.core.error import HAInvalidCommand
+from ha.cli.command_factory import CmdFactory
+from ha.cli.exec.commandExecutor import CLIUsage
+from ha.cli.exec.commandExecutor import CommandExecutor as cmdExecutor
+
 
 class Command:
-    @staticmethod
-    def add_args(component_parser):
-        raise HAUnimplemented()
+    """  Parse the CLI and call appropriate executor """
+    def __init__(self):
+        self.module_name = None
+        self.operation_name = None
+        self.options = None
+        self.cmd_factory = CmdFactory()
 
-class NodeCommand(Command):
-    @staticmethod
-    def add_args(component_parser):
-        """
-        Add parser for cleanup command
+    def parse(self, args: list):
+        """ Parse the CLI string to identify parameters"""
 
-        Args:
-            component_parser (<class 'argparse._SubParsersAction'>): argparse to add subparser.
-        """
-        node_parser = component_parser.add_parser("node",
-            help = "This command is used to manage node level operation")
-        action_subparser = node_parser.add_subparsers(
-            title="Node Actions",
-            dest="node_action")
+        try:
+            self.module_name = args[0]
+            self.operation_name = args[1]
+            self.options = args[2:]
 
-        refresh_parser = action_subparser.add_parser("refresh",
-            help = "Refresh nodes to recheck service status and take particular action")
-        refresh_parser.add_argument("--node",
-            help="Provide node name to take action on particular node.")
-        refresh_parser.add_argument("--soft", action='store_true',
-            help="Check node status and then perform action only if require.")
-        refresh_parser.add_argument("--hard", action='store_true',
-            help="Perform refresh forcefully")
-        refresh_parser.add_argument("--data-only", action='store_true',
-            help="Forget all previous data and collect new data in db to take action.")
+        except Exception:
 
-class ClusterCommand(Command):
-    @staticmethod
-    def add_args(component_parser):
-        """
-        Add parser for cluster command
+            print(CLIUsage.usage())
+            if self.module_name != "-h" and self.module_name != "--help":
+                raise HAInvalidCommand("Invalid parameters passed; refer to help for details")
+            else:
+                return False
+        return True
 
-        Args:
-            component_parser (<class 'argparse._SubParsersAction'>): argparse to add subparser.
-        """
-        cluster_parser =  component_parser.add_parser("cluster",
-            help = "Manage cluster operations like start, stop cluster.")
-        action_subparser = cluster_parser.add_subparsers(
-            title="Cluster Actions",
-            dest="cluster_action")
+    def get_class(self, cmd_exec: cmdExecutor):
+        """ get class object for the appropriate executor """
 
-        add_node_parser = action_subparser.add_parser("add_node",
-            help = "Add new node to existing cluster to manage their service.")
-        add_node_parser.add_argument("node",
-            help="Provide node name to add it in cluster.", action="store")
+        parts = cmd_exec.split('.')
+        module = ".".join(parts[:-1])
+        exec_mod = __import__(module)
+        for comp in parts[1:]:
+            exec_mod = getattr(exec_mod, comp)
+        return exec_mod
 
-        remove_node_parser = action_subparser.add_parser("remove_node",
-            help = "Remove node from cluster")
-        remove_node_parser.add_argument("node",
-            help="Provide node name to remove it from the cluster.", action="store")
+    def process(self, args: list):
+        """ Process the command """
 
-        start_parser = action_subparser.add_parser("start",
-            help = "Start cluster and it's services.")
+        # Raise exception if user does not have proper permissions
+        self.cmd_executor = cmdExecutor()
+        self.cmd_executor.validate_permissions()
 
-        stop_parser = action_subparser.add_parser("stop",
-            help = "Stop cluster and it's services.")
+        if self.parse(args):
+            command_executor = self.cmd_factory.get_executor(self.module_name, self.operation_name)
 
-        status_parser = action_subparser.add_parser("status",
-            help = "Get cluster status.")
+            if command_executor is None:
+                print(CLIUsage.usage())
+                raise HAInvalidCommand("Invalid parameters passed; refer to help for details")
 
-        shutdown_parser = action_subparser.add_parser("shutdown",
-            help = "Shutdown cluster.")
+            exec_class = self.get_class(command_executor)
+            # Call execute function of the appropriate executor class
+            executor_class = exec_class()
+            if executor_class.validate():
+                executor_class.execute()
 
-class ServiceCommand(Command):
-    @staticmethod
-    def add_args(component_parser):
-        """
-        Add parser for cluster command
 
-        Args:
-            component_parser (<class 'argparse._SubParsersAction'>): argparse to add subparser.
-        """
-        service_parser =  component_parser.add_parser("service",
-                    help = "Manage cluster services and it's operations.")
-        action_subparser = service_parser.add_subparsers(
-            title="Service Actions",
-            dest="service_action")
-
-        start_parser = action_subparser.add_parser("start",
-            help = "Start Service")
-        start_parser.add_argument("service_name",
-            help="Service name", action="store")
-        start_parser.add_argument("--node",
-            help="Provide node name to start service on particular node")
-
-        stop_parser = action_subparser.add_parser("stop",
-            help = "Stop Service")
-        stop_parser.add_argument("service_name",
-            help="Service name", action="store")
-        stop_parser.add_argument("--node",
-            help="Provide node name to stop service on particular node")
-
-        status_parser = action_subparser.add_parser("status",
-            help = "Status of service")
-        status_parser.add_argument("service_name",
-            help="Service name", action="store")
-        status_parser.add_argument("--node",
-            help="Provide node name to get status of service.")
-
-class SupportBundleCommand(Command):
-    @staticmethod
-    def add_args(component_parser):
-        """
-        Add parser for support bundle command
-
-        Args:
-            component_parser (<class 'argparse._SubParsersAction'>): argparse to add subparser.
-        """
-        bundle_parser =  component_parser.add_parser("support_bundle",
-                                help = "Manage support bundle operation like create.")
-        action_subparser = bundle_parser.add_subparsers(
-            title="Support Bundle",
-            dest="bundle_action")
-
-        create_parser = action_subparser.add_parser("create",
-            help = "Create Support Bundle")
-        create_parser.add_argument("id",
-            help="Bundle id", action="store")
-        create_parser.add_argument("path",
-            help="Bundle Path", action="store")
+"""
+SupportBundleCommand is currently broken, so removed the code.
+This will be added when the support bundle user story [ EOS-17931 ] is started
+"""

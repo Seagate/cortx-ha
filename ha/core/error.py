@@ -27,6 +27,15 @@ HA_COMMAND_TERMINATION_ERROR    = 0x0003
 HA_TEST_FAILED                  = 0x0004
 HA_SUPPORT_BUNDLE_FAILED        = 0x0005
 HA_CLUSTER_MANAGER_FAILED       = 0x0006
+HA_PRE_UPGRADE_FAILED           = 0x0007
+HA_SETUP_FAILED                 = 0x0008
+HA_REMOTE_EXECUTOR_FAILED       = 0x0009
+HA_INVALID_PERMISSION_ERROR     = 0x000a
+# To be removed once the "cortx cluster start" user story [EOS-16248] is started
+HA_CLUSTER_START_ERROR          = 0x000b
+HA_SYSTEM_HEALTH_FAILED         = 0x000c
+HA_CLUSTER_CLI_FAILED           = 0x000d
+HA_EVENT_ANALYZER_ERROR         = 0x000e
 
 class HAError(BaseError):
     def __init__(self, rc=1, desc=None, message_id=HA_BASIC_ERROR, message_args=None):
@@ -87,6 +96,19 @@ class HATestFailedError(HAError):
         _rc = 1
         super(HATestFailedError, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
 
+class RemoteExecutorError(HAError):
+    '''
+    Remote Node Execution Exception handling
+    '''
+    def __init__(self, desc=None, retcode=-1):
+        """
+        Init method.
+        """
+        _desc = f'{"Failed to execute opeartion on a remote node"}' if desc is None else desc
+        _message_id = HA_REMOTE_EXECUTOR_FAILED
+        _rc = retcode
+        super(RemoteExecutorError, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
+
 class SupportBundleError(HAError):
     def __init__(self, desc=None):
         """
@@ -106,3 +128,135 @@ class ClusterManagerError(HAError):
         _message_id = HA_CLUSTER_MANAGER_FAILED
         _rc = 1
         super(ClusterManagerError, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
+
+class HAClusterCLIError(HAError):
+    def __init__(self, desc=None):
+        """
+        Handle Cluster CLI error.
+        """
+        _desc = "Failed to perform Cluster CLI request" if desc is None else desc
+        _message_id = HA_CLUSTER_CLI_FAILED
+        _rc = 1
+        super(HAClusterCLIError, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
+
+class PreRequisiteUpgradeError(HAError):
+    """
+    Disruptive upgrade prerequisites exceptions
+    """
+    def __init__(self, desc=None):
+        _desc = "Failed to prepare to disruptive upgrade" if desc is None else desc
+        _message_id = HA_PRE_UPGRADE_FAILED
+        _rc = 1
+        super(PreRequisiteUpgradeError, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
+
+class SetupError(HAError):
+    def __init__(self, desc=None):
+        """
+        Handle HA .
+        """
+        _desc = "HA miniprovision failure." if desc is None else desc
+        _message_id = HA_SETUP_FAILED
+        _rc = 1
+        super(SetupError, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
+
+class CreateResourceError(SetupError):
+    """Exception to indicate any failure happened during resource creation."""
+
+
+class CreateResourceConfigError(CreateResourceError):
+    """Exception to indicate that given resource configuration is incorrect or incomplete."""
+
+class HaPrerequisiteException(SetupError):
+    """
+    Exception to indicate that some error happened during HA prerequisite checks.
+    """
+    pass
+
+class HaConfigException(SetupError):
+    """
+    Exception to indicate that config command failed during cluster config.
+    """
+    pass
+
+class HaInitException(SetupError):
+    """
+    Exception to indicate that cleanup command failed due to some error.
+    """
+    pass
+
+class HaCleanupException(SetupError):
+    """
+    Exception to indicate that cleanup command failed due to some error.
+    """
+    pass
+
+class HAInvalidPermission(HAError):
+    def __init__(self, desc=None):
+        """
+        Handle permissions error.
+        """
+        _desc = f"Invalid permission. stack: {inspect.stack()[1]}" if desc is None else desc
+        _message_id = HA_INVALID_PERMISSION_ERROR
+        _rc = 1
+        super(HAInvalidPermission, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
+
+# To be removed once the "cortx cluster start" user story [EOS-16248] is started
+class HAClusterStart(HAError):
+    def __init__(self, desc=None):
+        """
+        Handle cluster start error.
+        """
+        _desc = f"Cluster start error. stack: {inspect.stack()[1]}" if desc is None else desc
+        _message_id = HA_CLUSTER_START_ERROR
+        _rc = 1
+        super(HAClusterStart, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
+        
+class SystemHealthError(HAError):
+    def __init__(self, desc=None):
+        """
+        Handle system health exceptions.
+        """
+        _desc = "HA System Health failure." if desc is None else desc
+        _message_id = HA_SYSTEM_HEALTH_FAILED
+        _rc = 1
+        super(SystemHealthError, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
+
+class EventAnalyzerError(HAError):
+    def __init__(self, desc=None):
+        """
+        Handle Event Analyzer error.
+        """
+        _desc = "HA Event Analyzer failure" if desc is None else desc
+        _message_id = HA_EVENT_ANALYZER_ERROR
+        _rc = 1
+        super(EventAnalyzerError, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
+
+class HaEntityHealthException(SystemHealthError):
+    """
+    Exception to indicate that some error happened when populating entity health.
+    """
+    pass
+
+class HaStatusMapperException(SystemHealthError):
+    """
+    Exception to indicate that some error happened when mapping an event to system health status.
+    """
+    pass
+
+class HaSystemHealthComponentsException(SystemHealthError):
+    """
+    Exception to indicate that the system health does not support health/some error for the component.
+    """
+    pass
+
+class HaSystemHealthHierarchyException(SystemHealthError):
+    """
+    Exception to indicate that the some error happened when searching health update hierarchy for a component.
+    """
+    pass
+
+class HaSystemHealthException(SystemHealthError):
+    """
+    Exception to indicate that some error happened during HA System Health processing.
+    """
+    pass
