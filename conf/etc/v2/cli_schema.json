@@ -1,5 +1,11 @@
 {
     "version": "2.0.0",
+    "cortx": {
+        "help": {
+            "usage": "cortx [-h | --help]",
+            "class": "ha.cli.exec.commandExecutor.CLIUsage"
+        }
+    },
     "cluster": {
         "help": {
             "usage": "cortx cluster [-h | --help]",
@@ -34,11 +40,7 @@
             "class": "ha.cli.exec.clusterExecutor.ClusterStatusExecutor"
         },
         "add_node": {
-            "usage": "cortx cluster add_node [--nodeid <node id> | --descfile <node description file>] [ --username <cluster_username> ] [ --password <cluster_password> ] [--json]",
-            "class": "ha.cli.exec.clusterExecutor.ClusterNodeAddExecutor"
-        },
-        "add_storageset": {
-            "usage": "cortx cluster add_storageset [<storageset id>] [ --descfile <storageset description file>] [--json]",
+            "usage": "cortx cluster add node [--nodeid <node id> | --descfile <node description file>] [ --username <cluster_username> ] [ --password <cluster_password> ] [--json]",
             "class": "ha.cli.exec.clusterExecutor.ClusterNodeAddExecutor"
         }
     },

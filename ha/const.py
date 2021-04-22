@@ -51,7 +51,7 @@ CLI_SCHEMA_FILE = "{}/cli_schema.json".format(CONFIG_DIR)
 CLUSTER_CONFSTORE_NODES_KEY="nodes"
 
 # Cortx commands
-CORTX_CLUSTER_NODE_ADD="cortx cluster add_node --nodeid <node> --username <user> --password <secret>"
+CORTX_CLUSTER_NODE_ADD="cortx cluster add node --nodeid <node> --username <user> --password <secret>"
 
 # hare commands
 HCTL_FETCH_FIDS="hctl fetch-fids --json"

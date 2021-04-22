@@ -20,6 +20,35 @@ from ha.cli.cli_schema import CLISchema
 
 class CmdFactory:
 
+    DEFAULT_MODEL = "cortx"
+    DEFAULT_OPERATION = "help"
+
+    @staticmethod
+    def parse(args: list):
+        """
+        Parse args to find module, operation, options.
+
+        Args:
+            args (list): command line argument list.
+        """
+        module: str = None
+        operation: str = None
+        options: list = None
+        count: int = 0
+        try:
+            module = args[count]
+            count += 1
+            operation = args[count]
+            count += 1
+            if operation == "add":
+                operation += "_" + args[2]
+                count += 1
+            options = args[count:]
+        except Exception as e:
+            module = CmdFactory.DEFAULT_MODEL
+            operation = CmdFactory.DEFAULT_OPERATION
+        return module, operation, options
+
     @staticmethod
     def get_executor(module_name: str, operation_name: str) -> str:
         """ return the appropriate class name from the dictionary"""
@@ -27,5 +56,5 @@ class CmdFactory:
             executor = CLISchema.get_class(module_name, operation_name)
         except Exception:
             Log.error(f"Failed to get executor Module Name: {module_name}, Operation Name: {operation_name}")
-            return None
+            executor = CLISchema.get_class(CmdFactory.DEFAULT_MODEL, CmdFactory.DEFAULT_OPERATION)
         return executor

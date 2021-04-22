@@ -58,6 +58,8 @@ class CLISchema:
         if operation_name in ["-h", "--help"]:
             return schema[module_name]["help"]["class"]
         else:
+            if operation_name not in schema[module_name].keys():
+                operation_name = "help"
             return schema[module_name][operation_name]["class"]
 
     @staticmethod

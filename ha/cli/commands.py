@@ -22,6 +22,7 @@ from ha.core.error import HAInvalidCommand
 from ha.cli.command_factory import CmdFactory
 from ha.cli.exec.commandExecutor import CLIUsage
 from ha.cli.exec.commandExecutor import CommandExecutor as cmdExecutor
+from ha.core.error import HACommandTerminated
 
 class Command:
     """  Parse the CLI and call appropriate executor """
@@ -30,23 +31,10 @@ class Command:
         self.module_name = None
         self.operation_name = None
         self.options = None
-        self.cmd_factory = CmdFactory()
 
-    def parse(self, args: list):
+    def parse(self, args: list) -> None:
         """ Parse the CLI string to identify parameters"""
-
-        try:
-            self.module_name = args[0]
-            self.operation_name = args[1]
-            self.options = args[2:]
-
-        except Exception:
-            CLIUsage().execute()
-            if self.module_name != "-h" and self.module_name != "--help":
-                raise HAInvalidCommand("Invalid parameters passed; refer to help (-h or --help) for details")
-            else:
-                return False
-        return True
+        self.module_name, self.operation_name, _ = CmdFactory.parse(args)
 
     def get_class(self, cmd_exec: cmdExecutor):
         """ get class object for the appropriate executor """
@@ -61,26 +49,21 @@ class Command:
     def process(self, args: list):
         """ Process the command """
 
+        self.parse(args)
+        command_executor = CmdFactory.get_executor(self.module_name, self.operation_name)
+        exec_class = self.get_class(command_executor)
+        # Call execute function of the appropriate executor class
+        executor_class = exec_class()
+
         # Raise exception if user does not have proper permissions
-        self.cmd_executor = cmdExecutor()
-        self.cmd_executor.validate_permissions()
+        executor_class.validate_permissions()
 
-        if self.parse(args):
-            command_executor = CmdFactory.get_executor(self.module_name, self.operation_name)
-
-            if command_executor is None:
-                CLIUsage().execute()
-                raise HAInvalidCommand("Invalid parameters passed; refer to help for details")
-
-            exec_class = self.get_class(command_executor)
-            # Call execute function of the appropriate executor class
-            executor_class = exec_class()
-            if executor_class.validate():
-                try:
-                    executor_class.execute()
-                except Exception as err:
-                    Log.error(f"{traceback.format_exc()}, {err}")
-                    raise Exception(f"CLI execution failed, Error: {err}")
+        if executor_class.validate():
+            try:
+                executor_class.execute()
+            except Exception as err:
+                Log.error(f"{traceback.format_exc()}, {err}")
+                raise HACommandTerminated(f"CLI execution failed, Error: {err}")
 
 
 """

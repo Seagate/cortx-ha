@@ -137,14 +137,12 @@ class ClusterRestartExecutor(CommandExecutor):
     def execute(self) -> None:
         raise HAUnimplemented("This operation is not implemented.")
 
-
 class ClusterStandbyExecutor(CommandExecutor):
     def validate(self) -> bool:
         raise HAUnimplemented("This operation is not implemented.")
 
     def execute(self) -> None:
         raise HAUnimplemented("This operation is not implemented.")
-
 
 class ClusterActiveExecutor(CommandExecutor):
     def validate(self) -> bool:
@@ -153,14 +151,12 @@ class ClusterActiveExecutor(CommandExecutor):
     def execute(self) -> None:
         raise HAUnimplemented("This operation is not implemented.")
 
-
 class ClusterListExecutor(CommandExecutor):
     def validate(self) -> bool:
         raise HAUnimplemented("This operation is not implemented.")
 
     def execute(self) -> None:
         raise HAUnimplemented("This operation is not implemented.")
-
 
 class ClusterStatusExecutor(CommandExecutor):
     def validate(self) -> bool:
@@ -189,8 +185,9 @@ class ClusterNodeAddExecutor(CommandExecutor):
                         usage = CLISchema.get_usage("cluster", "add_node"),
                         formatter_class = argparse.RawDescriptionHelpFormatter)
         parser.add_argument("cluster", help="Module")
-        parser.add_argument("add_node", help="action to be performed")
-        group = parser.add_mutually_exclusive_group(required='True')
+        parser.add_argument("add", help="action to be performed")
+        parser.add_argument("node", help="Component to be added.")
+        group = parser.add_mutually_exclusive_group(required=True)
         group.add_argument('--nodeid', action='store', \
                            help='ID of a node which needs to be added in a cluster')
         group.add_argument('--descfile', action='store', \
