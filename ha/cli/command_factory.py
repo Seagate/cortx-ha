@@ -44,7 +44,7 @@ class CmdFactory:
                 operation += "_" + args[2]
                 count += 1
             options = args[count:]
-        except Exception as e:
+        except Exception:
             module = CmdFactory.DEFAULT_MODEL
             operation = CmdFactory.DEFAULT_OPERATION
         return module, operation, options
