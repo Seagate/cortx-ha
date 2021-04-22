@@ -58,10 +58,10 @@ def restore_config() -> None:
     except Exception as e:
         Log.error(f'post upgrade failed at config restore phase: {e}')
 
-def create_resources() -> None:
+def create_resources(s3instance=None) -> None:
     '''create required resources'''
     Log.info('Creating the resources in the cluster')
-    create_all_resources()
+    create_all_resources(s3instance)
 
 def _unstandby_cluster() -> None:
     '''Unstandby the cluster'''

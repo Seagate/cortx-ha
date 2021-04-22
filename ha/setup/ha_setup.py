@@ -471,7 +471,7 @@ class UpgradeCmd(Cmd):
         Init method.
         """
         super().__init__(args)
-        self._config = ConfigCmd()
+        self._config = ConfigCmd(args)
         machine_id = self.get_machine_id()
         self.s3_instance = self._config._get_s3_instance(machine_id)
 
