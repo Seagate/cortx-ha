@@ -466,13 +466,14 @@ class UpgradeCmd(Cmd):
     """
     name = "upgrade"
 
-    def __init__(self, args):
+    def __init__(self, args=None):
         """
         Init method.
         """
         super().__init__(args)
         self._config = ConfigCmd()
-        self.s3_instance = self._config._get_s3_instance()
+        machine_id = self.get_machine_id()
+        self.s3_instance = self._config._get_s3_instance(machine_id)
 
     def process(self):
         """
