@@ -201,8 +201,6 @@ consul_watcher_failback() {
 
 consul_watcher_stop_io() {
     echo "Copy consul watcher files for data integrity check ..."
-    cp -rf ${SOURCE_HA_CONF}/ha_stop_io ${HA_CONF}/
-    chmod +x ${HA_CONF}/ha_stop_io
     mkdir -p /var/lib/hare/consul-server-c1-conf/ /var/lib/hare/consul-server-c2-conf/
     cp -rf ${SOURCE_HA_CONF}/consul_watcher_stop_io.json /var/lib/hare/consul-server-c1-conf/
     cp -rf ${SOURCE_HA_CONF}/consul_watcher_stop_io.json /var/lib/hare/consul-server-c2-conf/
