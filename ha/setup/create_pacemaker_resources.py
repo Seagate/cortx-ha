@@ -41,6 +41,7 @@ s3backprod
 sspl-ll-clone
     sspl-ll
 management
+    mgmt-vip
     kibana
     csm-agent
     csm-web
@@ -164,13 +165,12 @@ def sspl(cib_xml, push=False, **kwargs):
 
 def mgmt_vip(cib_xml, push=False, **kwargs):
     """Create mgmt Virtual IP resource."""
-    mgmt_vip_cfg = {k: kwargs[k] for k in ("vip", "cidr", "iface")
-                    if k in kwargs and kwargs[k] is not None}
-    if len(mgmt_vip_cfg) not in (0, 3):
-        raise CreateResourceConfigError("Given mgmt VIP configuration is incomplete")
-    if mgmt_vip_cfg:
+    if len(mgmt_info) == 0 or "mgmt_info" in kwargs.keys():
+        Log.warn("Management VIP is not detected in current configuration.")
+    else:
+        mgmt_info = kwargs["mgmt_info"]
         process.run_cmd(f"pcs -f {cib_xml} resource create mgmt-vip ocf:heartbeat:IPaddr2 \
-            ip={mgmt_vip_cfg['vip']} cidr_netmask={mgmt_vip_cfg['cidr']} nic={mgmt_vip_cfg['iface']} iflabel=v1 \
+            ip={mgmt_info['mgmt_vip']} cidr_netmask={mgmt_info['mgmt_netmask']} nic={mgmt_info['mgmt_iface']} iflabel=mgmt_vip \
             op start timeout=60s interval=0s \
             op monitor timeout=30s interval=30s \
             op stop timeout=60s interval=0s --group management_group")

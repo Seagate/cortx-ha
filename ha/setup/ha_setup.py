@@ -23,7 +23,7 @@ import os
 import shutil
 import json
 import grp, pwd
-
+from ipaddress import IPv4Network
 from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
 from cortx.utils.validator.v_pkg import PkgV
@@ -228,10 +228,13 @@ class ConfigCmd(Cmd):
         key = Cipher.generate_key(cluster_id, const.HACLUSTER_KEY)
         cluster_secret = Cipher.decrypt(key, cluster_secret.encode('ascii')).decode()
         s3_instances = self._get_s3_instance(machine_id)
+        mgmt_info = self._get_mgmt_vip(machine_id, cluster_id)
 
         self._update_env(node_name, node_type, const.HA_CLUSTER_SOFTWARE)
         self._fetch_fids()
         self._update_cluster_manager_config()
+
+        # Update cluster and resources
         self._cluster_manager = CortxClusterManager()
         Log.info("Checking if cluster exists already")
         cluster_exists = self._confstore.key_exists(const.CLUSTER_CONFSTORE_NODES_KEY)
@@ -249,7 +252,7 @@ class ConfigCmd(Cmd):
                     Log.info(f"Put node in standby output: {standby_output}")
                     if json.loads(standby_output).get("status") != STATUSES.FAILED.value:
                         Log.info("Creating pacemaker resources")
-                        create_all_resources(s3_instances=s3_instances)
+                        create_all_resources(s3_instances=s3_instances, mgmt_info=mgmt_info)
                         Log.info("Created pacemaker resources successfully")
                         # Add this node to the cluster nodes list in the store.
                         self._confstore.set(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
@@ -329,6 +332,19 @@ class ConfigCmd(Cmd):
         except Exception as e:
             Log.error(f"Found {s3_instances} which is invalid s3 instance count. Error: {e}")
             raise HaConfigException(f"Found {s3_instances} which is invalid s3 instance count.")
+
+    def _get_mgmt_vip(self, machine_id: str, cluster_id: str) -> dict:
+        mgmt_info = {}
+        try:
+            mgmt_info["mgmt_vip"] = Conf.get(self._index, f"cluster.{cluster_id}.network.management.virtual_host")
+            #netmask = Conf.get(self._index, f"server_node.{machine_id}.network.management.netmask")
+            #mgmt_info["mgmt_netmask"] = IPv4Network(f"0.0.0.0/{netmask}").prefixlen
+            #mgmt_info["mgmt_iface"] = Conf.get(self._index, f"server_node.{machine_id}.network.management.interfaces")[0]
+            Log.info(f"Mgmt vip configuration: {str(mgmt_info)}")
+            return mgmt_info
+        except Exception as e:
+            Log.error(f"Failed to get mgmt ip address. Error: {e}")
+            raise HaConfigException(f"Failed to get mgmt ip address. Error: {e}.")
 
     def _update_env(self, node_name: str, node_type: str, cluster_type: str) -> None:
         """
