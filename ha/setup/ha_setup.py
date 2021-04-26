@@ -83,7 +83,6 @@ class Cmd:
         Return the Command after parsing the command line.
         """
         parser = argparse.ArgumentParser(desc)
-
         subparsers = parser.add_subparsers()
         cmds = inspect.getmembers(sys.modules[__name__])
         cmds = [(x, y) for x, y in cmds
@@ -139,6 +138,28 @@ class Cmd:
         node_name = Conf.get(self._index, f"server_node.{machine_id}.network.data.private_fqdn")
         Log.info(f"Read node name: {node_name}")
         return node_name
+
+    @staticmethod
+    def get_s3_instance(machine_id: str) -> int:
+        """
+        Return s3 instance
+
+        Raises:
+            HaConfigException: Raise exception for in-valide s3 count.
+
+        Returns:
+            [int]: Return s3 count.
+        """
+        try:
+            print(Conf)
+            s3_instances = Conf.get(Cmd._index, f"server_node.{machine_id}.s3_instances")
+            if int(s3_instances) < 1:
+                raise HaConfigException(f"Found {s3_instances} which is invalid s3 instance count.")
+            return int(s3_instances)
+        except Exception as e:
+            Log.error(e)
+            # Log.error(f"Found {s3_instances} which is invalid s3 instance count. Error: {e}")
+            raise HaConfigException(f"Found {s3_instances} which is invalid s3 instance count.")
 
 class PostInstallCmd(Cmd):
     """
@@ -245,8 +266,8 @@ class ConfigCmd(Cmd):
         cluster_secret = Conf.get(self._index, f"cortx.software.{const.HA_CLUSTER_SOFTWARE}.secret")
         key = Cipher.generate_key(cluster_id, const.HACLUSTER_KEY)
         cluster_secret = Cipher.decrypt(key, cluster_secret.encode('ascii')).decode()
-        s3_instances = self._get_s3_instance(machine_id)
         mgmt_info: dict = self._get_mgmt_vip(machine_id, cluster_id)
+        s3_instances = Cmd.get_s3_instance(machine_id)
 
         self._update_env(node_name, node_type, const.HA_CLUSTER_SOFTWARE)
         self._fetch_fids()
@@ -471,9 +492,9 @@ class UpgradeCmd(Cmd):
         Init method.
         """
         super().__init__(args)
-        self._config = ConfigCmd(args)
+        # self._config = ConfigCmd(args)
         machine_id = self.get_machine_id()
-        self.s3_instance = self._config._get_s3_instance(machine_id)
+        self.s3_instance = Cmd.get_s3_instance(machine_id)
 
     def process(self):
         """
