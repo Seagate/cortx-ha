@@ -42,8 +42,8 @@ STOP_IO="false"
 IFS=$'\n' list=($OUTPUT_ALL)
 for item in "${list[@]}"
 do
-if [ `echo $item| grep -c "\"action\": \"stop_io\"" ` -gt 0 ]
-then
+  if [ `echo $item| grep -c "\"action\": \"stop_io\"" ` -gt 0 ]
+  then
 
     # disable lnet resources
     if [ "$STOP_IO" = "false" ]; then
@@ -68,7 +68,7 @@ then
 
     consul kv put $key $modified_val
 
-fi
+  fi
 
 done
 
