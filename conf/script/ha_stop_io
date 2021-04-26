@@ -17,25 +17,59 @@
 
 HA_LOG="/var/log/seagate/cortx/ha"
 
-# Extract keys matching to STR from consul that contain the string stop_io
+# Extract all keys matching to STR from consul
+# parse these keys and find those that contain the string stop_io
+# Modify stop_io to stop_io_success in all matching consul keys
+# disable pcs resources lnet-c1 and lnet-c2
+
 STR="cortx/base/ha/obj/node/"
-# search in consul for "action": "stop_io"
-OUTPUT=$( consul kv get -recurse $STR | grep "\"action\": \"stop_io\"" )
 
 # Add Log
 mkdir -p "${HA_LOG}"/
 exec &>> "${HA_LOG}"/${0##*/}.log
 exec &> >(stdbuf -oL gawk '{ print strftime("%Y-%m-%d %H:%M:%S"), $0 }')
 
-if [ "$OUTPUT" ]
+
+OUTPUT_ALL=$( consul kv get -recurse $STR )
+
+#Log consul keys for debugging
+echo "Current consul keys matching the defined keyprefix are :"
+echo "$OUTPUT_ALL"
+echo ""
+
+STOP_IO="false"
+
+IFS=$'\n' list=($OUTPUT_ALL)
+for item in "${list[@]}"
+do
+if [ `echo $item| grep -c "\"action\": \"stop_io\"" ` -gt 0 ]
 then
-    #execute resource stop
-    pcs status
-    echo "IEM received, Stopping IO"
-    pcs resource disable lnet-c1 lnet-c2
-    echo "Resource disable in progress."
-    pcs status
+
+    # disable lnet resources
+    if [ "$STOP_IO" = "false" ]; then
+      STOP_IO="true"
+
+      #execute resource stop
+      pcs status
+      echo "Data Integrity check failure; Stopping IO"
+      pcs resource disable lnet-c1 lnet-c2
+      echo "Resource disable in progress."
+      pcs status
+
+    fi
+
+    echo "Replacing stop_io with stop_io_success in "
+    echo "$item"
+
+    # get the key, value, replace stop_io with stop_io_success and write back to consul
+    key="$( cut -d ':' -f 1 <<< "$item" )";
+    value=$( consul kv get $key )
+    modified_val=${value/stop_io/stop_io_success}
+
+    consul kv put $key $modified_val
+
 fi
 
+done
 
 
