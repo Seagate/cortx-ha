@@ -29,7 +29,6 @@ mkdir -p "${HA_LOG}"/
 exec &>> "${HA_LOG}"/${0##*/}.log
 exec &> >(stdbuf -oL gawk '{ print strftime("%Y-%m-%d %H:%M:%S"), $0 }')
 
-
 OUTPUT_ALL=$( consul kv get -recurse $STR )
 
 #Log consul keys for debugging
@@ -71,5 +70,3 @@ do
   fi
 
 done
-
-
