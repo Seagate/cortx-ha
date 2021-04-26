@@ -33,6 +33,7 @@ from ha.execute import SimpleCommand
 from ha import const
 from ha.const import STATUSES
 from ha.setup.create_pacemaker_resources import create_all_resources
+from ha.setup.create_pacemaker_resources import mgmt_vip
 from ha.core.cluster.cluster_manager import CortxClusterManager
 from ha.core.config.config_manager import ConfigManager
 from ha.remote_execution.ssh_communicator import SSHRemoteExecutor
@@ -228,7 +229,6 @@ class ConfigCmd(Cmd):
         key = Cipher.generate_key(cluster_id, const.HACLUSTER_KEY)
         cluster_secret = Cipher.decrypt(key, cluster_secret.encode('ascii')).decode()
         s3_instances = self._get_s3_instance(machine_id)
-        mgmt_info = self._get_mgmt_vip(machine_id, cluster_id)
 
         self._update_env(node_name, node_type, const.HA_CLUSTER_SOFTWARE)
         self._fetch_fids()
@@ -252,7 +252,7 @@ class ConfigCmd(Cmd):
                     Log.info(f"Put node in standby output: {standby_output}")
                     if json.loads(standby_output).get("status") != STATUSES.FAILED.value:
                         Log.info("Creating pacemaker resources")
-                        create_all_resources(s3_instances=s3_instances, mgmt_info=mgmt_info)
+                        create_all_resources(s3_instances=s3_instances, mgmt_info={})
                         Log.info("Created pacemaker resources successfully")
                         # Add this node to the cluster nodes list in the store.
                         self._confstore.set(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
@@ -307,11 +307,13 @@ class ConfigCmd(Cmd):
                         # Delete the node from nodelist if it was added in the store
                         if self._confstore.key_exists(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}"):
                             self._confstore.delete(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
-
+                nodes = self._confstore.get(f"{const.CLUSTER_CONFSTORE_NODES_KEY}")
+                if node_added == True and len(nodes.keys()) == 2:
+                    mgmt_info = self._get_mgmt_vip(machine_id, cluster_id)
+                    mgmt_vip(f"{const.RA_LOG_DIR}/cortx-cib_mgmt.xml", create=True, push=True, mgmt_info=mgmt_info)
             if node_added == False:
                 Log.error(f"Adding {node_name} failed")
                 raise HaConfigException("Add node failed")
-
         Log.info("config command is successful")
 
     def _get_s3_instance(self, machine_id: str) -> int:
@@ -337,9 +339,12 @@ class ConfigCmd(Cmd):
         mgmt_info = {}
         try:
             mgmt_info["mgmt_vip"] = Conf.get(self._index, f"cluster.{cluster_id}.network.management.virtual_host")
-            #netmask = Conf.get(self._index, f"server_node.{machine_id}.network.management.netmask")
-            #mgmt_info["mgmt_netmask"] = IPv4Network(f"0.0.0.0/{netmask}").prefixlen
-            #mgmt_info["mgmt_iface"] = Conf.get(self._index, f"server_node.{machine_id}.network.management.interfaces")[0]
+            netmask = Conf.get(self._index, f"server_node.{machine_id}.network.management.netmask")
+            gateway = Conf.get(self._index, f"server_node.{machine_id}.network.management.gateway")
+            if netmask is None or gateway is None:
+                raise HaConfigException("Detected invalid netmask or gateway, they should not be empty.")
+            mgmt_info["mgmt_netmask"] = IPv4Network(f"{gateway}/{netmask}").prefixlen
+            mgmt_info["mgmt_iface"] = Conf.get(self._index, f"server_node.{machine_id}.network.management.interfaces")[0]
             Log.info(f"Mgmt vip configuration: {str(mgmt_info)}")
             return mgmt_info
         except Exception as e:
