@@ -207,9 +207,9 @@ consul_watcher_stop_io() {
 
     CONSUL_PS=$(ps -aux | grep "consul" | grep -v "grep" || true)
     if [ -z "$CONSUL_PS" ]; then
-        echo "Warning: Consul is not running."
+        echo "Warning: Consul is not running on $LOCAL_NODE_MINION_ID"
     else
-        echo 'Reloading Consul...'
+        echo "Reloading Consul on $LOCAL_NODE_MINION_ID"
         /usr/bin/consul reload
     fi
 }

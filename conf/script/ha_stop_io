@@ -50,9 +50,8 @@ do
 
       #execute resource stop
       pcs status
-      echo "Data Integrity check failure; Stopping IO"
       pcs resource disable lnet-c1 lnet-c2
-      echo "Resource disable in progress."
+      echo "Data Integrity check failure; Resource disable in progress for lnet-c1, lnet-c2 and its dependencies."
       pcs status
 
     fi
