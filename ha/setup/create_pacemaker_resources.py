@@ -51,7 +51,7 @@ process = SimpleCommand()
 
 def cib_push(cib_xml):
     """Shortcut to avoid boilerplate pushing CIB file."""
-    print(process.run_cmd(f"pcs cluster verify -V {cib_xml}"))
+    process.run_cmd(f"pcs cluster verify -V {cib_xml}")
     process.run_cmd(f"pcs cluster cib-push {cib_xml} --config")
 
 def cib_get(cib_xml):
