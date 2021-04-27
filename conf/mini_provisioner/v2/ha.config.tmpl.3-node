@@ -18,6 +18,5 @@ server_node:
       management:
         interfaces: TMPL_INTERFACES
         netmask: TMPL_NETMASK
-        gateway: TMPL_GATEWAY
     s3_instances: '1'
     type: TMPL_TYPE

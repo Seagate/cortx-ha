@@ -23,7 +23,6 @@ import os
 import shutil
 import json
 import grp, pwd
-from ipaddress import IPv4Network
 from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
 from cortx.utils.validator.v_pkg import PkgV
@@ -342,10 +341,9 @@ class ConfigCmd(Cmd):
         try:
             mgmt_info["mgmt_vip"] = Conf.get(self._index, f"cluster.{cluster_id}.network.management.virtual_host")
             netmask = Conf.get(self._index, f"server_node.{machine_id}.network.management.netmask")
-            gateway = Conf.get(self._index, f"server_node.{machine_id}.network.management.gateway")
-            if netmask is None or gateway is None:
+            if netmask is None:
                 raise HaConfigException("Detected invalid netmask or gateway, they should not be empty.")
-            mgmt_info["mgmt_netmask"] = IPv4Network(f"{gateway}/{netmask}").prefixlen
+            mgmt_info["mgmt_netmask"] = sum(bin(int(x)).count('1') for x in netmask.split('.'))
             mgmt_info["mgmt_iface"] = Conf.get(self._index, f"server_node.{machine_id}.network.management.interfaces")[0]
             Log.info(f"Mgmt vip configuration: {str(mgmt_info)}")
             return mgmt_info
