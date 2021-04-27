@@ -51,7 +51,7 @@ process = SimpleCommand()
 
 def cib_push(cib_xml):
     """Shortcut to avoid boilerplate pushing CIB file."""
-    process.run_cmd(f"pcs cluster verify -V {cib_xml}")
+    print(process.run_cmd(f"pcs cluster verify -V {cib_xml}"))
     process.run_cmd(f"pcs cluster cib-push {cib_xml} --config")
 
 def cib_get(cib_xml):
@@ -189,11 +189,13 @@ def mgmt_vip(cib_xml, create=False, push=False, **kwargs):
         Log.warn("Management VIP is not detected in current configuration.")
     else:
         mgmt_info = kwargs["mgmt_info"]
-        process.run_cmd(f"pcs -f {cib_xml} resource create mgmt-vip ocf:heartbeat:IPaddr2 \
+        output, err, rc = process.run_cmd(f"pcs -f {cib_xml} resource create mgmt-vip ocf:heartbeat:IPaddr2 \
             ip={mgmt_info['mgmt_vip']} cidr_netmask={mgmt_info['mgmt_netmask']} nic={mgmt_info['mgmt_iface']} iflabel=mgmt_vip \
             op start timeout=60s interval=0s \
             op monitor timeout=30s interval=30s \
-            op stop timeout=60s interval=0s --group management_group")
+            op stop timeout=60s interval=0s --group management_group", check_error=False)
+        if rc != 0:
+            raise CreateResourceError(f"Mgmt vip creation failed, mgmt info: {mgmt_info}, Err: {err}")
     if push:
         cib_push(cib_xml)
 

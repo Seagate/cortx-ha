@@ -294,8 +294,14 @@ class ConfigCmd(Cmd):
                         self._confstore.set(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
                         Log.info(f"Added new node: {node_name}")
                         node_added = True
+                        nodes = self._confstore.get(f"{const.CLUSTER_CONFSTORE_NODES_KEY}")
+                        if node_added == True and len(nodes.keys()) == 2:
+                            mgmt_info = self._get_mgmt_vip(machine_id, cluster_id)
+                            mgmt_vip(f"{const.RA_LOG_DIR}/cortx-cib_mgmt.xml", create=True, push=True, mgmt_info=mgmt_info)
+                            Log.info(f"Added management vip to cluster {mgmt_info}")
                         break
                     except Exception as e:
+                        node_added = False
                         Log.error(f"Adding {node_name} using remote node {remote_node} failed with error: {e}, \
                                 if available, will try with other node")
                         # Try removing the node, it might be partially added.
@@ -307,13 +313,9 @@ class ConfigCmd(Cmd):
                         # Delete the node from nodelist if it was added in the store
                         if self._confstore.key_exists(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}"):
                             self._confstore.delete(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
-                nodes = self._confstore.get(f"{const.CLUSTER_CONFSTORE_NODES_KEY}")
-                if node_added == True and len(nodes.keys()) == 2:
-                    mgmt_info = self._get_mgmt_vip(machine_id, cluster_id)
-                    mgmt_vip(f"{const.RA_LOG_DIR}/cortx-cib_mgmt.xml", create=True, push=True, mgmt_info=mgmt_info)
             if node_added == False:
                 Log.error(f"Adding {node_name} failed")
-                raise HaConfigException("Add node failed")
+                raise HaConfigException(f"Failed to add node {node_name}.")
         Log.info("config command is successful")
 
     def _get_s3_instance(self, machine_id: str) -> int:
