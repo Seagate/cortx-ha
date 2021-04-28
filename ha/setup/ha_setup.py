@@ -46,6 +46,7 @@ class Cmd:
     Setup Command. This class provides methods for parsing arguments.
     """
     _index = "conf"
+    DEV_CHECK = False
 
     def __init__(self, args: dict):
         """
@@ -90,6 +91,7 @@ class Cmd:
         for name, cmd in cmds:
             cmd.add_args(subparsers, cmd, name)
         args = parser.parse_args(argv)
+        Cmd.DEV_CHECK = args.dev
         return args.command(args)
 
     @staticmethod
@@ -99,6 +101,7 @@ class Cmd:
         """
         setup_arg_parser = parser.add_parser(cls.name, help='setup %s' % name)
         setup_arg_parser.add_argument('--config', help='Config URL')
+        setup_arg_parser.add_argument('--dev', action='store_true', help='Dev check')
         setup_arg_parser.add_argument('args', nargs='*', default=[], help='args')
         setup_arg_parser.set_defaults(command=cls)
 
@@ -294,7 +297,7 @@ class ConfigCmd(Cmd):
                         Log.info(f"Added new node: {node_name}")
                         node_added = True
                         nodes = self._confstore.get(f"{const.CLUSTER_CONFSTORE_NODES_KEY}")
-                        if node_added == True and len(nodes.keys()) == 2:
+                        if ConfigCmd.DEV_CHECK == False and node_added == True and len(nodes.keys()) == 2:
                             mgmt_info = self._get_mgmt_vip(machine_id, cluster_id)
                             mgmt_vip(f"{const.RA_LOG_DIR}/cortx-cib_mgmt.xml", create=True, push=True, mgmt_info=mgmt_info)
                             Log.info(f"Added management vip to cluster {mgmt_info}")
