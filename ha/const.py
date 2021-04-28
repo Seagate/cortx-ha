@@ -46,6 +46,7 @@ BACKUP_DEST_DIR_CONF = "{}/conf".format(BACKUP_DEST_DIR)
 BACKUP_DEST_DIR_CONSUL = "{}/Consul".format(BACKUP_DEST_DIR)
 SOURCE_CLI_SCHEMA_FILE = "{}/cli_schema.json".format(SOURCE_CONFIG_PATH)
 CLI_SCHEMA_FILE = "{}/cli_schema.json".format(CONFIG_DIR)
+COMPONENTS_CONFIG_DIR = "{}/components".format(CONFIG_DIR)
 
 # Mini-provisioning
 CLUSTER_CONFSTORE_NODES_KEY="nodes"

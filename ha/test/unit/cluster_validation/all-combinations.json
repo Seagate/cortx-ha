@@ -1,0 +1,217 @@
+{
+    "test": {
+        "parameters": { },
+        "group": "io_group",
+        "provider": {
+            "name": "ocf:heartbeat",
+            "service": "Dummy",
+            "intervals": [
+                "0s",
+                "30s",
+                "0s"
+            ],
+            "timeouts": [
+                "60s",
+                "30s",
+                "60s"
+            ],
+            "counters": [1, 2]
+        }, 
+
+        "dependencies": {
+            "predecessors": [
+                "<resource>",
+                "<resource>"
+            ],
+            "colocation": [
+                "<resource>",
+                "<resource>"
+            ],
+            "relation": [
+                "<resource>",
+                "<resource>"
+            ]
+        },
+        "ha": {
+            "mode": "active_active",
+            "clones": {
+                "active": [
+                    "1",
+                    "INFINITY"
+                ],
+                "primary": [
+                    "<max-primary-on-node>",
+                    "<total-primary>"
+                ],
+                "parameters": {
+                    "<key1>": "<value1>",
+                    "<key2>": "<value2>"
+                }
+            },
+            "location": {
+                "<hostname1>": "<priority1>",
+                "<hostname2>": "<priority2>"
+            }
+        }
+    },
+    "test-3": {
+        "parameters": { },
+        "group": "",
+        "provider": {
+            "name": "ocf:heartbeat",
+            "service": "Dummy",
+            "intervals": [
+                "0s",
+                "30s",
+                "0s"
+            ],
+            "timeouts": [
+                "100s",
+                "30s",
+                "120s"
+            ],
+            "counters": []
+        }, 
+
+        "dependencies": {
+            "predecessors": [
+                "<resource>",
+                "<resource>"
+            ],
+            "colocation": [
+                "<resource>",
+                "<resource>"
+            ],
+            "relation": [
+                "<resource>",
+                "<resource>"
+            ]
+        },
+        "ha": {
+            "mode": "active_active",
+            "clones": {
+                "active": [
+                    "1",
+                    "INFINITY"
+                ],
+                "primary": [
+                    "<max-primary-on-node>",
+                    "<total-primary>"
+                ],
+                "parameters": {
+                    "failure-timeout": "300s"
+                }
+            },
+            "location": {
+                "<hostname1>": "<priority1>",
+                "<hostname2>": "<priority2>"
+            }
+        }
+    },
+    "test-4": {
+        "parameters": { },
+        "group": "",
+        "provider": {
+            "name": "ocf:heartbeat",
+            "service": "Dummy",
+            "intervals": [
+                "0s",
+                "30s",
+                "0s"
+            ],
+            "timeouts": [
+                "60s",
+                "30s",
+                "60s"
+            ],
+            "counters": []
+        }, 
+
+        "dependencies": {
+            "predecessors": [
+                "<resource>",
+                "<resource>"
+            ],
+            "colocation": [
+                "<resource>",
+                "<resource>"
+            ],
+            "relation": [
+                "<resource>",
+                "<resource>"
+            ]
+        },
+        "ha": {
+            "mode": "active_passive",
+            "clones": {
+                "active": [
+                    "1",
+                    "INFINITY"
+                ],
+                "primary": [
+                    "<max-primary-on-node>",
+                    "<total-primary>"
+                ],
+                "parameters": {
+                }
+            },
+            "location": {
+                "<hostname1>": "<priority1>",
+                "<hostname2>": "<priority2>"
+            }
+        }
+    },
+    "test-5": {
+        "parameters": { },
+        "group": "alone",
+        "provider": {
+            "name": "ocf:heartbeat",
+            "service": "Dummy",
+            "intervals": [
+                "0s",
+                "30s",
+                "0s"
+            ],
+            "timeouts": [
+                "60s",
+                "30s",
+                "60s"
+            ],
+            "counters": []
+        }, 
+
+        "dependencies": {
+            "predecessors": [
+                "<resource>",
+                "<resource>"
+            ],
+            "colocation": [
+                "<resource>",
+                "<resource>"
+            ],
+            "relation": [
+                "<resource>",
+                "<resource>"
+            ]
+        },
+        "ha": {
+            "mode": "active_passive",
+            "clones": {
+                "active": [
+                    "1",
+                    "INFINITY"
+                ],
+                "primary": [
+                    "<max-primary-on-node>",
+                    "<total-primary>"
+                ],
+                "parameters": {
+                }
+            },
+            "location": {
+                "<hostname1>": "<priority1>",
+                "<hostname2>": "<priority2>"
+            }
+        }
+    }
+}

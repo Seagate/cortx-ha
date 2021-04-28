@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<crm_mon version="1.1.23">
+    <summary>
+        <stack type="corosync" />
+        <current_dc present="true" version="1.1.23-1.el7_9.1-9acf116022" name="localhrost" id="1" with_quorum="false" />
+        <last_update time="Sun Apr  4 22:47:02 2021" />
+        <last_change time="Sun Apr  4 22:42:51 2021" user="root" client="cibadmin" origin="localhrost" />
+        <nodes_configured number="2" expected_votes="unknown" />
+        <resources_configured number="8" disabled="0" blocked="0" />
+        <cluster_options stonith-enabled="false" symmetric-cluster="true" no-quorum-policy="stop" maintenance-mode="false" />
+    </summary>
+    <nodes>
+        <node name="localfrost" id="2" online="false" standby="false" standby_onfail="false" maintenance="false" pending="false" unclean="false" shutdown="false" expected_up="false" is_dc="false" resources_running="0" type="member" />
+        <node name="localhrost" id="1" online="true" standby="false" standby_onfail="false" maintenance="false" pending="false" unclean="false" shutdown="false" expected_up="true" is_dc="true" resources_running="0" type="member" />
+    </nodes>
+    <resources>
+        <clone id="io_group-clone" multi_state="false" unique="false" managed="true" failed="false" failure_ignored="false" >
+            <group id="io_group:0" number_resources="2" >
+                 <resource id="test-1" resource_agent="ocf::heartbeat:Dummy" role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+                 <resource id="test-2" resource_agent="ocf::heartbeat:Dummy" role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+            </group>
+            <group id="io_group:1" number_resources="2" >
+                 <resource id="test-1" resource_agent="ocf::heartbeat:Dummy" role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+                 <resource id="test-2" resource_agent="ocf::heartbeat:Dummy" role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+            </group>
+        </clone>
+        <clone id="test-3-clone" multi_state="false" unique="false" managed="true" failed="false" failure_ignored="false" >
+            <resource id="test-3" resource_agent="ocf::heartbeat:Dummy" role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+            <resource id="test-3" resource_agent="ocf::heartbeat:Dummy" role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+        </clone>
+        <resource id="test-4" resource_agent="ocf::heartbeat:Dummy" role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+        <group id="alone" number_resources="1" >
+             <resource id="test-5" resource_agent="ocf::heartbeat:Dummy" role="Stopped" active="false" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="0" />
+        </group>
+    </resources>
+    <node_attributes>
+        <node name="localhrost">
+        </node>
+    </node_attributes>
+    <node_history>
+        <node name="localhrost">
+        </node>
+    </node_history>
+    <fence_history>
+    </fence_history>
+    <tickets>
+    </tickets>
+    <bans>
+    </bans>
+</crm_mon>
