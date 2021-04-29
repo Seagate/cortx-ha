@@ -29,6 +29,9 @@ from cortx.utils.log import Log
 from cortx.utils.validator.v_pkg import PkgV
 from cortx.utils.security.cipher import Cipher
 
+import pathlib
+sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..'))
+
 from ha.execute import SimpleCommand
 from ha import const
 from ha.const import STATUSES
@@ -284,7 +287,7 @@ class ConfigCmd(Cmd):
                     try:
                         remote_executor.execute(const.CORTX_CLUSTER_NODE_ADD.replace("<node>", node_name)
                                                                             .replace("<user>", cluster_user)
-                                                                            .replace("<secret>", cluster_secret))
+                                                                            .replace("<secret>", "'" + cluster_secret + "'"))
                         # TODO: Change following PCS command to CLI when available.
                         remote_executor.execute(const.PCS_NODE_STANDBY.replace("<node>", node_name))
                         # Add this node to the cluster nodes list in the store.
