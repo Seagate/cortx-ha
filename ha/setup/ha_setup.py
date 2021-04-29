@@ -29,9 +29,6 @@ from cortx.utils.log import Log
 from cortx.utils.validator.v_pkg import PkgV
 from cortx.utils.security.cipher import Cipher
 
-import pathlib
-sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..'))
-
 from ha.execute import SimpleCommand
 from ha import const
 from ha.const import STATUSES
