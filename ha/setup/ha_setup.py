@@ -113,6 +113,18 @@ class Cmd:
         if os.path.exists(file):
             os.remove(file)
 
+    @staticmethod
+    def copy_file(source: str, dest: str):
+        """
+        Move file source to destination.
+
+        Args:
+            source (str): [description]
+            dest (str): [description]
+        """
+        Cmd.remove_file(dest)
+        shutil.copyfile(source, dest)
+
     def get_machine_id(self):
         command = "cat /etc/machine-id"
         machine_id, err, rc = self._execute.run_cmd(command, check_error=True)
@@ -144,21 +156,21 @@ class PostInstallCmd(Cmd):
 
         Log.info("Processing post_install command")
         try:
+            if os.path.exists(const.CONFIG_DIR):
+                shutil.rmtree(const.CONFIG_DIR)
             os.makedirs(const.CONFIG_DIR, exist_ok=True)
             # Create a directory and copy config file
-            PostInstallCmd.remove_file(const.HA_CONFIG_FILE)
-            shutil.copyfile(const.SOURCE_CONFIG_FILE, const.HA_CONFIG_FILE)
-            PostInstallCmd.remove_file(const.CM_CONTROLLER_SCHEMA)
-            shutil.copyfile(f"{const.SOURCE_CONFIG_PATH}/{const.CM_CONTROLLER_INDEX}.json",
+            PostInstallCmd.copy_file(const.SOURCE_CONFIG_FILE, const.HA_CONFIG_FILE)
+            PostInstallCmd.copy_file(f"{const.SOURCE_CONFIG_PATH}/{const.CM_CONTROLLER_INDEX}.json",
                             const.CM_CONTROLLER_SCHEMA)
-            PostInstallCmd.remove_file(const.ALERT_FILTER_RULES_FILE)
-            shutil.copyfile(const.SOURCE_ALERT_FILTER_RULES_FILE, const.ALERT_FILTER_RULES_FILE)
+            PostInstallCmd.copy_file(const.SOURCE_ALERT_FILTER_RULES_FILE, const.ALERT_FILTER_RULES_FILE)
+            PostInstallCmd.copy_file(const.SOURCE_CLI_SCHEMA_FILE, const.CLI_SCHEMA_FILE)
             Log.info(f"{self.name}: Copied HA configs file.")
             # Pre-requisite checks are done here.
             # Make sure that cortx necessary packages have been installed
             PkgV().validate('rpms', const.CORTX_CLUSTER_PACKAGES)
             Log.info("Found required cluster packages installed.")
-
+            # Check user and group
             groups = [g.gr_name for g in grp.getgrall() if const.CLUSTER_USER in g.gr_mem]
             gid = pwd.getpwnam(const.CLUSTER_USER).pw_gid
             groups.append(grp.getgrgid(gid).gr_name)
@@ -495,14 +507,11 @@ class CleanupCmd(Cmd):
             if self._confstore.key_exists(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}"):
                 self._confstore.delete(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
             # Delete the config file
-            if os.path.exists(const.HA_CONFIG_FILE):
-                os.remove(const.HA_CONFIG_FILE)
-            if os.path.exists(const.CM_CONTROLLER_SCHEMA):
-                os.remove(const.CM_CONTROLLER_SCHEMA)
-            if os.path.exists(const.FIDS_CONFIG_FILE):
-                os.remove(const.FIDS_CONFIG_FILE)
-            if os.path.exists(const.ALERT_FILTER_RULES_FILE):
-                os.remove(const.ALERT_FILTER_RULES_FILE)
+            CleanupCmd.remove_file(const.HA_CONFIG_FILE)
+            CleanupCmd.remove_file(const.CM_CONTROLLER_SCHEMA)
+            CleanupCmd.remove_file(const.FIDS_CONFIG_FILE)
+            CleanupCmd.remove_file(const.ALERT_FILTER_RULES_FILE)
+            CleanupCmd.remove_file(const.CLI_SCHEMA_FILE)
         except Exception as e:
             Log.error(f"Cluster cleanup command failed. Error: {e}")
             raise HaCleanupException("Cluster cleanup failed")
@@ -560,9 +569,9 @@ def main(argv: dict):
         command.process()
 
         sys.stdout.write(f"Mini Provisioning {sys.argv[1]} configured sussesfully.\n")
-    except Exception:
+    except Exception as err:
         Log.error("%s\n" % traceback.format_exc())
-        sys.stderr.write(f"Setup command:{argv[1]} failed for cortx-ha.\n")
+        sys.stderr.write(f"Setup command:{argv[1]} failed for cortx-ha. Error: {err}\n")
         return errno.EINVAL
 
 if __name__ == '__main__':

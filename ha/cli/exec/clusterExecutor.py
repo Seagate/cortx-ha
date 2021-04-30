@@ -17,11 +17,10 @@
 
 import argparse
 import os
-
 from cortx.utils.log import Log
 from ha.cli.exec.commandExecutor import CommandExecutor
 from ha.core.error import HAUnimplemented
-
+from ha.cli.cli_schema import CLISchema
 
 class ClusterStartExecutor(CommandExecutor):
 
@@ -45,14 +44,16 @@ class ClusterStartExecutor(CommandExecutor):
         Parses the command line args.
         Return: argparse
         """
-        parser = argparse.ArgumentParser(prog='cluster start all|<server>')
+        parser = argparse.ArgumentParser(prog='cluster start cli',
+                        usage = CLISchema.get_usage("cluster", "start"),
+                        formatter_class = argparse.RawDescriptionHelpFormatter)
         parser.add_argument("cluster", help="Module")
         parser.add_argument("start", help="action to be performed")
         group = parser.add_mutually_exclusive_group()
         group.add_argument('--all', action='store_true',
                            help='All servers to start in a cluster')
         group.add_argument('--server', action='store_false',
-                           help='Server to start in a cluster')
+                           help='Server to start in a cluster (Default: true)')
         parser.add_argument('--json', help='Required output format', action='store_true')
         self._args = parser.parse_args()
         return True
@@ -66,11 +67,13 @@ class ClusterStartExecutor(CommandExecutor):
         if self._args.all:
             Log.info("Executing storage start")
             # TODO : start storage enclosure
-
+        Log.debug(_cluster_start_result)
+        if self.is_status_failed(_cluster_start_result):
+            self.op.set_rc(1)
+        self.op.set_output(_cluster_start_result)
         if self._args.json:
-            self.op.print_json(_cluster_start_result)
-        Log.info(_cluster_start_result)
-
+            self.op.set_format(self.op.JSON)
+        self.op.dump_output()
 
 class ClusterStopExecutor(CommandExecutor):
 
@@ -84,14 +87,16 @@ class ClusterStopExecutor(CommandExecutor):
            Parses the command line args.
            Return: argparse
         '''
-        parser = argparse.ArgumentParser(description="cluster stop")
+        parser = argparse.ArgumentParser(prog='cluster stop cli',
+                        usage = CLISchema.get_usage("cluster", "stop"),
+                        formatter_class = argparse.RawDescriptionHelpFormatter)
         parser.add_argument("cluster", help="Module")
         parser.add_argument("stop", help="action to be performed")
         group = parser.add_mutually_exclusive_group()
         group.add_argument('--all', action='store_true', \
                             help='Server and storage stop')
         group.add_argument('--server', action='store_false', \
-                            help='server stop')
+                            help='server stop (Default: true)')
         parser.add_argument('--json', help='Required output format', action='store_true')
         return parser.parse_args()
 
@@ -117,12 +122,13 @@ class ClusterStopExecutor(CommandExecutor):
             # TODO: Perform storageset stop
 
         stop_cluster_message = self.cluster_manager.cluster_controller.stop()
-        if self._args.json:
-            self.op.print_json(stop_cluster_message)
-        else:
-            print(stop_cluster_message)
         Log.info(stop_cluster_message)
-
+        if self.is_status_failed(stop_cluster_message):
+            self.op.set_rc(1)
+        self.op.set_output(stop_cluster_message)
+        if self._args.json:
+            self.op.set_format(self.op.JSON)
+        self.op.dump_output()
 
 class ClusterRestartExecutor(CommandExecutor):
     def validate(self) -> bool:
@@ -131,14 +137,12 @@ class ClusterRestartExecutor(CommandExecutor):
     def execute(self) -> None:
         raise HAUnimplemented("This operation is not implemented.")
 
-
 class ClusterStandbyExecutor(CommandExecutor):
     def validate(self) -> bool:
         raise HAUnimplemented("This operation is not implemented.")
 
     def execute(self) -> None:
         raise HAUnimplemented("This operation is not implemented.")
-
 
 class ClusterActiveExecutor(CommandExecutor):
     def validate(self) -> bool:
@@ -147,7 +151,6 @@ class ClusterActiveExecutor(CommandExecutor):
     def execute(self) -> None:
         raise HAUnimplemented("This operation is not implemented.")
 
-
 class ClusterListExecutor(CommandExecutor):
     def validate(self) -> bool:
         raise HAUnimplemented("This operation is not implemented.")
@@ -155,14 +158,12 @@ class ClusterListExecutor(CommandExecutor):
     def execute(self) -> None:
         raise HAUnimplemented("This operation is not implemented.")
 
-
 class ClusterStatusExecutor(CommandExecutor):
     def validate(self) -> bool:
         raise HAUnimplemented("This operation is not implemented.")
 
     def execute(self) -> None:
         raise HAUnimplemented("This operation is not implemented.")
-
 
 class ClusterNodeAddExecutor(CommandExecutor):
     '''
@@ -180,11 +181,13 @@ class ClusterNodeAddExecutor(CommandExecutor):
            Parses the command line args.
            Return: argparse
         '''
-        parser = argparse.ArgumentParser(prog='cluster add node')
+        parser = argparse.ArgumentParser(prog='cluster add_node cli',
+                        usage = CLISchema.get_usage("cluster", "add_node"),
+                        formatter_class = argparse.RawDescriptionHelpFormatter)
         parser.add_argument("cluster", help="Module")
         parser.add_argument("add", help="action to be performed")
-        parser.add_argument("node", help="component on which action to be performed")
-        group = parser.add_mutually_exclusive_group(required='True')
+        parser.add_argument("node", help="Component to be added.")
+        group = parser.add_mutually_exclusive_group(required=True)
         group.add_argument('--nodeid', action='store', \
                            help='ID of a node which needs to be added in a cluster')
         group.add_argument('--descfile', action='store', \
@@ -235,8 +238,10 @@ class ClusterNodeAddExecutor(CommandExecutor):
         if self.is_valid_node_id(node_id):
             add_node_result_message = self.cluster_manager.cluster_controller.add_node(node_id, \
                                     cluster_uname, cluster_pwd)
+            Log.info(add_node_result_message)
             if self._args.json:
-                self.op.print_json(add_node_result_message)
-            else:
-                print(add_node_result_message)
-        Log.info(add_node_result_message)
+                self.op.set_format(self.op.JSON)
+            self.op.set_output(add_node_result_message)
+            if self.is_status_failed(add_node_result_message):
+                self.op.set_rc(1)
+            self.op.dump_output()
