@@ -46,6 +46,8 @@ BACKUP_DEST_DIR_CONF = "{}/conf".format(BACKUP_DEST_DIR)
 BACKUP_DEST_DIR_CONSUL = "{}/Consul".format(BACKUP_DEST_DIR)
 CORTX_CLUSTER_PACKAGES=["pacemaker", "corosync", "pcs", "cortx-py-utils", "cortx-csm", "cortx-motr", "cortx-hare", "cortx-s3server", "cortx-sspl"]
 CIB_FILE="{}/cortx-r2-cib.xml".format(RA_LOG_DIR)
+SOURCE_CLI_SCHEMA_FILE = "{}/cli_schema.json".format(SOURCE_CONFIG_PATH)
+CLI_SCHEMA_FILE = "{}/cli_schema.json".format(CONFIG_DIR)
 
 # Mini-provisioning
 CLUSTER_CONFSTORE_NODES_KEY="nodes"

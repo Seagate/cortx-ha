@@ -24,13 +24,14 @@ def main(argv):
     """
     Entry point for cortx CLI
     """
-
-    sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..'))
-
     from ha.cli.commands import Command
-    command = Command()
-    command.process(argv[1:])
-
+    try:
+        command = Command()
+        command.process(argv[1:])
+    except Exception as err:
+        sys.stderr.write(f"Failed to execute:  {' '.join(argv)}.")
+        sys.stderr.write(f" {err}\n")
+        sys.exit(1)
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv))
