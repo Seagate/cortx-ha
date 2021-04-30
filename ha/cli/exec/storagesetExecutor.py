@@ -58,4 +58,3 @@ class StoragesetStatusExecutor(CommandExecutor):
 
     def execute(self) -> str:
         raise HAUnimplemented("This operation is not implemented.")
-

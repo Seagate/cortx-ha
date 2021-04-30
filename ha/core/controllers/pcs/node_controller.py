@@ -172,10 +172,7 @@ class PcsVMNodeController(PcsNodeController):
         _node_status = self.nodes_status([nodeid])[nodeid]
         if _node_status == NODE_STATUSES.ONLINE.value:
             return {"status": const.STATUSES.SUCCEEDED.value, "msg": f"Node {nodeid}, is already in Online status"}
-        elif _node_status == NODE_STATUSES.STANDBY_WITH_RESOURCES_RUNNING.value:
-            return {"status": const.STATUSES.SUCCEEDED.value, "msg": f"Node {nodeid}, is going in standby mode, "
-                                                  f"We need to wait to complete the resource shutdown"}
-        elif _node_status == NODE_STATUSES.STANDBY.value:
+        elif _node_status == NODE_STATUSES.STANDBY.value or _node_status == NODE_STATUSES.STANDBY_WITH_RESOURCES_RUNNING.value:
             # make node unstandby
             if self.heal_resource(nodeid):
                 _output, _err, _rc = self._execute.run_cmd(const.PCS_NODE_UNSTANDBY.replace("<node>", nodeid),
