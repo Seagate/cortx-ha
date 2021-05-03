@@ -116,7 +116,7 @@
     },
     "support_bundle": {
         "create": {
-            "usage": "support_bundle create [--id <Bundle ID>] [--path <Bundle Path>]",
+            "usage": "support_bundle create  <Bundle ID> <Bundle Path>",
             "class": "ha.cli.exec.supportBundleExecutor.CreateSupportBundleExecutor"
         }
     }

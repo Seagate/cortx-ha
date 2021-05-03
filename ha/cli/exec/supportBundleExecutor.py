@@ -46,8 +46,8 @@ class CreateExecutor(CommandExecutor):
         parser = argparse.ArgumentParser(prog='support_bundle create')
         parser.add_argument("support_bundle", help="Module name")
         parser.add_argument("create", help="Operation")
-        parser.add_argument('--id', help='Bundle id', required=True)
-        parser.add_argument('--path', help='Bundle path', required=True)
+        parser.add_argument('id', help='Bundle id', action="store")
+        parser.add_argument('path', help='Bundle path', action="store")
         self._args = parser.parse_args()
         self._id = self._args.id
         self._path = self._args.path
