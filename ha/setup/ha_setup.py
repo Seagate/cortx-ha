@@ -32,7 +32,6 @@ from ha.execute import SimpleCommand
 from ha import const
 from ha.const import STATUSES
 from ha.setup.create_pacemaker_resources import create_all_resources
-from ha.setup.create_pacemaker_resources import mgmt_vip
 from ha.core.cluster.cluster_manager import CortxClusterManager
 from ha.core.config.config_manager import ConfigManager
 from ha.remote_execution.ssh_communicator import SSHRemoteExecutor
