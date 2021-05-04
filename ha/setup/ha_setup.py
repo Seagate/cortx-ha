@@ -366,11 +366,6 @@ class ConfigCmd(Cmd):
             node_count: int = len(Conf.get(self._index, "server_node"))
             if ConfigCmd.DEV_CHECK == True or node_count < 2:
                 return mgmt_info
-            #nodes = self._confstore.get(f"{const.CLUSTER_CONFSTORE_NODES_KEY}")
-            #if ConfigCmd.DEV_CHECK == False and node_added == True and len(nodes.keys()) == 2:
-            #    mgmt_info = self._get_mgmt_vip(machine_id, cluster_id)
-            #    mgmt_vip(f"{const.RA_LOG_DIR}/cortx-cib_mgmt.xml", create=True, push=True, mgmt_info=mgmt_info)
-            #    Log.info(f"Added management vip to cluster {mgmt_info}")
             mgmt_info["mgmt_vip"] = Conf.get(self._index, f"cluster.{cluster_id}.network.management.virtual_host")
             netmask = Conf.get(self._index, f"server_node.{machine_id}.network.management.netmask")
             if netmask is None:

@@ -10,33 +10,33 @@ cortx:
       secret: TMPL_SECRET
       user: TMPL_USER
 server_node:
-  TMPL_MACHINE_ID-1:
-    cluster_id: TMPL_CLUSTER_ID-1
+  TMPL_MACHINE_ID_1:
+    cluster_id: TMPL_CLUSTER_ID_1
     network:
       data:
-        private_fqdn: TMPL_PRIVATE_FQDN-1
+        private_fqdn: TMPL_PRIVATE_FQDN_1
       management:
-        interfaces: TMPL_INTERFACES-1
-        netmask: TMPL_NETMASK-1
+        interfaces: TMPL_INTERFACES_1
+        netmask: TMPL_NETMASK_1
     s3_instances: '1'
-    type: TMPL_TYPE-1
-  TMPL_MACHINE_ID-2:
-    cluster_id: TMPL_CLUSTER_ID-2
+    type: TMPL_TYPE_1
+  TMPL_MACHINE_ID_2:
+    cluster_id: TMPL_CLUSTER_ID_2
     network:
       data:
-        private_fqdn: TMPL_PRIVATE_FQDN-2
+        private_fqdn: TMPL_PRIVATE_FQDN_2
       management:
-        interfaces: TMPL_INTERFACES-2
-        netmask: TMPL_NETMASK-2
+        interfaces: TMPL_INTERFACES_2
+        netmask: TMPL_NETMASK_2
     s3_instances: '1'
-    type: TMPL_TYPE-2
-  TMPL_MACHINE_ID-3:
-    cluster_id: TMPL_CLUSTER_ID-3
+    type: TMPL_TYPE_2
+  TMPL_MACHINE_ID_3:
+    cluster_id: TMPL_CLUSTER_ID_3
     network:
       data:
-        private_fqdn: TMPL_PRIVATE_FQDN-3
+        private_fqdn: TMPL_PRIVATE_FQDN_3
       management:
-        interfaces: TMPL_INTERFACES-3
-        netmask: TMPL_NETMASK-3
+        interfaces: TMPL_INTERFACES_3
+        netmask: TMPL_NETMASK_3
     s3_instances: '1'
-    type: TMPL_TYPE-3
+    type: TMPL_TYPE_3
