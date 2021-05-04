@@ -16,7 +16,7 @@ server_node:
       data:
         private_fqdn: TMPL_PRIVATE_FQDN-1
       management:
-        interfaces: TMPL_INTERFACES=1
+        interfaces: TMPL_INTERFACES-1
         netmask: TMPL_NETMASK-1
     s3_instances: '1'
     type: TMPL_TYPE-1

@@ -171,7 +171,8 @@ class PostInstallCmd(Cmd):
             Log.info(f"{self.name}: Copied HA configs file.")
             # Pre-requisite checks are done here.
             # Make sure that cortx necessary packages have been installed
-            PkgV().validate('rpms', const.CORTX_CLUSTER_PACKAGES)
+            if PostInstallCmd.DEV_CHECK != True:
+                PkgV().validate('rpms', const.CORTX_CLUSTER_PACKAGES)
             Log.info("Found required cluster packages installed.")
             # Check user and group
             groups = [g.gr_name for g in grp.getgrall() if const.CLUSTER_USER in g.gr_mem]
