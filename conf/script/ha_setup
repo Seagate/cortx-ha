@@ -70,8 +70,9 @@ config() {
 
 init() {
     echo "init"
-    # Add consul watcher
+    # Add consul watchers
     consul_watcher_failback
+    consul_watcher_stop_io
 
     # Add permisson to hacluster
     add_permission
@@ -194,6 +195,21 @@ consul_watcher_failback() {
         echo "Warning: Consul is not running."
     else
         echo 'Reloading Consul...'
+        /usr/bin/consul reload
+    fi
+}
+
+consul_watcher_stop_io() {
+    echo "Copy consul watcher file for data integrity check ${SOURCE_HA_CONF}/consul_watcher_stop_io.json to /var/lib/hare/consul-server-c[1-2]-conf/ "
+    mkdir -p /var/lib/hare/consul-server-c1-conf/ /var/lib/hare/consul-server-c2-conf/
+    cp -rf ${SOURCE_HA_CONF}/consul_watcher_stop_io.json /var/lib/hare/consul-server-c1-conf/
+    cp -rf ${SOURCE_HA_CONF}/consul_watcher_stop_io.json /var/lib/hare/consul-server-c2-conf/
+
+    CONSUL_PS=$(ps -aux | grep "consul" | grep -v "grep" || true)
+    if [ -z "$CONSUL_PS" ]; then
+        echo "Warning: Consul is not running on $LOCAL_NODE_MINION_ID"
+    else
+        echo "Reloading Consul on $LOCAL_NODE_MINION_ID"
         /usr/bin/consul reload
     fi
 }
