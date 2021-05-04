@@ -57,7 +57,24 @@
             "action":"resolved"
         }
     ],
-    "iem": [],
+    "iem":[
+        {
+            "alert_type": "fault",
+            "severity": "error",
+            "component_id": "s3",
+            "module_id": "data",
+            "event_id": "data integrity failed",
+            "action": "stop_io"
+        },
+        {
+            "alert_type": "fault",
+            "severity": "error",
+            "component_id": "s3",
+            "module_id": "data",
+            "event_id": "metadata integrity failed",
+            "action": "stop_io"
+        }
+    ],
     "node:interface:sas":[
         {
             "alert_type":"fault",
