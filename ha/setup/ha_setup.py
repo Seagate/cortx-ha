@@ -243,6 +243,7 @@ class ConfigCmd(Cmd):
         key = Cipher.generate_key(cluster_id, const.HACLUSTER_KEY)
         cluster_secret = Cipher.decrypt(key, cluster_secret.encode('ascii')).decode()
         s3_instances = self._get_s3_instance(machine_id)
+        mgmt_info: dict = self._get_mgmt_vip(machine_id, cluster_id)
 
         self._update_env(node_name, node_type, const.HA_CLUSTER_SOFTWARE)
         self._fetch_fids()
@@ -266,7 +267,7 @@ class ConfigCmd(Cmd):
                     Log.info(f"Put node in standby output: {standby_output}")
                     if json.loads(standby_output).get("status") != STATUSES.FAILED.value:
                         Log.info("Creating pacemaker resources")
-                        create_all_resources(s3_instances=s3_instances, mgmt_info={})
+                        create_all_resources(s3_instances=s3_instances, mgmt_info=mgmt_info)
                         Log.info("Created pacemaker resources successfully")
                         # Add this node to the cluster nodes list in the store.
                         self._confstore.set(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
@@ -308,11 +309,6 @@ class ConfigCmd(Cmd):
                         self._confstore.set(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
                         Log.info(f"Added new node: {node_name}")
                         node_added = True
-                        nodes = self._confstore.get(f"{const.CLUSTER_CONFSTORE_NODES_KEY}")
-                        if ConfigCmd.DEV_CHECK == False and node_added == True and len(nodes.keys()) == 2:
-                            mgmt_info = self._get_mgmt_vip(machine_id, cluster_id)
-                            mgmt_vip(f"{const.RA_LOG_DIR}/cortx-cib_mgmt.xml", create=True, push=True, mgmt_info=mgmt_info)
-                            Log.info(f"Added management vip to cluster {mgmt_info}")
                         break
                     except Exception as e:
                         node_added = False
@@ -352,8 +348,29 @@ class ConfigCmd(Cmd):
             raise HaConfigException(f"Found {s3_instances} which is invalid s3 instance count.")
 
     def _get_mgmt_vip(self, machine_id: str, cluster_id: str) -> dict:
-        mgmt_info = {}
+        """
+        Get Mgmt info.
+
+        Args:
+            machine_id (str): Get machine ID.
+            cluster_id (str): Get Cluster ID.
+
+        Raises:
+            HaConfigException: Raise exception.
+
+        Returns:
+            dict: Mgmt info.
+        """
+        mgmt_info: dict = {}
         try:
+            node_count: int = len(Conf.get(self._index, "server_node"))
+            if ConfigCmd.DEV_CHECK == True or node_count < 2:
+                return mgmt_info
+            #nodes = self._confstore.get(f"{const.CLUSTER_CONFSTORE_NODES_KEY}")
+            #if ConfigCmd.DEV_CHECK == False and node_added == True and len(nodes.keys()) == 2:
+            #    mgmt_info = self._get_mgmt_vip(machine_id, cluster_id)
+            #    mgmt_vip(f"{const.RA_LOG_DIR}/cortx-cib_mgmt.xml", create=True, push=True, mgmt_info=mgmt_info)
+            #    Log.info(f"Added management vip to cluster {mgmt_info}")
             mgmt_info["mgmt_vip"] = Conf.get(self._index, f"cluster.{cluster_id}.network.management.virtual_host")
             netmask = Conf.get(self._index, f"server_node.{machine_id}.network.management.netmask")
             if netmask is None:
