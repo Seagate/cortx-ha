@@ -34,7 +34,7 @@ def import_list(ha_path, walk_path):
 block_cipher = None
 
 ha_path="<HA_PATH>"
-cmd_hidden_import = ["ha.cli.exec.clusterExecutor", "ha.cli.exec.nodeExecutor", "ha.cli.exec.serviceExecutor", "ha.cli.exec.storagesetExecutor"]
+cmd_hidden_import = ["ha.cli.exec.clusterExecutor", "ha.cli.exec.nodeExecutor", "ha.cli.exec.serviceExecutor", "ha.cli.exec.storagesetExecutor", "ha.cli.exec.supportBundleExecutor"]
 product_module_list = import_list(ha_path, ha_path + "/ha/core/controllers")
 product_module_list.extend(cmd_hidden_import)
 
