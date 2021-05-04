@@ -64,9 +64,3 @@ class Command:
             except Exception as err:
                 Log.error(f"{traceback.format_exc()}, {err}")
                 raise HACommandTerminated(f"CLI execution failed, Error: {err}")
-
-
-"""
-SupportBundleCommand is currently broken, so removed the code.
-This will be added when the support bundle user story [ EOS-17931 ] is started
-"""
