@@ -19,7 +19,7 @@ server_node:
         interfaces: TMPL_INTERFACES
         netmask: TMPL_NETMASK
     s3_instances: '1'
-    type: TMPL_TYPE_1
+    type: TMPL_TYPE
   TMPL_MACHINE_ID_2:
     cluster_id: TMPL_CLUSTER_ID
     network:
@@ -29,7 +29,7 @@ server_node:
         interfaces: TMPL_INTERFACES
         netmask: TMPL_NETMASK
     s3_instances: '1'
-    type: TMPL_TYPE_2
+    type: TMPL_TYPE
   TMPL_MACHINE_ID_3:
     cluster_id: TMPL_CLUSTER_ID
     network:
@@ -39,4 +39,4 @@ server_node:
         interfaces: TMPL_INTERFACES
         netmask: TMPL_NETMASK
     s3_instances: '1'
-    type: TMPL_TYPE_3
+    type: TMPL_TYPE
