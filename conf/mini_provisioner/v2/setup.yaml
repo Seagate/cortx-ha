@@ -15,39 +15,44 @@
 
 ha:
     post_install:
-        cmd: ha_setup post_install
+        cmd: /opt/seagate/cortx/ha/bin/ha_setup post_install
+        args: --config $URL
+
+    prepare:
+        cmd: /opt/seagate/cortx/ha/bin/ha_setup prepare
         args: --config $URL
 
     config:
-        cmd: ha_setup config
+        cmd: /opt/seagate/cortx/ha/bin/ha_setup config
         args: --config $URL
 
     init:
-        cmd: ha_setup init
+        cmd: /opt/seagate/cortx/ha/bin/ha_setup init
         args: --config $URL
 
     test:
-        cmd: ha_setup test
+        cmd: /opt/seagate/cortx/ha/bin/ha_setup test
         args: --config $URL
 
     upgrade:
-        cmd: ha_setup upgrade
+        cmd: /opt/seagate/cortx/ha/bin/ha_setup upgrade
         args: --config $URL
 
     reset:
-        cmd: ha_setup reset
+        cmd: /opt/seagate/cortx/ha/bin/ha_setup reset
         args: --config $URL
 
     cleanup:
-        cmd: ha_setup cleanup
+        cmd: /opt/seagate/cortx/ha/bin/ha_setup cleanup
         args: --config $URL
 
     backup:
-        cmd: ha_setup backup
+        cmd: /opt/seagate/cortx/ha/bin/ha_setup backup
         args: --location $URL
 
     restore:
-        cmd: ha_setup restore
+        cmd: /opt/seagate/cortx/ha/bin/ha_setup restore
         args: --location $URL
 
 support_bundle:
+    - cortx support_bundle create

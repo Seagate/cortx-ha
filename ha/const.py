@@ -18,29 +18,43 @@ from enum import Enum
 #LOGS and config
 CORTX_VERSION_1="1"
 CORTX_VERSION_2="2"
+HA_CLUSTER_SOFTWARE="corosync"
+HACLUSTER_KEY = "cortx"
 RA_LOG_DIR="/var/log/seagate/cortx/ha"
 PACEMAKER_LOG="/var/log/pacemaker.log"
 PCSD_LOG="/var/log/pcsd/pcsd.log"
 HA_CMDS_OUTPUT="{}/ha_cmds_output".format(RA_LOG_DIR)
 COROSYNC_LOG="/var/log/cluster"
+CONFIG_DIR="/etc/cortx/ha"
 SUPPORT_BUNDLE_ERR="{}/support_bundle.err".format(RA_LOG_DIR)
 SUPPORT_BUNDLE_LOGS=[RA_LOG_DIR, PCSD_LOG, PACEMAKER_LOG, COROSYNC_LOG]
-CORTX_SUPPORT_BUNDLE_LOGS=[RA_LOG_DIR]
+CORTX_SUPPORT_BUNDLE_LOGS=[RA_LOG_DIR, PCSD_LOG, PACEMAKER_LOG, CONFIG_DIR, COROSYNC_LOG]
 DATASTORE_VERSION="v1"
 CLUSTER_CONFSTORE_PREFIX = "cortx/ha/{}/".format(DATASTORE_VERSION)
 HA_INIT_DIR="/var/cortx/ha/"
-CONFIG_DIR="/etc/cortx/ha"
 SOURCE_CONFIG_PATH="/opt/seagate/cortx/ha/conf/etc"
 RESOURCE_SCHEMA="{}/decision_monitor_conf.json".format(CONFIG_DIR)
 RESOURCE_GLOBAL_INDEX="decision_monitor"
 RULE_ENGINE_SCHAMA="{}/rules_engine_schema.json".format(CONFIG_DIR)
 RULE_GLOBAL_INDEX="rules_engine"
 HA_CONFIG_FILE="{}/ha.conf".format(CONFIG_DIR)
+FIDS_CONFIG_FILE="{}/fids.json".format(CONFIG_DIR)
 HA_GLOBAL_INDEX="ha_conf"
 SOURCE_CONFIG_FILE="{}/ha.conf".format(SOURCE_CONFIG_PATH)
 BACKUP_DEST_DIR="/opt/seagate/cortx/ha_backup"
 BACKUP_DEST_DIR_CONF = "{}/conf".format(BACKUP_DEST_DIR)
 BACKUP_DEST_DIR_CONSUL = "{}/Consul".format(BACKUP_DEST_DIR)
+SOURCE_CLI_SCHEMA_FILE = "{}/cli_schema.json".format(SOURCE_CONFIG_PATH)
+CLI_SCHEMA_FILE = "{}/cli_schema.json".format(CONFIG_DIR)
+
+# Mini-provisioning
+CLUSTER_CONFSTORE_NODES_KEY="nodes"
+
+# Cortx commands
+CORTX_CLUSTER_NODE_ADD="cortx cluster add node --nodeid <node> --username <user> --password <secret>"
+
+# hare commands
+HCTL_FETCH_FIDS="hctl fetch-fids --json"
 
 CURRENT_NODE_STATUS="self_node_status"
 OTHER_NODE_STATUS="other_node_status"
@@ -76,8 +90,9 @@ BUNDLE_COMMAND="support_bundle"
 USER_GROUP_HACLIENT="haclient"
 USER_GROUP_ROOT="root"
 USER_HA_INTERNAL="hauser"
+CLUSTER_USER="hacluster"
 
-PCS_CLUSTER_PACKAGES=["pacemaker", "corosync", "pcs"]
+CORTX_CLUSTER_PACKAGES=["pacemaker", "corosync", "pcs", "cortx-py-utils", "cortx-csm", "cortx-motr", "cortx-hare", "cortx-s3server", "cortx-sspl"]
 CIB_FILE="/var/log/seagate/cortx/ha/cortx-r2-cib.xml"
 
 NODE_DISCONNECTED="Disconnected"
@@ -89,34 +104,44 @@ HARE_FID_MAPPING_FILE="/var/lib/hare/consul-server-conf/consul-server-conf.json"
 # PCS Commands
 PCS_CLUSTER_START="pcs cluster start --all"
 PCS_CLUSTER_START_NODE="pcs cluster start"
+PCS_NODE_START="pcs cluster start <node>"
 PCS_CLUSTER_ENABLE="pcs cluster enable <node>"
 PCS_CLUSTER_STATUS="pcs cluster status"
 PCS_CLUSTER_UNSTANDBY="pcs cluster unstandby --all"
 PCS_SETUP_CLUSTER="pcs cluster setup --start --name <cluster_name> <node>"
 PCS_CLUSTER_NODE_AUTH="pcs cluster auth <node> -u <username> -p <password>"
 PCS_CLUSTER_NODE_ADD="pcs cluster node add <node> --start --enable"
+PCS_CLUSTER_NODE_REMOVE="pcs cluster node remove <node>"
 PCS_CLUSTER_PCSD_STATUS="pcs status pcsd"
 PCS_STATUS_NODES="pcs status nodes"
 PCS_NODE_UNSTANDBY="pcs node unstandby <node>"
 PCS_CLEANUP="pcs resource cleanup"
 PCS_FAILCOUNT_STATUS="pcs resource failcount show"
 PCS_NODE_CLEANUP= PCS_CLEANUP + " --node <node>"
-PCS_NODE_FAILCOUNT_STATUS= PCS_FAILCOUNT_STATUS + " --node <node>"
+PCS_STOP_NODE="pcs cluster stop <node> --request-timeout=<seconds>"
+PCS_STOP_CLUSTER="pcs cluster stop --request-timeout=<seconds> --all"
 PCS_STATUS = "pcs status"
 PCS_CLUSTER_DESTROY="pcs cluster destroy"
 PCS_NODE_STANDBY="pcs node standby <node>"
 PCS_STONITH_DISABLE="pcs property set stonith-enabled=False"
 
 # Cluster manager
-CM_CONTROLLER_INDEX="controller_interface"
-CM_CONTROLLER_SCHEMA="{}/controller_interface.json".format(CONFIG_DIR)
+CM_CONTROLLER_INDEX="cluster_controller_interfaces"
+CM_CONTROLLER_SCHEMA="{}/cluster_controller_interfaces.json".format(CONFIG_DIR)
 CM_ELEMENT=["cluster", "node", "service", "storageset"]
-NO_FAILCOUNT = "No failcounts"
 RETRY_COUNT = 2
-PCS_NODE_START_GROUP_SIZE = 3
+PCS_NODE_GROUP_SIZE = 3
 NODE_CONTROLLER = "node_controller"
 CLUSTER_RETRY_COUNT = 6
 BASE_WAIT_TIME = 5
+NODE_STOP_TIMEOUT = 300 # 300 sec to stop single node
+
+# Event Analyzer
+INCLUSION = "inclusion"
+EXCLUSION = "exclusion"
+ALERT_FILTER_INDEX = "alert_filter_rules"
+ALERT_FILTER_RULES_FILE = "{}/alert_filter_rules.json".format(CONFIG_DIR)
+SOURCE_ALERT_FILTER_RULES_FILE = "{}/alert_filter_rules.json".format(SOURCE_CONFIG_PATH)
 
 class STATUSES(Enum):
     IN_PROGRESS = "InProgress"
@@ -124,12 +149,14 @@ class STATUSES(Enum):
     FAILED = "Failed"
 
 class NODE_STATUSES(Enum):
-    OFFLINE = "Offline"
-    STANDBY = "Standby"
-    ONLINE = "Online"
-    STANDBY_WITH_RESOURCES_RUNNING = "Standby with resource(s) running"
-    MAINTENANCE = "Maintenance"
-    UNKNOWN = "Unknown"
+    CLUSTER_OFFLINE = "Offline".lower() # Cluster not running on current node.
+    STANDBY = "Standby".lower() # Cluster Running but resource are not running.
+    ONLINE = "Online".lower() # Cluster and resource Running on current node.
+    # STANDBY_WITH_RESOURCES_RUNNING: Cluster and few resource running, Unstable state.
+    STANDBY_WITH_RESOURCES_RUNNING = "Standby with resource(s) running".lower()
+    MAINTENANCE = "Maintenance".lower() # In maintenance mode, Resource not monitored.
+    UNKNOWN = "Unknown".lower() # Unknown or Network problem
+    POWEROFF = "Poweroff or Disconnected".lower() # Node is poweroff or disconnected from network.
 
 # System Health
 # Constants

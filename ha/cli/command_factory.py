@@ -15,73 +15,46 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-import inspect
-
 from cortx.utils.log import Log
-from ha.cli import commands
-from ha.core.config.config_manager import ConfigManager
+from ha.cli.cli_schema import CLISchema
 
 class CmdFactory:
-    def __init__(self):
+
+    DEFAULT_MODEL = "cortx"
+    DEFAULT_OPERATION = "help"
+
+    @staticmethod
+    def parse(args: list):
         """
-        init of command factory
+        Parse args to find module, operation, options.
+
+        Args:
+            args (list): command line argument list.
         """
-        # Initialize logging.
-        # Prefix of the log file name "cortxcli" is passed to the init function;
-        # So the generated log file will be cortxcli.log
-        ConfigManager.init("cortxcli")
-
-        # This dictionary contains the classes used by all HA CLIs
-        # In case of any modifications to the CLI,
-        # this dictionary should be updated.
-        self.cmd_dict = {
-            "cluster": {
-                "start": "ha.cli.exec.clusterExecutor.ClusterStartExecutor",
-                "stop": "ha.cli.exec.clusterExecutor.ClusterStopExecutor",
-                "restart": "ha.cli.exec.clusterExecutor.ClusterRestartExecutor",
-                "standby": "ha.cli.exec.clusterExecutor.ClusterStandbyExecutor",
-                "active": "ha.cli.exec.clusterExecutor.ClusterActiveExecutor",
-                "list": "ha.cli.exec.clusterExecutor.ClusterListExecutor",
-                "status": "ha.cli.exec.clusterExecutor.ClusterStatusExecutor",
-                "add": "ha.cli.exec.clusterExecutor.ClusterAddExecutor",
-                "-h": "ha.cli.exec.commandExecutor.ClusterCLIUsage",
-                "--help": "ha.cli.exec.commandExecutor.ClusterCLIUsage"
-            },
-            "node": {
-                "start": "ha.cli.exec.nodeExecutor.NodeStartExecutor",
-                "stop": "ha.cli.exec.nodeExecutor.NodeStopExecutor",
-                "standby": "ha.cli.exec.nodeExecutor.NodeStandbyExecutor",
-                "active": "ha.cli.exec.nodeExecutor.NodeActiveExecutor",
-                "status": "ha.cli.exec.nodeExecutor.NodeStatusExecutor",
-                "-h": "ha.cli.exec.commandExecutor.NodeCLIUsage",
-                "--help": "ha.cli.exec.commandExecutor.NodeCLIUsage"
-            },
-            "storageset": {
-                "start": "ha.cli.exec.storagesetExecutor.StoragesetStartExecutor",
-                "stop": "ha.cli.exec.storagesetExecutor.StoragesetStopExecutor",
-                "standby": "ha.cli.exec.storagesetExecutor.StoragesetStandbyExecutor",
-                "active": "ha.cli.exec.storagesetExecutor.StoragesetActiveExecutor",
-                "status": "ha.cli.exec.storagesetExecutor.StoragesetStatusExecutor",
-                "-h": "ha.cli.exec.commandExecutor.StoragesetCLIUsage",
-                "--help": "ha.cli.exec.commandExecutor.StoragesetCLIUsage"
-            },
-            "service": {
-                "start": "ha.cli.exec.serviceExecutor.ServiceStartExecutor",
-                "stop": "ha.cli.exec.serviceExecutor.ServiceStopExecutor",
-                "status": "ha.cli.exec.serviceExecutor.ServiceStatusExecutor",
-                "-h": "ha.cli.exec.commandExecutor.ServiceCLIUsage",
-                "--help": "ha.cli.exec.commandExecutor.ServiceCLIUsage"
-            },
-            "-h": "ha.cli.exec.commandExecutor.CLIUsage",
-            "--help": "ha.cli.exec.commandExecutor.CLIUsage"
-        }
-
-    def get_executor(self, module_name: str, operation_name: str) -> str:
-        """ return the appropriate class name from the dictionary"""
-
+        module: str = None
+        operation: str = None
+        options: list = None
+        count: int = 0
         try:
-            executor = self.cmd_dict.get(module_name).get(operation_name)
+            module = args[count]
+            count += 1
+            operation = args[count]
+            count += 1
+            if operation == "add":
+                operation += "_" + args[2]
+                count += 1
+            options = args[count:]
+        except Exception:
+            module = CmdFactory.DEFAULT_MODEL
+            operation = CmdFactory.DEFAULT_OPERATION
+        return module, operation, options
+
+    @staticmethod
+    def get_executor(module_name: str, operation_name: str) -> str:
+        """ return the appropriate class name from the dictionary"""
+        try:
+            executor = CLISchema.get_class(module_name, operation_name)
         except Exception:
             Log.error(f"Failed to get executor Module Name: {module_name}, Operation Name: {operation_name}")
-            return None
+            executor = CLISchema.get_class(CmdFactory.DEFAULT_MODEL, CmdFactory.DEFAULT_OPERATION)
         return executor

@@ -78,6 +78,13 @@ class ConfigManager:
         ConfigManager._safe_load(const.CM_CONTROLLER_INDEX, f"json://{const.CM_CONTROLLER_SCHEMA}")
 
     @staticmethod
+    def load_filter_rules():
+        """
+        Loads alert filter rules.
+        """
+        ConfigManager._safe_load(const.ALERT_FILTER_INDEX, f"json://{const.ALERT_FILTER_RULES_FILE}")
+
+    @staticmethod
     def _safe_load(index: str, url: str):
         """
         Load config if not loaded
@@ -97,3 +104,10 @@ class ConfigManager:
         version = Conf.get(const.HA_GLOBAL_INDEX, "VERSION.version")
         major_version = version.split('.')
         return major_version[0]
+
+    @staticmethod
+    def get_local_node() -> str:
+        """
+        Get local node name.
+        """
+        return Conf.get(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.local_node")

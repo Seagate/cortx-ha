@@ -18,32 +18,36 @@
 
 import grp
 import getpass
+import json
 import os
+import re
+import abc
+import socket
 
 from ha import const
+from ha.const import STATUSES
+from ha.cli.cli_schema import CLISchema
 from cortx.utils.log import Log
-from ha.core.error import HAInvalidPermission
+from ha.core.error import HAInvalidPermission, HAClusterCLIError, HAUnimplemented
+from ha.core.cluster.cluster_manager import CortxClusterManager
+from ha.cli.displayOutput import Output
 
-class CommandExecutor:
-    def __init__(self):
-        self._is_hauser = False
+class CLIExecutor(metaclass=abc.ABCMeta):
+    @abc.abstractmethod
+    def execute(self) -> None:
+        """
+        Abstract method of CLIExecuter.
+        """
+        pass
 
-    def validate(self) -> str:
-        print("validate for ")
-        print(self.__class__.__name__)
+    @abc.abstractmethod
+    def validate(self) -> bool:
+        """
+        Abstract method of CLIExecuter.
+        """
+        pass
 
-    def execute(self):
-        print("execute")
-        print(self.__class__.__name__)
-
-    """
-    Routine used by executors to confirm acess permissions.
-    Used to differentiate between external and internal CLIs
-    """
-    def is_ha_user(self) -> bool:
-        return self._is_hauser
-
-    def validate_permissions(self):
+    def validate_permissions(self) -> None:
 
         # confirm that user is root or part of haclient group"
 
@@ -64,8 +68,10 @@ class CommandExecutor:
             # The user name "hauser"; which is part of the "haclient" group;
             # is used by HA.
             # internal commands are allowed only if the user is "hauser"
-            if user == const.USER_HA_INTERNAL:
-                self._is_hauser = True
+            # As of now, every HA CLI will be internal command. So, we
+            # do not need this change. We can revisit this if needed in future
+            #if user == const.USER_HA_INTERNAL:
+            #    self._is_hauser = True
 
 
         # TBD : If required raise seperate exception  for root and haclient
@@ -73,104 +79,102 @@ class CommandExecutor:
             Log.error("Group root / haclient is not defined")
             raise HAInvalidPermission("Group root / haclient is not defined ")
 
+class CommandExecutor(CLIExecutor):
+    def __init__(self):
+        self._is_hauser = False
+        self.cluster_manager = CortxClusterManager()
+        self.op = Output()
 
-class CLIUsage:
+    def validate(self) -> bool:
+        raise HAUnimplemented("This operation is not implemented.")
 
-    @staticmethod
-    def usage() -> str:
-        usage_string = ("\t[-h]\n"
-                        "\tcluster start [all|server] [--json]\n"
-                        "\tcluster stop [all|server] [--json]\n"
-                        "\tcluster restart\n"
-                        "\tcluster standby [--json]\n"
-                        "\tcluster active [--json]\n"
-                        "\tcluster list [nodes|storagesets|services]\n"
-                        "\tcluster status [all|hw|services] [--json]\n"
-                        "\tcluster add node [<node id>] [ --descfile <node description file>] [--json]\n"
-                        "\tcluster add storageset [<storageset id>] [ --descfile <storageset description file>] [--json]\n"
-                        "\tnode start <Node> [all|server] [--json]\n"
-                        "\tnode stop <Node> [all|server] [--json]\n"
-                        "\tnode standby <Node> [--json]\n"
-                        "\tnode active <Node> [--json]\n"
-                        "\tnode status <Node> [all|hw|services] [--json]\n"
-                        "\tstorageset status [all|hw|services] <storageset_id>\n"
-                        "\tstorageset start <storageset_id>\n"
-                        "\tstorageset stop <storageset_id>\n"
-                        "\tstorageset standby <storageset_id>\n"
-                        "\tstorageset active <storageset_id>\n"
-                        "\tservice start <service> [--node <Node>] [--json]\n"
-                        "\tservice stop <service> [--node <Node>] [--json]\n"
-                        "\tservice status <service> [--node <Node>] [--json]\n")
-        return usage_string
+    def execute(self) -> None:
+        raise HAUnimplemented("This operation is not implemented.")
 
+    def is_status_failed(self, output):
+        output = json.loads(output)
+        if STATUSES.FAILED.value == output.get("status"):
+            return True
+
+    def is_valid_node_id(self, node_id) -> bool:
+        '''
+           Checks if node id gets resolved to some IP address or not
+           Returns: bool
+           Exception: socket.gaierror, socket.herror
+        '''
+
+        # TODO: change this logic and validate the node_id from the
+        # list coming from system health
+        ip_validator_regex = "^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])$"
+
+        # node_id can be passed as IP address or FQDN or
+        # some random number or just sequence of chars
+
+        # first seperate the string from dots.
+        splitted_node_id = node_id.replace('.', '')
+
+        # If string only contains numbers, means it can be just
+        # random number or can be an IP address. So, IP address
+        # validation can be done. else for random number, exception will be
+        # raised
+        if re.search('^[0-9]*$', splitted_node_id):
+            if re.search(ip_validator_regex, node_id):
+                return True
+            raise HAClusterCLIError(f'{node_id} is not a valid node_id')
+        # else it can be combination of chars and numbers means hostname or just a
+        # random meaningless string
+        else:
+            try:
+                socket.gethostbyname(node_id)
+            except Exception as err:
+                raise HAClusterCLIError(f'{node_id} not a valid node_id: {err}')
+        return True
+
+    def is_ha_user(self) -> bool:
+        """
+        Routine used by executors to confirm access permissions.
+        Used to differentiate between external and internal CLIs
+        """
+        return self._is_hauser
+
+    def parse_node_desc_file(self, node_desc_file):
+        with open(node_desc_file) as nf:
+            try:
+                node_data = json.load(nf)
+                node_id = node_data.get('node_id')
+            except KeyError:
+                raise HAClusterCLIError('node_id can not be None')
+        return node_id
+
+class CLIUsage(CLIExecutor):
+
+    def usage(self) -> str:
+        return CLISchema.get_help()
+
+    def validate(self):
+        return True
 
     def execute(self):
-        print(self.usage())
-
+        output = Output()
+        output.set_output(self.usage())
+        output.dump_output()
 
 class ClusterCLIUsage(CLIUsage):
 
-    @staticmethod
-    def usage() -> str:
-        usage_string = ("\t[-h]\n"
-                        "\tcluster start [all|server] [--json]\n"
-                        "\tcluster stop [all|server] [--json]\n"
-                        "\tcluster restart\n"
-                        "\tcluster standby [--json]\n"
-                        "\tcluster active [--json]\n"
-                        "\tcluster list [nodes|storagesets|services]\n"
-                        "\tcluster status [all|hw|services] [--json]\n"
-                        "\tcluster add node [<node id>] [ --descfile <node description file>] [--json]\n"
-                        "\tcluster add storageset [<storageset id>] [ --descfile <storageset description file>] [--json]\n")
-        return usage_string
-
-
-    def execute(self):
-        print(self.usage())
+    def usage(self) -> str:
+        return CLISchema.get_help("cluster")
 
 class NodeCLIUsage(CLIUsage):
 
-    @staticmethod
-    def usage() -> str:
-        usage_string = ("\t[-h]\n"
-                        "\tnode start <Node> [all|server] [--json]\n"
-                        "\tnode stop <Node> [all|server] [--json]\n"
-                        "\tnode standby <Node> [--json]\n"
-                        "\tnode active <Node> [--json]\n"
-                        "\tnode status <Node> [all|hw|services] [--json]\n")
-        return usage_string
-
-
-    def execute(self):
-        print(self.usage())
+    def usage(self) -> str:
+        return CLISchema.get_help("node")
 
 class StoragesetCLIUsage(CLIUsage):
 
-    @staticmethod
-    def usage() -> str:
-        usage_string = ("\t[-h]\n"
-                        "\tstorageset status [all|hw|services] <storageset_id>\n"
-                        "\tstorageset start <storageset_id>\n"
-                        "\tstorageset stop <storageset_id>\n"
-                        "\tstorageset standby <storageset_id>\n"
-                        "\tstorageset active <storageset_id>\n")
-        return usage_string
-
-
-    def execute(self):
-        print(self.usage())
-
+    def usage(self) -> str:
+        return CLISchema.get_help("storageset")
 
 class ServiceCLIUsage(CLIUsage):
 
-    @staticmethod
-    def usage() -> str:
-        usage_string = ("\t[-h]\n"
-                        "\tservice start <service> [--node <Node>] [--json]\n"
-                        "\tservice stop <service> [--node <Node>] [--json]\n"
-                        "\tservice status <service> [--node <Node>] [--json]\n")
-        return usage_string
-
-
-    def execute(self):
-        print(self.usage())
+    def usage(self) -> str:
+        return CLISchema.get_help("service")

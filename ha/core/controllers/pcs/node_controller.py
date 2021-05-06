@@ -25,7 +25,6 @@ from ha import const
 from ha.const import NODE_STATUSES
 from cortx.utils.log import Log
 
-
 class PcsNodeController(NodeController, PcsController):
     """ Controller to manage node. """
 
@@ -54,9 +53,41 @@ class PcsNodeController(NodeController, PcsController):
         raise HAUnimplemented("This operation is not implemented.")
 
     @controller_error_handler
-    def stop(self, nodeid: str) -> dict:
+    def stop(self, nodeid: str, timeout: int = -1) -> dict:
         """
-        Stop node with nodeid.
+        Stop Cluster on node with nodeid.
+        Args:
+            nodeid (str): Node ID from cluster nodes.
+        Returns:
+            ([dict]): Return dictionary. {"status": "", "msg":""}
+                status: Succeeded, Failed, InProgress
+        """
+        timeout = const.NODE_STOP_TIMEOUT if timeout < 0 else timeout
+        node_status = self.nodes_status([nodeid]).get(nodeid)
+        if node_status == NODE_STATUSES.CLUSTER_OFFLINE.value:
+            Log.info(f"For stop {nodeid}, Node already in offline state.")
+            status = f"Node {nodeid} is already in offline state."
+        elif node_status == NODE_STATUSES.POWEROFF.value:
+            raise ClusterManagerError(f"Failed to stop {nodeid}."
+                f"node is in {node_status}.")
+        else:
+            if self.heal_resource(nodeid):
+                time.sleep(const.BASE_WAIT_TIME)
+            try:
+                Log.info(f"Please Wait, trying to stop node: {nodeid}")
+                self._execute.run_cmd(const.PCS_STOP_NODE.replace("<node>", nodeid)
+                        .replace("<seconds>", str(timeout)))
+                Log.info(f"Executed node stop for {nodeid}, Waiting to stop resource")
+                time.sleep(const.BASE_WAIT_TIME)
+                status = f"Stop for {nodeid} is in progress, waiting to stop resource"
+            except Exception as e:
+                raise ClusterManagerError(f"Failed to stop {nodeid}, Error: {e}")
+        return {"status": const.STATUSES.IN_PROGRESS.value, "msg": status}
+
+    @controller_error_handler
+    def shutdown(self, nodeid: str) -> dict:
+        """
+        Shutdown node with nodeid.
         Args:
             nodeid (str): Node ID from cluster nodes.
         Returns:
@@ -77,11 +108,11 @@ class PcsNodeController(NodeController, PcsController):
         """
         status: str = ""
         # Check node status
-        node_status = self.nodes_status([nodeid]).get(nodeid).lower()
+        node_status = self.nodes_status([nodeid]).get(nodeid)
         Log.info(f"Current {nodeid} status is {node_status}")
-        if node_status == NODE_STATUSES.STANDBY.value.lower():
+        if node_status == NODE_STATUSES.STANDBY.value:
             status = f"Node {nodeid} is already running in standby mode."
-        elif node_status.lower() != NODE_STATUSES.ONLINE.value.lower():
+        elif node_status != NODE_STATUSES.ONLINE.value:
             return {"status": const.STATUSES.FAILED.value,
                     "msg": f"Failed to put node in standby as node is in {node_status}"}
         else:
@@ -90,7 +121,7 @@ class PcsNodeController(NodeController, PcsController):
             self._execute.run_cmd(const.PCS_NODE_STANDBY.replace("<node>", nodeid))
             Log.info(f"Waiting to standby {nodeid} node.")
             time.sleep(const.BASE_WAIT_TIME * 2)
-            node_status = self.nodes_status([nodeid]).get(nodeid).lower()
+            node_status = self.nodes_status([nodeid]).get(nodeid)
             Log.info(f"After standby, current {nodeid} status is {node_status}")
             status = f"Waiting for resource to stop, {nodeid} standby is in progress"
         return {"status": const.STATUSES.IN_PROGRESS.value, "msg": status}
@@ -121,7 +152,6 @@ class PcsNodeController(NodeController, PcsController):
         """
         raise HAUnimplemented("This operation is not implemented.")
 
-
 class PcsVMNodeController(PcsNodeController):
     def initialize(self, controllers):
         """
@@ -139,14 +169,10 @@ class PcsVMNodeController(PcsNodeController):
             ([dict]): Return dictionary. {"status": "", "msg":""}
                 status: Succeeded, Failed, InProgress
         """
-        _res = self.nodes_status([nodeid])
-        _node_status = _res.get(nodeid)
-        if _node_status.lower() == NODE_STATUSES.ONLINE.value.lower():
+        _node_status = self.nodes_status([nodeid])[nodeid]
+        if _node_status == NODE_STATUSES.ONLINE.value:
             return {"status": const.STATUSES.SUCCEEDED.value, "msg": f"Node {nodeid}, is already in Online status"}
-        elif _node_status.lower() == NODE_STATUSES.STANDBY_WITH_RESOURCES_RUNNING.value.lower():
-            return {"status": const.STATUSES.SUCCEEDED.value, "msg": f"Node {nodeid}, is going in standby mode, "
-                                                  f"We need to wait to complete the resource shutdown"}
-        elif _node_status.lower() == NODE_STATUSES.STANDBY.value.lower():
+        elif _node_status == NODE_STATUSES.STANDBY.value or _node_status == NODE_STATUSES.STANDBY_WITH_RESOURCES_RUNNING.value:
             # make node unstandby
             if self.heal_resource(nodeid):
                 _output, _err, _rc = self._execute.run_cmd(const.PCS_NODE_UNSTANDBY.replace("<node>", nodeid),
@@ -158,25 +184,20 @@ class PcsVMNodeController(PcsNodeController):
                           f"cleanup not worked after 2 retries")
                 return {"status": const.STATUSES.FAILED.value, "msg": f"Node {nodeid} is in standby mode: Resource "
                                                    f"failcount found on the node cleanup not worked after 2 retries"}
-
-        elif _node_status.lower() == NODE_STATUSES.OFFLINE.value.lower():
+        elif _node_status == NODE_STATUSES.CLUSTER_OFFLINE.value:
+            _output, _err, _rc = self._execute.run_cmd(const.PCS_NODE_START.replace("<node>", nodeid), check_error=False)
+            if _rc != 0:
+                raise ClusterManagerError(f"Failed to start node {nodeid}")
+            return {"status": const.STATUSES.IN_PROGRESS.value, "msg": f"Node {nodeid} : Node was in cluster_offline mode, "
+                                                       f"Cluster started on node successfully"}
+        elif _node_status == NODE_STATUSES.POWEROFF.value:
             # start node not in scope of VM
             Log.error("Operation not available for node type VM")
-            raise ClusterManagerError(f"Node {nodeid} : Node was in offline mode, "
+            raise ClusterManagerError(f"Node {nodeid} : Node was in poweroff mode, "
                                       "Node start : Operation not available for VM")
-
-    @controller_error_handler
-    def stop(self, nodeid: str) -> dict:
-        """
-        Stop node with nodeid.
-        Args:
-            nodeid (str): Node ID from cluster nodes.
-        Returns:
-            ([dict]): Return dictionary. {"status": "", "msg":""}
-                status: Succeeded, Failed, InProgress
-        """
-        raise HAUnimplemented("This operation is not implemented.")
-
+        else:
+            Log.error(f"{nodeid} status is {_node_status}, node may not be started.")
+            raise ClusterManagerError(f"Failed to start {nodeid} as found unhandled status {_node_status}")
 
 class PcsHWNodeController(PcsNodeController):
     def initialize(self, controllers):
@@ -198,9 +219,9 @@ class PcsHWNodeController(PcsNodeController):
         raise HAUnimplemented("This operation is not implemented.")
 
     @controller_error_handler
-    def stop(self, nodeid: str) -> dict:
+    def shutdown(self, nodeid: str) -> dict:
         """
-        Stop node with nodeid.
+        Shutdown node with nodeid.
         Args:
             nodeid (str): Node ID from cluster nodes.
         Returns:

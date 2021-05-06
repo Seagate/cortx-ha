@@ -15,25 +15,49 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
+import sys
 import json
-#import sys
 
-
-class Output():
+class Output:
     """Class representing a generic framework for output handling. """
 
-    #def __init__(self, rc, desc):
-        #self.output_string = "output"
+    JSON = "json"
+    TEXT = "text"
+    TABULAR = "tabular"
+
+    def __init__(self):
+        self.output_format = Output.TEXT
+        self.rc = 0
+
+    def set_output(self, output):
+        self.output = output
+
+    def set_rc(self, rc):
+        self.rc = rc
+
+    def set_format(self, output_format):
+        self.output_format = output_format
 
     # print the output in json format
-    def print_json(self, output_data):
-        # we should be okay with using print instead of sys.stdout.write
-        # since print writes to stdout only.
-        print(json.dumps(output_data, indent=4, sort_keys=False))
+    def print_json(self):
+        # sys.stdout.write as it also help to print as buffer
+        # sys.stdout.write restrict user to only print string not object.
+        parse = json.loads(self.output)
+        sys.stdout.write(json.dumps(parse, indent=4, sort_keys=False))
 
-        # TBD check if exit required at this point
-        #sys.exit()
+    def print_text(self):
+        sys.stdout.write(self.output)
 
     # TBD print in  tabular format
-    def print_string(self, output_data):
-        print(json.dumps(output_data, indent=4, sort_keys=False))
+    def print_string(self):
+        parse = json.loads(self.output)
+        sys.stdout.write(json.dumps(parse, indent=4, sort_keys=False))
+
+    def dump_output(self):
+        if self.output_format == Output.JSON:
+            self.print_json()
+        elif self.output_format == Output.TABULAR:
+            self.print_string()
+        else:
+            self.print_text()
+        sys.exit(self.rc)

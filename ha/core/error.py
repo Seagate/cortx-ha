@@ -34,6 +34,8 @@ HA_INVALID_PERMISSION_ERROR     = 0x000a
 # To be removed once the "cortx cluster start" user story [EOS-16248] is started
 HA_CLUSTER_START_ERROR          = 0x000b
 HA_SYSTEM_HEALTH_FAILED         = 0x000c
+HA_CLUSTER_CLI_FAILED           = 0x000d
+HA_EVENT_ANALYZER_ERROR         = 0x000e
 
 class HAError(BaseError):
     def __init__(self, rc=1, desc=None, message_id=HA_BASIC_ERROR, message_args=None):
@@ -127,6 +129,15 @@ class ClusterManagerError(HAError):
         _rc = 1
         super(ClusterManagerError, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
 
+class HAClusterCLIError(HAError):
+    def __init__(self, desc=None):
+        """
+        Handle Cluster CLI error.
+        """
+        _desc = "Failed to perform Cluster CLI request" if desc is None else desc
+        _message_id = HA_CLUSTER_CLI_FAILED
+        _rc = 1
+        super(HAClusterCLIError, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
 
 class PreRequisiteUpgradeError(HAError):
     """
@@ -209,6 +220,16 @@ class SystemHealthError(HAError):
         _message_id = HA_SYSTEM_HEALTH_FAILED
         _rc = 1
         super(SystemHealthError, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
+
+class EventAnalyzerError(HAError):
+    def __init__(self, desc=None):
+        """
+        Handle Event Analyzer error.
+        """
+        _desc = "HA Event Analyzer failure" if desc is None else desc
+        _message_id = HA_EVENT_ANALYZER_ERROR
+        _rc = 1
+        super(EventAnalyzerError, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
 
 class HaEntityHealthException(SystemHealthError):
     """
