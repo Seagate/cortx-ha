@@ -123,7 +123,10 @@ PCS_STOP_CLUSTER="pcs cluster stop --request-timeout=<seconds> --all"
 PCS_STATUS = "pcs status"
 PCS_CLUSTER_DESTROY="pcs cluster destroy"
 PCS_NODE_STANDBY="pcs node standby <node>"
+PCS_CLUSTER_STANDBY="pcs node standby --all"
 PCS_STONITH_DISABLE="pcs property set stonith-enabled=False"
+LIST_PCS_RESOURCES = '/usr/sbin/crm_resource --list-raw'
+CHECK_PCS_STANDBY_MODE = '/usr/sbin/crm_standby --query | awk \'{print $3}\''
 
 # Cluster manager
 CM_CONTROLLER_INDEX="cluster_controller_interfaces"
@@ -135,6 +138,7 @@ NODE_CONTROLLER = "node_controller"
 CLUSTER_RETRY_COUNT = 6
 BASE_WAIT_TIME = 5
 NODE_STOP_TIMEOUT = 300 # 300 sec to stop single node
+CLUSTER_STANDBY_UNSTANDBY_TIMEOUT = 600 # 300 sec to stop single node
 
 # Event Analyzer
 INCLUSION = "inclusion"
