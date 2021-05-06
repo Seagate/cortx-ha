@@ -43,7 +43,7 @@ class TestIEMResourceAgent(unittest.TestCase):
         self.filename = 'node_iem_motr'
         self.path = 'io'
         self.decision_monitor.get_resource_status.side_effect = self._side_effect_group_status
-        self.schama = {
+        self.schema = {
             "nodes": {
                 "27534128-7ecd-4606-bf42-ebc9765095ba": "cortxnode1.example.com",
                 "f3c7d479-2249-40f4-9276-91ba59f50034": "cortxnode2.example.com",
@@ -51,7 +51,7 @@ class TestIEMResourceAgent(unittest.TestCase):
             }
         }
         self.status = None
-        self.iem_agent = IEMResourceAgent(self.decision_monitor, self.schama)
+        self.iem_agent = IEMResourceAgent(self.decision_monitor, self.schema)
 
     def tearDown(self):
         if os.path.exists(const.HA_INIT_DIR + self.filename):
@@ -59,7 +59,7 @@ class TestIEMResourceAgent(unittest.TestCase):
 
     def _side_effect_group_status(self, key):
         if self.status is None:
-            return Action.FAILED if key == self.path+'_'+self.schama['nodes']['local'] else Action.OK
+            return Action.FAILED if key == self.path+'_'+self.schema['nodes']['local'] else Action.OK
         else:
             return self.status
 
