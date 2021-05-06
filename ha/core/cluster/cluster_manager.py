@@ -267,7 +267,7 @@ class PcsClusterManager:
 
 # Note: This class is used by version 2
 class CortxClusterManager:
-    def __init__(self):
+    def __init__(self,logfix = False):
         """
         Manage cluster operation
         """
