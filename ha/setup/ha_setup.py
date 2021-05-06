@@ -23,7 +23,6 @@ import os
 import shutil
 import json
 import grp, pwd
-
 from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
 from cortx.utils.validator.v_pkg import PkgV
@@ -46,6 +45,7 @@ class Cmd:
     Setup Command. This class provides methods for parsing arguments.
     """
     _index = "conf"
+    DEV_CHECK = False
 
     def __init__(self, args: dict):
         """
@@ -90,6 +90,7 @@ class Cmd:
         for name, cmd in cmds:
             cmd.add_args(subparsers, cmd, name)
         args = parser.parse_args(argv)
+        Cmd.DEV_CHECK = args.dev
         return args.command(args)
 
     @staticmethod
@@ -99,6 +100,7 @@ class Cmd:
         """
         setup_arg_parser = parser.add_parser(cls.name, help='setup %s' % name)
         setup_arg_parser.add_argument('--config', help='Config URL')
+        setup_arg_parser.add_argument('--dev', action='store_true', help='Dev check')
         setup_arg_parser.add_argument('args', nargs='*', default=[], help='args')
         setup_arg_parser.set_defaults(command=cls)
 
@@ -168,7 +170,8 @@ class PostInstallCmd(Cmd):
             Log.info(f"{self.name}: Copied HA configs file.")
             # Pre-requisite checks are done here.
             # Make sure that cortx necessary packages have been installed
-            PkgV().validate('rpms', const.CORTX_CLUSTER_PACKAGES)
+            if PostInstallCmd.DEV_CHECK != True:
+                PkgV().validate('rpms', const.CORTX_CLUSTER_PACKAGES)
             Log.info("Found required cluster packages installed.")
             # Check user and group
             groups = [g.gr_name for g in grp.getgrall() if const.CLUSTER_USER in g.gr_mem]
@@ -240,10 +243,13 @@ class ConfigCmd(Cmd):
         key = Cipher.generate_key(cluster_id, const.HACLUSTER_KEY)
         cluster_secret = Cipher.decrypt(key, cluster_secret.encode('ascii')).decode()
         s3_instances = self._get_s3_instance(machine_id)
+        mgmt_info: dict = self._get_mgmt_vip(machine_id, cluster_id)
 
         self._update_env(node_name, node_type, const.HA_CLUSTER_SOFTWARE)
         self._fetch_fids()
         self._update_cluster_manager_config()
+
+        # Update cluster and resources
         self._cluster_manager = CortxClusterManager()
         Log.info("Checking if cluster exists already")
         cluster_exists = self._confstore.key_exists(const.CLUSTER_CONFSTORE_NODES_KEY)
@@ -261,7 +267,7 @@ class ConfigCmd(Cmd):
                     Log.info(f"Put node in standby output: {standby_output}")
                     if json.loads(standby_output).get("status") != STATUSES.FAILED.value:
                         Log.info("Creating pacemaker resources")
-                        create_all_resources(s3_instances=s3_instances)
+                        create_all_resources(s3_instances=s3_instances, mgmt_info=mgmt_info)
                         Log.info("Created pacemaker resources successfully")
                         # Add this node to the cluster nodes list in the store.
                         self._confstore.set(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
@@ -305,6 +311,7 @@ class ConfigCmd(Cmd):
                         node_added = True
                         break
                     except Exception as e:
+                        node_added = False
                         Log.error(f"Adding {node_name} using remote node {remote_node} failed with error: {e}, \
                                 if available, will try with other node")
                         # Try removing the node, it might be partially added.
@@ -316,11 +323,9 @@ class ConfigCmd(Cmd):
                         # Delete the node from nodelist if it was added in the store
                         if self._confstore.key_exists(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}"):
                             self._confstore.delete(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
-
             if node_added == False:
                 Log.error(f"Adding {node_name} failed")
-                raise HaConfigException("Add node failed")
-
+                raise HaConfigException(f"Failed to add node {node_name}.")
         Log.info("config command is successful")
 
     def _get_s3_instance(self, machine_id: str) -> int:
@@ -341,6 +346,37 @@ class ConfigCmd(Cmd):
         except Exception as e:
             Log.error(f"Found {s3_instances} which is invalid s3 instance count. Error: {e}")
             raise HaConfigException(f"Found {s3_instances} which is invalid s3 instance count.")
+
+    def _get_mgmt_vip(self, machine_id: str, cluster_id: str) -> dict:
+        """
+        Get Mgmt info.
+
+        Args:
+            machine_id (str): Get machine ID.
+            cluster_id (str): Get Cluster ID.
+
+        Raises:
+            HaConfigException: Raise exception.
+
+        Returns:
+            dict: Mgmt info.
+        """
+        mgmt_info: dict = {}
+        try:
+            node_count: int = len(Conf.get(self._index, "server_node"))
+            if ConfigCmd.DEV_CHECK == True or node_count < 2:
+                return mgmt_info
+            mgmt_info["mgmt_vip"] = Conf.get(self._index, f"cluster.{cluster_id}.network.management.virtual_host")
+            netmask = Conf.get(self._index, f"server_node.{machine_id}.network.management.netmask")
+            if netmask is None:
+                raise HaConfigException("Detected invalid netmask, It should not be empty.")
+            mgmt_info["mgmt_netmask"] = sum(bin(int(x)).count('1') for x in netmask.split('.'))
+            mgmt_info["mgmt_iface"] = Conf.get(self._index, f"server_node.{machine_id}.network.management.interfaces")[0]
+            Log.info(f"Mgmt vip configuration: {str(mgmt_info)}")
+            return mgmt_info
+        except Exception as e:
+            Log.error(f"Failed to get mgmt ip address. Error: {e}")
+            raise HaConfigException(f"Failed to get mgmt ip address. Error: {e}.")
 
     def _update_env(self, node_name: str, node_type: str, cluster_type: str) -> None:
         """
