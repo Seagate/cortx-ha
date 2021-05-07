@@ -36,6 +36,7 @@ HA_CLUSTER_START_ERROR          = 0x000b
 HA_SYSTEM_HEALTH_FAILED         = 0x000c
 HA_CLUSTER_CLI_FAILED           = 0x000d
 HA_EVENT_ANALYZER_ERROR         = 0x000e
+HA_CLUSTER_CONFIG_ERROR         = 0x000f
 
 class HAError(BaseError):
     def __init__(self, rc=1, desc=None, message_id=HA_BASIC_ERROR, message_args=None):

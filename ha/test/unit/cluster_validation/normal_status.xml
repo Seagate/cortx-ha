@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+<crm_mon version="1.1.23">
+  <summary>
+    <stack type="corosync"/>
+    <current_dc present="true" version="1.1.23-1.el7-9acf116022" name="ssc-vm-1550.colo.seagate.com" id="1" with_quorum="true"/>
+    <last_update time="Mon Mar 22 05:55:23 2021"/>
+    <last_change time="Mon Mar 22 05:50:47 2021" user="root" client="cibadmin" origin="ssc-vm-1550.colo.seagate.com"/>
+    <nodes_configured number="2" expected_votes="unknown"/>
+    <resources_configured number="4" disabled="0" blocked="0"/>
+    <cluster_options stonith-enabled="false" symmetric-cluster="true" no-quorum-policy="stop" maintenance-mode="false"/>
+  </summary>
+  <nodes>
+    <node name="ssc-vm-1550.colo.seagate.com" id="1" online="true" standby="false" standby_onfail="false" maintenance="false" pending="false" unclean="false" shutdown="false" expected_up="true" is_dc="true" resources_running="2" type="member"/>
+    <node name="ssc-vm-1551.colo.seagate.com" id="2" online="true" standby="false" standby_onfail="false" maintenance="false" pending="false" unclean="false" shutdown="false" expected_up="true" is_dc="false" resources_running="2" type="member"/>
+  </nodes>
+  <resources>
+    <clone id="test-cl-clone" multi_state="false" unique="false" managed="true" failed="false" failure_ignored="false">
+      <resource id="test-cl" resource_agent="ocf::heartbeat:Dummy" role="Started" active="true" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="1">
+        <node name="ssc-vm-1550.colo.seagate.com" id="1" cached="false"/>
+      </resource>
+      <resource id="test-cl" resource_agent="ocf::heartbeat:Dummy" role="Started" active="true" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="1">
+        <node name="ssc-vm-1551.colo.seagate.com" id="2" cached="false"/>
+      </resource>
+    </clone>
+    <resource id="test-0" resource_agent="ocf::heartbeat:Dummy" role="Started" active="true" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="1">
+      <node name="ssc-vm-1550.colo.seagate.com" id="1" cached="false"/>
+    </resource>
+    <resource id="test-1" resource_agent="ocf::heartbeat:Dummy" role="Started" active="true" orphaned="false" blocked="false" managed="true" failed="false" failure_ignored="false" nodes_running_on="1">
+      <node name="ssc-vm-1551.colo.seagate.com" id="2" cached="false"/>
+    </resource>
+  </resources>
+  <node_attributes>
+    <node name="ssc-vm-1550.colo.seagate.com"> </node>
+    <node name="ssc-vm-1551.colo.seagate.com"> </node>
+  </node_attributes>
+  <node_history>
+    <node name="ssc-vm-1550.colo.seagate.com">
+      <resource_history id="test-cl" orphan="false" migration-threshold="1000000">
+        <operation_history call="44" task="start" last-rc-change="Mon Mar 22 05:49:42 2021" last-run="Mon Mar 22 05:49:42 2021" exec-time="14ms" queue-time="0ms" rc="0" rc_text="ok"/>
+        <operation_history call="45" task="monitor" interval="10000ms" last-rc-change="Mon Mar 22 05:49:42 2021" exec-time="12ms" queue-time="0ms" rc="0" rc_text="ok"/>
+      </resource_history>
+      <resource_history id="test-0" orphan="false" migration-threshold="1000000">
+        <operation_history call="50" task="start" last-rc-change="Mon Mar 22 05:49:58 2021" last-run="Mon Mar 22 05:49:58 2021" exec-time="13ms" queue-time="0ms" rc="0" rc_text="ok"/>
+        <operation_history call="51" task="monitor" interval="10000ms" last-rc-change="Mon Mar 22 05:49:58 2021" exec-time="10ms" queue-time="0ms" rc="0" rc_text="ok"/>
+      </resource_history>
+    </node>
+    <node name="ssc-vm-1551.colo.seagate.com">
+      <resource_history id="test-cl" orphan="false" migration-threshold="1000000">
+        <operation_history call="7" task="start" last-rc-change="Mon Mar 22 05:49:42 2021" last-run="Mon Mar 22 05:49:42 2021" exec-time="12ms" queue-time="0ms" rc="0" rc_text="ok"/>
+        <operation_history call="8" task="monitor" interval="10000ms" last-rc-change="Mon Mar 22 05:49:42 2021" exec-time="11ms" queue-time="0ms" rc="0" rc_text="ok"/>
+      </resource_history>
+      <resource_history id="test-1" orphan="false" migration-threshold="1000000">
+        <operation_history call="17" task="start" last-rc-change="Mon Mar 22 05:50:06 2021" last-run="Mon Mar 22 05:50:06 2021" exec-time="12ms" queue-time="0ms" rc="0" rc_text="ok"/>
+        <operation_history call="18" task="monitor" interval="10000ms" last-rc-change="Mon Mar 22 05:50:06 2021" exec-time="10ms" queue-time="0ms" rc="0" rc_text="ok"/>
+      </resource_history>
+    </node>
+  </node_history>
+  <fence_history> </fence_history>
+  <tickets> </tickets>
+  <bans> </bans>
+</crm_mon>
