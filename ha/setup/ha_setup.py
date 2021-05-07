@@ -23,6 +23,8 @@ import os
 import shutil
 import json
 import grp, pwd
+import pathlib
+sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..'))
 
 from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
@@ -168,7 +170,7 @@ class PostInstallCmd(Cmd):
             Log.info(f"{self.name}: Copied HA configs file.")
             # Pre-requisite checks are done here.
             # Make sure that cortx necessary packages have been installed
-            PkgV().validate('rpms', const.CORTX_CLUSTER_PACKAGES)
+            #PkgV().validate('rpms', const.CORTX_CLUSTER_PACKAGES)
             Log.info("Found required cluster packages installed.")
             # Check user and group
             groups = [g.gr_name for g in grp.getgrall() if const.CLUSTER_USER in g.gr_mem]
@@ -244,7 +246,7 @@ class ConfigCmd(Cmd):
         self._update_env(node_name, node_type, const.HA_CLUSTER_SOFTWARE)
         self._fetch_fids()
         self._update_cluster_manager_config()
-        self._cluster_manager = CortxClusterManager()
+        self._cluster_manager = CortxClusterManager(False)
         Log.info("Checking if cluster exists already")
         cluster_exists = self._confstore.key_exists(const.CLUSTER_CONFSTORE_NODES_KEY)
         Log.info(f"Cluster exists? {cluster_exists}")
