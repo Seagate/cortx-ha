@@ -26,16 +26,11 @@ from ha.core.error import EventAnalyzerError
 class Filter(metaclass=abc.ABCMeta):
     """ Base class to filter alert """
 
-    def __init__(self):
-        """
-        Init method
-        """
-        pass
-
     @abc.abstractmethod
     def filter_event(self, msg: str) -> bool:
         """
         Filter event.
+
         Args:
             msg (str): Msg
         """
@@ -43,6 +38,15 @@ class Filter(metaclass=abc.ABCMeta):
 
 class AlertFilter(Filter):
     """ Filter unnecessary alert. """
+
+    def filter_event(self, msg: str) -> bool:
+        """
+        Filter event.
+
+        Args:
+            msg (str): Msg
+        """
+        return True
 
     def __init__(self):
         """
