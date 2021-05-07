@@ -1,0 +1,161 @@
+{
+    "csm-agent": {
+        "parameters": {},
+        "group": "management_group",
+        "provider": {
+            "name": "systemd",
+            "service": "csm_agent",
+            "intervals": [
+                "0s",
+                "30s",
+                "0s"
+            ],
+            "timeouts": [
+                "60s",
+                "30s",
+                "60s"
+            ],
+            "counters": []
+        },
+        "dependencies": {
+            "predecessors": [
+                "<resource>",
+                "<resource>"
+            ],
+            "colocation": [
+                "<resource>",
+                "<resource>"
+            ],
+            "relation": [
+                "<resource>",
+                "<resource>"
+            ]
+        },
+        "ha": {
+            "mode": "active_passive",
+            "clones": {
+                "active": [
+                    "<max-clone-on-node>",
+                    "<total-clone>"
+                ],
+                "primary": [
+                    "<max-primary-on-node>",
+                    "<total-primary>"
+                ],
+                "parameters": {
+                    "<key1>": "<value1>",
+                    "<key2>": "<value2>"
+                }
+            },
+            "location": {}
+        }
+    },
+    "csm-web": {
+        "parameters": {},
+        "group": "management_group",
+        "provider": {
+            "name": "systemd",
+            "service": "csm_web",
+            "intervals": [
+                "0s",
+                "30s",
+                "0s"
+            ],
+            "timeouts": [
+                "60s",
+                "30s",
+                "60s"
+            ],
+            "counters": []
+        },
+        "dependencies": {
+            "predecessors": [
+                "<resource>",
+                "<resource>"
+            ],
+            "colocation": [
+                "<resource>",
+                "<resource>"
+            ],
+            "relation": [
+                "<resource>",
+                "<resource>"
+            ]
+        },
+        "ha": {
+            "mode": "active_passive",
+            "clones": {
+                "active": [
+                    "<max-clone-on-node>",
+                    "<total-clone>"
+                ],
+                "primary": [
+                    "<max-primary-on-node>",
+                    "<total-primary>"
+                ],
+                "parameters": {
+                    "<key1>": "<value1>",
+                    "<key2>": "<value2>"
+                }
+            },
+            "location": {
+                "<hostname1>": "<priority1>",
+                "<hostname2>": "<priority2>"
+            }
+        }
+    },
+    "kibana": {
+        "parameters": {},
+        "group": "management_group",
+        "provider": {
+            "name": "systemd",
+            "service": "kibana",
+            "intervals": [
+                "0s",
+                "30s",
+                "0s"
+            ],
+            "timeouts": [
+                "60s",
+                "30s",
+                "60s"
+            ],
+            "counters": []
+        },
+        "dependencies": {
+            "predecessors": [
+                "<resource>",
+                "<resource>"
+            ],
+            "colocation": [
+                "<resource>",
+                "<resource>"
+            ],
+            "relation": [
+                "<resource>",
+                "<resource>"
+            ]
+        },
+        "ha": {
+            "mode": "active_passive",
+            "clones": {
+                "active": [
+                    "<max-clone-on-node>",
+                    "<total-clone>"
+                ],
+                "primary": [
+                    "<max-primary-on-node>",
+                    "<total-primary>"
+                ],
+                "parameters": {
+                    "<key1>": "<value1>",
+                    "<key2>": "<value2>"
+                }
+            },
+            "location": {
+                "<hostname1>": "<priority1>",
+                "<hostname2>": "<priority2>"
+            }
+        }
+    }
+}

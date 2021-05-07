@@ -1,0 +1,113 @@
+{
+    "hax": {
+        "parameters": { },
+        "group": "io_group",
+        "provider": {
+            "name": "systemd",
+            "service": "hare-hax",
+            "intervals": [
+                "0s",
+                "30s",
+                "0s"
+            ],
+            "timeouts": [
+                "60s",
+                "30s",
+                "60s"
+            ],
+            "counters": []
+        }, 
+
+        "dependencies": {
+            "predecessors": [
+                "<resource>",
+                "<resource>"
+            ],
+            "colocation": [
+                "<resource>",
+                "<resource>"
+            ],
+            "relation": [
+                "<resource>",
+                "<resource>"
+            ]
+        },
+        "ha": {
+            "mode": "active_active",
+            "clones": {
+                "active": [
+                    "1",
+                    "INFINITY"
+                ],
+                "primary": [
+                    "<max-primary-on-node>",
+                    "<total-primary>"
+                ],
+                "parameters": {
+                    "<key1>": "<value1>",
+                    "<key2>": "<value2>"
+                }
+            },
+            "location": {
+                "<hostname1>": "<priority1>",
+                "<hostname2>": "<priority2>"
+            }
+        }
+    },
+    
+    "hax-consul": {
+        "parameters": { },
+        "group": "io_group",
+        "provider": {
+            "name": "systemd",
+            "service": "hare-consul-agent",
+            "intervals": [
+                "0s",
+                "30s",
+                "0s"
+            ],
+            "timeouts": [
+                "60s",
+                "30s",
+                "60s"
+            ],
+            "counters": []
+        }, 
+
+        "dependencies": {
+            "predecessors": [
+                "<resource>",
+                "<resource>"
+            ],
+            "colocation": [
+                "<resource>",
+                "<resource>"
+            ],
+            "relation": [
+                "<resource>",
+                "<resource>"
+            ]
+        },
+        "ha": {
+            "mode": "active_active",
+            "clones": {
+                "active": [
+                    "1",
+                    "INFINITY"
+                ],
+                "primary": [
+                    "<max-primary-on-node>",
+                    "<total-primary>"
+                ],
+                "parameters": {
+                    "<key1>": "<value1>",
+                    "<key2>": "<value2>"
+                }
+            },
+            "location": {
+                "<hostname1>": "<priority1>",
+                "<hostname2>": "<priority2>"
+            }
+        }
+    }
+}
