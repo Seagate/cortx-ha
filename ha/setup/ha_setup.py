@@ -23,8 +23,6 @@ import os
 import shutil
 import json
 import grp, pwd
-import pathlib
-sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..'))
 
 from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
@@ -170,7 +168,7 @@ class PostInstallCmd(Cmd):
             Log.info(f"{self.name}: Copied HA configs file.")
             # Pre-requisite checks are done here.
             # Make sure that cortx necessary packages have been installed
-            #PkgV().validate('rpms', const.CORTX_CLUSTER_PACKAGES)
+            PkgV().validate('rpms', const.CORTX_CLUSTER_PACKAGES)
             Log.info("Found required cluster packages installed.")
             # Check user and group
             groups = [g.gr_name for g in grp.getgrall() if const.CLUSTER_USER in g.gr_mem]
