@@ -138,7 +138,7 @@ NODE_CONTROLLER = "node_controller"
 CLUSTER_RETRY_COUNT = 6
 BASE_WAIT_TIME = 5
 NODE_STOP_TIMEOUT = 300 # 300 sec to stop single node
-CLUSTER_STANDBY_UNSTANDBY_TIMEOUT = 600 # 300 sec to stop single node
+CLUSTER_STANDBY_UNSTANDBY_TIMEOUT = 600 # 600 sec to stop single node
 
 # Event Analyzer
 INCLUSION = "inclusion"

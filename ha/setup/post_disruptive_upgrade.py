@@ -2,6 +2,7 @@
 
 import os
 from shutil import copystat
+import sys
 
 from cortx.utils.log import Log
 from ha.execute import SimpleCommand
@@ -23,9 +24,9 @@ def check_for_any_resource_presence() -> None:
     resource_list[0].split('\n')
 
     if resource_list:
-        Log.error('Some resources are already present. \
-                    Perform Upgrade again')
-        return
+        Log.error('Some resources are already present in the cluster. \
+                    Perform pre-Upgrade process again')
+        sys.exit()
 
 def is_cluster_standby_on() -> None:
     '''Check if cluster is in standby mode. If not, make standby mode ON'''
@@ -40,12 +41,14 @@ def is_cluster_standby_on() -> None:
         standby_cmd = PCS_CLUSTER_STANDBY + f' --wait={CLUSTER_STANDBY_UNSTANDBY_TIMEOUT}'
         SimpleCommand().run_cmd(standby_cmd)
         Log.info('cluster standby mode on success')
+    else:
+        Log.info('#### All post-upgrade prerequisites are in place ####')
 
 def restore_consul_backup():
 
     Log.info('Restoring the consul backup')
 
-def restore_config() -> None:
+def load_config() -> None:
     '''Restores the config taken at the pre-upgrade step'''
 
     # TODO: Merging of old and new config if required
@@ -58,20 +61,21 @@ def restore_config() -> None:
     except Exception as e:
         Log.error(f'post upgrade failed at config restore phase: {e}')
 
-def create_resources(s3instance=None) -> None:
+def create_resources(_s3instances=None) -> None:
     '''create required resources'''
-    Log.info('Creating the resources in the cluster')
-    create_all_resources(s3instance)
+    create_all_resources(s3_instances=_s3instances)
 
 def _unstandby_cluster() -> None:
     '''Unstandby the cluster'''
 
     unstandby_cmd = PCS_CLUSTER_UNSTANDBY + f' --wait={CLUSTER_STANDBY_UNSTANDBY_TIMEOUT}'
     SimpleCommand().run_cmd(unstandby_cmd)
+    Log.info('### cluster is up and running ###')
 
-def perform_post_upgrade(s3instance=None):
+def perform_post_upgrade(s3_instances=None):
     Log.init(service_name="post_disruptive_upgrade", log_path=RA_LOG_DIR, level="INFO")
     check_for_any_resource_presence()
     is_cluster_standby_on()
-    restore_config()
-    create_resources(s3instance)
+    load_config()
+    create_resources(s3_instances)
+    _unstandby_cluster()
