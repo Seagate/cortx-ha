@@ -244,7 +244,7 @@ class ConfigCmd(Cmd):
         self._update_env(node_name, node_type, const.HA_CLUSTER_SOFTWARE)
         self._fetch_fids()
         self._update_cluster_manager_config()
-        self._cluster_manager = CortxClusterManager(default_log_enable = False)
+        self._cluster_manager = CortxClusterManager(default_log_enable=False)
         Log.info("Checking if cluster exists already")
         cluster_exists = self._confstore.key_exists(const.CLUSTER_CONFSTORE_NODES_KEY)
         Log.info(f"Cluster exists? {cluster_exists}")

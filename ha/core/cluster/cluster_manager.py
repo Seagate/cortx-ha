@@ -267,12 +267,11 @@ class PcsClusterManager:
 
 # Note: This class is used by version 2
 class CortxClusterManager:
-    def __init__(self,default_log_enable = True):
+    def __init__(self, default_log_enable=True):
         """
         Manage cluster operation
         """
-        # TODO: Update Config manager if log utility changes.
-        if default_log_enable == True :
+        if default_log_enable is True:
             ConfigManager.init("cluster_manager")
         self._cluster_type = Conf.get(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.cluster_type")
         self._env = Conf.get(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.env")
