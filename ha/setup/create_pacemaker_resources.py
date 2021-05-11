@@ -41,6 +41,7 @@ s3backprod
 sspl-ll-clone
     sspl-ll
 management
+    mgmt-vip
     kibana
     csm-agent
     csm-web
@@ -164,16 +165,17 @@ def sspl(cib_xml, push=False, **kwargs):
 
 def mgmt_vip(cib_xml, push=False, **kwargs):
     """Create mgmt Virtual IP resource."""
-    mgmt_vip_cfg = {k: kwargs[k] for k in ("vip", "cidr", "iface")
-                    if k in kwargs and kwargs[k] is not None}
-    if len(mgmt_vip_cfg) not in (0, 3):
-        raise CreateResourceConfigError("Given mgmt VIP configuration is incomplete")
-    if mgmt_vip_cfg:
-        process.run_cmd(f"pcs -f {cib_xml} resource create mgmt-vip ocf:heartbeat:IPaddr2 \
-            ip={mgmt_vip_cfg['vip']} cidr_netmask={mgmt_vip_cfg['cidr']} nic={mgmt_vip_cfg['iface']} iflabel=v1 \
+    if "mgmt_info" not in kwargs.keys() or len(kwargs["mgmt_info"]) == 0:
+        Log.warn("Management VIP is not detected in current configuration.")
+    else:
+        mgmt_info = kwargs["mgmt_info"]
+        output, err, rc = process.run_cmd(f"pcs -f {cib_xml} resource create mgmt-vip ocf:heartbeat:IPaddr2 \
+            ip={mgmt_info['mgmt_vip']} cidr_netmask={mgmt_info['mgmt_netmask']} nic={mgmt_info['mgmt_iface']} iflabel=mgmt_vip \
             op start timeout=60s interval=0s \
             op monitor timeout=30s interval=30s \
-            op stop timeout=60s interval=0s --group management_group")
+            op stop timeout=60s interval=0s --group management_group", check_error=False)
+        if rc != 0:
+            raise CreateResourceError(f"Mgmt vip creation failed, mgmt info: {mgmt_info}, Err: {err}")
     if push:
         cib_push(cib_xml)
 
@@ -240,7 +242,7 @@ monitor_config = [sspl]
 management_config = [mgmt_vip, kibana, csm, uds]
 # TODO: ha_group
 
-def io_stack(cib_xml, push, **kwargs):
+def io_stack(cib_xml, push=False, **kwargs):
     """Create IO stack related resources."""
     Log.info("HA Rules: ******* io_group *********")
     # Create core io resources
@@ -259,7 +261,7 @@ def io_stack(cib_xml, push, **kwargs):
     if push:
         cib_push(cib_xml)
 
-def monitor_stack(cib_xml, push, **kwargs):
+def monitor_stack(cib_xml, push=False, **kwargs):
     """Configure monitor stack"""
     Log.info("HA Rules: ******* monitor_group *********")
     for create_resource in monitor_config:
@@ -269,7 +271,7 @@ def monitor_stack(cib_xml, push, **kwargs):
     if push:
         cib_push(cib_xml)
 
-def management_group(cib_xml, push, **kwargs):
+def management_group(cib_xml, push=False, **kwargs):
     """Configure management group"""
     Log.info("HA Rules: ******* management_group *********")
     for create_resource in management_config:
