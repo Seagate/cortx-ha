@@ -27,7 +27,7 @@ from ha.core.event_analyzer.parser.parser import Parser
 from ha.core.event_analyzer.subscriber import Subscriber
 
 class Watcher(Thread):
-    """ Watch message bus to check in comming event. """
+    """ Watch message bus to check in coming event. """
 
     def __init__(self, id: int, message_type: str, group: str,
                 event_filter: Filter, parser: Parser, subscriber: Subscriber):
@@ -36,7 +36,7 @@ class Watcher(Thread):
 
         Args:
             id (int): Consumer ID for message bus.
-            message_type (str): Message type for geeting event.
+            message_type (str): Message type for getting event.
             group (str): Consumer Group of message bus.
             event_filter (Filter): Filter unused event.
             parser (Parser): Parse event to HealthEvent
