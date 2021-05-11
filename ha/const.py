@@ -94,7 +94,7 @@ CLUSTER_USER="hacluster"
 
 CORTX_CLUSTER_PACKAGES=["pacemaker", "corosync", "pcs", "cortx-py-utils", "cortx-csm", "cortx-motr", "cortx-hare", "cortx-s3server", "cortx-sspl"]
 CIB_FILE="/var/log/seagate/cortx/ha/cortx-r2-cib.xml"
-
+COROSYNC_CONF="/etc/corosync/corosync.conf"
 NODE_DISCONNECTED="Disconnected"
 NODE_ONLINE="Online"
 
@@ -105,7 +105,7 @@ HARE_FID_MAPPING_FILE="/var/lib/hare/consul-server-conf/consul-server-conf.json"
 PCS_CLUSTER_START="pcs cluster start --all"
 PCS_CLUSTER_START_NODE="pcs cluster start"
 PCS_NODE_START="pcs cluster start <node>"
-PCS_CLUSTER_ENABLE="pcs cluster enable <node>"
+PCS_CLUSTER_ENABLE="pcs cluster enable"
 PCS_CLUSTER_STATUS="pcs cluster status"
 PCS_CLUSTER_UNSTANDBY="pcs cluster unstandby --all"
 PCS_SETUP_CLUSTER="pcs cluster setup --start --name <cluster_name> <node>"

@@ -216,6 +216,7 @@ class ConfigCmd(Cmd):
         Init method.
         """
         super().__init__(args)
+        self._cluster_manager = None
 
     def process(self):
         """
@@ -224,9 +225,9 @@ class ConfigCmd(Cmd):
         Log.info("Processing config command")
         # Read machine-id and using machine-id read minion name from confstore
         # This minion name will be used for adding the node to the cluster.
-        nodelist = []
-        node_name = self.get_node_name()
-        nodelist.append(node_name)
+        node_name: str = self.get_node_name()
+        nodes_schema = Conf.get(self._index, f"server_node")
+        nodelist: list = self._update_nodelist(nodes_schema)
 
         # Read cluster name and cluster user
         machine_id = self.get_machine_id()
@@ -245,13 +246,36 @@ class ConfigCmd(Cmd):
         self._fetch_fids()
         self._update_cluster_manager_config()
         self._cluster_manager = CortxClusterManager()
+
+        Log.info("Checking if cluster exists already")
+        cluster_exists = bool(json.loads(self._cluster_manager.cluster_controller.cluster_exists()).get("msg"))
+        Log.info(f"Cluster exists? {cluster_exists}")
+
+        if cluster_exists:
+            nodes = self._confstore.get(const.CLUSTER_CONFSTORE_NODES_KEY)
+            node_count: int = 0 if nodes is None else len(nodes)
+            if node_count == 0:
+                try:
+                    Log.info(f"Creating cluster: {cluster_name} with node: {node_name}")
+                    # Create cluster
+                    self._create_cluster(cluster_name, cluster_user, cluster_secret, node_name)
+
+                    cluster_output: str = self._cluster_manager.cluster_controller.create_cluster(
+                        cluster_name, cluster_user, cluster_secret, node_name)
+
+                    Log.info(f"Cluster creation output: {cluster_output}")
+                except Exception as e:
+                    pass
+        import sys; sys.exit()
+
         Log.info("Checking if cluster exists already")
         cluster_exists = self._confstore.key_exists(const.CLUSTER_CONFSTORE_NODES_KEY)
         Log.info(f"Cluster exists? {cluster_exists}")
+
         if cluster_exists == False:
             try:
-                # Create cluster
                 Log.info(f"Creating cluster: {cluster_name} with node: {node_name}")
+                # Create cluster
                 cluster_output: str = self._cluster_manager.cluster_controller.create_cluster(
                     cluster_name, cluster_user, cluster_secret, node_name)
                 Log.info(f"Cluster creation output: {cluster_output}")
@@ -322,6 +346,38 @@ class ConfigCmd(Cmd):
                 raise HaConfigException("Add node failed")
 
         Log.info("config command is successful")
+
+    def _create_cluster(self, cluster_name: str, cluster_user: str, cluster_secret: str, node_name: str):
+        """
+        Create cluster on first node.
+
+        Args:
+            cluster_name (str): Cluster Name
+            cluster_user (str): Cluster User
+            cluster_secret (str): Cluster Secret
+            node_name (str): Node name
+        """
+        cluster_output: str = self._cluster_manager.cluster_controller.create_cluster(
+                        cluster_name, cluster_user, cluster_secret, node_name)
+        Log.info(f"Cluster creation output: {cluster_output}")
+        if json.loads(cluster_output).get("status") != STATUSES.SUCCEEDED.value:
+            pass
+
+    def _update_nodelist(self, node_schema: dict) -> None:
+        """
+        Get Node list.
+
+        Args:
+            nodelist (list): Update node list.
+            node_schama (dict): Provisioner node schema
+        """
+        Log.info("Updating nodelist:")
+        nodelist: list = []
+        machine_ids: list = list(node_schema.keys())
+        for machine in machine_ids:
+            nodelist.append(Conf.get(self._index, f"server_node.{machine}.network.data.private_fqdn"))
+        Log.info(f"Found total Nodes: {len(nodelist)}, Nodes: {nodelist}")
+        return nodelist
 
     def _get_s3_instance(self, machine_id: str) -> int:
         """
