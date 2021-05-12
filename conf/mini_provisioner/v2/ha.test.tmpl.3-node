@@ -10,11 +10,31 @@ cortx:
       secret: TMPL_SECRET
       user: TMPL_USER
 server_node:
-  TMPL_MACHINE_ID:
+  TMPL_MACHINE_ID_1:
     cluster_id: TMPL_CLUSTER_ID
     network:
       data:
-        private_fqdn: TMPL_PRIVATE_FQDN
+        private_fqdn: TMPL_PRIVATE_FQDN_1
+      management:
+        interfaces: TMPL_INTERFACES
+        netmask: TMPL_NETMASK
+    s3_instances: '1'
+    type: TMPL_TYPE
+  TMPL_MACHINE_ID_2:
+    cluster_id: TMPL_CLUSTER_ID
+    network:
+      data:
+        private_fqdn: TMPL_PRIVATE_FQDN_2
+      management:
+        interfaces: TMPL_INTERFACES
+        netmask: TMPL_NETMASK
+    s3_instances: '1'
+    type: TMPL_TYPE
+  TMPL_MACHINE_ID_3:
+    cluster_id: TMPL_CLUSTER_ID
+    network:
+      data:
+        private_fqdn: TMPL_PRIVATE_FQDN_3
       management:
         interfaces: TMPL_INTERFACES
         netmask: TMPL_NETMASK
