@@ -257,21 +257,32 @@ class ConfigCmd(Cmd):
         cluster_exists = bool(json.loads(self._cluster_manager.cluster_controller.cluster_exists()).get("msg"))
         Log.info(f"Cluster exists? {cluster_exists}")
 
-        if cluster_exists:
+        if not cluster_exists:
             nodes = self._confstore.get(const.CLUSTER_CONFSTORE_NODES_KEY)
             node_count: int = 0 if nodes is None else len(nodes)
-            if node_count == 0:
-                try:
+            try:
+                if node_count == 0:
                     Log.info(f"Creating cluster: {cluster_name} with node: {node_name}")
                     # Create cluster
                     self._create_cluster(cluster_name, cluster_user, cluster_secret, node_name)
-
-                    cluster_output: str = self._cluster_manager.cluster_controller.create_cluster(
-                        cluster_name, cluster_user, cluster_secret, node_name)
-
-                    Log.info(f"Cluster creation output: {cluster_output}")
-                except Exception as e:
+                    # Add Other Node
+                    for node in nodelist:
+                        if node != node_name:
+                            Log.info(f"Adding node {node} to Cluster {cluster_name}")
+                            self._add_node(node, cluster_user, cluster_secret)
+                    # Create resource
+                    Log.info("Creating pacemaker resources")
+                    create_all_resources(s3_instances=s3_instances, mgmt_info=mgmt_info)
+                    Log.info("Created pacemaker resources successfully")
+                else:
                     pass
+            except Exception as e:
+                pass
+        else:
+            for node in nodelist:
+                if node != node_name:
+                    Log.info(f"Adding node {node} to Cluster {cluster_name}")
+                    self._add_node(node, cluster_user, cluster_secret)
         import sys; sys.exit()
 
         Log.info("Checking if cluster exists already")
@@ -362,11 +373,49 @@ class ConfigCmd(Cmd):
             cluster_secret (str): Cluster Secret
             node_name (str): Node name
         """
+        cluster_exists = self._confstore.key_exists(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
+        if cluster_exists:
+            Log.info(f"Cluster already created on node {node_name}")
+            return
         cluster_output: str = self._cluster_manager.cluster_controller.create_cluster(
                         cluster_name, cluster_user, cluster_secret, node_name)
         Log.info(f"Cluster creation output: {cluster_output}")
         if json.loads(cluster_output).get("status") != STATUSES.SUCCEEDED.value:
-            pass
+            raise HaConfigException(f"Cluster creation failed. Error: {cluster_output}")
+        self._standby_node(node_name)
+        self._confstore.set(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
+
+    def _standby_node(self, node_name: str):
+        """
+        Put node in standby
+
+        Args:
+            node_name (str): Node name.
+        """
+        standby_output: str = self._cluster_manager.node_controller.standby(node_name)
+        Log.info(f"Put node in standby output: {standby_output}")
+        if json.loads(standby_output).get("status") == STATUSES.FAILED.value:
+            raise HaConfigException(f"Failed to put cluster in standby mode. Error: {standby_output}")
+
+    def _add_node(self, node_name: str, cluster_user: str, cluster_secret: str) -> None:
+        """
+        Add Node
+
+        Args:
+            node_name (str): Node name
+            cluster_user (str): HA user
+            cluster_secret (str): Ha user password
+        """
+        if self._confstore.key_exists(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}"):
+            Log.info(f"The node {node_name} present in the cluster already")
+            return
+        add_node_cli = const.CORTX_CLUSTER_NODE_ADD.replace("<node>", node_name)\
+            .replace("<user>", cluster_user).replace("<secret>", "'" + cluster_secret + "'")
+        output, err, rc = self._execute.run_cmd(add_node_cli, check_error=False, secret=cluster_secret)
+        print(output, err, rc)
+        self._standby_node(node_name)
+        self._confstore.set(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
+        Log.info(f"The node {node_name} added in the existing cluster.")
 
     def _update_nodelist(self, node_schema: dict) -> None:
         """

@@ -73,11 +73,12 @@ class PcsClusterController(ClusterController, PcsController):
         Auth node to add
         """
         try:
-            output, err, rc = self._execute.run_cmd(const.PCS_CLUSTER_NODE_AUTH.replace("<node>", node_id)
-                    .replace("<username>", cluster_user).replace("<password>", cluster_password),
-                    check_error=False, secret=cluster_password)
-            if rc != 0:
-                Log.warn(f"Auth to {node_id} failed with error: {err}")
+            standby_cmd = const.PCS_CLUSTER_NODE_AUTH.replace("<node>", node_id
+                ).replace("<username>", cluster_user).replace("<password>", cluster_password)
+            #a = self._execute.run_cmd(standby_cmd, secret=cluster_password)
+            a = self._execute.run_cmd("pcs cluster auth srvnode-2 -u hacluster -p Seagate", secret=cluster_password)
+            print(standby_cmd, a)
+            import sys; sys.exit()
             Log.info(f"Node {node_id} authenticated with {cluster_user} Successfully.")
         except Exception as e:
             Log.error(f"Failed to authenticate node : {node_id} with reason : {e}")
