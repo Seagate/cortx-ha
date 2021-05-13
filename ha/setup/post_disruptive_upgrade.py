@@ -17,19 +17,19 @@
 
 import os
 from shutil import copystat
-import yaml
+from xml.etree import ElementTree
+from xml.etree.ElementTree import Element
 
 from deepdiff import DeepDiff
 from cortx.utils.log import Log
 from ha.core.error import UpgradeError
 from ha.execute import SimpleCommand
 from ha.const import (BACKUP_DEST_DIR_CONF, CONFIG_DIR, SOURCE_CONFIG_PATH,
-                        RA_LOG_DIR, LIST_PCS_RESOURCES, CHECK_PCS_STANDBY_MODE, \
+                        RA_LOG_DIR, CHECK_PCS_STANDBY_MODE, \
                         CLUSTER_STANDBY_UNSTANDBY_TIMEOUT, PCS_CLUSTER_STANDBY, \
                         PCS_CLUSTER_UNSTANDBY)
 from ha.setup.create_pacemaker_resources import create_all_resources
-from xml.etree import ElementTree
-from xml.etree.ElementTree import Element
+import yaml
 
 
 def _get_cib_xml() -> Element:
@@ -58,9 +58,9 @@ def _is_cluster_standby_on() -> None:
     Log.info('Check cluster is in standby mode')
     value = SimpleCommand().run_cmd(CHECK_PCS_STANDBY_MODE)
 
-    value = value[0].split(' ')[3].strip('\n').split('=')
+    standby_value = value[0].split(' ')[3].strip('\n').split('=')
 
-    if value[1].lower() != 'on':
+    if standby_value[1].lower() != 'on':
         Log.warn('cluster is not in standby mode.')
         Log.info('switching the cluster in standby mode for performing post upgrade routines')
         _switch_cluster_mode(PCS_CLUSTER_STANDBY)
