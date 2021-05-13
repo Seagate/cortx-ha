@@ -1,8 +1,22 @@
-# coding: utf8
+# Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
+#
+# This program is free software: you can redistribute it and/or modify it under the
+# terms of the GNU Affero General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+# PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License along
+# with this program. If not, see <https://www.gnu.org/licenses/>. For any questions
+# about this software or licensing, please email opensource@seagate.com or
+# cortx-questions@seagate.com.
+
+"""Module which performs post-upgrade routines for the Disruptive Upgrade feature."""
 
 import os
 from shutil import copystat
-import sys
 import yaml
 
 from deepdiff import DeepDiff
@@ -29,7 +43,6 @@ def _check_for_any_resource_presence() -> None:
     if resource_list:
         raise UpgradeError('Some resources are already present in the cluster. \
                             Perform Upgrade process again')
-        sys.exit()
 
 def _is_cluster_standby_on() -> None:
     '''Check if cluster is in standby mode. If not, make standby mode ON'''
@@ -57,8 +70,8 @@ def _yaml_to_dict(yaml_file=None):
     if yaml_file is None:
         raise UpgradeError('yaml file path can not be None. Please provide the \
                  HA yaml conf file path for conversion')
-    with open(yaml_file, 'r') as fp:
-        file_as_dict = yaml.safe_load(fp)
+    with open(yaml_file, 'r') as conf_file:
+        file_as_dict = yaml.safe_load(conf_file)
     return file_as_dict
 
 def _load_config() -> None:
@@ -87,7 +100,7 @@ def _load_config() -> None:
         if os.path.exists(src_dir) and os.listdir(src_dir):
             copystat(src_dir, dest_dir)
     except Exception as err:
-        raise UpgradeError(f'Failed to load the new config after \
+        raise UpgradeError('Failed to load the new config after \
                        upgrading the RPM. Please retry Upgrade process again') \
                        from err
 
