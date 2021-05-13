@@ -28,7 +28,14 @@ from ha.const import (BACKUP_DEST_DIR_CONF, CONFIG_DIR, SOURCE_CONFIG_PATH,
                         CLUSTER_STANDBY_UNSTANDBY_TIMEOUT, PCS_CLUSTER_STANDBY, \
                         PCS_CLUSTER_UNSTANDBY)
 from ha.setup.create_pacemaker_resources import create_all_resources
+from xml.etree import ElementTree
+from xml.etree.ElementTree import Element
 
+
+def _get_cib_xml() -> Element:
+    """Call `pcs cluster cib` and return XML object for further parsing."""
+    output, _, _ = SimpleCommand().run_cmd("pcs cluster cib")
+    return ElementTree.fromstring(output)
 
 def _check_for_any_resource_presence() -> None:
     '''Check if any resources are already present in a cluster.
@@ -36,13 +43,14 @@ def _check_for_any_resource_presence() -> None:
 
     Log.info('Check for any resource presence in a cluster')
 
-    resource_list = SimpleCommand().run_cmd(LIST_PCS_RESOURCES)
-
-    resource_list[0].split('\n')
+    root = _get_cib_xml()
+    resource_list = [e.attrib["id"] for e in root.findall(".//lrm_resource")
+                if "id" in e.attrib]
 
     if resource_list:
         raise UpgradeError('Some resources are already present in the cluster. \
                             Perform Upgrade process again')
+
 
 def _is_cluster_standby_on() -> None:
     '''Check if cluster is in standby mode. If not, make standby mode ON'''
@@ -53,7 +61,7 @@ def _is_cluster_standby_on() -> None:
     value = value[0].split(' ')[3].strip('\n').split('=')
 
     if value[1].lower() != 'on':
-        Log.warning('cluster is not in standby mode.')
+        Log.warn('cluster is not in standby mode.')
         Log.info('switching the cluster in standby mode for performing post upgrade routines')
         _switch_cluster_mode(PCS_CLUSTER_STANDBY)
     Log.info('#### All post-upgrade prerequisites are in place ####')
@@ -132,7 +140,7 @@ def _unstandby_cluster() -> None:
 def perform_post_upgrade(s3_instances=None):
     '''Starting routine for post-upgrade process'''
     Log.init(service_name="post_disruptive_upgrade", log_path=RA_LOG_DIR, level="INFO")
-    # _check_for_any_resource_presence()
+    _check_for_any_resource_presence()
     _is_cluster_standby_on()
     _load_config()
     _create_resources(s3_instances)
