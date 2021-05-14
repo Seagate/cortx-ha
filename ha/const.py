@@ -44,6 +44,8 @@ SOURCE_CONFIG_FILE="{}/ha.conf".format(SOURCE_CONFIG_PATH)
 BACKUP_DEST_DIR="/opt/seagate/cortx/ha_backup"
 BACKUP_DEST_DIR_CONF = "{}/conf".format(BACKUP_DEST_DIR)
 BACKUP_DEST_DIR_CONSUL = "{}/Consul".format(BACKUP_DEST_DIR)
+CORTX_CLUSTER_PACKAGES=["pacemaker", "corosync", "pcs", "cortx-py-utils", "cortx-csm", "cortx-motr", "cortx-hare", "cortx-s3server", "cortx-sspl"]
+CIB_FILE="{}/cortx-r2-cib.xml".format(RA_LOG_DIR)
 SOURCE_CLI_SCHEMA_FILE = "{}/cli_schema.json".format(SOURCE_CONFIG_PATH)
 CLI_SCHEMA_FILE = "{}/cli_schema.json".format(CONFIG_DIR)
 COMPONENTS_CONFIG_DIR = "{}/components".format(CONFIG_DIR)
@@ -52,7 +54,7 @@ COMPONENTS_CONFIG_DIR = "{}/components".format(CONFIG_DIR)
 CLUSTER_CONFSTORE_NODES_KEY="nodes"
 
 # Cortx commands
-CORTX_CLUSTER_NODE_ADD="cortx cluster add node --nodeid <node> --username <user> --password <secret>"
+CORTX_CLUSTER_NODE_ADD="cortx cluster add node --nodeid=<node> --username=<user> --password=<secret>"
 
 # hare commands
 HCTL_FETCH_FIDS="hctl fetch-fids --json"
@@ -92,9 +94,6 @@ USER_GROUP_HACLIENT="haclient"
 USER_GROUP_ROOT="root"
 USER_HA_INTERNAL="hauser"
 CLUSTER_USER="hacluster"
-
-CORTX_CLUSTER_PACKAGES=["pacemaker", "corosync", "pcs", "cortx-py-utils", "cortx-csm", "cortx-motr", "cortx-hare", "cortx-s3server", "cortx-sspl"]
-CIB_FILE="/var/log/seagate/cortx/ha/cortx-r2-cib.xml"
 
 NODE_DISCONNECTED="Disconnected"
 NODE_ONLINE="Online"
