@@ -104,11 +104,25 @@ remote_execution =  Analysis([ha_path + '/ha/remote_execution/ssh_communicator.p
         cipher=block_cipher,
         noarchive=False)
 
+event_analyzer_d =  Analysis([ha_path + '/ha/core/event_analyzer/event_analyzerd.py'],
+        pathex=[ha_path],
+        binaries=[],
+        datas=[],
+        hiddenimports=product_module_list,
+        hookspath=[],
+        runtime_hooks=[],
+        excludes=['numpy', 'matplotlib'],
+        win_no_prefer_redirects=False,
+        win_private_assemblies=False,
+        cipher=block_cipher,
+        noarchive=False)
+
 MERGE((cortxha, 'cortxha', 'cortxha'),
         (dynamic_fid_service_ra, 'dynamic_fid_service_ra', 'dynamic_fid_service_ra'),
         (ha_setup, 'ha_setup', 'ha_setup'),
         (pre_disruptive_upgrade, 'pre_disruptive_upgrade', 'pre_disruptive_upgrade'),
         (remote_execution, 'remote_execution', 'remote_execution'),
+        (event_analyzer_d, 'event_analyzer_d', 'event_analyzer_d'),
         )
 
 # cortxha
@@ -186,6 +200,21 @@ remote_execution_exe = EXE(remote_execution_pyz,
         upx=True,
         console=True )
 
+# event_analyzer_d
+event_analyzer_d_pyz = PYZ(event_analyzer_d.pure, event_analyzer_d.zipped_data,
+        cipher=block_cipher)
+
+event_analyzer_d_exe = EXE(event_analyzer_d_pyz,
+        event_analyzer_d.scripts,
+        [],
+        exclude_binaries=True,
+        name='event_analyzer_d',
+        debug=False,
+        bootloader_ignore_signals=False,
+        strip=False,
+        upx=True,
+        console=True )
+
 coll = COLLECT(
         # cortxha
         cortxha_exe,
@@ -216,6 +245,12 @@ coll = COLLECT(
         remote_execution.binaries,
         remote_execution.zipfiles,
         remote_execution.datas,
+
+        # event_analyzer_d
+        event_analyzer_d_exe,
+        event_analyzer_d.binaries,
+        event_analyzer_d.zipfiles,
+        event_analyzer_d.datas,
 
         strip=False,
         upx=True,
