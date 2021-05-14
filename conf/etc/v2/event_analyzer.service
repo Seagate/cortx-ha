@@ -23,7 +23,7 @@ ExecStartPre=/usr/bin/sleep 5
 ExecStart=/usr/bin/event_analyzer_d
 ExecStopPre=/usr/bin/sleep 10
 TimeoutStopSec=7sec
-# TODO: user to be changed to hauser 
+# TODO: user to be changed to hauser
 User=root
 
 [Install]
