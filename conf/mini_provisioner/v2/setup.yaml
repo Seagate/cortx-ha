@@ -43,6 +43,7 @@ ha:
         args: --config $URL
 
     cleanup:
+        # To run manually for local node use --local
         cmd: /opt/seagate/cortx/ha/bin/ha_setup cleanup
         args: --config $URL
 

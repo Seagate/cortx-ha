@@ -53,8 +53,7 @@ CLI_SCHEMA_FILE = "{}/cli_schema.json".format(CONFIG_DIR)
 CLUSTER_CONFSTORE_NODES_KEY="nodes"
 
 # Cortx commands
-CORTX_CLUSTER_NODE_ADD="/usr/bin/env python3 /home/708945/src/Repos/cortx-ha/ha/cli/cortxha.py --nodeid=<node> --username=<user> --password=<secret>"
-#CORTX_CLUSTER_NODE_ADD="cortx cluster add node --nodeid=<node> --username=<user> --password=<secret>"
+CORTX_CLUSTER_NODE_ADD="cortx cluster add node --nodeid=<node> --username=<user> --password=<secret>"
 
 # hare commands
 HCTL_FETCH_FIDS="hctl fetch-fids --json"
@@ -111,7 +110,7 @@ PCS_CLUSTER_UNSTANDBY="pcs cluster unstandby --all"
 PCS_SETUP_CLUSTER="pcs cluster setup --start --name <cluster_name> <node>"
 PCS_CLUSTER_NODE_AUTH="pcs cluster auth <node> -u <username> -p <password>"
 PCS_CLUSTER_NODE_ADD="pcs cluster node add <node> --start --enable"
-PCS_CLUSTER_NODE_REMOVE="pcs cluster node remove <node>"
+PCS_CLUSTER_NODE_REMOVE="pcs cluster node remove <node> --force"
 PCS_CLUSTER_PCSD_STATUS="pcs status pcsd"
 PCS_STATUS_NODES="pcs status nodes"
 PCS_NODE_UNSTANDBY="pcs node unstandby <node>"
