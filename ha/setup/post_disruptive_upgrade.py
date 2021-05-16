@@ -16,12 +16,12 @@
 """Module which performs post-upgrade routines for the Disruptive Upgrade feature."""
 
 import os
-from shutil import copystat
+from shutil import copystat, copyfile
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element
 
-from deepdiff import DeepDiff
 from cortx.utils.log import Log
+import yaml
 from ha.core.error import UpgradeError
 from ha.execute import SimpleCommand
 from ha.const import (BACKUP_DEST_DIR_CONF, CONFIG_DIR, SOURCE_CONFIG_PATH,
@@ -29,7 +29,6 @@ from ha.const import (BACKUP_DEST_DIR_CONF, CONFIG_DIR, SOURCE_CONFIG_PATH,
                         CLUSTER_STANDBY_UNSTANDBY_TIMEOUT, PCS_CLUSTER_STANDBY, \
                         PCS_CLUSTER_UNSTANDBY)
 from ha.setup.create_pacemaker_resources import create_all_resources
-import yaml
 
 
 def _get_cib_xml() -> Element:
@@ -88,25 +87,42 @@ def _load_config() -> None:
        RPM upgrade as part of post-upgrade process
     '''
 
-    src_dir = BACKUP_DEST_DIR_CONF
     dest_dir = CONFIG_DIR
+    new_src_dir = SOURCE_CONFIG_PATH
 
     HA_BACKUP_CONF_FILE = BACKUP_DEST_DIR_CONF + '/' + 'ha.conf'
     HA_SOURCE_CONF = SOURCE_CONFIG_PATH + '/' + 'ha.conf'
+
+    # Convert yaml to dictionary
     old_backup_conf_dict = _yaml_to_dict(HA_BACKUP_CONF_FILE)
     new_conf_dict = _yaml_to_dict(HA_SOURCE_CONF)
 
-    diff = DeepDiff(old_backup_conf_dict, new_conf_dict)
-    if diff:
-        newly_added_conf = diff.get('dictionary_item_added')
-        if newly_added_conf:
-            for new_keys in newly_added_conf:
-                new_key = new_keys[6]
-                old_backup_conf_dict[new_key] = new_conf_dict[new_key]
+    # convert dictionary to set data structure
+    old_conf_set = set(old_backup_conf_dict)
+    new_conf_set = set(new_conf_dict)
+
+    # Get the new conf added after upgrade using the set operation
+    new_conf_keys_set = new_conf_set - old_conf_set
+
+    Log.info(f"##### new conf key set : {new_conf_keys_set}")
+    upgraded_conf= {}
+    # Iterate over the new set of keys and add it to the dictionary
+    for new_conf_key in new_conf_keys_set:
+       upgraded_conf[new_conf_key] = new_conf_dict[new_conf_key]
+
+    Log.info(f"##### upgraded conf: {upgraded_conf}")
+    # append the new conf keys to backup_conf file
+    with open(HA_BACKUP_CONF_FILE, 'a') as outfile:
+        yaml.dump(upgraded_conf, outfile, default_flow_style=False)
 
     try:
-        if os.path.exists(src_dir) and os.listdir(src_dir):
-            copystat(src_dir, dest_dir)
+        # Finally copy the updated backup conf file to a source
+        copyfile(HA_BACKUP_CONF_FILE, HA_SOURCE_CONF)
+
+        # At last, copy the whole source directory which has updated
+        # conf to a desired location
+        if os.path.exists(new_src_dir) and os.listdir(new_src_dir):
+            copystat(new_src_dir, dest_dir)
     except Exception as err:
         raise UpgradeError('Failed to load the new config after \
                        upgrading the RPM. Please retry Upgrade process again') \
