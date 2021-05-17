@@ -71,7 +71,7 @@ def _restore_consul_backup():
 
 def _yaml_to_dict(yaml_file=None):
     '''
-       Convert yaml format key value info i the form of
+       Convert yaml format key value info in the form of
        python dictionary key value
     '''
     if yaml_file is None:
@@ -110,7 +110,7 @@ def _load_config(ha_source_conf: str = SOURCE_CONFIG_FILE, \
     # 1. New conf key-value pair can be introduced
     # 2. Already present conf key can be updated with new value
     # 3. A conf key-value can be deleted
-    # Here, we are considering or assuming thatthere will not be updation.
+    # Here, we are considering or assuming that there will not be updation.
     # Upgrade means a new key value will be added. 2nd scenario can be handled
     # or needs to be handled seperately.
     # If key will be deleted after upgrade and still the conf will be loaded with that
@@ -119,6 +119,7 @@ def _load_config(ha_source_conf: str = SOURCE_CONFIG_FILE, \
     # Update the old dictionary with new one
     # This update will also update the values if they got changed in new
     # version. This is not considered right now, hence update can be safely used.
+    # So, handling only first scenario here.
     old_backup_conf_dict.update(new_conf_dict)
 
     # Finally, update the old config file with new changes
