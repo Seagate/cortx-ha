@@ -348,25 +348,6 @@ class ConfigCmd(Cmd):
                 raise HaConfigException(f"Failed to add node {node_name}.")
         Log.info("config command is successful")
 
-    #def _get_s3_instance(self, machine_id: str) -> int:
-    #    """
-    #    Return s3 instance
-
-    #    Raises:
-    #        HaConfigException: Raise exception for in-valide s3 count.
-
-    #    Returns:
-    #        [int]: Return s3 count.
-    #    """
-    #    try:
-    #        s3_instances = Conf.get(self._index, f"server_node.{machine_id}.s3_instances")
-    #        if int(s3_instances) < 1:
-    #            raise HaConfigException(f"Found {s3_instances} which is invalid s3 instance count.")
-    #        return int(s3_instances)
-    #    except Exception as e:
-    #        Log.error(f"Found {s3_instances} which is invalid s3 instance count. Error: {e}")
-    #        raise HaConfigException(f"Found {s3_instances} which is invalid s3 instance count.")
-
     def _get_mgmt_vip(self, machine_id: str, cluster_id: str) -> dict:
         """
         Get Mgmt info.

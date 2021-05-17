@@ -81,6 +81,17 @@ def _yaml_to_dict(yaml_file=None):
         file_as_dict = yaml.safe_load(conf_file)
     return file_as_dict
 
+def parse_dict(sample_dict, lkey=''):
+    flattened_dict = {}
+    for dict_key, val in sample_dict.items():
+        key = lkey+dict_key
+        if isinstance(val, dict):
+            flattened_dict.update(parse_dict(val, key+':'))
+        else:
+            flattened_dict[key] = val
+    return flattened_dict
+
+
 def _load_config(ha_source_conf: str = SOURCE_CONFIG_FILE, \
                  ha_backup_conf: str = BACKUP_DEST_DIR_CONF) -> None:
     '''
@@ -95,23 +106,24 @@ def _load_config(ha_source_conf: str = SOURCE_CONFIG_FILE, \
     old_backup_conf_dict = _yaml_to_dict(ha_backup_conf)
     new_conf_dict = _yaml_to_dict(ha_source_conf)
 
-    # convert dictionary to set data structure
-    old_conf_set = set(old_backup_conf_dict)
-    new_conf_set = set(new_conf_dict)
+    # Note: There are 3 scenarios for conf file upgrade
+    # 1. New conf key-value pair can be introduced
+    # 2. Already present conf key can be updated with new value
+    # 3. A conf key-value can be deleted
+    # Here, we are considering or assuming thatthere will not be updation.
+    # Upgrade means a new key value will be added. 2nd scenario can be handled
+    # or needs to be handled seperately.
+    # If key will be deleted after upgrade and still the conf will be loaded with that
+    # key, it will not affect the functionality because, that key will not be in use.
 
-    # Get the new conf added after upgrade using the set operation
-    new_conf_keys_set = new_conf_set - old_conf_set
+    # Update the old dictionary with new one
+    # This update will also update the values if they got changed in new
+    # version. This is not considered right now, hence update can be safely used.
+    old_backup_conf_dict.update(new_conf_dict)
 
-    Log.info(f"##### new conf key set : {new_conf_keys_set}")
-    upgraded_conf= {}
-    # Iterate over the new set of keys and add it to the dictionary
-    for new_conf_key in new_conf_keys_set:
-        upgraded_conf[new_conf_key] = new_conf_dict[new_conf_key]
-
-    Log.info(f"##### upgraded conf: {upgraded_conf}")
-    # append the new conf keys to backup_conf file
+    # Finally, update the old config file with new changes
     with open(ha_backup_conf, 'a') as outfile:
-        yaml.dump(upgraded_conf, outfile, default_flow_style=False)
+        yaml.dump(old_backup_conf_dict, outfile, default_flow_style=False)
 
     try:
         # Finally copy the updated backup conf file to a source
