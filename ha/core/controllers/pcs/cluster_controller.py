@@ -17,7 +17,6 @@
 
 import json
 import time
-import shutil
 from cortx.utils.log import Log
 
 from ha.core.error import HAUnimplemented

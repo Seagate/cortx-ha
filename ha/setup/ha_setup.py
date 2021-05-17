@@ -161,7 +161,7 @@ class Cmd:
             for key in cluster_nodes:
                 nodelist.append(key.split('/')[-1])
         else:
-            nodes_schema = Conf.get(self._index, f"server_node")
+            nodes_schema = Conf.get(self._index, "server_node")
             machine_ids: list = list(nodes_schema.keys())
             for machine in machine_ids:
                 nodelist.append(Conf.get(self._index, f"server_node.{machine}.network.data.private_fqdn"))
@@ -378,7 +378,7 @@ class ConfigCmd(Cmd):
                 return
             add_node_cli = const.CORTX_CLUSTER_NODE_ADD.replace("<node>", node_name)\
                 .replace("<user>", cluster_user).replace("<secret>", cluster_secret)
-            output, err, rc = self._execute.run_cmd(add_node_cli, check_error=False, secret=cluster_secret)
+            self._execute.run_cmd(add_node_cli, check_error=False, secret=cluster_secret)
             self.standby_node(node_name)
             self._confstore.set(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
             Log.info(f"The node {node_name} added in the existing cluster.")
