@@ -25,7 +25,7 @@ import yaml
 from ha.core.error import UpgradeError
 from ha.execute import SimpleCommand
 from ha.const import (BACKUP_DEST_DIR_CONF, CONFIG_DIR, SOURCE_CONFIG_PATH,
-                        RA_LOG_DIR, CHECK_PCS_STANDBY_MODE, \
+                        RA_LOG_DIR, CHECK_PCS_STANDBY_MODE, SOURCE_CONFIG_FILE, \
                         CLUSTER_STANDBY_UNSTANDBY_TIMEOUT, PCS_CLUSTER_STANDBY, \
                         PCS_CLUSTER_UNSTANDBY)
 from ha.setup.create_pacemaker_resources import create_all_resources
@@ -81,7 +81,8 @@ def _yaml_to_dict(yaml_file=None):
         file_as_dict = yaml.safe_load(conf_file)
     return file_as_dict
 
-def _load_config() -> None:
+def _load_config(ha_source_conf: str = SOURCE_CONFIG_FILE, \
+                 ha_backup_conf: str = BACKUP_DEST_DIR_CONF) -> None:
     '''
        Load the new config at proper location after the
        RPM upgrade as part of post-upgrade process
@@ -90,12 +91,9 @@ def _load_config() -> None:
     dest_dir = CONFIG_DIR
     new_src_dir = SOURCE_CONFIG_PATH
 
-    HA_BACKUP_CONF_FILE = BACKUP_DEST_DIR_CONF + '/' + 'ha.conf'
-    HA_SOURCE_CONF = SOURCE_CONFIG_PATH + '/' + 'ha.conf'
-
     # Convert yaml to dictionary
-    old_backup_conf_dict = _yaml_to_dict(HA_BACKUP_CONF_FILE)
-    new_conf_dict = _yaml_to_dict(HA_SOURCE_CONF)
+    old_backup_conf_dict = _yaml_to_dict(ha_backup_conf)
+    new_conf_dict = _yaml_to_dict(ha_source_conf)
 
     # convert dictionary to set data structure
     old_conf_set = set(old_backup_conf_dict)
@@ -108,16 +106,16 @@ def _load_config() -> None:
     upgraded_conf= {}
     # Iterate over the new set of keys and add it to the dictionary
     for new_conf_key in new_conf_keys_set:
-       upgraded_conf[new_conf_key] = new_conf_dict[new_conf_key]
+        upgraded_conf[new_conf_key] = new_conf_dict[new_conf_key]
 
     Log.info(f"##### upgraded conf: {upgraded_conf}")
     # append the new conf keys to backup_conf file
-    with open(HA_BACKUP_CONF_FILE, 'a') as outfile:
+    with open(ha_backup_conf, 'a') as outfile:
         yaml.dump(upgraded_conf, outfile, default_flow_style=False)
 
     try:
         # Finally copy the updated backup conf file to a source
-        copyfile(HA_BACKUP_CONF_FILE, HA_SOURCE_CONF)
+        copyfile(ha_backup_conf, ha_source_conf)
 
         # At last, copy the whole source directory which has updated
         # conf to a desired location
