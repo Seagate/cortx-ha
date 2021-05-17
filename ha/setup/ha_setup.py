@@ -302,8 +302,18 @@ class ConfigCmd(Cmd):
             if node_count == 0:
                 Log.info(f"Creating cluster: {cluster_name} with node: {node_name}")
                 # Create cluster
-                self._create_cluster(cluster_name, cluster_user, cluster_secret, node_name)
-                self._create_resource(s3_instances=s3_instances, mgmt_info=mgmt_info)
+                try:
+                    self._create_cluster(cluster_name, cluster_user, cluster_secret, node_name)
+                    self._create_resource(s3_instances=s3_instances, mgmt_info=mgmt_info)
+                    self._confstore.set(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
+                except Exception as e:
+                    Log.error(f"Cluster creation failed; destroying the cluster. Error: {e}")
+                    output = self._execute.run_cmd(const.PCS_CLUSTER_DESTROY)
+                    Log.error(f"Cluster destroyed. Output: {output}")
+                    # Delete the node from nodelist if it was added in the store
+                    if self._confstore.key_exists(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}"):
+                        self._confstore.delete(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
+                    raise HaConfigException("Cluster creation failed")
                 # Add Other Node
                 for node in nodelist:
                     if node != node_name:
@@ -353,15 +363,8 @@ class ConfigCmd(Cmd):
             if json.loads(cluster_output).get("status") != STATUSES.SUCCEEDED.value:
                 raise HaConfigException(f"Cluster creation failed. Error: {cluster_output}")
             self.standby_node(node_name)
-            self._confstore.set(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
         except Exception as e:
-            Log.error(f"Cluster creation failed; destroying the cluster. Error: {e}")
-            output = self._execute.run_cmd(const.PCS_CLUSTER_DESTROY)
-            Log.error(f"Cluster destroyed. Output: {output}")
-            # Delete the node from nodelist if it was added in the store
-            if self._confstore.key_exists(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}"):
-                self._confstore.delete(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
-            raise HaConfigException("Cluster creation failed")
+            raise HaConfigException(f"Failed to create cluster. Error: {e}")
 
     def _add_node(self, node_name: str, cluster_user: str, cluster_secret: str) -> None:
         """
