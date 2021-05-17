@@ -24,10 +24,10 @@ from cortx.utils.log import Log
 import yaml
 from ha.core.error import UpgradeError
 from ha.execute import SimpleCommand
-from ha.const import (BACKUP_DEST_DIR_CONF, CONFIG_DIR, SOURCE_CONFIG_PATH,
-                        RA_LOG_DIR, CHECK_PCS_STANDBY_MODE, SOURCE_CONFIG_FILE, \
-                        CLUSTER_STANDBY_UNSTANDBY_TIMEOUT, PCS_CLUSTER_STANDBY, \
-                        PCS_CLUSTER_UNSTANDBY)
+from ha.const import (CONFIG_DIR, SOURCE_CONFIG_PATH, \
+                        BACKUP_CONFIG_FILE, RA_LOG_DIR, CHECK_PCS_STANDBY_MODE, \
+                        SOURCE_CONFIG_FILE, CLUSTER_STANDBY_UNSTANDBY_TIMEOUT, \
+                        PCS_CLUSTER_STANDBY, PCS_CLUSTER_UNSTANDBY)
 from ha.setup.create_pacemaker_resources import create_all_resources
 
 
@@ -81,19 +81,8 @@ def _yaml_to_dict(yaml_file=None):
         file_as_dict = yaml.safe_load(conf_file)
     return file_as_dict
 
-def parse_dict(sample_dict, lkey=''):
-    flattened_dict = {}
-    for dict_key, val in sample_dict.items():
-        key = lkey+dict_key
-        if isinstance(val, dict):
-            flattened_dict.update(parse_dict(val, key+':'))
-        else:
-            flattened_dict[key] = val
-    return flattened_dict
-
-
 def _load_config(ha_source_conf: str = SOURCE_CONFIG_FILE, \
-                 ha_backup_conf: str = BACKUP_DEST_DIR_CONF) -> None:
+                 ha_backup_conf: str = BACKUP_CONFIG_FILE) -> None:
     '''
        Load the new config at proper location after the
        RPM upgrade as part of post-upgrade process
@@ -123,7 +112,7 @@ def _load_config(ha_source_conf: str = SOURCE_CONFIG_FILE, \
     old_backup_conf_dict.update(new_conf_dict)
 
     # Finally, update the old config file with new changes
-    with open(ha_backup_conf, 'a') as outfile:
+    with open(ha_backup_conf, 'w') as outfile:
         yaml.dump(old_backup_conf_dict, outfile, default_flow_style=False)
 
     try:
