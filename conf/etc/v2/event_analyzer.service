@@ -20,8 +20,7 @@ After=syslog.target
 [Service]
 Type=simple
 ExecStartPre=/usr/bin/sleep 5
-ExecStart=/usr/bin/event_analyzer_d
-ExecStopPre=/usr/bin/sleep 10
+ExecStart=/usr/bin/event_analyzerd
 TimeoutStopSec=7sec
 # TODO: user to be changed to hauser
 User=root

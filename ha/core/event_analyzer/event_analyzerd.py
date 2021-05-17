@@ -31,7 +31,7 @@ from ha.core.config.config_manager import ConfigManager
 class Service:
 
     def init(self):
-        ConfigManager.init("event_analyzer_d")
+        ConfigManager.init("event_analyzerd")
         Log.info("Event analyzer daemon initializations")
 
     def run(self):
