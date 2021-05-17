@@ -49,7 +49,8 @@ class ConfigManager:
             Conf.init(delim='.')
         ConfigManager._safe_load(const.HA_GLOBAL_INDEX, f"yaml://{const.HA_CONFIG_FILE}")
         ConfigManager._safe_load(const.RESOURCE_GLOBAL_INDEX, f"json://{const.RESOURCE_SCHEMA}")
-        ConfigManager._init_log(log_name)
+        if(log_name != 'none'):
+            ConfigManager._init_log(log_name)
 
     @staticmethod
     def _init_log(log_name: str):
