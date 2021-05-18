@@ -50,6 +50,7 @@ CORTX_CLUSTER_PACKAGES=["pacemaker", "corosync", "pcs", "cortx-py-utils", "cortx
 CIB_FILE="{}/cortx-r2-cib.xml".format(RA_LOG_DIR)
 SOURCE_CLI_SCHEMA_FILE = "{}/cli_schema.json".format(SOURCE_CONFIG_PATH)
 CLI_SCHEMA_FILE = "{}/cli_schema.json".format(CONFIG_DIR)
+COMPONENTS_CONFIG_DIR = "{}/components".format(CONFIG_DIR)
 
 # Mini-provisioning
 CLUSTER_CONFSTORE_NODES_KEY="nodes"
