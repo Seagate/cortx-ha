@@ -39,6 +39,7 @@ from ha.core.error import HaPrerequisiteException
 from ha.core.error import HaConfigException
 from ha.core.error import HaInitException
 from ha.core.error import HaCleanupException
+from ha.core.error import SetupError
 
 class Cmd:
     """
@@ -47,8 +48,8 @@ class Cmd:
     _index = "conf"
     DEV_CHECK = False
     LOCAL_CHECK = False
-    PROVISIONER = "provisioner"
-    CONFSTORE = "confstore"
+    PROV_CONFSTORE = "provisioner"
+    HA_CONFSTORE = "confstore"
 
     def __init__(self, args: dict):
         """
@@ -145,7 +146,7 @@ class Cmd:
         Log.info(f"Read node name: {node_name}")
         return node_name
 
-    def get_nodelist(self, fetch_from: str) -> list:
+    def get_nodelist(self, fetch_from: str = None) -> list:
         """
         Get nodelist from provisioner or confstore
 
@@ -156,19 +157,22 @@ class Cmd:
             list: List of nodes.
         """
         nodelist: list = []
-        if fetch_from == Cmd.CONFSTORE:
+        fetch_from = Cmd.HA_CONFSTORE if fetch_from is None else fetch_from
+        if fetch_from == Cmd.HA_CONFSTORE:
             cluster_nodes = self._confstore.get(const.CLUSTER_CONFSTORE_NODES_KEY)
             for key in cluster_nodes:
                 nodelist.append(key.split('/')[-1])
-        else:
+        elif fetch_from == Cmd.PROV_CONFSTORE:
             nodes_schema = Conf.get(self._index, "server_node")
             machine_ids: list = list(nodes_schema.keys())
             for machine in machine_ids:
                 nodelist.append(Conf.get(self._index, f"server_node.{machine}.network.data.private_fqdn"))
+        else:
+            raise SetupError(f"Failed to get nodelist, Invalid options {fetch_from}")
         Log.info(f"Found total Nodes: {len(nodelist)}, Nodes: {nodelist}, in {fetch_from}")
         return nodelist
 
-    def standby_node(self, node_name: str):
+    def standby_node(self, node_name: str) -> None:
         """
         Put node in standby
 
@@ -269,7 +273,7 @@ class ConfigCmd(Cmd):
         # Read machine-id and using machine-id read minion name from confstore
         # This minion name will be used for adding the node to the cluster.
         node_name: str = self.get_node_name()
-        nodelist: list = self.get_nodelist(fetch_from=ConfigCmd.PROVISIONER)
+        nodelist: list = self.get_nodelist(fetch_from=ConfigCmd.PROV_CONFSTORE)
 
         # Read cluster name and cluster user
         machine_id = self.get_machine_id()
@@ -297,8 +301,7 @@ class ConfigCmd(Cmd):
         Log.info(f"Cluster exists? {cluster_exists}")
 
         if not cluster_exists:
-            nodes = self._confstore.get(const.CLUSTER_CONFSTORE_NODES_KEY)
-            node_count = 0 if nodes is None else len(nodes)
+            node_count: int = len(self.get_nodelist(fetch_from=ConfigCmd.HA_CONFSTORE))
             if node_count == 0:
                 Log.info(f"Creating cluster: {cluster_name} with node: {node_name}")
                 # Create cluster
@@ -400,7 +403,7 @@ class ConfigCmd(Cmd):
                 Log.info(f"The node already {node_name} present in the cluster.")
                 return
             Log.info(f"The cluster exists already, adding new node: {node_name}")
-            nodelist: list = self.get_nodelist(fetch_from=ConfigCmd.CONFSTORE)
+            nodelist: list = self.get_nodelist(fetch_from=ConfigCmd.HA_CONFSTORE)
 
             for remote_node in nodelist:
                 try:
@@ -642,7 +645,7 @@ class CleanupCmd(Cmd):
         Args:
             node_name (str): Node Name.
         """
-        nodelist: list = self.get_nodelist(fetch_from=CleanupCmd.CONFSTORE)
+        nodelist: list = self.get_nodelist(fetch_from=CleanupCmd.HA_CONFSTORE)
         for remote_node in nodelist:
             if remote_node == node_name:
                 continue

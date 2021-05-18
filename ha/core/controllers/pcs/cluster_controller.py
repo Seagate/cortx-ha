@@ -72,9 +72,9 @@ class PcsClusterController(ClusterController, PcsController):
         Auth node to add
         """
         try:
-            standby_cmd = const.PCS_CLUSTER_NODE_AUTH.replace("<node>", node_id
+            auth_cmd = const.PCS_CLUSTER_NODE_AUTH.replace("<node>", node_id
                 ).replace("<username>", cluster_user).replace("<password>", cluster_password)
-            self._execute.run_cmd(standby_cmd, secret=cluster_password)
+            self._execute.run_cmd(auth_cmd, secret=cluster_password)
             Log.info(f"Node {node_id} authenticated with {cluster_user} Successfully.")
         except Exception as e:
             Log.error(f"Failed to authenticate node : {node_id} with reason : {e}")
@@ -104,7 +104,7 @@ class PcsClusterController(ClusterController, PcsController):
 
         Returns:
             dict: Return dictionary. {"status": "", "msg":""}
-                status: Succeeded, Failed, InProgress
+                status: Succeeded
         """
         try:
             result: bool = True if self._is_pcs_cluster_running() else False
