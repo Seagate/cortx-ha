@@ -30,6 +30,6 @@ class RemoteExecutor:
         self._port = port
 
     @abc.abstractmethod
-    def execute(self, command):
+    def execute(self, command: str, secret: str=None):
         '''Communicates to remote node by code execution'''
         raise NotImplementedError
