@@ -267,12 +267,12 @@ class PcsClusterManager:
 
 # Note: This class is used by version 2
 class CortxClusterManager:
-    def __init__(self, init_config_manager=True):
+    def __init__(self, default_log_enable=True):
         """
         Manage cluster operation
         """
         # TODO: Update Config manager if log utility changes.(reference EOS-17614)
-        if init_config_manager is True:
+        if default_log_enable is True:
             ConfigManager.init("cluster_manager")
         else:
             ConfigManager.init(None)
