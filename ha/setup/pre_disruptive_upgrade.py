@@ -30,7 +30,7 @@ from xml.etree.ElementTree import Element
 from cortx.utils.log import Log
 from ha.const import (BACKUP_DEST_DIR_CONF, BACKUP_DEST_DIR_CONSUL,
                       CONFIG_DIR, RA_LOG_DIR)
-from ha.core.error import PreRequisiteUpgradeError
+from ha.core.error import UpgradeError
 from ha.execute import SimpleCommand
 
 
@@ -46,7 +46,7 @@ def backup_consul(filename: str = "consul-kv-dump.json", dst: str = BACKUP_DEST_
         None
 
     Exceptions:
-        PreRequisiteUpgradeError
+        UpgradeError
     """
     consul_kv_dump = os.path.join(dst, filename)
 
@@ -66,7 +66,7 @@ def backup_consul(filename: str = "consul-kv-dump.json", dst: str = BACKUP_DEST_
     consul_export_cmd = "consul kv export > {}".format(shlex.quote(consul_kv_dump))
     cp = subprocess.run(consul_export_cmd, shell=True, stderr=subprocess.PIPE)
     if cp.returncode:
-        raise PreRequisiteUpgradeError("Consul export failed with error {}".format(cp.stderr.decode()))
+        raise UpgradeError("Consul export failed with error {}".format(cp.stderr.decode()))
 
 
 def backup_configuration(src: str = CONFIG_DIR, dst: str = BACKUP_DEST_DIR_CONF) -> None:
@@ -81,7 +81,7 @@ def backup_configuration(src: str = CONFIG_DIR, dst: str = BACKUP_DEST_DIR_CONF)
         None
 
     Exceptions:
-        PreRequisiteUpgradeError
+        UpgradeError
     """
     Log.info(f"Backup HA configuration from {src} to {dst}")
     try:
@@ -89,7 +89,7 @@ def backup_configuration(src: str = CONFIG_DIR, dst: str = BACKUP_DEST_DIR_CONF)
             rmtree(dst)
         copytree(src, dst)
     except Exception as err:
-        raise PreRequisiteUpgradeError("Failed to create backup of HA config") from err
+        raise UpgradeError("Failed to create backup of HA config") from err
 
 
 def cluster_standby_mode() -> None:
@@ -99,14 +99,14 @@ def cluster_standby_mode() -> None:
     Note: this function may be replaced by Cluster Manager call.
 
     Exceptions:
-        PreRequisiteUpgradeError
+        UpgradeError
     """
     Log.info("Set cluster to standby mode")
     standby_cmd = "pcs node standby --all --wait=600"
     try:
         SimpleCommand().run_cmd(standby_cmd)
     except Exception as err:
-        raise PreRequisiteUpgradeError("Cluster standby operation failed") from err
+        raise UpgradeError("Cluster standby operation failed") from err
 
 
 def _get_cib_xml() -> Element:
@@ -120,7 +120,7 @@ def delete_resources() -> None:
     Delete pacemaker resources.
 
     Exceptions:
-        PreRequisiteUpgradeError
+        UpgradeError
     """
     try:
         root = _get_cib_xml()
@@ -132,7 +132,7 @@ def delete_resources() -> None:
             Log.info(f"Deleting {r}")
             SimpleCommand().run_cmd(f"pcs resource delete {r}")
     except Exception as err:
-        raise PreRequisiteUpgradeError("Resource deletion failed") from err
+        raise UpgradeError("Resource deletion failed") from err
 
 
 def _parse_arguments() -> Any:
