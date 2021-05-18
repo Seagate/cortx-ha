@@ -43,14 +43,19 @@ RES_AGENT="/usr/lib/ocf/resource.d/seagate"
 mkdir -p $HA_DIR/bin /usr/bin $RES_AGENT
 
 # Move binary file
+# TODO: Remove one of path of CLI
 ln -sf $HA_DIR/lib/cortxha $HA_DIR/bin/cortx
 ln -sf $HA_DIR/lib/cortxha /usr/bin/cortx
+ln -sf $HA_DIR/lib/cortxha /usr/bin/cortxha
 ln -sf $HA_DIR/lib/dynamic_fid_service_ra $HA_DIR/bin/dynamic_fid_service_ra
 # TODO: dynamic_fid_service_ra to RESOURCE_AGENT path from setup post_install
 ln -sf $HA_DIR/lib/dynamic_fid_service_ra $RES_AGENT/dynamic_fid_service_ra
 ln -sf $HA_DIR/lib/ha_setup $HA_DIR/bin/ha_setup
 ln -sf $HA_DIR/lib/ha_setup /usr/bin/ha_setup
 ln -sf $HA_DIR/lib/ha_setup /usr/local/bin/ha_setup
+ln -sf $HA_DIR/lib/event_analyzerd $HA_DIR/bin/event_analyzerd
+ln -sf $HA_DIR/lib/event_analyzerd /usr/bin/event_analyzerd
+ln -sf $HA_DIR/lib/event_analyzerd /usr/local/bin/event_analyzerd
 exit 0
 
 %preun
@@ -66,6 +71,9 @@ rm -f $HA_DIR/bin/dynamic_fid_service_ra 2> /dev/null;
 rm -f /usr/local/bin/ha_setup 2> /dev/null;
 rm -f /usr/bin/ha_setup 2> /dev/null;
 rm -f $HA_DIR/bin/ha_setup 2> /dev/null;
+rm -f /usr/local/bin/event_analyzerd 2> /dev/null;
+rm -f /usr/bin/event_analyzerd 2> /dev/null;
+rm -f $HA_DIR/bin/event_analyzerd 2> /dev/null;
 exit 0
 
 %clean

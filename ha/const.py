@@ -26,6 +26,7 @@ PCSD_LOG="/var/log/pcsd/pcsd.log"
 HA_CMDS_OUTPUT="{}/ha_cmds_output".format(RA_LOG_DIR)
 COROSYNC_LOG="/var/log/cluster"
 CONFIG_DIR="/etc/cortx/ha"
+SYSTEM_DIR="/etc/systemd/system"
 SUPPORT_BUNDLE_ERR="{}/support_bundle.err".format(RA_LOG_DIR)
 SUPPORT_BUNDLE_LOGS=[RA_LOG_DIR, PCSD_LOG, PACEMAKER_LOG, COROSYNC_LOG]
 CORTX_SUPPORT_BUNDLE_LOGS=[RA_LOG_DIR, PCSD_LOG, PACEMAKER_LOG, CONFIG_DIR, COROSYNC_LOG]
@@ -44,14 +45,17 @@ SOURCE_CONFIG_FILE="{}/ha.conf".format(SOURCE_CONFIG_PATH)
 BACKUP_DEST_DIR="/opt/seagate/cortx/ha_backup"
 BACKUP_DEST_DIR_CONF = "{}/conf".format(BACKUP_DEST_DIR)
 BACKUP_DEST_DIR_CONSUL = "{}/Consul".format(BACKUP_DEST_DIR)
+CORTX_CLUSTER_PACKAGES=["pacemaker", "corosync", "pcs", "cortx-py-utils", "cortx-csm", "cortx-motr", "cortx-hare", "cortx-s3server", "cortx-sspl"]
+CIB_FILE="{}/cortx-r2-cib.xml".format(RA_LOG_DIR)
 SOURCE_CLI_SCHEMA_FILE = "{}/cli_schema.json".format(SOURCE_CONFIG_PATH)
 CLI_SCHEMA_FILE = "{}/cli_schema.json".format(CONFIG_DIR)
+COMPONENTS_CONFIG_DIR = "{}/components".format(CONFIG_DIR)
 
 # Mini-provisioning
 CLUSTER_CONFSTORE_NODES_KEY="nodes"
 
 # Cortx commands
-CORTX_CLUSTER_NODE_ADD="cortx cluster add node --nodeid <node> --username <user> --password <secret>"
+CORTX_CLUSTER_NODE_ADD="cortx cluster add node --nodeid=<node> --username=<user> --password=<secret>"
 
 # hare commands
 HCTL_FETCH_FIDS="hctl fetch-fids --json"
@@ -91,9 +95,6 @@ USER_GROUP_HACLIENT="haclient"
 USER_GROUP_ROOT="root"
 USER_HA_INTERNAL="hauser"
 CLUSTER_USER="hacluster"
-
-CORTX_CLUSTER_PACKAGES=["pacemaker", "corosync", "pcs", "cortx-py-utils", "cortx-csm", "cortx-motr", "cortx-hare", "cortx-s3server", "cortx-sspl"]
-CIB_FILE="/var/log/seagate/cortx/ha/cortx-r2-cib.xml"
 
 NODE_DISCONNECTED="Disconnected"
 NODE_ONLINE="Online"
@@ -142,6 +143,8 @@ EXCLUSION = "exclusion"
 ALERT_FILTER_INDEX = "alert_filter_rules"
 ALERT_FILTER_RULES_FILE = "{}/alert_filter_rules.json".format(CONFIG_DIR)
 SOURCE_ALERT_FILTER_RULES_FILE = "{}/alert_filter_rules.json".format(SOURCE_CONFIG_PATH)
+SYSTEM_SERVICE_FILE = "{}/event_analyzer.service".format(SYSTEM_DIR)
+SOURCE_SERVICE_FILE = "{}/event_analyzer.service".format(SOURCE_CONFIG_PATH)
 
 class STATUSES(Enum):
     IN_PROGRESS = "InProgress"

@@ -40,7 +40,7 @@
             "class": "ha.cli.exec.clusterExecutor.ClusterStatusExecutor"
         },
         "add_node": {
-            "usage": "cortx cluster add node [--nodeid <node id> | --descfile <node description file>] [ --username <cluster_username> ] [ --password <cluster_password> ] [--json]",
+            "usage": "cortx cluster add node [--nodeid=<node id> | --descfile=<node description file>] [ --username=<cluster_username> ] [ --password=<cluster_password> ] [--json]",
             "class": "ha.cli.exec.clusterExecutor.ClusterNodeAddExecutor"
         }
     },
