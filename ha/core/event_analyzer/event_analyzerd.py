@@ -36,7 +36,7 @@ class Service:
 
     def run(self):
         Log.info("Running the daemon for HA event analyzer...")
-        while 1:
+        while True:
             #TODO remove this message and sleep once appropriate code is added here
             Log.info("Running the daemon for HA event analyzer")
             time.sleep(600)
