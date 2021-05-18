@@ -26,6 +26,7 @@ PCSD_LOG="/var/log/pcsd/pcsd.log"
 HA_CMDS_OUTPUT="{}/ha_cmds_output".format(RA_LOG_DIR)
 COROSYNC_LOG="/var/log/cluster"
 CONFIG_DIR="/etc/cortx/ha"
+SYSTEM_DIR="/etc/systemd/system"
 SUPPORT_BUNDLE_ERR="{}/support_bundle.err".format(RA_LOG_DIR)
 SUPPORT_BUNDLE_LOGS=[RA_LOG_DIR, PCSD_LOG, PACEMAKER_LOG, COROSYNC_LOG]
 CORTX_SUPPORT_BUNDLE_LOGS=[RA_LOG_DIR, PCSD_LOG, PACEMAKER_LOG, CONFIG_DIR, COROSYNC_LOG]
@@ -142,6 +143,8 @@ EXCLUSION = "exclusion"
 ALERT_FILTER_INDEX = "alert_filter_rules"
 ALERT_FILTER_RULES_FILE = "{}/alert_filter_rules.json".format(CONFIG_DIR)
 SOURCE_ALERT_FILTER_RULES_FILE = "{}/alert_filter_rules.json".format(SOURCE_CONFIG_PATH)
+SYSTEM_SERVICE_FILE = "{}/event_analyzer.service".format(SYSTEM_DIR)
+SOURCE_SERVICE_FILE = "{}/event_analyzer.service".format(SOURCE_CONFIG_PATH)
 
 class STATUSES(Enum):
     IN_PROGRESS = "InProgress"

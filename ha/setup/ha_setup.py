@@ -167,6 +167,8 @@ class PostInstallCmd(Cmd):
                             const.CM_CONTROLLER_SCHEMA)
             PostInstallCmd.copy_file(const.SOURCE_ALERT_FILTER_RULES_FILE, const.ALERT_FILTER_RULES_FILE)
             PostInstallCmd.copy_file(const.SOURCE_CLI_SCHEMA_FILE, const.CLI_SCHEMA_FILE)
+            PostInstallCmd.copy_file(const.SOURCE_SERVICE_FILE, const.SYSTEM_SERVICE_FILE)
+            self._execute.run_cmd("systemctl daemon-reload")
             Log.info(f"{self.name}: Copied HA configs file.")
             # Pre-requisite checks are done here.
             # Make sure that cortx necessary packages have been installed
@@ -248,9 +250,7 @@ class ConfigCmd(Cmd):
         self._update_env(node_name, node_type, const.HA_CLUSTER_SOFTWARE)
         self._fetch_fids()
         self._update_cluster_manager_config()
-
-        # Update cluster and resources
-        self._cluster_manager = CortxClusterManager()
+        self._cluster_manager = CortxClusterManager(default_log_enable=False)
         Log.info("Checking if cluster exists already")
         cluster_exists = self._confstore.key_exists(const.CLUSTER_CONFSTORE_NODES_KEY)
         Log.info(f"Cluster exists? {cluster_exists}")
@@ -302,7 +302,7 @@ class ConfigCmd(Cmd):
                     try:
                         remote_executor.execute(const.CORTX_CLUSTER_NODE_ADD.replace("<node>", node_name)
                                                                             .replace("<user>", cluster_user)
-                                                                            .replace("<secret>", "'" + cluster_secret + "'"))
+                                                                            .replace("<secret>", "'" + cluster_secret + "'"), secret=cluster_secret)
                         # TODO: Change following PCS command to CLI when available.
                         remote_executor.execute(const.PCS_NODE_STANDBY.replace("<node>", node_name))
                         # Add this node to the cluster nodes list in the store.
