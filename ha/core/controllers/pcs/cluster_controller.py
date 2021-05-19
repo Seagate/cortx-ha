@@ -134,6 +134,7 @@ class PcsClusterController(ClusterController, PcsController):
             for node_subgroup in node_group:
                 for node_id in node_subgroup:
                     res = json.loads(self._controllers[const.NODE_CONTROLLER].start(node_id))
+                    Log.info('Starting the node. {node_id}')
                     if res.get("status") == const.STATUSES.FAILED.value:
                         msg = res.get("msg")
                         Log.error(f"Node {node_id} : {msg}")
@@ -149,6 +150,25 @@ class PcsClusterController(ClusterController, PcsController):
             raise ClusterManagerError(f"Failed to start all nodes {failed_node_list}")
         else:
             status += "All node started successfully, resource start in progress."
+            Log.info('Cluster start is in progress. Now, checking the status of the node. standby or unstandby')
+
+            # Get the nodee list with its status
+            node_with_status_dict = self.nodes_status()
+            Log.info(f'########### node status: {node_with_status_dict}')
+
+            # If there is at least one value exists for standby, go ahead and
+            # get the node_id and unstandby that node
+            if NODE_STATUSES.STANDBY.value in node_with_status_dict.values():
+                for node_id, node_status in node_with_status_dict.items():
+                    if node_status == NODE_STATUSES.STANDBY.value:
+                        Log.info(f'Node: {node_id} is in standby mode')
+                        _output, _err, _rc = self._execute.run_cmd(const.PCS_NODE_UNSTANDBY.replace("<node>", node_id),
+                                                           check_error=False)
+                        if _rc != 0 or _err is not None:
+                            Log.error(f'Cluster started but failed to unstandby the node: {node_id}')
+                        else:
+                            Log.info(f'Unstandby for {node_id}: SUCCESS')
+
         return {"status": const.STATUSES.IN_PROGRESS.value, "msg": "Cluster start operation performed"}
 
     @controller_error_handler
