@@ -117,10 +117,15 @@ class Cmd:
         Check if file exist and delete existing file.
 
         Args:
-            file ([str]): File name to be deleted.
+            file ([str]): File or Dir name to be deleted.
         """
         if os.path.exists(file):
-            os.remove(file)
+            if os.path.isfile(file):
+                os.remove(file)
+            elif os.path.isdir(file):
+                shutil.rmtree(file)
+            else:
+                raise SetupError(f"{file} is not dir and file, can not be deleted.")
 
     @staticmethod
     def copy_file(source: str, dest: str):
@@ -160,6 +165,8 @@ class Cmd:
         fetch_from = Cmd.HA_CONFSTORE if fetch_from is None else fetch_from
         if fetch_from == Cmd.HA_CONFSTORE:
             cluster_nodes = self._confstore.get(const.CLUSTER_CONFSTORE_NODES_KEY)
+            if cluster_nodes is None:
+                return nodelist
             for key in cluster_nodes:
                 nodelist.append(key.split('/')[-1])
         elif fetch_from == Cmd.PROV_CONFSTORE:
@@ -678,11 +685,7 @@ class CleanupCmd(Cmd):
         """
         Remove file created by ha.
         """
-        CleanupCmd.remove_file(const.HA_CONFIG_FILE)
-        CleanupCmd.remove_file(const.CM_CONTROLLER_SCHEMA)
-        CleanupCmd.remove_file(const.FIDS_CONFIG_FILE)
-        CleanupCmd.remove_file(const.ALERT_FILTER_RULES_FILE)
-        CleanupCmd.remove_file(const.CLI_SCHEMA_FILE)
+        CleanupCmd.remove_file(const.CONFIG_DIR)
 
 class BackupCmd(Cmd):
     """
