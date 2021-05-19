@@ -6,6 +6,10 @@
     },
     "iem": {
         "filter_type":"inclusion",
-        "IEC": ["IS0080020001", "WS0080010001"]
+        "component": {
+            "ha": {
+                "module": ["Node", "Service"]
+            }
+        }
     }
 }
