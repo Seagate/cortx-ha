@@ -91,6 +91,19 @@ pre_disruptive_upgrade =  Analysis([ha_path + '/ha/setup/pre_disruptive_upgrade.
         cipher=block_cipher,
         noarchive=False)
 
+post_disruptive_upgrade =  Analysis([ha_path + '/ha/setup/post_disruptive_upgrade.py'],
+        pathex=[ha_path],
+        binaries=[],
+        datas=[],
+        hiddenimports=product_module_list,
+        hookspath=[],
+        runtime_hooks=[],
+        excludes=['numpy', 'matplotlib'],
+        win_no_prefer_redirects=False,
+        win_private_assemblies=False,
+        cipher=block_cipher,
+        noarchive=False)
+
 remote_execution =  Analysis([ha_path + '/ha/remote_execution/ssh_communicator.py', ha_path + '/ha/remote_execution/remote_executor.py'],
         pathex=[ha_path],
         binaries=[],
@@ -121,8 +134,9 @@ MERGE((cortxha, 'cortxha', 'cortxha'),
         (dynamic_fid_service_ra, 'dynamic_fid_service_ra', 'dynamic_fid_service_ra'),
         (ha_setup, 'ha_setup', 'ha_setup'),
         (pre_disruptive_upgrade, 'pre_disruptive_upgrade', 'pre_disruptive_upgrade'),
-        (remote_execution, 'remote_execution', 'remote_execution'),
         (event_analyzerd, 'event_analyzerd', 'event_analyzerd'),
+        (post_disruptive_upgrade, 'post_disruptive_upgrade', 'post_disruptive_upgrade'),
+        (remote_execution, 'remote_execution', 'remote_execution')
         )
 
 # cortxha
@@ -185,6 +199,21 @@ pre_disruptive_upgrade_exe = EXE(pre_disruptive_upgrade_pyz,
         upx=True,
         console=True )
 
+# post_disruptive_upgrade
+post_disruptive_upgrade_pyz = PYZ(post_disruptive_upgrade.pure, post_disruptive_upgrade.zipped_data,
+        cipher=block_cipher)
+
+post_disruptive_upgrade_exe = EXE(post_disruptive_upgrade_pyz,
+        post_disruptive_upgrade.scripts,
+        [],
+        exclude_binaries=True,
+        name='post_disruptive_upgrade',
+        debug=False,
+        bootloader_ignore_signals=False,
+        strip=False,
+        upx=True,
+        console=True )
+
 # remote_execution
 remote_execution_pyz = PYZ(remote_execution.pure, remote_execution.zipped_data,
         cipher=block_cipher)
@@ -239,6 +268,12 @@ coll = COLLECT(
         pre_disruptive_upgrade.binaries,
         pre_disruptive_upgrade.zipfiles,
         pre_disruptive_upgrade.datas,
+
+        # post_disruptive_upgrade
+        post_disruptive_upgrade_exe,
+        post_disruptive_upgrade.binaries,
+        post_disruptive_upgrade.zipfiles,
+        post_disruptive_upgrade.datas,
 
         # remote_execution
         remote_execution_exe,
