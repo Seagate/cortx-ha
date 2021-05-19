@@ -6,6 +6,6 @@
     },
     "iem": {
         "filter_type":"inclusion",
-        "resource_type":"iem"
+        "IEC": ["IS0080020001", "WS0080010001"]
     }
 }
