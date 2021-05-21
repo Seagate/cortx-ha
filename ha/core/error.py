@@ -27,13 +27,14 @@ HA_COMMAND_TERMINATION_ERROR    = 0x0003
 HA_TEST_FAILED                  = 0x0004
 HA_SUPPORT_BUNDLE_FAILED        = 0x0005
 HA_CLUSTER_MANAGER_FAILED       = 0x0006
-HA_PRE_UPGRADE_FAILED           = 0x0007
+HA_UPGRADE_FAILED               = 0x0007
 HA_SETUP_FAILED                 = 0x0008
 HA_REMOTE_EXECUTOR_FAILED       = 0x0009
 HA_INVALID_PERMISSION_ERROR     = 0x000a
 HA_SYSTEM_HEALTH_FAILED         = 0x000b
 HA_CLUSTER_CLI_FAILED           = 0x000c
 HA_EVENT_ANALYZER_ERROR         = 0x000d
+HA_CLUSTER_CONFIG_ERROR         = 0x000e
 
 class HAError(BaseError):
     def __init__(self, rc=1, desc=None, message_id=HA_BASIC_ERROR, message_args=None):
@@ -137,15 +138,15 @@ class HAClusterCLIError(HAError):
         _rc = 1
         super(HAClusterCLIError, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
 
-class PreRequisiteUpgradeError(HAError):
+class UpgradeError(HAError):
     """
     Disruptive upgrade prerequisites exceptions
     """
     def __init__(self, desc=None):
         _desc = "Failed to prepare to disruptive upgrade" if desc is None else desc
-        _message_id = HA_PRE_UPGRADE_FAILED
+        _message_id = HA_UPGRADE_FAILED
         _rc = 1
-        super(PreRequisiteUpgradeError, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
+        super(UpgradeError, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
 
 class SetupError(HAError):
     def __init__(self, desc=None):
