@@ -27,15 +27,6 @@ class NodeAlertMonitor():
     '''
     #TODO: Inherit this class from base AlertMonitor
 
-    # TODO: This can be initialized at base level
-    IEC_mapping_dict = {
-        'severity': {'shutdown': 'W', 'poweron': 'I'},
-        'source': 'S',
-        'component': '008',
-        'module': '001',
-        'event': {'failure': '0001', 'recover': '0002'}
-        }
-
     def __init__(self):
         ''''Init method'''
         self._execute = SimpleCommand()
