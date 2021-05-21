@@ -70,8 +70,8 @@ if __name__ == '__main__':
         }
     }
 
-    # Push hostname to node id mapping to consul
-    print(f"Adding hostname to node id mapping to consul for {host}:{node_id}")
+    # Push hostname to node id mapping to confstore
+    print(f"Adding hostname to node id mapping to confstore for {host}:{node_id}")
     confstore.set(f"{const.HOSTNAME_TO_NODEID_KEY}/{host}", node_id)
 
     try:
@@ -105,6 +105,6 @@ if __name__ == '__main__':
     except Exception as e:
         print(f"IEM parser negative test passed successfully, caught err: {e}")
 
-    # Delete hostname to node id mapping from consul
-    print(f"Deleting hostname to node id mapping from consul for {host}")
+    # Delete hostname to node id mapping from confstore
+    print(f"Deleting hostname to node id mapping from confstore for {host}")
     confstore.delete(f"{const.HOSTNAME_TO_NODEID_KEY}/{host}")
