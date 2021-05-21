@@ -17,13 +17,22 @@
 
 import abc
 import json
+import re
 from ha.core.error import EventAnalyzerError
 from ha.core.system_health.model.health_event import HealthEvent
+from ha.core.config.config_manager import ConfigManager
+from ha import const
 
 class Parser(metaclass=abc.ABCMeta):
     """
     Subscriber for event analyzer to pass msg.
     """
+
+    def __init__(self):
+        """
+        Init method.
+        """
+        self._confstore = ConfigManager._get_confstore()
 
     @abc.abstractmethod
     def parse_event(self, msg: str) -> HealthEvent:
@@ -83,26 +92,31 @@ class IEMParser(Parser):
             msg (str): Msg
         """
         try:
-            alert = json.loads(msg)
+            iem_alert = json.loads(msg)
+
+            # Parse hostname and convert to node id
+            iem_description = iem_alert['sensor_response_type']['info']['description']
+            hostname = re.split("=", re.split(";", re.findall("host=.+", iem_description)[0])[0])[1]
+            key_val = self._confstore.get(f"{const.HOSTNAME_TO_NODEID_KEY}/{hostname}")
+            _, node_id = key_val.popitem()
 
             event = {
-                "event_id" : alert['sensor_response_type']['alert_id'],
-                "event_type" : alert['sensor_response_type']['alert_type'],
-                "severity" : alert['sensor_response_type']['severity'],
-                "site_id" : alert['sensor_response_type']['info']['site_id'],
-                "rack_id" : alert['sensor_response_type']['info']['rack_id'],
-                "cluster_id" : alert['sensor_response_type']['info']['cluster_id'],
+                "event_id" : iem_alert['sensor_response_type']['alert_id'],
+                "event_type" : iem_alert['sensor_response_type']['alert_type'],
+                "severity" : iem_alert['sensor_response_type']['severity'],
+                "site_id" : iem_alert['sensor_response_type']['info']['site_id'],
+                "rack_id" : iem_alert['sensor_response_type']['info']['rack_id'],
+                "cluster_id" : iem_alert['sensor_response_type']['info']['cluster_id'],
                 "storageset_id" : "TBD",
-                "node_id" : alert['sensor_response_type']['info']['node_id'],
-                "host_id" : alert['sensor_response_type']['host_id'],
-                "resource_type" : alert['sensor_response_type']['specific_info']['module'],
-                "timestamp" : alert['sensor_response_type']['info']['event_time'],
-                "resource_id" : "TBD",
-                "specific_info" : alert['sensor_response_type']['specific_info']
+                "node_id" : iem_alert['sensor_response_type']['info']['node_id'],
+                "host_id" : iem_alert['sensor_response_type']['host_id'],
+                "resource_type" : iem_alert['sensor_response_type']['specific_info']['module'].lower(),
+                "timestamp" : iem_alert['sensor_response_type']['info']['event_time'],
+                "resource_id" : node_id,
+                "specific_info" : iem_alert['sensor_response_type']['specific_info']
             }
 
             health_event = HealthEvent.dict_to_object(event)
-
             return health_event
 
         except Exception as e:

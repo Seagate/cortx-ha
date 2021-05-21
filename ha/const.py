@@ -49,8 +49,14 @@ CIB_FILE="{}/cortx-r2-cib.xml".format(RA_LOG_DIR)
 SOURCE_CLI_SCHEMA_FILE = "{}/cli_schema.json".format(SOURCE_CONFIG_PATH)
 CLI_SCHEMA_FILE = "{}/cli_schema.json".format(CONFIG_DIR)
 
+# IEM DESCRIPTION string: To be removed
+IEM_DESCRIPTION="WS0080010001,Node, The cluster has lost $host server. System is running in degraded mode. For more information refer the Troubleshooting guide. Extra Info: host=$host; status=$status;"
+
 # Mini-provisioning
 CLUSTER_CONFSTORE_NODES_KEY="nodes"
+
+# Node name mapping keys
+HOSTNAME_TO_NODEID_KEY="hostname_to_nodeid"
 
 # Cortx commands
 CORTX_CLUSTER_NODE_ADD="cortx cluster add node --nodeid=<node> --username=<user> --password=<secret>"
