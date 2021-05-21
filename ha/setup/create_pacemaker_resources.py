@@ -45,6 +45,7 @@ management
     kibana
     csm-agent
     csm-web
+event_analyzer
 """
 
 process = SimpleCommand()
@@ -201,6 +202,16 @@ def kibana(cib_xml, push=False, **kwargs):
     if push:
         cib_push(cib_xml)
 
+def event_analyzer(cib_xml, push=False, **kwargs):
+    """Create event analyzer resource."""
+    process.run_cmd(f"pcs -f {cib_xml} resource create event_analyzer systemd:event_analyzer \
+        op start timeout=60s interval=0s \
+        op monitor timeout=30s interval=30s \
+        op stop timeout=60s interval=0s --group ha_group")
+    if push:
+        cib_push(cib_xml)
+
+
 def uds(cib_xml, push=False, **kwargs):
     """Create uds resource."""
     with_uds = kwargs["uds"] if "uds" in kwargs else False
@@ -240,7 +251,7 @@ io_helper_aa = [s3bc]
 io_helper_ap = [free_space_monitor, s3bp]
 monitor_config = [sspl]
 management_config = [mgmt_vip, kibana, csm, uds]
-# TODO: ha_group
+ha_group_config = [event_analyzer]
 
 def io_stack(cib_xml, push=False, **kwargs):
     """Create IO stack related resources."""
@@ -280,6 +291,16 @@ def management_group(cib_xml, push=False, **kwargs):
     if push:
         cib_push(cib_xml)
 
+def ha_group(cib_xml, push=False, **kwargs):
+    """Configure management group"""
+    Log.info("HA Rules: ******* ha_group *********")
+    for create_resource in ha_group_config:
+        Log.info(f"HA Rules: Configure {str(create_resource)}")
+        create_resource(cib_xml, push, **kwargs)
+    if push:
+        cib_push(cib_xml)
+
+
 def create_all_resources(cib_xml=const.CIB_FILE, push=True, **kwargs):
     """Populate the cluster with all Cortx resources.
 
@@ -302,6 +323,8 @@ def create_all_resources(cib_xml=const.CIB_FILE, push=True, **kwargs):
         monitor_stack(cib_xml, False, **kwargs)
         # Configure of management group
         management_group(cib_xml, False, **kwargs)
+        # Configure HA management group
+        ha_group(cib_xml, False, **kwargs)
         # Configure constraint
         Log.info("HA Rules: Start configuring HA Rules.")
         config_constraint(cib_xml, False, **kwargs)

@@ -26,6 +26,7 @@ PCSD_LOG="/var/log/pcsd/pcsd.log"
 HA_CMDS_OUTPUT="{}/ha_cmds_output".format(RA_LOG_DIR)
 COROSYNC_LOG="/var/log/cluster"
 CONFIG_DIR="/etc/cortx/ha"
+SYSTEM_DIR="/etc/systemd/system"
 SUPPORT_BUNDLE_ERR="{}/support_bundle.err".format(RA_LOG_DIR)
 SUPPORT_BUNDLE_LOGS=[RA_LOG_DIR, PCSD_LOG, PACEMAKER_LOG, COROSYNC_LOG]
 CORTX_SUPPORT_BUNDLE_LOGS=[RA_LOG_DIR, PCSD_LOG, PACEMAKER_LOG, CONFIG_DIR, COROSYNC_LOG]
@@ -43,11 +44,13 @@ HA_GLOBAL_INDEX="ha_conf"
 SOURCE_CONFIG_FILE="{}/ha.conf".format(SOURCE_CONFIG_PATH)
 BACKUP_DEST_DIR="/opt/seagate/cortx/ha_backup"
 BACKUP_DEST_DIR_CONF = "{}/conf".format(BACKUP_DEST_DIR)
+BACKUP_CONFIG_FILE="{}/ha.conf".format(BACKUP_DEST_DIR_CONF)
 BACKUP_DEST_DIR_CONSUL = "{}/Consul".format(BACKUP_DEST_DIR)
 CORTX_CLUSTER_PACKAGES=["pacemaker", "corosync", "pcs", "cortx-py-utils", "cortx-csm", "cortx-motr", "cortx-hare", "cortx-s3server", "cortx-sspl"]
 CIB_FILE="{}/cortx-r2-cib.xml".format(RA_LOG_DIR)
 SOURCE_CLI_SCHEMA_FILE = "{}/cli_schema.json".format(SOURCE_CONFIG_PATH)
 CLI_SCHEMA_FILE = "{}/cli_schema.json".format(CONFIG_DIR)
+COMPONENTS_CONFIG_DIR = "{}/components".format(CONFIG_DIR)
 
 # IEM DESCRIPTION string: To be removed
 IEM_DESCRIPTION="WS0080010001,Node, The cluster has lost $host server. System is running in degraded mode. For more information refer the Troubleshooting guide. Extra Info: host=$host; status=$status;"
@@ -110,13 +113,13 @@ HARE_FID_MAPPING_FILE="/var/lib/hare/consul-server-conf/consul-server-conf.json"
 PCS_CLUSTER_START="pcs cluster start --all"
 PCS_CLUSTER_START_NODE="pcs cluster start"
 PCS_NODE_START="pcs cluster start <node>"
-PCS_CLUSTER_ENABLE="pcs cluster enable <node>"
+PCS_CLUSTER_ENABLE="pcs cluster enable"
 PCS_CLUSTER_STATUS="pcs cluster status"
 PCS_CLUSTER_UNSTANDBY="pcs cluster unstandby --all"
 PCS_SETUP_CLUSTER="pcs cluster setup --start --name <cluster_name> <node>"
 PCS_CLUSTER_NODE_AUTH="pcs cluster auth <node> -u <username> -p <password>"
 PCS_CLUSTER_NODE_ADD="pcs cluster node add <node> --start --enable"
-PCS_CLUSTER_NODE_REMOVE="pcs cluster node remove <node>"
+PCS_CLUSTER_NODE_REMOVE="pcs cluster node remove <node> --force"
 PCS_CLUSTER_PCSD_STATUS="pcs status pcsd"
 PCS_STATUS_NODES="pcs status nodes"
 PCS_NODE_UNSTANDBY="pcs node unstandby <node>"
@@ -128,7 +131,10 @@ PCS_STOP_CLUSTER="pcs cluster stop --request-timeout=<seconds> --all"
 PCS_STATUS = "pcs status"
 PCS_CLUSTER_DESTROY="pcs cluster destroy"
 PCS_NODE_STANDBY="pcs node standby <node>"
+PCS_CLUSTER_STANDBY="pcs node standby --all"
 PCS_STONITH_DISABLE="pcs property set stonith-enabled=False"
+LIST_PCS_RESOURCES = '/usr/sbin/crm_resource --list-raw'
+CHECK_PCS_STANDBY_MODE = '/usr/sbin/crm_standby --query | awk \'{print $3}\''
 
 # Cluster manager
 CM_CONTROLLER_INDEX="cluster_controller_interfaces"
@@ -140,6 +146,7 @@ NODE_CONTROLLER = "node_controller"
 CLUSTER_RETRY_COUNT = 6
 BASE_WAIT_TIME = 5
 NODE_STOP_TIMEOUT = 300 # 300 sec to stop single node
+CLUSTER_STANDBY_UNSTANDBY_TIMEOUT = 600 # 600 sec to stop single node
 
 # Event Analyzer
 INCLUSION = "inclusion"
@@ -147,6 +154,8 @@ EXCLUSION = "exclusion"
 ALERT_FILTER_INDEX = "alert_filter_rules"
 ALERT_FILTER_RULES_FILE = "{}/alert_filter_rules.json".format(CONFIG_DIR)
 SOURCE_ALERT_FILTER_RULES_FILE = "{}/alert_filter_rules.json".format(SOURCE_CONFIG_PATH)
+SYSTEM_SERVICE_FILE = "{}/event_analyzer.service".format(SYSTEM_DIR)
+SOURCE_SERVICE_FILE = "{}/event_analyzer.service".format(SOURCE_CONFIG_PATH)
 
 class STATUSES(Enum):
     IN_PROGRESS = "InProgress"

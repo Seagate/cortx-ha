@@ -72,9 +72,9 @@ class PcsClusterController(ClusterController, PcsController):
         Auth node to add
         """
         try:
-            self._execute.run_cmd(const.PCS_CLUSTER_NODE_AUTH.replace("<node>", node_id)
-                    .replace("<username>", cluster_user).replace("<password>", cluster_password),
-                    is_secret=True, error=f"Auth to {node_id} failed.")
+            auth_cmd = const.PCS_CLUSTER_NODE_AUTH.replace("<node>", node_id
+                ).replace("<username>", cluster_user).replace("<password>", cluster_password)
+            self._execute.run_cmd(auth_cmd, secret=cluster_password)
             Log.info(f"Node {node_id} authenticated with {cluster_user} Successfully.")
         except Exception as e:
             Log.error(f"Failed to authenticate node : {node_id} with reason : {e}")
@@ -96,6 +96,22 @@ class PcsClusterController(ClusterController, PcsController):
                 node_group: list = [ node_list[i:i + const.PCS_NODE_GROUP_SIZE]
                         for i in range(0, len(node_list), const.PCS_NODE_GROUP_SIZE)]
         return node_group
+
+    @controller_error_handler
+    def cluster_exists(self) -> dict:
+        """
+        Check if cluster exists.
+
+        Returns:
+            dict: Return dictionary. {"status": "", "msg":""}
+                status: Succeeded
+        """
+        try:
+            result: bool = True if self._is_pcs_cluster_running() else False
+        except Exception as e:
+            Log.error(f"Cluster status is failed. error {e}")
+            result = False
+        return {"status": const.STATUSES.SUCCEEDED.value, "msg": result}
 
     @controller_error_handler
     def start(self) -> dict:
@@ -315,11 +331,10 @@ class PcsClusterController(ClusterController, PcsController):
             if not self._is_pcs_cluster_running():
                 self._auth_node(nodeid, user, secret)
                 self._execute.run_cmd(const.PCS_SETUP_CLUSTER.replace("<cluster_name>", name)
-                                        .replace("<node>", nodeid), is_secret=True,
-                                        error="Cluster setup failed.")
+                                        .replace("<node>", nodeid))
                 Log.info("Pacmaker cluster created, waiting to start node.")
                 self._execute.run_cmd(const.PCS_CLUSTER_START_NODE)
-                self._execute.run_cmd(const.PCS_CLUSTER_ENABLE.replace("<node>", nodeid))
+                self._execute.run_cmd(const.PCS_CLUSTER_ENABLE)
                 Log.info("Node started and enabled successfully.")
                 # TODO: Divide class into vm, hw when stonith is needed.
                 self._execute.run_cmd(const.PCS_STONITH_DISABLE)
