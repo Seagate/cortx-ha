@@ -150,22 +150,6 @@ class PcsClusterController(ClusterController, PcsController):
             raise ClusterManagerError(f"Failed to start all nodes {failed_node_list}")
         else:
             status += "All node started successfully, resource start in progress."
-            Log.info('Cluster start is in progress. Now, checking the status of the node. standby or unstandby')
-
-            # Get the nodee list with its status
-            node_with_status_dict = self.nodes_status()
-            Log.info(f'########### node status: {node_with_status_dict}')
-
-            # If there is at least one value exists for standby, go ahead and
-            # perform unstandby for all the nodes
-            if NODE_STATUSES.STANDBY.value in node_with_status_dict.values():
-                # Perform the unstandby for all the nodes
-                _output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_UNSTANDBY, check_error=False)
-                if _rc != 0 or _err is not None:
-                    Log.error(f'Cluster started but failed to unstandby the node')
-                else:
-                    Log.info(f'Unstandby SUCCESS')
-
         return {"status": const.STATUSES.IN_PROGRESS.value, "msg": "Cluster start operation performed"}
 
     @controller_error_handler
