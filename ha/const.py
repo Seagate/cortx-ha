@@ -110,6 +110,8 @@ NODE_ONLINE="Online"
 # Systemd wrapper resource agent
 HARE_FID_MAPPING_FILE="/var/lib/hare/consul-server-conf/consul-server-conf.json"
 
+# Send IEC to syslog
+IEC="logger -i -p local3.err"
 # PCS Commands
 PCS_CLUSTER_START="pcs cluster start --all"
 PCS_CLUSTER_START_NODE="pcs cluster start"
@@ -166,6 +168,14 @@ MODULE = "module"
 RESOURCE_TYPE = "resource_type"
 IEM_DESCRIPTION="WS0080010001, Node, The cluster has lost $host server. System is running in degraded mode. " \
                 "For more information refer the Troubleshooting guide. Extra Info: host=$host; status=$status;"
+
+IEC_MAPPING_DICT = {
+        'severity': {'shutdown': 'W', 'poweron': 'I'},
+        'source': 'S',
+        'component': '008',
+        'module': '001',
+        'event': {'failure': '0001', 'recover': '0002'}
+        }
 
 class STATUSES(Enum):
     IN_PROGRESS = "InProgress"

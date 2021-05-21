@@ -120,6 +120,7 @@ remote_execution =  Analysis([ha_path + '/ha/remote_execution/ssh_communicator.p
         noarchive=False)
 
 event_analyzerd =  Analysis([ha_path + '/ha/core/event_analyzer/event_analyzerd.py'],
+node_alert_monitor =  Analysis([ha_path + '/ha/alert_monitor/node_alert_monitor.py'],
         pathex=[ha_path],
         binaries=[],
         datas=[],
@@ -139,6 +140,7 @@ MERGE((cortxha, 'cortxha', 'cortxha'),
         (event_analyzerd, 'event_analyzerd', 'event_analyzerd'),
         (post_disruptive_upgrade, 'post_disruptive_upgrade', 'post_disruptive_upgrade'),
         (remote_execution, 'remote_execution', 'remote_execution')
+        (node_alert_monitor, 'node_alert_monitor', 'node_alert_monitor'),
         )
 
 # cortxha
@@ -240,6 +242,14 @@ event_analyzerd_exe = EXE(event_analyzerd_pyz,
         [],
         exclude_binaries=True,
         name='event_analyzerd',
+node_alert_monitor_pyz = PYZ(node_alert_monitor.pure, node_alert_monitor.zipped_data,
+        cipher=block_cipher)
+
+node_alert_monitor_exe = EXE(remote_execution_pyz,
+        node_alert_monitor.scripts,
+        [],
+        exclude_binaries=True,
+        name='node_alert_monitor',
         debug=False,
         bootloader_ignore_signals=False,
         strip=False,
@@ -288,6 +298,12 @@ coll = COLLECT(
         event_analyzerd.binaries,
         event_analyzerd.zipfiles,
         event_analyzerd.datas,
+
+        # node_alert_monitor
+        node_alert_monitor_exe,
+        node_alert_monitor.binaries,
+        node_alert_monitor.zipfiles,
+        node_alert_monitor.datas,
 
         strip=False,
         upx=True,
