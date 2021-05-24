@@ -26,6 +26,13 @@ from ha.core.error import EventAnalyzerError
 class Filter(metaclass=abc.ABCMeta):
     """ Base class to filter alert """
 
+    def __init__(self):
+        """
+        Load filter rules.
+        """
+        #Loads alert flter rules in the configuration
+        ConfigManager.load_filter_rules()
+
     @abc.abstractmethod
     def filter_event(self, msg: str) -> bool:
         """
@@ -39,22 +46,10 @@ class Filter(metaclass=abc.ABCMeta):
 class AlertFilter(Filter):
     """ Filter unnecessary alert. """
 
-    def filter_event(self, msg: str) -> bool:
-        """
-        Filter event.
-
-        Args:
-            msg (str): Msg
-        """
-        return True
-
     def __init__(self):
         """
         Init method
         """
-        #Loads alert flter rules in the configuration
-        ConfigManager.load_filter_rules()
-
         #Get filter type and resource types list from the alert rule file
         self.filter_type = Conf.get(const.ALERT_FILTER_INDEX, "alert.filter_type")
         self.resource_types_list = Conf.get(const.ALERT_FILTER_INDEX, "alert.resource_type")
@@ -90,3 +85,12 @@ class AlertFilter(Filter):
         except Exception as e:
             raise EventAnalyzerError(f"Failed to filter event. Message: {msg}, Error: {e}")
 
+class IEMFilter(Filter):
+
+    def filter_event(self, msg: str) -> bool:
+        """
+        Filter event.
+        Args:
+            msg (str): Msg
+        """
+        return False

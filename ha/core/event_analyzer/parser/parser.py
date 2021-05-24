@@ -26,7 +26,7 @@ class Parser(metaclass=abc.ABCMeta):
     """
 
     @abc.abstractmethod
-    def parse_event(self, msg: str) -> Event:
+    def parse_event(self, msg: str) -> HealthEvent:
         """
         Parse event.
 
@@ -71,3 +71,11 @@ class AlertParser(Parser):
 
         except Exception as e:
             raise EventAnalyzerError(f"Failed to parse alert. Message: {msg}, Error: {e}")
+
+class IEMParser(Parser):
+    """
+    Subscriber for event analyzer to pass msg.
+    """
+
+    def parse_event(self, msg: str) -> HealthEvent:
+        return None

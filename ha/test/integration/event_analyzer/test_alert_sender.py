@@ -18,60 +18,25 @@
 
 import os
 import sys
+import json
 import pathlib
 from cortx.utils.message_bus import MessageBusAdmin
 from cortx.utils.message_bus.error import MessageBusError
 from cortx.utils.message_bus import MessageProducer
 from cortx.utils.conf_store import Conf, ConfStore
 
-MESSAGE_TYPE=["Alerts"]
-
 if __name__ == '__main__':
-    resource_type = "enclosure:fru:fan"
-    TestMsg = {
-        "sspl_ll_msg_header": {
-        "msg_version": "1.0.0",
-        "schema_version": "1.0.0",
-        "sspl_version": "1.0.0"
-        },
-        "sensor_response_type": {
-            "info": {
-                "event_time": "1574075909",
-                "resource_id": "Fan Module 4",
-                "site_id": 1,
-                "node_id": 1,
-                "cluster_id": 1,
-                "rack_id": 1,
-                "resource_type": resource_type,
-                "description": "The fan module is not installed."
-            },
-            "alert_type": "missing",
-            "severity": "critical",
-            "specific_info": {
-                "status": "Not Installed",
-                "name": "Fan Module 4",
-                "enclosure-id": 0,
-                "durable-id": "fan_module_0.4",
-                "fans": [],
-                "health-reason": "The fan module is not installed.",
-                "health": "Fault",
-                "location": "Enclosure 0 - Right",
-                "position": "Indexed",
-                "health-recommendation": "Install the missing fan module."
-            },
-            "alert_id": "15740759091a4e14bca51d46908ac3e9102605d560",
-            "host_id": "s3node-host-1"
-        }
-    }
     try:
         admin = MessageBusAdmin(admin_id="admin")
-        admin.register_message_type(message_types=MESSAGE_TYPE, partitions=1)
+        admin.register_message_type(message_types=["alerts"], partitions=1)
     except MessageBusError as e:
         print("\n\n\n\n" + e.desc + "\n\n\n\n")
         if "ALREADY_EXISTS" not in e.desc:
             raise e
 
-    producer = MessageProducer(producer_id="sspl-sensor", message_type="Alerts")
-    message_list = ["This is test message 1",   "This is test message 2"]
-    producer.send(message_list)
+    #message_list = [json.dumps({"username": "sspl-ll", "description": "Seagate Storage Platform Library - Sensor Response", "title": "SSPL Sensor Response", "expires": 3600, "signature": "None", "time": "1621581798", "message": {"sspl_ll_msg_header": {"schema_version": "1.0.0", "sspl_version": "2.0.0", "msg_version": "1.0.0"}, "sensor_response_type": {"info": {"event_time": "1621581795", "resource_id": "iem", "resource_type": "iem", "description": "The cluster has lost ssc-vm-4455.colo.seagate.com server. System is running in degraded mode. For more information refer the Troubleshooting guide. Extra Info: host=ssc-vm-4455.colo.seagate.com; status=standby;", "impact": "NA", "recommendation": "NA", "site_id": "1", "node_id": "0", "rack_id": "1", "cluster_id": "e7106e74-828b-4b46-b319-d3594f39fb1f"}, "alert_type": "get", "severity": "warning", "specific_info": {"source": "Software", "component": "ha", "module": "NodeFailure", "event": "The cluster has lost one server. System is running in degraded mode.", "IEC": "WS0080010001"}, "alert_id": "16215817982ac7b67a94584377a060ffaca0b56cf8", "host_id": "srvnode-1.mgmt.public"}}})]
+    producer = MessageProducer(producer_id="sspl-sensor", message_type="alerts", method="sync")
+    for i in range(0, 30):
+        message_list = [json.dumps({"username": f"sspl-ll{str(i)}"})]
+        producer.send(message_list)
     print("Message send")

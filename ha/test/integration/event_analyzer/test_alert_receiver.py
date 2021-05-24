@@ -26,29 +26,23 @@ from cortx.utils.conf_store import Conf, ConfStore
 import json
 import time
 
-MESSAGE_TYPE=["Alerts"]
 
 if __name__ == '__main__':
-    try:
-        admin = MessageBusAdmin(admin_id="admin")
-    except MessageBusError as e:
-        print("\n\n\n\n" + e.desc + "\n\n\n\n")
-        if "ALREADY_EXISTS" not in e.desc:
-            raise e
-
-    consumer = MessageConsumer(consumer_id="1", consumer_group='ha_event_analyzer', message_types=MESSAGE_TYPE, auto_ack=True, offset='latest')
+    consumer = MessageConsumer(consumer_id="1",
+                                consumer_group='ha_event_analyzer',
+                                message_types=["alerts"],
+                                auto_ack=False, offset='latest')
 
     while True:
         try:
-            message = consumer.receive(timeout=0)
-            # consumer receives the messages
-            print(message)
-            # To convert the message into required format
-            #print(json.loads(message.decode('utf-8')))
             print("In receiver")
+            message = consumer.receive(timeout=0)
+            msg = json.loads(message.decode('utf-8'))
+            print(msg)
+            #if msg.get("username") == "sspl-ll20":
+            #    raise Exception("Failed")
             consumer.ack()
-            time.sleep(3)
         except Exception as e:
-            pass
+            sys.exit(0)
             #print(e)
             #sys.exit(0)

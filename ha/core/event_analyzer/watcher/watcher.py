@@ -20,6 +20,7 @@ import json
 from threading import Thread
 
 from cortx.utils.message_bus import MessageConsumer
+from cortx.utils.log import Log
 
 from ha.core.error import EventAnalyzer
 from ha.core.event_analyzer.filter.filter import Filter
@@ -29,8 +30,8 @@ from ha.core.event_analyzer.subscriber import Subscriber
 class Watcher(Thread):
     """ Watch message bus to check in coming event. """
 
-    def __init__(self, id: int, message_type: str, group: str,
-                event_filter: Filter, parser: Parser, subscriber: Subscriber):
+    def __init__(self, consumer_id: int, message_type: str, consumer_group: str,
+                event_filter: Filter, event_parser: Parser, subscriber: Subscriber):
         """
         Initalize Watcher class to monitor message bus event.
 
@@ -42,12 +43,13 @@ class Watcher(Thread):
             parser (Parser): Parse event to HealthEvent
             subscriber (Subscriber): Pass event to Subscriber.
         """
-        super(Watcher, self).__init__(name=f"{message_type}-{id}", daemon=True)
-        self.consumer_id = id
+        super(Watcher, self).__init__(name=f"{message_type}-{str(consumer_id)}", daemon=True)
+        Log.info(f"Initalizing watcher {message_type}-{str(consumer_id)}")
+        self.consumer_id = consumer_id
         self.message_type = message_type
-        self.consumer_group = group
+        self.consumer_group = consumer_group
         self.filter = event_filter
-        self.parser = parser
+        self.parser = event_parser
         self.subscriber = subscriber
         self._validate()
         self.consumer = self._get_connection()
@@ -59,7 +61,7 @@ class Watcher(Thread):
         Raises:
             EventAnalyzer: event analyser exception.
         """
-        if not issubclass(self.subscriber, Subscriber):
+        if not isinstance(self.subscriber, Subscriber):
             raise EventAnalyzer(f"Invaid subscriber {self.subscriber}")
 
     def _get_connection(self) -> MessageConsumer:
@@ -70,8 +72,9 @@ class Watcher(Thread):
             MessageConsumer: Return instance of MessageConsumer.
         """
         return MessageConsumer(consumer_id=str(self.consumer_id),
-            consumer_group=self.consumer_group,
-            message_types=[self.message_type], auto_ack=True, offset='latest')
+                                consumer_group=self.consumer_group,
+                                message_types=[self.message_type],
+                                auto_ack=False, offset='latest')
 
     def run(self):
         """
@@ -79,11 +82,15 @@ class Watcher(Thread):
         """
         while True:
             try:
-                message = json.loads(self.consumer.receive(timeout=0).decode('utf-8'))
-                if filter.filter_event(message):
-                    event = self.parser.parse_event(message)
+                message = self.consumer.receive(timeout=0)
+                msg_schema = json.loads(message.decode('utf-8'))
+                print(msg_schema)
+                Log.debug(f"Captured message: {msg_schema}")
+                if self.filter.filter_event(msg_schema):
+                    Log.debug(f"Found usefull alert: {msg_schema}")
+                    event = self.parser.parse_event(msg_schema)
                     self.subscriber.process_event(event)
                 self.consumer.ack()
-                time.sleep(3)
             except Exception as e:
-                print(e)
+                #print(e)
+                self.consumer.ack()
