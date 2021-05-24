@@ -17,11 +17,18 @@
 
 import abc
 import json
+from enum import Enum
 from cortx.utils.conf_store.conf_store import Conf
 from cortx.utils.log import Log
 from ha import const
 from ha.core.config.config_manager import ConfigManager
 from ha.core.error import EventAnalyzerError
+
+
+class MESSAGETYPE(Enum):
+    ALERT = "ALERT"
+    IEM = "IEM"
+
 
 class Filter(metaclass=abc.ABCMeta):
     """ Base class to filter alert """
@@ -41,6 +48,18 @@ class Filter(metaclass=abc.ABCMeta):
         """
         pass
 
+    @staticmethod
+    def is_iem_msg(msg: dict) -> bool:
+        """
+        Check if the msg type is iem or alert
+        """
+        msg_type = msg.get("sensor_response_type")
+        resource_type = msg_type["info"]["resource_type"]
+        if resource_type == MESSAGETYPE.IEM.value:
+            return True
+        return False
+
+
 class AlertFilter(Filter):
     """ Filter unnecessary alert. """
 
@@ -48,10 +67,9 @@ class AlertFilter(Filter):
         """
         Init method
         """
-        #Loads alert flter rules in the configuration
-        ConfigManager.load_filter_rules()
+        super().__init__()
 
-        #Get filter type and resource types list from the alert rule file
+        # Get filter type and resource types list from the alert rule file
         self.filter_type = Conf.get(const.ALERT_FILTER_INDEX, "alert.filter_type")
         self.resource_types_list = Conf.get(const.ALERT_FILTER_INDEX, "alert.resource_type")
 
@@ -86,3 +104,52 @@ class AlertFilter(Filter):
         except Exception as e:
             raise EventAnalyzerError(f"Failed to filter event. Message: {msg}, Error: {e}")
 
+
+class IEMFilter(Filter):
+    """ Filter IEM consumed by watcher """
+
+    def __init__(self):
+        """
+        Init method
+        """
+        super().__init__()
+        # Loads IEM filter rules in the configuration
+        ConfigManager.load_filter_rules()
+
+        # Get filter type and resource types list from the IEM rule file
+        self.filter_type = Conf.get(const.ALERT_FILTER_INDEX, "iem.filter_type")
+        self.module_types_list = Conf.get(const.ALERT_FILTER_INDEX, "iem.component.ha.module")
+
+    def filter_event(self, msg: str) -> bool:
+        """
+        Filter event.
+        Args:
+            msg (str): Msg
+        """
+        try:
+            iem_required = False
+            message = json.loads(msg)
+
+            msg_type = message['message']['actuator_response_type']
+            if msg_type is not None:
+                return iem_required
+
+            if not Filter.is_iem_msg(message):
+                return iem_required
+
+            msg_type = message['message']['sensor_response_type']
+            _module_type = msg_type['specific_info']['module']
+
+            if self.filter_type == const.INCLUSION:
+                if _module_type in self.module_types_list:
+                    iem_required = True
+            if self.filter_type == const.EXCLUSION:
+                if _module_type not in self.module_types_list:
+                    iem_required = True
+            else:
+                Log.error("Invalid IEM filter type in the event IEM filter rules")
+
+            return iem_required
+
+        except Exception as e:
+            raise EventAnalyzerError(f"Failed to filter IEM event. Message: {msg}, Error: {e}")
