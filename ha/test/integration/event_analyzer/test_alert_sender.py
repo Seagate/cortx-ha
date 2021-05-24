@@ -24,6 +24,7 @@ from cortx.utils.message_bus import MessageBusAdmin
 from cortx.utils.message_bus.error import MessageBusError
 from cortx.utils.message_bus import MessageProducer
 from cortx.utils.conf_store import Conf, ConfStore
+import time
 
 if __name__ == '__main__':
     try:
@@ -36,7 +37,9 @@ if __name__ == '__main__':
 
     #message_list = [json.dumps({"username": "sspl-ll", "description": "Seagate Storage Platform Library - Sensor Response", "title": "SSPL Sensor Response", "expires": 3600, "signature": "None", "time": "1621581798", "message": {"sspl_ll_msg_header": {"schema_version": "1.0.0", "sspl_version": "2.0.0", "msg_version": "1.0.0"}, "sensor_response_type": {"info": {"event_time": "1621581795", "resource_id": "iem", "resource_type": "iem", "description": "The cluster has lost ssc-vm-4455.colo.seagate.com server. System is running in degraded mode. For more information refer the Troubleshooting guide. Extra Info: host=ssc-vm-4455.colo.seagate.com; status=standby;", "impact": "NA", "recommendation": "NA", "site_id": "1", "node_id": "0", "rack_id": "1", "cluster_id": "e7106e74-828b-4b46-b319-d3594f39fb1f"}, "alert_type": "get", "severity": "warning", "specific_info": {"source": "Software", "component": "ha", "module": "NodeFailure", "event": "The cluster has lost one server. System is running in degraded mode.", "IEC": "WS0080010001"}, "alert_id": "16215817982ac7b67a94584377a060ffaca0b56cf8", "host_id": "srvnode-1.mgmt.public"}}})]
     producer = MessageProducer(producer_id="sspl-sensor", message_type="alerts", method="sync")
-    for i in range(0, 30):
+    for i in range(0, 1000):
+        print(f"count {str(i)}")
         message_list = [json.dumps({"username": f"sspl-ll{str(i)}"})]
         producer.send(message_list)
+        time.sleep(5)
     print("Message send")

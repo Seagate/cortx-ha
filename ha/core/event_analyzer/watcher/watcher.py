@@ -17,6 +17,7 @@
 
 import time
 import json
+import traceback
 from threading import Thread
 
 from cortx.utils.message_bus import MessageConsumer
@@ -84,13 +85,13 @@ class Watcher(Thread):
             try:
                 message = self.consumer.receive(timeout=0)
                 msg_schema = json.loads(message.decode('utf-8'))
-                print(msg_schema)
-                Log.debug(f"Captured message: {msg_schema}")
+                Log.info(f"Captured message: {msg_schema}")
                 if self.filter.filter_event(msg_schema):
-                    Log.debug(f"Found usefull alert: {msg_schema}")
+                    Log.info(f"Found filtered alert: {msg_schema}")
                     event = self.parser.parse_event(msg_schema)
                     self.subscriber.process_event(event)
                 self.consumer.ack()
             except Exception as e:
-                #print(e)
+                Log.error(f"Exception caught: {traceback.format_exc()}, failed to process {msg_schema}")
+                Log.error(f"Forcefully ack failed msg: {msg_schema}")
                 self.consumer.ack()
