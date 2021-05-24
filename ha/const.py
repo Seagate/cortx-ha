@@ -33,7 +33,8 @@ CORTX_SUPPORT_BUNDLE_LOGS=[RA_LOG_DIR, PCSD_LOG, PACEMAKER_LOG, CONFIG_DIR, CORO
 DATASTORE_VERSION="v1"
 CLUSTER_CONFSTORE_PREFIX = "cortx/ha/{}/".format(DATASTORE_VERSION)
 HA_INIT_DIR="/var/cortx/ha/"
-SOURCE_CONFIG_PATH="/opt/seagate/cortx/ha/conf/etc"
+SOURCE_PATH="/opt/seagate/cortx/ha"
+SOURCE_CONFIG_PATH="{}/conf/etc".format(SOURCE_PATH)
 RESOURCE_SCHEMA="{}/decision_monitor_conf.json".format(CONFIG_DIR)
 RESOURCE_GLOBAL_INDEX="decision_monitor"
 RULE_ENGINE_SCHAMA="{}/rules_engine_schema.json".format(CONFIG_DIR)
@@ -149,7 +150,7 @@ ALERT_FILTER_INDEX = "alert_filter_rules"
 ALERT_FILTER_RULES_FILE = "{}/alert_filter_rules.json".format(CONFIG_DIR)
 SOURCE_ALERT_FILTER_RULES_FILE = "{}/alert_filter_rules.json".format(SOURCE_CONFIG_PATH)
 SYSTEM_SERVICE_FILE = "{}/event_analyzer.service".format(SYSTEM_DIR)
-SOURCE_SERVICE_FILE = "{}/event_analyzer.service".format(SOURCE_CONFIG_PATH)
+SOURCE_SERVICE_FILE = "{}/conf/service/event_analyzer.service".format(SOURCE_PATH)
 
 class STATUSES(Enum):
     IN_PROGRESS = "InProgress"
