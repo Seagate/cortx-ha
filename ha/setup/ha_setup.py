@@ -760,7 +760,7 @@ def main(argv: dict):
         command = Cmd.get_command(desc, argv[1:])
         command.process()
 
-        sys.stdout.write(f"Mini Provisioning {sys.argv[1]} configured succesfully.\n")
+        sys.stdout.write(f"Mini Provisioning {sys.argv[1]} configured successfully.\n")
     except Exception as err:
         Log.error("%s\n" % traceback.format_exc())
         sys.stderr.write(f"Setup command:{argv[1]} failed for cortx-ha. Error: {err}\n")
