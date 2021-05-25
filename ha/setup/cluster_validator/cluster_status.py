@@ -23,17 +23,18 @@ import re
 from typing import Callable, List, NamedTuple, Union, Optional
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element
-from ha.core.error import SetupError, HA_CLUSTER_CONFIG_ERROR
+from ha.core.error import SetupError
 from ha.execute import SimpleCommand
+from ha.setup.cluster_validator.pcs_const import COMMNANDS
+from ha.setup.cluster_validator.pcs_const import CLUSTER_ATTRIBUTES
+from ha.setup.cluster_validator.pcs_const import RESOURCE_ATTRIBUTES
 
 
 class ValidationStatusError(SetupError):
     """Cluster status format is invalid."""
     def __init__(self, desc=None):
         _desc = "Error when parsing cluster status" if desc is None else desc
-        _message_id = HA_CLUSTER_CONFIG_ERROR
-        _rc = 1
-        super().__init__(rc=_rc, desc=_desc, message_id=_message_id)
+        super().__init__(desc=_desc)
 
 
 ClusterSummary = NamedTuple("ClusterSummary", [
@@ -86,81 +87,86 @@ class ClusterStatusPcs():
         """Call `pcs status` and init XML object for further parsing"""
         if not executor:
             executor = SimpleCommand().run_cmd
-        output, _, _ = executor("pcs status --full xml")
+        output, _, _ = executor(COMMNANDS.PCS_STATUS_XML)
         self.tree = ElementTree.fromstring(output)
 
     @staticmethod
     def _to_bool(value: str) -> bool:
-        return value == "true"
+        return value.lower() == str(True).lower()
 
     def get_nodes(self) -> List[ClusterNode]:
         """Return list of nodes."""
         node_elements = self.tree.findall("./nodes/node")
         nodes = []
         try:
-            b = self._to_bool
-            for n in node_elements:
+            bool_value = self._to_bool
+            for a_node in node_elements:
                 nodes.append(ClusterNode(
-                    name=n.attrib["name"],
-                    online=b(n.attrib["online"]),
-                    maintenance=b(n.attrib["maintenance"]),
-                    standby=b(n.attrib["standby"]),
-                    unclean=b(n.attrib["unclean"]),
-                    resources_running=int(n.attrib["resources_running"]),
+                    name=a_node.attrib[CLUSTER_ATTRIBUTES.NAME],
+                    online=bool_value(a_node.attrib[CLUSTER_ATTRIBUTES.ONLINE]),
+                    maintenance=bool_value(a_node.attrib[CLUSTER_ATTRIBUTES.MAINTENANCE]),
+                    standby=bool_value(a_node.attrib[CLUSTER_ATTRIBUTES.STANDBY]),
+                    unclean=bool_value(a_node.attrib[CLUSTER_ATTRIBUTES.UNCLEAN]),
+                    resources_running=int(a_node.attrib[CLUSTER_ATTRIBUTES.RESOURCES_RUNNING]),
                 ))
         except Exception as err:
             raise ValidationStatusError(
-                "Parsed XML doesn't contain required attributes") from err
+                "get_nodes: Parsed XML doesn't contain required attributes") from err
         return nodes
 
     def get_summary(self) -> ClusterSummary:
         """Return summary information about cluster for further checks."""
-        b = self._to_bool
-        e = self.tree.find("./summary")
+        bool_value = self._to_bool
+        relative_path = "./"
+        summary = self.tree.find(relative_path+CLUSTER_ATTRIBUTES.SUMMARY)
         try:
             res = ClusterSummary(
-                maintenance_mode=b(
-                    e.find("./cluster_options").attrib["maintenance-mode"]),
-                quorum=b(e.find("./current_dc").attrib["with_quorum"]),
-                stonith_enabled=b(
-                    e.find("./cluster_options").attrib["stonith-enabled"]),
-                num_nodes=int(e.find("./nodes_configured").attrib["number"]),
+                maintenance_mode=bool_value(
+                    summary.find(relative_path+CLUSTER_ATTRIBUTES.CLUSTER_OPTIONS).attrib[CLUSTER_ATTRIBUTES.MAINTENANCE_MODE]),
+                quorum=bool_value(summary.find(relative_path+CLUSTER_ATTRIBUTES.CURRENT_DC).attrib[CLUSTER_ATTRIBUTES.WITH_QUORUM]),
+                stonith_enabled=bool_value(
+                    summary.find(relative_path+CLUSTER_ATTRIBUTES.CLUSTER_OPTIONS).attrib[CLUSTER_ATTRIBUTES.STONITH_ENABLED]),
+                num_nodes=int(summary.find(relative_path+CLUSTER_ATTRIBUTES.NODES_CONFIGURED).attrib[CLUSTER_ATTRIBUTES.NUMBER]),
                 num_resources_configured=int(
-                    e.find("./resources_configured").attrib["number"]),
+                    summary.find(relative_path+CLUSTER_ATTRIBUTES.RESOURCES_CONFIGURED).attrib[CLUSTER_ATTRIBUTES.NUMBER]),
                 num_resources_disabled=int(
-                    e.find("./resources_configured").attrib["disabled"]),
+                    summary.find(relative_path+CLUSTER_ATTRIBUTES.RESOURCES_CONFIGURED).attrib[CLUSTER_ATTRIBUTES.DISABLED]),
             )
         except Exception as err:
             raise ValidationStatusError(
-                "Parsed XML contains unexpected summary format") from err
+                "get_summary: Parsed XML contains unexpected summary format") from err
         return res
 
     def _resource_from_xml(self, elem: Element, is_clone: bool = False, group: str = "") -> ClusterResource:
         """Convert XML element to ClusterResource."""
-        assert elem.tag == "resource"
-        b = self._to_bool
+        assert elem.tag == CLUSTER_ATTRIBUTES.RESOURCE
+        relative_path = "./"
+        bool_value = self._to_bool
         try:
             locations: List[str] = []
-            if int(elem.attrib["nodes_running_on"]) > 0:
-                locations = elem.find("./node").attrib["name"]
+            if int(elem.attrib[RESOURCE_ATTRIBUTES.NODES_RUNNING_ON]) > 0:
+                locations = elem.find(relative_path+CLUSTER_ATTRIBUTES.NODE).attrib[RESOURCE_ATTRIBUTES.NAME]
             #  "ocf::heartbeat:Dummy" -> "ocf:heartbeat:Dummy"
-            res_agent = elem.attrib["resource_agent"].split(":")
-            res_agent = "{}:{}:{}".format(res_agent[0], res_agent[2], res_agent[3])
+            res_agent = elem.attrib[RESOURCE_ATTRIBUTES.RESOURCE_AGENT]
+            # pacemaker is putting double colons in some case.
+            if res_agent is not None:
+                res_agent = res_agent.replace("::", ":")
+
             return ClusterResource(
-                name=elem.attrib["id"],
+                name=elem.attrib[RESOURCE_ATTRIBUTES.ID],
                 clone=is_clone,
                 resource_agent=res_agent,
-                role=elem.attrib["role"],
-                enabled=b(elem.attrib["active"]),
-                failed=b(elem.attrib["failed"]),
-                managed=b(elem.attrib["managed"]),
-                failure_ignored=b(elem.attrib["failure_ignored"]),
+                role=elem.attrib[RESOURCE_ATTRIBUTES.ROLE],
+                enabled=bool_value(elem.attrib[RESOURCE_ATTRIBUTES.ACTIVE]),
+                failed=bool_value(elem.attrib[RESOURCE_ATTRIBUTES.FAILED]),
+                managed=bool_value(elem.attrib[RESOURCE_ATTRIBUTES.MANAGED]),
+                failure_ignored=bool_value(elem.attrib[RESOURCE_ATTRIBUTES.FAILURE_IGNORED]),
                 location=locations,
                 group=group,
             )
         except Exception as err:
             raise ValidationStatusError(
-                "Parsed XML doesn't contain expected attributes") from err
+                "CLusterResource: Parsed XML doesn't contain expected attributes") from err
 
     def get_resource_from_cloned_group_by_name(self, name: str) -> Optional[ClusterResource]:
         """Get resource that is located in cloned group."""
@@ -168,7 +174,7 @@ class ClusterStatusPcs():
         for group in self.tree.findall("./resources/clone/group"):
             res = group.find(f"./resource[@id='{name}']")
             if res is not None:
-                return self._resource_from_xml(res, is_clone=True, group=group.get("id").split(":")[0])
+                return self._resource_from_xml(res, is_clone=True, group=group.get(RESOURCE_ATTRIBUTES.ID).split(":")[0])
         return None
 
     def get_unique_resource_by_name(self, name: str) -> Optional[ClusterResource]:
@@ -206,42 +212,41 @@ class ClusterStatusPcs():
                         elem: Element,
                         is_clone: bool = False
                         ) -> List[ClusterResource]:
-        assert elem.tag == "group"
+        assert elem.tag == RESOURCE_ATTRIBUTES.GROUP
         rcs: List[Union[ClusterCloneResource, ClusterResource]] = []
-        for e in elem:
-            if e.tag == "clone":
-                # rcs.append(self._clone_from_xml(e, elem.attrib["id"]))
+        for a_resource in elem:
+            if a_resource.tag == RESOURCE_ATTRIBUTES.CLONE:
                 raise NotImplementedError("Clones are not supposred within groups")
-            group_name = elem.attrib["id"].split(":")[0]
-            if e.tag == "resource":
+            group_name = elem.attrib[RESOURCE_ATTRIBUTES.ID].split(":")[0]
+            if a_resource.tag == CLUSTER_ATTRIBUTES.RESOURCE:
                 rcs.append(self._resource_from_xml(
-                           e, group=group_name, is_clone=is_clone))
+                           a_resource, group=group_name, is_clone=is_clone))
             else:
-                raise NotImplementedError(f"Group subelement {e.tag} is not supported")
+                raise NotImplementedError(f"Group subelement {a_resource.tag} is not supported")
         return rcs
 
     def _clone_from_xml(self, elem: Element, group: str = "") -> ClusterCloneResource:
         """Convert XML status to ClusterCloneResource"""
-        assert elem.tag == "clone"
+        assert elem.tag == RESOURCE_ATTRIBUTES.CLONE
         rcs = []
-        b = self._to_bool
-        for r in elem:
-            if r.tag == "resource":
-                rcs.append(self._resource_from_xml(r, is_clone=True, group=group))
-            elif r.tag == "group":
-                rcs.extend(self._group_from_xml(r, is_clone=True))
+        bool_value = self._to_bool
+        for resource_type in elem:
+            if resource_type.tag == CLUSTER_ATTRIBUTES.RESOURCE:
+                rcs.append(self._resource_from_xml(resource_type, is_clone=True, group=group))
+            elif resource_type.tag == RESOURCE_ATTRIBUTES.GROUP:
+                rcs.extend(self._group_from_xml(resource_type, is_clone=True))
                 # Cloned group XML contains several groups inside - interested only in one copy
-                group = group or r.attrib["id"].split(":")[0]
+                group = group or resource_type.attrib[RESOURCE_ATTRIBUTES.ID].split(":")[0]
                 break
             else:
-                raise NotImplementedError(f"Clone subelement {r.tag} is not supported")
+                raise NotImplementedError(f"Clone subelement {resource_type.tag} is not supported")
 
         return ClusterCloneResource(
-            name=re.sub("-clone$", "", elem.attrib["id"]),
-            managed=b(elem.attrib["managed"]),
-            unique=b(elem.attrib["unique"]),
-            failed=b(elem.attrib["failed"]),
-            failure_ignored=b(elem.attrib["failure_ignored"]),
+            name=re.sub("-clone$", "", elem.attrib[RESOURCE_ATTRIBUTES.ID]),
+            managed=bool_value(elem.attrib[RESOURCE_ATTRIBUTES.MANAGED]),
+            unique=bool_value(elem.attrib[RESOURCE_ATTRIBUTES.UNIQUE]),
+            failed=bool_value(elem.attrib[RESOURCE_ATTRIBUTES.FAILED]),
+            failure_ignored=bool_value(elem.attrib[RESOURCE_ATTRIBUTES.FAILURE_IGNORED]),
             copies=rcs,
             group=group,
         )
@@ -260,15 +265,15 @@ class ClusterStatusPcs():
 
     def get_all_resources(self) -> List[Union[ClusterResource, ClusterCloneResource]]:
         """Parse all resources from status XML."""
-        resources = self.tree.find("./resources")
+        resources = self.tree.find("./"+CLUSTER_ATTRIBUTES.RESOURCES)
         resources = resources or []
         result: List[Union[ClusterResource, ClusterCloneResource]] = []
         for res in resources:
-            if res.tag == "clone":
+            if res.tag == RESOURCE_ATTRIBUTES.CLONE:
                 result.append(self._clone_from_xml(res))
-            elif res.tag == "group":
+            elif res.tag == RESOURCE_ATTRIBUTES.GROUP:
                 result.extend(self._group_from_xml(res))
-            elif res.tag == "resource":
+            elif res.tag == CLUSTER_ATTRIBUTES.RESOURCE:
                 result.append(self._resource_from_xml(res))
             else:
                 raise NotImplementedError(f"Resource with type {res.tag} is not supported")
