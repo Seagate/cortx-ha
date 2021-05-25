@@ -21,15 +21,16 @@ import sys
 import pathlib
 import traceback
 from string import Template
-from cortx.utils.conf_store.conf_store import Conf
-from ha import const
-from ha.core.config.config_manager import ConfigManager
-from ha.core.event_analyzer.filter.filter import IEMFilter
 
 # Test case for iem filter
 if __name__ == '__main__':
     sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..', '..', '..'))
     try:
+        from cortx.utils.conf_store.conf_store import Conf
+        from ha import const
+        from ha.core.config.config_manager import ConfigManager
+        from ha.core.event_analyzer.filter.filter import IEMFilter
+
         ConfigManager.init("test_iem_filter")
         IEMFilter = IEMFilter()
         print("********IEM Filter********")
