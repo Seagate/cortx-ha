@@ -16,15 +16,13 @@
 # cortx-questions@seagate.com.
 
 
-import os
 import sys
 import json
-import pathlib
+import time
+
 from cortx.utils.message_bus import MessageBusAdmin
 from cortx.utils.message_bus.error import MessageBusError
 from cortx.utils.message_bus import MessageProducer
-from cortx.utils.conf_store import Conf, ConfStore
-import time
 
 if __name__ == '__main__':
     try:

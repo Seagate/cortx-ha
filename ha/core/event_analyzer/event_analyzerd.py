@@ -64,7 +64,7 @@ class EventAnalyserService:
             event_filter_class = Conf.get(const.HA_GLOBAL_INDEX, f"EVENT_ANALYZER.watcher.{watcher}.event_filter")
             event_filter_instance = EventAnalyserService.get_class(event_filter_class)()
             event_parser_class = Conf.get(const.HA_GLOBAL_INDEX, f"EVENT_ANALYZER.watcher.{watcher}.event_parser")
-            event_parser_instance = EventAnalyserService.get_class(event_filter_class)()
+            event_parser_instance = EventAnalyserService.get_class(event_parser_class)()
             self._watcher_list[watcher] = Watcher(
                 consumer_id = Conf.get(const.HA_GLOBAL_INDEX, f"EVENT_ANALYZER.watcher.{watcher}.consumer_id"),
                 message_type = Conf.get(const.HA_GLOBAL_INDEX, f"EVENT_ANALYZER.watcher.{watcher}.message_type"),

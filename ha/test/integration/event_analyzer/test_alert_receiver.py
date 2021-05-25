@@ -15,17 +15,11 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-
-import os
 import sys
-import pathlib
-from cortx.utils.message_bus import MessageConsumer
-from cortx.utils.message_bus import MessageBusAdmin
-from cortx.utils.message_bus.error import MessageBusError
-from cortx.utils.conf_store import Conf, ConfStore
 import json
 import time
 
+from cortx.utils.message_bus import MessageConsumer
 
 if __name__ == '__main__':
     consumer = MessageConsumer(consumer_id="1",
@@ -39,10 +33,7 @@ if __name__ == '__main__':
             message = consumer.receive(timeout=0)
             msg = json.loads(message.decode('utf-8'))
             print(msg)
-            #if msg.get("username") == "sspl-ll20":
-            #    raise Exception("Failed")
             consumer.ack()
         except Exception as e:
+            print(e)
             sys.exit(0)
-            #print(e)
-            #sys.exit(0)

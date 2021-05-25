@@ -15,7 +15,6 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-import time
 import json
 import traceback
 from threading import Thread
@@ -92,6 +91,6 @@ class Watcher(Thread):
                     self.subscriber.process_event(event)
                 self.consumer.ack()
             except Exception as e:
-                Log.error(f"Exception caught: {traceback.format_exc()}, failed to process {msg_schema}")
+                Log.error(f"Exception caught: {e} {traceback.format_exc()}, failed to process {msg_schema}")
                 Log.error(f"Forcefully ack failed msg: {msg_schema}")
                 self.consumer.ack()
