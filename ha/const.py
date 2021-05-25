@@ -151,6 +151,8 @@ ALERT_FILTER_RULES_FILE = "{}/alert_filter_rules.json".format(CONFIG_DIR)
 SOURCE_ALERT_FILTER_RULES_FILE = "{}/alert_filter_rules.json".format(SOURCE_CONFIG_PATH)
 SYSTEM_SERVICE_FILE = "{}/event_analyzer.service".format(SYSTEM_DIR)
 SOURCE_SERVICE_FILE = "{}/conf/service/event_analyzer.service".format(SOURCE_PATH)
+IEM_DESCRIPTION="WS0080010001, Node, The cluster has lost $host server. System is running in degraded mode. " \
+                "For more information refer the Troubleshooting guide. Extra Info: host=$host; status=$status;"
 
 class STATUSES(Enum):
     IN_PROGRESS = "InProgress"
