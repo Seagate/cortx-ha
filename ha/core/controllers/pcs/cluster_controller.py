@@ -19,6 +19,7 @@ import json
 import time
 from cortx.utils.log import Log
 
+from ha.core.controllers.pcs.cluster_status import PcsClusterStatus
 from ha.core.error import HAUnimplemented
 from ha.core.config.config_manager import ConfigManager
 from ha.core.controllers.pcs.pcs_controller import PcsController
@@ -90,7 +91,7 @@ class PcsClusterController(ClusterController, PcsController):
         if res.get("status") != const.STATUSES.SUCCEEDED.value:
             raise ClusterManagerError("Failed to get node list.")
         else:
-            node_list: list = res.get("msg")
+            node_list: list = res.get("output")
             Log.info(f"Node List : {node_list}")
             if node_list is not None:
                 node_group: list = [ node_list[i:i + const.PCS_NODE_GROUP_SIZE]
@@ -103,7 +104,7 @@ class PcsClusterController(ClusterController, PcsController):
         Check if cluster exists.
 
         Returns:
-            dict: Return dictionary. {"status": "", "msg":""}
+            dict: Return dictionary. {"status": "", "output": "", "error": ""}
                 status: Succeeded
         """
         try:
@@ -111,15 +112,19 @@ class PcsClusterController(ClusterController, PcsController):
         except Exception as e:
             Log.error(f"Cluster status is failed. error {e}")
             result = False
-        return {"status": const.STATUSES.SUCCEEDED.value, "msg": result}
+        return {"status": const.STATUSES.SUCCEEDED.value, "output": result, "error": ""}
 
     @controller_error_handler
-    def start(self) -> dict:
+    def start(self, sync=False, timeout=30) -> dict:
         """
         Start cluster and all service.
 
+        Args:
+            sync (bool, optional): if sync is True then start will check the status for timeout seconds.
+            timeout (int, optional): timeout(in seconds) can be specified for sync=True otherwise ignored.
+
         Returns:
-            ([dict]): Return dictionary. {"status": "", "msg":""}
+            ([dict]): Return dictionary. {"status": "", "output":"", "error":""}
                 status: Succeeded, Failed, InProgress
         """
         if self._is_pcs_cluster_running() is False:
@@ -135,7 +140,7 @@ class PcsClusterController(ClusterController, PcsController):
                 for node_id in node_subgroup:
                     res = json.loads(self._controllers[const.NODE_CONTROLLER].start(node_id))
                     if res.get("status") == const.STATUSES.FAILED.value:
-                        msg = res.get("msg")
+                        msg = res.get("error")
                         Log.error(f"Node {node_id} : {msg}")
                         failed_node_list.append(node_id)
                 # Wait till all the resources get started in the sub group
@@ -143,21 +148,25 @@ class PcsClusterController(ClusterController, PcsController):
         except Exception as e:
             raise ClusterManagerError(f"Failed to start Cluster. Error: {e}")
         status = "Cluster start is in process."
-        if len(failed_node_list) != 0 and len(failed_node_list) != len(json.loads(self.node_list()).get("msg")):
+        if len(failed_node_list) != 0 and len(failed_node_list) != len(json.loads(self.node_list()).get("output")):
             status += f"Warning, Some of nodes failed to start are {failed_node_list}"
         elif len(failed_node_list) != 0:
             raise ClusterManagerError(f"Failed to start all nodes {failed_node_list}")
         else:
             status += "All node started successfully, resource start in progress."
-        return {"status": const.STATUSES.IN_PROGRESS.value, "msg": "Cluster start operation performed"}
+        return {"status": const.STATUSES.IN_PROGRESS.value, "output": "Cluster start operation performed", "error": ""}
 
     @controller_error_handler
-    def stop(self) -> dict:
+    def stop(self, sync=False, timeout=30) -> dict:
         """
-        Stop cluster and all service. It is Blocking call.
+        Stop cluster and all service.
+
+        Args:
+            sync (bool, optional): if sync is True then stop will check the status for timeout seconds.
+            timeout (int, optional): timeout(in seconds) can be specified for sync=True otherwise ignored.
 
         Returns:
-            ([dict]): Return dictionary. {"status": "", "msg":""}
+            ([dict]): Return dictionary. {"status": "", "output":"", "error":""}
                 status: Succeeded, Failed, InProgress
         """
         status: str = ""
@@ -179,7 +188,7 @@ class PcsClusterController(ClusterController, PcsController):
                         time.sleep(const.BASE_WAIT_TIME)
                     res = json.loads(self._controllers[const.NODE_CONTROLLER].stop(nodeid))
                     Log.info(f"Stopping node {nodeid}, output {res}")
-                    if NODE_STATUSES.POWEROFF.value in res.get("msg"):
+                    if NODE_STATUSES.POWEROFF.value in res.get("output"):
                         offline_nodes.append(nodeid)
                         Log.warn(f"Node {nodeid}, is in offline or lost from network.")
                     elif res.get("status") == const.STATUSES.FAILED.value:
@@ -201,7 +210,7 @@ class PcsClusterController(ClusterController, PcsController):
         status = "Cluster stop is in progress."
         if len(offline_nodes) != 0:
             status += f" Warning, Found {offline_nodes}, may be poweroff or not in network"
-        return {"status": const.STATUSES.IN_PROGRESS.value, "msg": status}
+        return {"status": const.STATUSES.IN_PROGRESS.value, "output": status, "error": ""}
 
     @controller_error_handler
     def status(self) -> dict:
@@ -209,30 +218,35 @@ class PcsClusterController(ClusterController, PcsController):
         Status cluster and all service. It gives status for all resources.
 
         Returns:
-            ([dict]): Return dictionary. {"status": "", "msg":{}}
-                status: Succeeded, Failed, InProgress
-                msg: dict of resource and status.
+            ([dict]): Return dictionary. {"status": "", "output":"", "error":""}
+                status: Succeeded, Failed
+                output: dict of resource and status.
         """
-        raise HAUnimplemented("This operation is not implemented.")
+        try:
+            pcs_cluster_status = PcsClusterStatus()
+            pcs_cluster_status.load()
+            return pcs_cluster_status.get_health_status()
+        except Exception as e:
+            return {"status": const.STATUSES.FAILED, "output": "", "error" : str(e)}
 
     @controller_error_handler
-    def standby(self) -> dict:
+    def standby(self, sync=False, timeout=30) -> dict:
         """
         Put cluster in standby mode.
 
         Returns:
-            ([dict]): Return dictionary. {"status": "", "msg":""}
+            ([dict]): Return dictionary. {"status": "", "output":"", "error":""}
                 status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
 
     @controller_error_handler
-    def active(self) -> dict:
+    def active(self, sync=False, timeout=30) -> dict:
         """
         Activate all node.
 
         Returns:
-            ([dict]): Return dictionary. {"status": "", "msg":""}
+            ([dict]): Return dictionary. {"status": "", "output":"", "error":""}
                 status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
@@ -243,11 +257,11 @@ class PcsClusterController(ClusterController, PcsController):
         Provide node list.
 
         Returns:
-            ([dict]): Return dictionary. {"status": "", "msg":[]}
+            ([dict]): Return dictionary. {"status": "", "output":"", "error":""}
                 status: Succeeded, Failed, InProgress
         """
         nodelist: list = self._get_node_list()
-        return {"status": const.STATUSES.SUCCEEDED.value, "msg": nodelist}
+        return {"status": const.STATUSES.SUCCEEDED.value, "output": nodelist, "error": ""}
 
     @controller_error_handler
     def service_list(self) -> dict:
@@ -255,7 +269,7 @@ class PcsClusterController(ClusterController, PcsController):
         Provide service list.
 
         Returns:
-            ([dict]): Return dictionary. {"status": "", "msg":[]}
+            ([dict]): Return dictionary. {"status": "", "output":"", "error":""}
                 status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
@@ -266,7 +280,7 @@ class PcsClusterController(ClusterController, PcsController):
         Provide storageset list.
 
         Returns:
-            ([dict]): Return dictionary. {"status": "", "msg":[]}
+            ([dict]): Return dictionary. {"status": "", "output":"", "error":""}
                 status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
@@ -284,7 +298,7 @@ class PcsClusterController(ClusterController, PcsController):
             cluster_password (str, required): Provide cluster_password.
 
         Returns:
-            ([dict]): Return dictionary. {"status": "", "msg":""}
+            ([dict]): Return dictionary. {"status": "", "output":"", "error":""}
                 status: Succeeded, Failed, InProgress
         """
         self._check_non_empty(nodeid=nodeid, cluster_user=cluster_user, cluster_password=cluster_password)
@@ -292,9 +306,9 @@ class PcsClusterController(ClusterController, PcsController):
         cluster_node_count = self._get_cluster_size()
         if cluster_node_count < 32:
             _output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_NODE_ADD.replace("<node>", nodeid))
-            return {"status": const.STATUSES.IN_PROGRESS.value, "msg": f"Node {nodeid} add operation started successfully in the cluster"}
+            return {"status": const.STATUSES.IN_PROGRESS.value, "output": f"Node {nodeid} add operation started successfully in the cluster", "error": ""}
         else:
-            return {"status": const.STATUSES.FAILED.value, "msg": "Cluster size is already filled to 32, "
+            return {"status": const.STATUSES.FAILED.value, "output": "", "error": "Cluster size is already filled to 32, "
                                                "Please use add-remote node mechanism"}
 
     @controller_error_handler
@@ -307,7 +321,7 @@ class PcsClusterController(ClusterController, PcsController):
             filename (str, optional): Provide descfile. Defaults to None.
 
         Returns:
-            ([dict]): Return dictionary. {"status": "", "msg":""}
+            ([dict]): Return dictionary. {"status": "", "output":"", "error":""}
                 status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
@@ -324,7 +338,7 @@ class PcsClusterController(ClusterController, PcsController):
             nodeid (str): Node name, nodeid of current node.
 
         Returns:
-            dict: Return dictionary. {"status": "", "msg":""}
+            dict: Return dictionary. {"status": "", "output":"", "error":""}
         """
         try:
             self._check_non_empty(name=name, user=user, secret=secret, nodeid=nodeid)
@@ -341,7 +355,7 @@ class PcsClusterController(ClusterController, PcsController):
                 time.sleep(const.BASE_WAIT_TIME * 2)
             if self._is_pcs_cluster_running():
                 return {"status": const.STATUSES.SUCCEEDED.value,
-                        "msg": "Cluster created successfully."}
+                        "output": "Cluster created successfully.", "error": ""}
             else:
                 raise ClusterManagerError("Cluster is not started.")
         except Exception as e:
