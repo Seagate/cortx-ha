@@ -50,7 +50,7 @@ class Filter(metaclass=abc.ABCMeta):
         pass
 
     @staticmethod
-    def get_msg_type(msg: dict) -> bool:
+    def get_msg_type(msg: dict) -> str:
         """
         Check if the msg type is iem or alert
         """
@@ -132,17 +132,17 @@ class IEMFilter(Filter):
                 return iem_required
 
             _msg_type = Filter.get_msg_type(message)
-            if _msg_type != MESSAGETYPE.IEM.value:
+            if _msg_type.lower() != MESSAGETYPE.IEM.value.lower():
                 return iem_required
 
             _sensor_response_type = message.get('sensor_response_type')
-            _component_type = _sensor_response_type['specific_info']['module']
+            _component_type = _sensor_response_type['specific_info']['component']
             _module_type = _sensor_response_type['specific_info']['module']
 
             if self.filter_type == const.INCLUSION:
                 if _component_type in self.components_list and _module_type in self.modules_dict.get(_component_type):
                     iem_required = True
-            if self.filter_type == const.EXCLUSION:
+            elif self.filter_type == const.EXCLUSION:
                 if _component_type not in self.components_list or _module_type not in self.modules_dict.get(
                         _component_type):
                     iem_required = True

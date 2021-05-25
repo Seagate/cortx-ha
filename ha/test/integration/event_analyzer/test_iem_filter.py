@@ -34,7 +34,7 @@ if __name__ == '__main__':
         ConfigManager.init("test_iem_filter")
         IEMFilter = IEMFilter()
         print("********IEM Filter********")
-        resource_type = "node"
+        resource_type = "iem"
         host = "abcd.com"
         node_id = "001"
         status = "offline"
