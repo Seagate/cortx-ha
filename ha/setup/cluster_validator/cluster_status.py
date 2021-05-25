@@ -23,7 +23,7 @@ import re
 from typing import Callable, List, NamedTuple, Union, Optional
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element
-from ha.core.error import SetupError, HA_CLUSTER_CONFIG_ERROR
+from ha.core.error import SetupError
 from ha.execute import SimpleCommand
 from ha.setup.cluster_validator.pcs_const import COMMNANDS
 from ha.setup.cluster_validator.pcs_const import CLUSTER_ATTRIBUTES

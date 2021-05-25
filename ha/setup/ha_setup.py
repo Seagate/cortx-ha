@@ -180,6 +180,22 @@ class Cmd:
         Log.info(f"Found total Nodes: {len(nodelist)}, Nodes: {nodelist}, in {fetch_from}")
         return nodelist
 
+    def get_installation_type(self):
+        hw_type = ConfigManager.get_hw_env()
+        if hw_type is not None:
+            install_type = hw_type.lower()
+        else:
+            Log.error("Error: Can not fetch h/w env from Config.")
+            raise HaConfigException("h/w env not present in config.")
+
+        nodes = self.get_nodelist(fetch_from=Cmd.HA_CONFSTORE)
+        if len(nodes) == 1 and install_type == const.INSTALLATION_TYPE.VM:
+            install_type = const.INSTALLATION_TYPE.SINGLE_VM
+
+        Log.info(f"Nodes count = {len(nodes)}, Install type = {install_type}")
+
+        return install_type
+
     def standby_node(self, node_name: str) -> None:
         """
         Put node in standby
@@ -572,20 +588,10 @@ class TestCmd(Cmd):
         """
         path_to_comp_config = const.SOURCE_CONFIG_PATH
 
-        hw_type = ConfigManager.get_hw_env()
-        if hw_type is not None:
-            hw_type = hw_type.lower()
-        else:
-            Log.error(f"Error: Can not fetch h/w env from Config.")
-            raise HaConfigException("h/w env not present in config.")
-
+        install_type = self.get_installation_type()
         nodes = self.get_nodelist(fetch_from=Cmd.HA_CONFSTORE)
-        if len(nodes) == 1 and hw_type == const.INSTALLATION_TYPE.VM:
-            hw_type = const.INSTALLATION_TYPE.SINGLE_VM
+        path_to_comp_config = path_to_comp_config + '/components/' + install_type
 
-        Log.info(f"Nodes count = {len(nodes)}, Install type = {hw_type}")
-
-        path_to_comp_config = path_to_comp_config + '/components/' + hw_type
         rc = TestExecutor.validate_cluster(node_list=nodes, comp_files_dir=path_to_comp_config)
         Log.info(f"cluster validation rc = {rc}")
 
