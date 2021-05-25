@@ -15,7 +15,7 @@
                 "30s",
                 "60s"
             ],
-            "counters": [1, 2, 3, 4]
+            "counters": [1]
         }, 
 
         "dependencies": {
@@ -110,7 +110,6 @@
     },
     "s3backprod": {
         "parameters": { },
-        "group": "io_group",
         "provider": {
             "name": "systemd",
             "service": "s3backgroundproducer",
@@ -142,7 +141,7 @@
             ]
         },
         "ha": {
-            "mode": "active_active",
+            "mode": "active_passive",
             "clones": {
                 "active": [
                     "1",

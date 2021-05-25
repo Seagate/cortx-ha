@@ -111,3 +111,10 @@ class ConfigManager:
         Get local node name.
         """
         return Conf.get(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.local_node")
+
+    @staticmethod
+    def get_hw_env() -> str:
+        """
+        Get if system is running on VM or actual h/w.
+        """
+        return Conf.get(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.env")

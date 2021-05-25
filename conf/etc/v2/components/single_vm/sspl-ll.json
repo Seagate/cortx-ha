@@ -1,19 +1,19 @@
 {
-    "motr-free-space-mon": {
+    "sspl-ll": {
         "parameters": { },
         "group": "monitor_group",
         "provider": {
             "name": "systemd",
-            "service": "motr-free-space-monitor",
+            "service": "sspl-ll",
             "intervals": [
                 "0s",
                 "30s",
                 "0s"
             ],
             "timeouts": [
-                "100s",
+                "60s",
                 "30s",
-                "120s"
+                "60s"
             ],
             "counters": []
         }, 
@@ -33,7 +33,7 @@
             ]
         },
         "ha": {
-            "mode": "active_passive",
+            "mode": "active_active",
             "clones": {
                 "active": [
                     "1",
@@ -44,7 +44,7 @@
                     "<total-primary>"
                 ],
                 "parameters": {
-                    "failure-timeout": "300s",
+                    "<key1>": "<value1>",
                     "<key2>": "<value2>"
                 }
             },
