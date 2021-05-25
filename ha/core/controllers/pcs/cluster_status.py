@@ -121,8 +121,9 @@ class PcsClusterStatus:
 
         for a_node in nodes:
             node_name = a_node.attrib[PcsConstants.NAME]
-            if a_node.attrib[PcsConstants.ONLINE] == PcsConstants.FALSE or \
-                    a_node.attrib[PcsConstants.STANDBY_ON_FAIL] == PcsConstants.TRUE or \
+            if a_node.attrib[PcsConstants.ONLINE] == PcsConstants.FALSE:
+                self._nodes[PcsConstants.OFFLINE].append(node_name)
+            elif a_node.attrib[PcsConstants.STANDBY_ON_FAIL] == PcsConstants.TRUE or \
                     a_node.attrib[PcsConstants.MAINTENANCE] == PcsConstants.TRUE or \
                     a_node.attrib[PcsConstants.PENDING] == PcsConstants.TRUE or \
                     a_node.attrib[PcsConstants.SHUTDOWN] == PcsConstants.TRUE:
@@ -186,7 +187,7 @@ class PcsClusterStatus:
         """
             Finds and returns the cluster health.
         """
-        if (len(self._nodes_configured))/2 + 1 <= len(self._nodes[PcsConstants.OFFLINE]):
+        if len(self._nodes_configured)//2 + 1 <= len(self._nodes[PcsConstants.OFFLINE]):
             return {"status": const.STATUSES.SUCCEEDED.value, "output": PcsConstants.OFFLINE, "error": ""}
 
         if len(self._nodes_configured) == len(self._nodes[PcsConstants.STANDBY]):

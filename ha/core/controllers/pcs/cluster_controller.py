@@ -227,7 +227,7 @@ class PcsClusterController(ClusterController, PcsController):
             pcs_cluster_status.load()
             return pcs_cluster_status.get_health_status()
         except Exception as e:
-            return {"status": const.STATUSES.FAILED, "output": "", "error" : str(e)}
+            return {"status": const.STATUSES.FAILED, "output": "Retry Suggested.", "error" : str(e)}
 
     @controller_error_handler
     def standby(self, sync=False, timeout=30) -> dict:
