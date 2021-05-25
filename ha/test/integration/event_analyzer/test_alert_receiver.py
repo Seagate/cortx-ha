@@ -17,7 +17,6 @@
 
 import sys
 import json
-import time
 
 from cortx.utils.message_bus import MessageConsumer
 
