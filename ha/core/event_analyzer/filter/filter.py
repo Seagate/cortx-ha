@@ -116,6 +116,15 @@ class IEMFilter(Filter):
         self.filter_type = Conf.get(const.ALERT_FILTER_INDEX, "iem.filter_type")
         self.components_list = Conf.get(const.ALERT_FILTER_INDEX, "iem.components")
         self.modules_dict = Conf.get(const.ALERT_FILTER_INDEX, "iem.modules")
+        self.validate()
+
+    def validate(self):
+        """
+        validate filter type
+        """
+        if self.filter_type not in [const.INCLUSION, const.EXCLUSION]:
+            Log.error("Invalid IEM filter type in the event IEM filter rules")
+            raise EventAnalyzerError(f"Invalid IEM filter type `{self.filter_type}` in the event IEM filter rules")
 
     def filter_event(self, msg: str) -> bool:
         """
@@ -146,8 +155,6 @@ class IEMFilter(Filter):
                 if _component_type not in self.components_list or _module_type not in self.modules_dict.get(
                         _component_type):
                     iem_required = True
-            else:
-                Log.error("Invalid IEM filter type in the event IEM filter rules")
 
             return iem_required
 
