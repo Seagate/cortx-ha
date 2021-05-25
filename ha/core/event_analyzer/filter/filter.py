@@ -37,7 +37,8 @@ class Filter(metaclass=abc.ABCMeta):
         """
         Init method
         """
-        pass
+        # Loads IEM filter rules in the configuration
+        ConfigManager.load_filter_rules()
 
     @abc.abstractmethod
     def filter_event(self, msg: str) -> bool:
@@ -49,15 +50,12 @@ class Filter(metaclass=abc.ABCMeta):
         pass
 
     @staticmethod
-    def is_iem_msg(msg: dict) -> bool:
+    def get_msg_type(msg: dict) -> bool:
         """
         Check if the msg type is iem or alert
         """
         msg_type = msg.get("sensor_response_type")
-        resource_type = msg_type["info"]["resource_type"]
-        if resource_type == MESSAGETYPE.IEM.value:
-            return True
-        return False
+        return msg_type["info"]["resource_type"]
 
 
 class AlertFilter(Filter):
@@ -113,12 +111,11 @@ class IEMFilter(Filter):
         Init method
         """
         super().__init__()
-        # Loads IEM filter rules in the configuration
-        ConfigManager.load_filter_rules()
 
         # Get filter type and resource types list from the IEM rule file
         self.filter_type = Conf.get(const.ALERT_FILTER_INDEX, "iem.filter_type")
-        self.module_types_list = Conf.get(const.ALERT_FILTER_INDEX, "iem.component.ha.module")
+        self.components_list = Conf.get(const.ALERT_FILTER_INDEX, "iem.components")
+        self.modules_dict = Conf.get(const.ALERT_FILTER_INDEX, "iem.modules")
 
     def filter_event(self, msg: str) -> bool:
         """
@@ -130,21 +127,24 @@ class IEMFilter(Filter):
             iem_required = False
             message = json.loads(msg)
 
-            msg_type = message['message']['actuator_response_type']
-            if msg_type is not None:
+            _actuator_response_type = message.get('actuator_response_type')
+            if _actuator_response_type is not None:
                 return iem_required
 
-            if not Filter.is_iem_msg(message):
+            _msg_type = Filter.get_msg_type(message)
+            if _msg_type != MESSAGETYPE.IEM.value:
                 return iem_required
 
-            msg_type = message['message']['sensor_response_type']
-            _module_type = msg_type['specific_info']['module']
+            _sensor_response_type = message.get('sensor_response_type')
+            _component_type = _sensor_response_type['specific_info']['module']
+            _module_type = _sensor_response_type['specific_info']['module']
 
             if self.filter_type == const.INCLUSION:
-                if _module_type in self.module_types_list:
+                if _component_type in self.components_list and _module_type in self.modules_dict.get(_component_type):
                     iem_required = True
             if self.filter_type == const.EXCLUSION:
-                if _module_type not in self.module_types_list:
+                if _component_type not in self.components_list or _module_type not in self.modules_dict.get(
+                        _component_type):
                     iem_required = True
             else:
                 Log.error("Invalid IEM filter type in the event IEM filter rules")
