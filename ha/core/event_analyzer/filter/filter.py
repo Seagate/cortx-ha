@@ -54,8 +54,8 @@ class Filter(metaclass=abc.ABCMeta):
         """
         Check if the msg type is iem or alert
         """
-        msg_type = msg.get("sensor_response_type")
-        return msg_type["info"]["resource_type"]
+        msg_type = msg.get(const.SENSOR_RESPONSE_TYPE)
+        return msg_type[const.INFO][const.RESOURCE_TYPE]
 
 
 class AlertFilter(Filter):
@@ -81,12 +81,12 @@ class AlertFilter(Filter):
             Alert_required = False
             message = json.loads(msg)
 
-            msg_type = message.get("actuator_response_type")
+            msg_type = message.get(const.ACTUATOR_RESPONSE_TYPE)
             if msg_type is not None:
                 return Alert_required
 
-            msg_type = message.get("sensor_response_type")
-            resource_type = msg_type["info"]["resource_type"]
+            msg_type = message.get(const.SENSOR_RESPONSE_TYPE)
+            resource_type = msg_type[const.INFO][const.RESOURCE_TYPE]
 
             if self.filter_type == const.INCLUSION:
                 if resource_type in self.resource_types_list:
@@ -136,7 +136,7 @@ class IEMFilter(Filter):
             iem_required = False
             message = json.loads(msg)
 
-            _actuator_response_type = message.get('actuator_response_type')
+            _actuator_response_type = message.get(const.ACTUATOR_RESPONSE_TYPE)
             if _actuator_response_type is not None:
                 return iem_required
 
@@ -144,9 +144,9 @@ class IEMFilter(Filter):
             if _msg_type.lower() != MESSAGETYPE.IEM.value.lower():
                 return iem_required
 
-            _sensor_response_type = message.get('sensor_response_type')
-            _component_type = _sensor_response_type['specific_info']['component']
-            _module_type = _sensor_response_type['specific_info']['module']
+            _sensor_response_type = message.get(const.SENSOR_RESPONSE_TYPE)
+            _component_type = _sensor_response_type[const.SPECIFIC_INFO][const.COMPONENT]
+            _module_type = _sensor_response_type[const.SPECIFIC_INFO][const.MODULE]
 
             if self.filter_type == const.INCLUSION:
                 if _component_type in self.components_list and _module_type in self.modules_dict.get(_component_type):
