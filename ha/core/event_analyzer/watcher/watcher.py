@@ -22,7 +22,6 @@ from threading import Thread
 from cortx.utils.message_bus import MessageConsumer
 from cortx.utils.log import Log
 
-from ha.core.error import EventAnalyzer
 from ha.core.event_analyzer.filter.filter import Filter
 from ha.core.event_analyzer.parser.parser import Parser
 from ha.core.event_analyzer.subscriber import Subscriber
@@ -88,7 +87,7 @@ class Watcher(Thread):
                 message = self.consumer.receive(timeout=0)
                 msg_schema = json.loads(message.decode('utf-8'))
             except Exception as e:
-                Log.error(f"Invalid format of message failed to convert message : {str(message)}")
+                Log.error(f"Invalid format of message failed due to {e}. Message : {str(message)}")
                 self.consumer.ack()
                 continue
             try:

@@ -35,7 +35,7 @@ class Filter(metaclass=abc.ABCMeta):
         ConfigManager.load_filter_rules()
 
     @staticmethod
-    def validate_filter(self, message_type: str):
+    def validate_filter(message_type: str):
         """
         Filter type should be one of INCLUSION or EXCLUSION
         """
@@ -63,7 +63,7 @@ class AlertFilter(Filter):
         Init method
         """
         #Get filter type and resource types list from the alert rule file
-        self.validate_filter(AlertFilter.MESSAGE_TYPE)
+        AlertFilter.validate_filter(AlertFilter.MESSAGE_TYPE)
         self.filter_type = Conf.get(const.ALERT_FILTER_INDEX, f"{AlertFilter.MESSAGE_TYPE}.filter_type")
         self.resource_types_list = Conf.get(const.ALERT_FILTER_INDEX, f"{AlertFilter.MESSAGE_TYPE}.resource_type")
 
@@ -100,6 +100,12 @@ class AlertFilter(Filter):
 class IEMFilter(Filter):
 
     MESSAGE_TYPE = "iem"
+
+    def __init__(self):
+        """
+        Init method
+        """
+        IEMFilter.validate_filter(IEMFilter.MESSAGE_TYPE)
 
     def filter_event(self, msg: str) -> bool:
         """
