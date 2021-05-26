@@ -26,6 +26,9 @@ from ha.core.error import EventAnalyzer
 from ha.core.event_analyzer.filter.filter import Filter
 from ha.core.event_analyzer.parser.parser import Parser
 from ha.core.event_analyzer.subscriber import Subscriber
+from ha.core.event_analyzer.event_analyzer_exceptions import InvalidSubscriber
+from ha.core.event_analyzer.event_analyzer_exceptions import EventFilterException
+from ha.core.event_analyzer.event_analyzer_exceptions import EventParserException
 
 class Watcher(Thread):
     """ Watch message bus to check in coming event. """
@@ -62,7 +65,7 @@ class Watcher(Thread):
             EventAnalyzer: event analyser exception.
         """
         if not isinstance(self.subscriber, Subscriber):
-            raise EventAnalyzer(f"Invaid subscriber {self.subscriber}")
+            raise InvalidSubscriber(f"Invaid subscriber {self.subscriber}")
 
     def _get_connection(self) -> MessageConsumer:
         """
@@ -84,13 +87,22 @@ class Watcher(Thread):
             try:
                 message = self.consumer.receive(timeout=0)
                 msg_schema = json.loads(message.decode('utf-8'))
-                Log.info(f"Captured message: {msg_schema}")
+            except Exception as e:
+                Log.error(f"Invalid format of message failed to convert message : {str(message)}")
+                self.consumer.ack()
+                continue
+            try:
+                Log.debug(f"Captured message: {msg_schema}")
                 if self.filter.filter_event(msg_schema):
                     Log.info(f"Found filtered alert: {msg_schema}")
                     event = self.parser.parse_event(msg_schema)
                     self.subscriber.process_event(event)
-                self.consumer.ack()
+            except EventFilterException as e:
+                Log.error(f"Filter exception {e} {traceback.format_exc()} for {msg_schema}")
+            except EventParserException as e:
+                Log.error(f"Parser exception {e} {traceback.format_exc()} for {msg_schema}")
             except Exception as e:
-                Log.error(f"Exception caught: {e} {traceback.format_exc()}, failed to process {msg_schema}")
+                Log.error(f"Exception caught: {e} {traceback.format_exc()}")
                 Log.error(f"Forcefully ack failed msg: {msg_schema}")
+            finally:
                 self.consumer.ack()

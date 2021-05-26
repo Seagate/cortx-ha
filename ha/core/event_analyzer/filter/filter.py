@@ -21,7 +21,8 @@ from cortx.utils.conf_store.conf_store import Conf
 from cortx.utils.log import Log
 from ha import const
 from ha.core.config.config_manager import ConfigManager
-from ha.core.error import EventAnalyzerError
+from ha.core.event_analyzer.event_analyzer_exceptions import EventFilterException
+from ha.core.event_analyzer.event_analyzer_exceptions import InvalidFilterRules
 
 class Filter(metaclass=abc.ABCMeta):
     """ Base class to filter alert """
@@ -30,8 +31,17 @@ class Filter(metaclass=abc.ABCMeta):
         """
         Load filter rules.
         """
-        #Loads alert flter rules in the configuration
+        #Loads alert filter rules in the configuration
         ConfigManager.load_filter_rules()
+
+    @staticmethod
+    def validate_filter(self, message_type: str):
+        """
+        Filter type should be one of INCLUSION or EXCLUSION
+        """
+        filter_type = Conf.get(const.ALERT_FILTER_INDEX, f"{message_type}.filter_type")
+        if filter_type not in [const.INCLUSION, const.EXCLUSION]:
+            raise InvalidFilterRules(f"Invalid filter type {filter_type}")
 
     @abc.abstractmethod
     def filter_event(self, msg: str) -> bool:
@@ -46,13 +56,16 @@ class Filter(metaclass=abc.ABCMeta):
 class AlertFilter(Filter):
     """ Filter unnecessary alert. """
 
+    MESSAGE_TYPE = "alert"
+
     def __init__(self):
         """
         Init method
         """
         #Get filter type and resource types list from the alert rule file
-        self.filter_type = Conf.get(const.ALERT_FILTER_INDEX, "alert.filter_type")
-        self.resource_types_list = Conf.get(const.ALERT_FILTER_INDEX, "alert.resource_type")
+        self.validate_filter(AlertFilter.MESSAGE_TYPE)
+        self.filter_type = Conf.get(const.ALERT_FILTER_INDEX, f"{AlertFilter.MESSAGE_TYPE}.filter_type")
+        self.resource_types_list = Conf.get(const.ALERT_FILTER_INDEX, f"{AlertFilter.MESSAGE_TYPE}.resource_type")
 
     def filter_event(self, msg: str) -> bool:
         """
@@ -74,18 +87,19 @@ class AlertFilter(Filter):
             if self.filter_type == const.INCLUSION:
                 if resource_type in self.resource_types_list:
                     Alert_required = True
-            elif self.filter_type == const.EXCLUSION:
+            else:
+                # EXCLUSION Rules
                 if resource_type not in self.resource_types_list:
                     Alert_required = True
-            else:
-                Log.error("Invalid filter type in the event filter rules")
 
             return Alert_required
 
         except Exception as e:
-            raise EventAnalyzerError(f"Failed to filter event. Message: {msg}, Error: {e}")
+            raise EventFilterException(f"Failed to filter event. Message: {msg}, Error: {e}")
 
 class IEMFilter(Filter):
+
+    MESSAGE_TYPE = "iem"
 
     def filter_event(self, msg: str) -> bool:
         """

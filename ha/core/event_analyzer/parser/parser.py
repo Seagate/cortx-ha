@@ -17,8 +17,9 @@
 
 import abc
 import json
-from ha.core.error import EventAnalyzerError
+
 from ha.core.system_health.model.health_event import HealthEvent
+from ha.core.event_analyzer.event_analyzer_exceptions import EventParserException
 
 class Parser(metaclass=abc.ABCMeta):
     """
@@ -70,7 +71,7 @@ class AlertParser(Parser):
             return health_event
 
         except Exception as e:
-            raise EventAnalyzerError(f"Failed to parse alert. Message: {msg}, Error: {e}")
+            raise EventParserException(f"Failed to parse alert. Message: {msg}, Error: {e}")
 
 class IEMParser(Parser):
     """
