@@ -200,8 +200,18 @@ class ACTION_STATUS(Enum):
     PENDING = "pending"
     COMPLETE = "complete"
 
-
 class INSTALLATION_TYPE(Enum):
     HW = "hw"
     VM = "vm"
     SINGLE_VM = "single_vm"
+
+# Alert constants
+class AlertConstants(Enum):
+    FILTER_TYPE = "alert.filter_type"
+    RESOURCE_TYPE = "alert.resource_type"
+
+# IEM constants
+class IemConstants(Enum):
+    FILTER_TYPE = "iem.filter_type"
+    COMPONENTS = "iem.components"
+    MODULES = "iem.modules"
