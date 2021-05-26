@@ -82,7 +82,7 @@ class PcsClusterStatus:
         error = None
         try:
             self._output, error, rc = SimpleCommand().run_cmd(PcsConstants.PCS_STATUS_XML)
-        except Exception as e:
+        except Exception:
             Log.info("Failed to run pcs status on current node.")
             rc = 1
         Log.info(f"pcs status : rc = {rc}, error = {error}")
