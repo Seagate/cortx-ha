@@ -69,7 +69,7 @@ class AlertMonitor:
         # validate event type and get class
         try:
              event_type = self.validate_event()
-             # Redirect the alert to appropriate monitor for further processing 
+             # Redirect the alert to appropriate monitor for further processing
              self.redirect_alert(event_type)
         except Exception as e:
             Log.error(f"{traceback.format_exc()}, {e}")
