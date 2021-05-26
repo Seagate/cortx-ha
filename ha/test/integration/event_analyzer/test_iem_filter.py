@@ -76,11 +76,11 @@ if __name__ == '__main__':
         components_types_list = Conf.get(const.ALERT_FILTER_INDEX, "iem.components")
         modules_dict = Conf.get(const.ALERT_FILTER_INDEX, "iem.modules")
 
-        msg_type = TestMsg['sensor_response_type']
-        _component_type = msg_type['specific_info']['component']
-        _module_type = msg_type['specific_info']['module']
+        msg_type = TestMsg[const.SENSOR_RESPONSE_TYPE]
+        _component_type = msg_type[const.SPECIFIC_INFO][const.COMPONENT]
+        _module_type = msg_type[const.SPECIFIC_INFO][const.MODULE]
 
-        if "actuator_response_type" not in TestMsg.keys():
+        if const.ACTUATOR_RESPONSE_TYPE not in TestMsg.keys():
             if filter_type == const.INCLUSION:
                 if _component_type in components_types_list and _module_type in modules_dict.get(_component_type):
                     Expected_result = True
