@@ -56,6 +56,9 @@ ln -sf $HA_DIR/lib/ha_setup /usr/local/bin/ha_setup
 ln -sf $HA_DIR/lib/event_analyzerd $HA_DIR/bin/event_analyzerd
 ln -sf $HA_DIR/lib/event_analyzerd /usr/bin/event_analyzerd
 ln -sf $HA_DIR/lib/event_analyzerd /usr/local/bin/event_analyzerd
+ln -sf $HA_DIR/lib/pcmk_alert $HA_DIR/bin/pcmk_alert
+ln -sf $HA_DIR/lib/pcmk_alert /usr/bin/pcmk_alert
+ln -sf $HA_DIR/lib/pcmk_alert /usr/local/bin/pcmk_alert
 exit 0
 
 %preun
@@ -74,6 +77,9 @@ rm -f $HA_DIR/bin/ha_setup 2> /dev/null;
 rm -f /usr/local/bin/event_analyzerd 2> /dev/null;
 rm -f /usr/bin/event_analyzerd 2> /dev/null;
 rm -f $HA_DIR/bin/event_analyzerd 2> /dev/null;
+rm -f /usr/local/bin/pcmk_alert d2> /dev/null;
+rm -f /usr/bin/pcmk_alert 2> /dev/null;
+rm -f $HA_DIR/bin/pcmk_alert d2> /dev/null;
 exit 0
 
 %clean
