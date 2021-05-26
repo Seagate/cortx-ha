@@ -227,6 +227,7 @@ class PcsClusterController(ClusterController, PcsController):
             pcs_cluster_status.load()
             return pcs_cluster_status.get_health_status()
         except Exception as e:
+            Log.error(f"Failed to get status of the cluster. Error: {e}")
             return {"status": const.STATUSES.FAILED, "output": "Retry Suggested.", "error" : str(e)}
 
     @controller_error_handler

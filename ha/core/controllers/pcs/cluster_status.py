@@ -17,6 +17,7 @@
 from ha import const
 from ha.core.config.config_manager import ConfigManager
 from ha.execute import SimpleCommand
+from ha.const import CLUSTER_STATUS
 
 from cortx.utils.log import Log
 
@@ -65,8 +66,11 @@ class PcsClusterStatus:
         # Read list of nodes from HA Conf store
         confstore = ConfigManager._get_confstore()
         nodelist = confstore.get(const.CLUSTER_CONFSTORE_NODES_KEY)
-        for a_node in nodelist:
-            self._nodes_configured.append(a_node.split('/')[-1])
+
+        if nodelist is not None:
+            Log.info(f"Number of nodes configured = {len(nodelist)}")
+            for a_node in nodelist:
+                self._nodes_configured.append(a_node.split('/')[-1])
 
     def _get_pcs_status(self):
         """
@@ -75,11 +79,13 @@ class PcsClusterStatus:
         self._nodes[PcsConstants.OFFLINE] = []
         self._nodes[PcsConstants.COUNT] = 0
 
+        error = None
         try:
             self._output, error, rc = SimpleCommand().run_cmd(PcsConstants.PCS_STATUS_XML)
-            Log.info(f"pcs status : rc = {rc}, error = {error}")
         except Exception as e:
+            Log.info("Failed to run pcs status on current node.")
             rc = 1
+        Log.info(f"pcs status : rc = {rc}, error = {error}")
 
         if rc != 0:
             self._output = self._get_pcs_status_remote()
@@ -91,16 +97,15 @@ class PcsClusterStatus:
         """
             Get status of the cluster using "pcs status --full xml" command remotely.
         """
-        res = None
         for remote_node in self._nodes_configured:
+            res = None
             remote_executor = SSHRemoteExecutor(remote_node)
             try:
                 res = remote_executor.execute(PcsConstants.PCS_STATUS_XML)
-                Log.info(f"res = {res}")
                 self._nodes[PcsConstants.OFFLINE] = []
             except Exception as e:
+                Log.info(f"Failed to run pcs status on node: {remote_node}")
                 self._nodes[PcsConstants.OFFLINE].append(remote_node)
-                Log.info(f"nodes = {self._nodes[PcsConstants.OFFLINE]}")
             else:
                 return res
 
@@ -188,21 +193,21 @@ class PcsClusterStatus:
             Finds and returns the cluster health.
         """
         if len(self._nodes_configured)//2 + 1 <= len(self._nodes[PcsConstants.OFFLINE]):
-            return {"status": const.STATUSES.SUCCEEDED.value, "output": PcsConstants.OFFLINE, "error": ""}
+            return {"status": const.STATUSES.SUCCEEDED.value, "output": CLUSTER_STATUS.OFFLINE.value, "error": ""}
 
         if len(self._nodes_configured) == len(self._nodes[PcsConstants.STANDBY]):
-            return {"status": const.STATUSES.SUCCEEDED.value, "output": PcsConstants.STANDBY, "error": ""}
+            return {"status": const.STATUSES.SUCCEEDED.value, "output": CLUSTER_STATUS.STANDBY.value, "error": ""}
 
         if len(self._nodes_configured) != self._nodes[PcsConstants.COUNT]:
-            return {"status": const.STATUSES.SUCCEEDED.value, "output": PcsConstants.UNHEALTHY,
+            return {"status": const.STATUSES.SUCCEEDED.value, "output": CLUSTER_STATUS.UNHEALTHY.value,
                     "error": f"Some nodes are missing from cluster. Expected: {self._nodes_configured}"}
         if len(self._nodes_configured) > len(self._nodes[PcsConstants.ONLINE]):
-            return {"status": const.STATUSES.SUCCEEDED.value, "output": PcsConstants.DEGRADED,
+            return {"status": const.STATUSES.SUCCEEDED.value, "output": CLUSTER_STATUS.DEGRADED.value,
                     "error": f"All nodes are not online. online: {self._nodes[PcsConstants.ONLINE]}"}
 
         if len(self._services[PcsConstants.UNHEALTHY]) > 0:
-            return {"status": const.STATUSES.SUCCEEDED.value, "output": PcsConstants.DEGRADED,
+            return {"status": const.STATUSES.SUCCEEDED.value, "output": CLUSTER_STATUS.DEGRADED.value,
                     "error": f"All services are not started. Sample: {self._services[PcsConstants.UNHEALTHY][:2]}"}
 
-        return {"status": const.STATUSES.SUCCEEDED.value, "output": PcsConstants.ONLINE, "error" : ""}
+        return {"status": const.STATUSES.SUCCEEDED.value, "output": CLUSTER_STATUS.ONLINE.value, "error" : ""}
 
