@@ -30,10 +30,10 @@ class SystemHealthManager:
         """
         Get key method.
         """
-        return self.store.get(key)
+        return self._store.get(key)
 
     def set_key(self, key: str, value: str):
         """
         Set key method.
         """
-        self.store.put(value, key)
+        self._store.set(value, key)

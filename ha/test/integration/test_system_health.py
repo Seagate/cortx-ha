@@ -22,6 +22,9 @@ from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
 sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..', '..'))
 from ha import const
+from ha.core.config.config_manager import ConfigManager
+from ha.core.system_health.system_health import SystemHealth
+from ha.core.system_health.model.health_event import HealthEvent
 
 def main(argv: dict):
     # TODO: Add test cases.
@@ -34,4 +37,11 @@ if __name__ == '__main__':
     log_path = Conf.get(const.HA_GLOBAL_INDEX, "LOG.path")
     log_level = Conf.get(const.HA_GLOBAL_INDEX, "LOG.level")
     Log.init(service_name='ha_system_health', log_path=log_path, level=log_level)
+    
+    #To check health is updated or not
+    store = ConfigManager._get_confstore()
+    health = SystemHealth(store)
+    event = HealthEvent("event_id", "fault", "severity", "site_id", "rack_id", "cluster_id", "storageset_id",
+                     "node_5", "host_id", "storageset", "now789", "789")
+    health.process_event(event)
     sys.exit(main(sys.argv))
