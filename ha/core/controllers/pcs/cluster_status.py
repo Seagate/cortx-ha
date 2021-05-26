@@ -103,7 +103,7 @@ class PcsClusterStatus:
             try:
                 res = remote_executor.execute(PcsConstants.PCS_STATUS_XML)
                 self._nodes[PcsConstants.OFFLINE] = []
-            except Exception as e:
+            except Exception:
                 Log.info(f"Failed to run pcs status on node: {remote_node}")
                 self._nodes[PcsConstants.OFFLINE].append(remote_node)
             else:
