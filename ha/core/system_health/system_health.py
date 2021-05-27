@@ -85,6 +85,14 @@ class SystemHealth:
         """
         get node status method. This method is for returning a status of a node.
         """
+        try:
+            # Prepare key and read the health value.
+            key = self._prepare_key(component='node', node_id=node_id, **kwargs)
+            return self.healthmanager.get_key(key)
+
+        except Exception as e:
+            Log.error(f"Failed reading status for component: node with Error: {e}")
+            raise HaSystemHealthException("Failed reading status")
 
     def get_storageset_status(self, storageset_id, **kwargs):
         """
