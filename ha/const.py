@@ -197,6 +197,11 @@ class ACTION_STATUS(Enum):
     PENDING = "pending"
     COMPLETE = "complete"
 
+class INSTALLATION_TYPE(Enum):
+    HW = "hw"
+    VM = "vm"
+    SINGLE_VM = "single_vm"
+
 # Alert attribute constants
 class ALERT_ATTRIBUTES:
     HEADER = "sspl_ll_msg_header"
