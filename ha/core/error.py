@@ -209,16 +209,6 @@ class SystemHealthError(HAError):
         _rc = 1
         super(SystemHealthError, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
 
-class EventAnalyzerError(HAError):
-    def __init__(self, desc=None):
-        """
-        Handle Event Analyzer error.
-        """
-        _desc = "HA Event Analyzer failure" if desc is None else desc
-        _message_id = HA_EVENT_ANALYZER_ERROR
-        _rc = 1
-        super(EventAnalyzerError, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
-
 class HaEntityHealthException(SystemHealthError):
     """
     Exception to indicate that some error happened when populating entity health.
@@ -249,12 +239,12 @@ class HaSystemHealthException(SystemHealthError):
     """
     pass
 
-class EventAnalyzer(HAError):
+class EventAnalyzerError(HAError):
     def __init__(self, desc=None):
         """
-        Event Analyzer exceptions.
+        Handle Event Analyzer error.
         """
-        _desc = "Event analyser exception." if desc is None else desc
+        _desc = "HA Event Analyzer failure" if desc is None else desc
         _message_id = HA_EVENT_ANALYZER_ERROR
         _rc = 1
-        super(EventAnalyzer, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
+        super(EventAnalyzerError, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)

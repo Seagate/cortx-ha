@@ -62,6 +62,7 @@ class AlertFilter(Filter):
         """
         Init method
         """
+        super(AlertFilter, self).__init__()
         #Get filter type and resource types list from the alert rule file
         AlertFilter.validate_filter(AlertFilter.MESSAGE_TYPE)
         self.filter_type = Conf.get(const.ALERT_FILTER_INDEX, f"{AlertFilter.MESSAGE_TYPE}.filter_type")
@@ -105,6 +106,7 @@ class IEMFilter(Filter):
         """
         Init method
         """
+        super(IEMFilter, self).__init__()
         IEMFilter.validate_filter(IEMFilter.MESSAGE_TYPE)
 
     def filter_event(self, msg: str) -> bool:

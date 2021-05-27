@@ -40,3 +40,9 @@ class InvalidFilterRules(EventAnalyzerError):
     Exception to detect invalid filter rules
     """
     pass
+
+class SubscriberException(EventAnalyzerError):
+    """
+    Exception to detect subscriber process event.
+    """
+    pass

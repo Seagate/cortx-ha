@@ -28,6 +28,7 @@ from ha.core.event_analyzer.subscriber import Subscriber
 from ha.core.event_analyzer.event_analyzer_exceptions import InvalidSubscriber
 from ha.core.event_analyzer.event_analyzer_exceptions import EventFilterException
 from ha.core.event_analyzer.event_analyzer_exceptions import EventParserException
+from ha.core.event_analyzer.event_analyzer_exceptions import SubscriberException
 
 class Watcher(Thread):
     """ Watch message bus to check in coming event. """
@@ -78,30 +79,47 @@ class Watcher(Thread):
                                 message_types=[self.message_type],
                                 auto_ack=False, offset='latest')
 
+    def _get_message(self):
+        """
+        Receive message from message bus.
+
+        Returns:
+            str: JSON object of message
+        """
+        try:
+            message = self.consumer.receive(timeout=0)
+            return json.loads(message.decode('utf-8'))
+        except Exception as e:
+            Log.error(f"Invalid format of message failed due to {e}. Message : {str(message)}")
+            return None
+
     def run(self):
         """
         Overloaded of Thread.
         """
         while True:
-            try:
-                message = self.consumer.receive(timeout=0)
-                msg_schema = json.loads(message.decode('utf-8'))
-            except Exception as e:
-                Log.error(f"Invalid format of message failed due to {e}. Message : {str(message)}")
+            message = self._get_message()
+            if message is None:
                 self.consumer.ack()
                 continue
             try:
-                Log.debug(f"Captured message: {msg_schema}")
-                if self.filter.filter_event(msg_schema):
-                    Log.info(f"Found filtered alert: {msg_schema}")
-                    event = self.parser.parse_event(msg_schema)
-                    self.subscriber.process_event(event)
+                Log.debug(f"Captured message: {message}")
+                if self.filter.filter_event(message):
+                    Log.info(f"Found filtered alert: {message}")
+                    event = self.parser.parse_event(message)
+                    try:
+                        self.subscriber.process_event(event)
+                    except Exception as e:
+                        raise SubscriberException(f"Failed to process event {message}. Error: {e}")
             except EventFilterException as e:
-                Log.error(f"Filter exception {e} {traceback.format_exc()} for {msg_schema}")
+                Log.error(f"Filter exception {e} {traceback.format_exc()} for {message}")
+                self.consumer.ack()
             except EventParserException as e:
-                Log.error(f"Parser exception {e} {traceback.format_exc()} for {msg_schema}")
+                Log.error(f"Parser exception {e} {traceback.format_exc()} for {message}")
+                self.consumer.ack()
+            except SubscriberException as e:
+                Log.error(f"Subscriber exception {e} {traceback.format_exc()} for {message}, retry without ack.")
             except Exception as e:
-                Log.error(f"Exception caught: {e} {traceback.format_exc()}")
-                Log.error(f"Forcefully ack failed msg: {msg_schema}")
-            finally:
+                Log.error(f"Unknown Exception caught {e} {traceback.format_exc()}")
+                Log.error(f"Forcefully ack failed msg: {message}")
                 self.consumer.ack()

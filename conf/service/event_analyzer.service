@@ -20,6 +20,7 @@ Description=HA event analyzer daemon process
 [Service]
 Type=simple
 ExecStart=/usr/bin/event_analyzerd
+TimeoutStopSec=30sec
 # TODO: user to be changed to hauser
 User=root
 

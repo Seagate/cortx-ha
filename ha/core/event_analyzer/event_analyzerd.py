@@ -57,15 +57,27 @@ class EventAnalyserService:
         confstore = ConfigManager.get_confstore()
         system_health = SystemHealth(confstore)
         # Initalize watcher
+        self._watcher_list: dict = self._initalize_watcher(system_health)
+
+    def _initalize_watcher(self, system_health: SystemHealth) -> dict:
+        """
+        Initalize watcher.
+
+        Args:
+            system_health (SystemHealth): Instance of systemhealth.
+
+        Returns:
+            dict: mapping of wather_type -> watcher_instance
+        """
         watchers = Conf.get(const.HA_GLOBAL_INDEX, "EVENT_ANALYZER.watcher")
-        self._watcher_list: dict = {}
+        watcher_list: dict = {}
         for watcher in watchers:
             Log.info(f"Initializing watcher {watcher}....")
             event_filter_class = Conf.get(const.HA_GLOBAL_INDEX, f"EVENT_ANALYZER.watcher.{watcher}.event_filter")
             event_filter_instance = EventAnalyserService.get_class(event_filter_class)()
             event_parser_class = Conf.get(const.HA_GLOBAL_INDEX, f"EVENT_ANALYZER.watcher.{watcher}.event_parser")
             event_parser_instance = EventAnalyserService.get_class(event_parser_class)()
-            self._watcher_list[watcher] = Watcher(
+            watcher_list[watcher] = Watcher(
                 consumer_id = Conf.get(const.HA_GLOBAL_INDEX, f"EVENT_ANALYZER.watcher.{watcher}.consumer_id"),
                 message_type = Conf.get(const.HA_GLOBAL_INDEX, f"EVENT_ANALYZER.watcher.{watcher}.message_type"),
                 consumer_group = Conf.get(const.HA_GLOBAL_INDEX, f"EVENT_ANALYZER.watcher.{watcher}.consumer_group"),
@@ -73,6 +85,7 @@ class EventAnalyserService:
                 event_parser = event_parser_instance,
                 subscriber = system_health
             )
+        return watcher_list
 
     def run(self):
         """
@@ -82,9 +95,7 @@ class EventAnalyserService:
             Log.info(f"Starting watcher {watcher} service for event analyser.")
             self._watcher_list[watcher].start()
         Log.info(f"Running the daemon for HA event analyzer with PID {os.getpid()}...")
-        # Check if need to handle signal
         while True:
-            Log.info("Running the daemon for HA event analyzer")
             time.sleep(600)
 
 def main(argv):
