@@ -41,7 +41,7 @@ class SSHRemoteExecutor(RemoteExecutor):
             Log.error(f'SSHRemoteExecutor, some error occured while connecting \
                         to SSH channel {err}')
 
-    def execute(self, command: str, secret: str=None) -> None:
+    def execute(self, command: str, secret: str=None):
         '''
         Communicates to remote node by code execution
 
@@ -71,6 +71,8 @@ class SSHRemoteExecutor(RemoteExecutor):
             raise RemoteExecutorError(f"Error: {err}.Some problem occured while executing \
                                         command {command_log} on a remote node: \
                                         {self._hostname}", ret_code)
+
+        return res
 
 def _parse_args():
     parser = argparse.ArgumentParser(description="RemoteExecutor using SSH")
