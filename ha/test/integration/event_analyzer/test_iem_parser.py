@@ -25,7 +25,7 @@ sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..'
 from ha.core.event_analyzer.parser.parser import IEMParser
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.config.config_manager import ConfigManager
-from ha import const
+from ha.const import IEM_DESCRIPTION, PVTFQDN_TO_NODEID_KEY, ALERT_ATTRIBUTES, EVENT_ATTRIBUTES
 
 # Test case for iem parser
 if __name__ == '__main__':
@@ -34,62 +34,62 @@ if __name__ == '__main__':
     iem_parser = IEMParser()
     print("********iem Parser********")
     resource_type = "node"
-    host = "abcd.com"
+    host = "abcd.data.private"
     node_id = "001"
     status = "offline"
-    iem_description = const.IEM_DESCRIPTION
+    iem_description = IEM_DESCRIPTION
     iem_description = Template(iem_description).substitute(host=host, status=status)
     TestMsg = {
-        "sspl_ll_msg_header": {
-        "msg_version": "1.0.0",
-        "schema_version": "1.0.0",
-        "sspl_version": "1.0.0"
+        ALERT_ATTRIBUTES.HEADER: {
+        ALERT_ATTRIBUTES.MSG_VERSION: "1.0.0",
+        ALERT_ATTRIBUTES.SCHEMA_VERSION: "1.0.0",
+        ALERT_ATTRIBUTES.SSPL_VERSION: "1.0.0"
         },
-        "sensor_response_type": {
-            "info": {
-                "event_time": "1574075909",
-                "resource_id": "Fan Module 4",
-                "site_id": 1,
-                "node_id": 1,
-                "cluster_id": 1,
-                "rack_id": 1,
-                "resource_type": resource_type,
-                "description": iem_description
+        ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE: {
+            ALERT_ATTRIBUTES.INFO: {
+                ALERT_ATTRIBUTES.EVENT_TIME: "1574075909",
+                ALERT_ATTRIBUTES.RESOURCE_ID: "Fan Module 4",
+                ALERT_ATTRIBUTES.SITE_ID: 1,
+                ALERT_ATTRIBUTES.NODE_ID: 1,
+                ALERT_ATTRIBUTES.CLUSTER_ID: 1,
+                ALERT_ATTRIBUTES.RACK_ID: 1,
+                ALERT_ATTRIBUTES.RESOURCE_TYPE: resource_type,
+                ALERT_ATTRIBUTES.DESCRIPTION: iem_description
             },
-            "alert_type": "missing",
-            "severity": "warning",
-            "specific_info": {
-                "source": "Software",
-                "component": "ha",
-                "module": "Node",
-                "event": "The cluster has lost one server. System is running in degraded mode.",
-                "IEC": "WS0080010001"
+            ALERT_ATTRIBUTES.ALERT_TYPE: "missing",
+            ALERT_ATTRIBUTES.SEVERITY: "warning",
+            ALERT_ATTRIBUTES.SPECIFIC_INFO: {
+                ALERT_ATTRIBUTES.SOURCE: "Software",
+                ALERT_ATTRIBUTES.COMPONENT: "ha",
+                ALERT_ATTRIBUTES.MODULE: "Node",
+                ALERT_ATTRIBUTES.EVENT: "The cluster has lost one server. System is running in degraded mode.",
+                ALERT_ATTRIBUTES.IEC: "WS0080010001"
             },
-            "alert_id": "15740759091a4e14bca51d46908ac3e9102605d560",
-            "host_id": "abcd.com"
+            ALERT_ATTRIBUTES.ALERT_ID: "15740759091a4e14bca51d46908ac3e9102605d560",
+            ALERT_ATTRIBUTES.HOST_ID: "abcd.com"
         }
     }
 
     # Push hostname to node id mapping to confstore
     print(f"Adding hostname to node id mapping to confstore for {host}:{node_id}")
-    confstore.set(f"{const.HOSTNAME_TO_NODEID_KEY}/{host}", node_id)
+    confstore.set(f"{PVTFQDN_TO_NODEID_KEY}/{host}", node_id)
 
     try:
         health_event = iem_parser.parse_event(json.dumps(TestMsg))
         if isinstance(health_event, HealthEvent):
-            print(f"event_id : {health_event.event_id}")
-            print(f"event_type : {health_event.event_type}")
-            print(f"severity : {health_event.severity}")
-            print(f"site_id : {health_event.site_id}")
-            print(f"rack_id : {health_event.rack_id}")
-            print(f"cluster_id : {health_event.cluster_id}")
-            print(f"storageset_id : {health_event.storageset_id}")
-            print(f"node_id : {health_event.node_id}")
-            print(f"host_id : {health_event.host_id}")
-            print(f"resource_type : {health_event.resource_type}")
-            print(f"timestamp : {health_event.timestamp}")
-            print(f"resource_id : {health_event.resource_id}")
-            print(f"specific_info : {health_event.specific_info}")
+            print(f"{EVENT_ATTRIBUTES.EVENT_ID} : {health_event.event_id}")
+            print(f"{EVENT_ATTRIBUTES.EVENT_TYPE} : {health_event.event_type}")
+            print(f"{EVENT_ATTRIBUTES.SEVERITY} : {health_event.severity}")
+            print(f"{EVENT_ATTRIBUTES.SITE_ID} : {health_event.site_id}")
+            print(f"{EVENT_ATTRIBUTES.RACK_ID} : {health_event.rack_id}")
+            print(f"{EVENT_ATTRIBUTES.CLUSTER_ID} : {health_event.cluster_id}")
+            print(f"{EVENT_ATTRIBUTES.STORAGESET_ID} : {health_event.storageset_id}")
+            print(f"{EVENT_ATTRIBUTES.NODE_ID} : {health_event.node_id}")
+            print(f"{EVENT_ATTRIBUTES.HOST_ID} : {health_event.host_id}")
+            print(f"{EVENT_ATTRIBUTES.RESOURCE_TYPE} : {health_event.resource_type}")
+            print(f"{EVENT_ATTRIBUTES.TIMESTAMP} : {health_event.timestamp}")
+            print(f"{EVENT_ATTRIBUTES.RESOURCE_ID} : {health_event.resource_id}")
+            print(f"{EVENT_ATTRIBUTES.SPECIFIC_INFO} : {health_event.specific_info}")
             print("IEM parser positive test passed successfully")
         else:
             print("IEM parser positive test failed")
@@ -98,7 +98,7 @@ if __name__ == '__main__':
 
     try:
         # Delete one key from the IEM msg and validate the exception handling
-        del TestMsg["sensor_response_type"]["alert_id"]
+        del TestMsg[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.ALERT_ID]
         msg_test = json.dumps(TestMsg)
         health_event = iem_parser.parse_event(json.dumps(TestMsg))
         print("IEM parser negative test failed")
@@ -107,4 +107,4 @@ if __name__ == '__main__':
 
     # Delete hostname to node id mapping from confstore
     print(f"Deleting hostname to node id mapping from confstore for {host}")
-    confstore.delete(f"{const.HOSTNAME_TO_NODEID_KEY}/{host}")
+    confstore.delete(f"{PVTFQDN_TO_NODEID_KEY}/{host}")
