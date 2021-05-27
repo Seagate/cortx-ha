@@ -16,7 +16,7 @@
 # cortx-questions@seagate.com.
 
 import json
-import time
+#import time
 
 from cortx.utils.message_bus import MessageBusAdmin
 from cortx.utils.message_bus.error import MessageBusError
