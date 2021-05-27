@@ -44,7 +44,7 @@ class PcsStorageSetController(StorageSetController, PcsController):
             storagesetid (str): Storageset ID from cluster nodes.
 
         Returns:
-            ([dict]): Return dictionary. {"status": "", "msg":""}
+            ([dict]): Return dictionary. {"status": "", "output": "", "error": ""}
                 status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
@@ -58,7 +58,7 @@ class PcsStorageSetController(StorageSetController, PcsController):
             storagesetid (str): Storageset ID from cluster nodes.
 
         Returns:
-            ([dict]): Return dictionary. {"status": "", "msg":""}
+            ([dict]): Return dictionary. {"status": "", "output": "", "error": ""}
                 status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
@@ -72,7 +72,7 @@ class PcsStorageSetController(StorageSetController, PcsController):
             storagesetid (str): Storageset ID from cluster nodes.
 
         Returns:
-            ([dict]): Return dictionary. {"status": "", "msg":""}
+            ([dict]): Return dictionary. {"status": "", "output": "", "error": ""}
                 status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
@@ -86,7 +86,7 @@ class PcsStorageSetController(StorageSetController, PcsController):
             storagesetid (str): Storageset ID from cluster nodes.
 
         Returns:
-            ([dict]): Return dictionary. {"status": "", "msg":""}
+            ([dict]): Return dictionary. {"status": "", "output": "", "error": ""}
                 status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
@@ -100,7 +100,7 @@ class PcsStorageSetController(StorageSetController, PcsController):
             storagesetid (str): Storageset ID from cluster nodes.
 
         Returns:
-            ([dict]): Return dictionary. {"status": "", "msg":""}
+            ([dict]): Return dictionary. {"status": "", "output": "", "error": ""}
                 status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
