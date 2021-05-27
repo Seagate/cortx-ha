@@ -338,11 +338,11 @@ class PcsClusterController(ClusterController, PcsController):
                 self._execute.run_cmd(const.PCS_CLUSTER_START_NODE)
                 self._execute.run_cmd(const.PCS_CLUSTER_ENABLE.replace("<node>", nodeid))
                 Log.info("Node started and enabled successfully.")
-                # TODO: Divide class into vm, hw when stonith is needed.
-                self._execute.run_cmd(const.PCS_STONITH_DISABLE)
                 time.sleep(const.BASE_WAIT_TIME * 2)
             if self._is_pcs_cluster_running():
                 if self._wait_for_node_online(nodeid):
+                    # TODO: Divide class into vm, hw when stonith is needed.
+                    self._execute.run_cmd(const.PCS_STONITH_DISABLE)
                     return {"status": const.STATUSES.SUCCEEDED.value,
                             "msg": "Cluster created successfully."}
                 else:
