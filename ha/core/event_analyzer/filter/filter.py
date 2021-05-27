@@ -68,8 +68,8 @@ class AlertFilter(Filter):
         super().__init__()
 
         # Get filter type and resource types list from the alert rule file
-        self.filter_type = Conf.get(const.ALERT_FILTER_INDEX, const.AlertConstants.FILTER_TYPE.value)
-        self.resource_types_list = Conf.get(const.ALERT_FILTER_INDEX, const.AlertConstants.RESOURCE_TYPE.value)
+        self.filter_type = Conf.get(const.ALERT_FILTER_INDEX, const.AlertEventConstants.ALERT_FILTER_TYPE.value)
+        self.resource_types_list = Conf.get(const.ALERT_FILTER_INDEX, const.AlertEventConstants.ALERT_RESOURCE_TYPE.value)
 
     def filter_event(self, msg: str) -> bool:
         """
@@ -113,9 +113,9 @@ class IEMFilter(Filter):
         super().__init__()
 
         # Get filter type and resource types list from the IEM rule file
-        self.filter_type = Conf.get(const.ALERT_FILTER_INDEX, const.IemConstants.FILTER_TYPE.value)
-        self.components_list = Conf.get(const.ALERT_FILTER_INDEX, const.IemConstants.COMPONENTS.value)
-        self.modules_dict = Conf.get(const.ALERT_FILTER_INDEX, const.IemConstants.MODULES.value)
+        self.filter_type = Conf.get(const.ALERT_FILTER_INDEX, const.AlertEventConstants.IEM_FILTER_TYPE.value)
+        self.components_list = Conf.get(const.ALERT_FILTER_INDEX, const.AlertEventConstants.IEM_COMPONENTS.value)
+        self.modules_dict = Conf.get(const.ALERT_FILTER_INDEX, const.AlertEventConstants.IEM_MODULES.value)
         self.validate()
 
     def validate(self):

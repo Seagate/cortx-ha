@@ -206,12 +206,9 @@ class INSTALLATION_TYPE(Enum):
     SINGLE_VM = "single_vm"
 
 # Alert constants
-class AlertConstants(Enum):
-    FILTER_TYPE = "alert.filter_type"
-    RESOURCE_TYPE = "alert.resource_type"
-
-# IEM constants
-class IemConstants(Enum):
-    FILTER_TYPE = "iem.filter_type"
-    COMPONENTS = "iem.components"
-    MODULES = "iem.modules"
+class AlertEventConstants(Enum):
+    ALERT_FILTER_TYPE = "alert.filter_type"
+    IEM_FILTER_TYPE = "iem.filter_type"
+    ALERT_RESOURCE_TYPE = "alert.resource_type"
+    IEM_COMPONENTS = "iem.components"
+    IEM_MODULES = "iem.modules"
