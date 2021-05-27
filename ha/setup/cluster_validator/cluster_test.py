@@ -35,6 +35,7 @@ from typing import Any, Iterable, List, Callable
 from ha.setup.cluster_validator.cluster_layout import ClusterLayout, ClusterLayoutJson
 from ha.setup.cluster_validator.cluster_status import (ClusterCloneResource, ClusterStatusPcs)
 from ha.const import COMPONENTS_CONFIG_DIR, RA_LOG_DIR
+from ha.setup.cluster_validator.pcs_const import RESOURCE_ATTRIBUTES
 from cortx.utils.log import Log
 
 
@@ -156,7 +157,7 @@ class ClusterTestAdapter():
         Take set of failed/not-failed resources.
         Check the difference with exceptions.
         """
-        return self.__compare_by_attribute("failed", is_failed, exceptions)
+        return self.__compare_by_attribute(RESOURCE_ATTRIBUTES.FAILED, is_failed, exceptions)
 
     def check_resources_managed(self, exceptions: Iterable[str] = None,
                                 is_managed: bool = True) -> bool:
@@ -165,26 +166,26 @@ class ClusterTestAdapter():
         Take set of managed/unmanaged resources.
         Check the difference with exceptions.
         """
-        return self.__compare_by_attribute("managed", is_managed, exceptions)
+        return self.__compare_by_attribute(RESOURCE_ATTRIBUTES.MANAGED, is_managed, exceptions)
 
     def check_resources_role(self, exceptions: Iterable[str] = None,
-                             expected_role: str = "Started") -> bool:
+                             expected_role: str = RESOURCE_ATTRIBUTES.STARTED) -> bool:
         """Check resources roles."""
         if exceptions is None:
             exceptions = []
         all_resources = self.status.get_all_resources()
         result = True
-        for r in all_resources:
-            if isinstance(r, ClusterCloneResource):
-                for copy in r.copies:
+        for a_resource in all_resources:
+            if isinstance(a_resource, ClusterCloneResource):
+                for copy in a_resource.copies:
                     if copy.role != expected_role and copy.name not in exceptions:
                         Log.info(
-                            f"Resource {r.name}:{copy.name} state expected: {expected_role} actual: {copy.role}")
+                            f"Resource {a_resource.name}:{copy.name} state expected: {expected_role} actual: {copy.role}")
                         result = False
             else:
-                if r.role != expected_role and r.name not in exceptions:
+                if a_resource.role != expected_role and a_resource.name not in exceptions:
                     Log.info(
-                        f"Resource {r.name} state expected: {expected_role} actual: {r.role}")
+                        f"Resource {a_resource.name} state expected: {expected_role} actual: {a_resource.role}")
                     result = False
         return result
 
@@ -201,23 +202,23 @@ class ClusterTestAdapter():
                 name_list = []
                 # Counters is syntastic sugar to specify names for several
                 # identical resources
-                if desc["provider"]["counters"]:
-                    for c in desc["provider"]["counters"]:
-                        name_list.append(f"{res}-{c}")
+                if desc[RESOURCE_ATTRIBUTES.PROVIDER][RESOURCE_ATTRIBUTES.COUNTERS]:
+                    for counter in desc[RESOURCE_ATTRIBUTES.PROVIDER][RESOURCE_ATTRIBUTES.COUNTERS]:
+                        name_list.append(f"{res}-{counter}")
                 else:
                     name_list = [res]
                 for res_name in name_list:
                     # Check that resource actually exists
-                    if desc["ha"]["mode"] == "active_active":
-                        if desc["group"] != "":
-                            r = self.status.get_resource_from_cloned_group_by_name(res_name)
-                            resource_list.append(r)
+                    if desc[RESOURCE_ATTRIBUTES.HA][RESOURCE_ATTRIBUTES.MODE] == RESOURCE_ATTRIBUTES.ACTIVE_ACTIVE:
+                        if desc[RESOURCE_ATTRIBUTES.GROUP] != "":
+                            resource = self.status.get_resource_from_cloned_group_by_name(res_name)
+                            resource_list.append(resource)
                         else:
-                            r = self.status.get_clone_resource_by_name(res_name)
-                            resource_list.extend(r.copies)
+                            resource = self.status.get_clone_resource_by_name(res_name)
+                            resource_list.extend(resource.copies)
                     else:
-                        r = self.status.get_unique_resource_by_name(res_name)
-                        resource_list.append(r)
+                        resource = self.status.get_unique_resource_by_name(res_name)
+                        resource_list.append(resource)
 
                     if not resource_list:
                         Log.info(f"Resource {res_name} not found in status")
@@ -227,19 +228,22 @@ class ClusterTestAdapter():
                 check_res = False
                 continue
 
-            for r in resource_list:
+            for a_resource in resource_list:
                 # Check provider and service
                 expected = "{}:{}".format(
-                    desc["provider"]["name"], desc["provider"]["service"])
-                actual = r.resource_agent
+                    desc[RESOURCE_ATTRIBUTES.PROVIDER][RESOURCE_ATTRIBUTES.NAME], desc[RESOURCE_ATTRIBUTES.PROVIDER][RESOURCE_ATTRIBUTES.SERVICE])
+                actual = a_resource.resource_agent
                 if expected != actual:
                     Log.info(
                         f"{res}: invalid resource agent is used {actual} instead of {expected}")
                     check_res = False
 
-                if desc["group"] != r.group:
-                    Log.info(f'{res}: wrong group {r.group} vs expected {desc["group"]}')
-                    check_res = False
+                try:
+                    if desc[RESOURCE_ATTRIBUTES.GROUP] != a_resource.group:
+                        Log.info(f'{res}: wrong group {a_resource.group} vs expected {desc[RESOURCE_ATTRIBUTES.GROUP]}')
+                        check_res = False
+                except KeyError:
+                    Log.warn(f"{res} : Group is not defined.")
                 # TODO: Location to be checked once component files become part of provisioning
 
         return check_res
@@ -259,113 +263,116 @@ class ClusterTestAdapter():
         return amount_ok and content_ok
 
 
-def _get_component_json_files(comp_files_dir: str = COMPONENTS_CONFIG_DIR) -> List[str]:
-    p = Path(comp_files_dir)
-    return list(map(str, p.glob("*.json")))
+class TestExecutor:
 
+    @staticmethod
+    def _get_component_json_files(comp_files_dir: str = COMPONENTS_CONFIG_DIR) -> List[str]:
+        path_to_files = Path(comp_files_dir)
+        return list(map(str, path_to_files.glob("*.json")))
 
-def validate_cluster(node_list: list[str],
-                     comp_files_dir: str = COMPONENTS_CONFIG_DIR,
-                     executor: Callable[[str], tuple] = None) -> bool:
-    """
-    Perform cluster sanity-checks.
+    @staticmethod
+    def validate_cluster(node_list: list,
+                         comp_files_dir: str = COMPONENTS_CONFIG_DIR,
+                         executor: Callable[[str], tuple] = None) -> bool:
+        """
+        Perform cluster sanity-checks.
 
-    A wrapper for many check functions to be called at once.
+        A wrapper for many check functions to be called at once.
 
-    Params:
-        node_list: expected list of nodes in the cluster.
-        comp_files_dir: directory where component json files are located.
-        executor: Callable to invoke "pcs status xml". Used for tests.
+        Params:
+            node_list: expected list of nodes in the cluster.
+            comp_files_dir: directory where component json files are located.
+            executor: Callable to invoke "pcs status xml". Used for tests.
 
-    Returns:
-        bool: result of sanity checks.
+        Returns:
+            bool: result of sanity checks.
 
-    Raises:
-        FileNotFoundError: no component files found.
-        ValidationStatusError: issues with ClusterStatus class.
-        ValidationConfigError: issues with ClusterLayout init.
-    """
-    res = True
+        Raises:
+            FileNotFoundError: no component files found.
+            ValidationStatusError: issues with ClusterStatus class.
+            ValidationConfigError: issues with ClusterLayout init.
+        """
+        res = True
 
-    status = ClusterStatusPcs(executor=executor)
-    file_list = _get_component_json_files(comp_files_dir)
-    if not file_list:
-        raise FileNotFoundError(
-            f"Component files were not found in {comp_files_dir}")
-    layout = ClusterLayoutJson.from_json_file(file_list, node_list)
-    validator = ClusterTestAdapter(status, layout)
+        status = ClusterStatusPcs(executor=executor)
+        file_list = TestExecutor._get_component_json_files(comp_files_dir)
+        if not file_list:
+            raise FileNotFoundError(
+                f"Component files were not found in {comp_files_dir}")
+        layout = ClusterLayoutJson.from_json_file(file_list, node_list)
+        validator = ClusterTestAdapter(status, layout)
 
-    sub_res = validator.check_resource_layout()
-    res &= sub_res
-    if not sub_res:
-        Log.info("Cluster resource layout does't correspond to component files config.")
+        sub_res = validator.check_resource_layout()
+        res &= sub_res
+        if not sub_res:
+            Log.info("Cluster resource layout does't correspond to component files config.")
 
-    sub_res = validator.check_quorum_state()
-    res &= sub_res
-    if not sub_res:
-        Log.info("Cluster doesn't have quorum. This is a showstopper!")
+        sub_res = validator.check_quorum_state()
+        res &= sub_res
+        if not sub_res:
+            Log.info("Cluster doesn't have quorum. This is a showstopper!")
 
-    # NOTE: Change if this assumption is incorrect or even remove this!
-    sub_res = validator.check_stonith_state(expected_state=False)
-    res &= sub_res
-    if not sub_res:
-        Log.info("Stonith is not disabled for some reason. Check expected configuration.")
+        # NOTE: Change if this assumption is incorrect or even remove this!
+        sub_res = validator.check_stonith_state(expected_state=False)
+        res &= sub_res
+        if not sub_res:
+            Log.info("Stonith is not disabled for some reason. Check expected configuration.")
 
-    sub_res = validator.check_maintenance_mode(expected_state=False)
-    res &= sub_res
-    if not sub_res:
-        Log.info("Cluster maintenance mode is on. Cluster check expected configuration.")
+        sub_res = validator.check_maintenance_mode(expected_state=False)
+        res &= sub_res
+        if not sub_res:
+            Log.info("Cluster maintenance mode is on. Cluster check expected configuration.")
 
-    sub_res = validator.check_nodes_online(nodelist=node_list)
-    res &= sub_res
-    if not sub_res:
-        Log.info("Some nodes are offline. Check HA logs for details.")
+        sub_res = validator.check_nodes_online(nodelist=node_list)
+        res &= sub_res
+        if not sub_res:
+            Log.info("Some nodes are offline. Check HA logs for details.")
 
-    sub_res = validator.check_nodes_standby()
-    res &= sub_res
-    if not sub_res:
-        Log.info("Some nodes are in standby. Check HA logs for details.")
+        sub_res = validator.check_nodes_standby()
+        res &= sub_res
+        if not sub_res:
+            Log.info("Some nodes are in standby. Check HA logs for details.")
 
-    sub_res = validator.check_nodes_maintenance()
-    res &= sub_res
-    if not sub_res:
-        Log.info(
-            "Some nodes are in maintenance mode. Cluster doesn't function normally.")
+        sub_res = validator.check_nodes_maintenance()
+        res &= sub_res
+        if not sub_res:
+            Log.info(
+                "Some nodes are in maintenance mode. Cluster doesn't function normally.")
 
-    sub_res = validator.check_nodes_unclean()
-    res &= sub_res
-    if not sub_res:
-        Log.info(
-            "Some nodes are in unclean state. Cluster doesn't function normally.")
+        sub_res = validator.check_nodes_unclean()
+        res &= sub_res
+        if not sub_res:
+            Log.info(
+                "Some nodes are in unclean state. Cluster doesn't function normally.")
 
-    sub_res = validator.check_resources_failed()
-    res &= sub_res
-    if not sub_res:
-        Log.info("Some resources are failed. Cluster doesn't function normally.")
+        sub_res = validator.check_resources_failed()
+        res &= sub_res
+        if not sub_res:
+            Log.info("Some resources are failed. Cluster doesn't function normally.")
 
-    sub_res = validator.check_resources_role(expected_role="Started")
-    res &= sub_res
-    if not sub_res:
-        Log.info("Some resources are not started. Cluster doesn't function normally.")
+        sub_res = validator.check_resources_role(expected_role="Started")
+        res &= sub_res
+        if not sub_res:
+            Log.info("Some resources are not started. Cluster doesn't function normally.")
 
-    return res
+        return res
 
-
-def _parse_args() -> Any:
-    parser = argparse.ArgumentParser(
-        description="Perform sanity-check of cluster configuration")
-    parser.add_argument("--nodes", type=str, nargs="+",
-                        help="List of cluster nodes expected by setup")
-    parser.add_argument("--comp-dir", type=str, default=COMPONENTS_CONFIG_DIR,
-                        help="List of cluster nodes expected by setup")
-    return parser.parse_args()
+    @staticmethod
+    def parse_args() -> Any:
+        parser = argparse.ArgumentParser(
+            description="Perform sanity-check of cluster configuration")
+        parser.add_argument("--nodes", type=str, nargs="+",
+                            help="List of cluster nodes expected by setup")
+        parser.add_argument("--comp-dir", type=str, default=COMPONENTS_CONFIG_DIR,
+                            help="List of cluster nodes expected by setup")
+        return parser.parse_args()
 
 
 def _main():
-    args = _parse_args()
+    args = TestExecutor.parse_args()
 
     Log.init(service_name="validate_cluster",
              log_path=RA_LOG_DIR, level="INFO")
 
-    ret = validate_cluster(node_list=args.nodes, comp_files_dir=args.comp_dir)
+    ret = TestExecutor.validate_cluster(node_list=args.nodes, comp_files_dir=args.comp_dir)
     sys.exit(ret)

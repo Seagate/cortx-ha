@@ -41,6 +41,7 @@ from ha.core.error import HaConfigException
 from ha.core.error import HaInitException
 from ha.core.error import HaCleanupException
 from ha.core.error import SetupError
+from ha.setup.cluster_validator.cluster_test import TestExecutor
 
 class Cmd:
     """
@@ -178,6 +179,22 @@ class Cmd:
             raise SetupError(f"Failed to get nodelist, Invalid options {fetch_from}")
         Log.info(f"Found total Nodes: {len(nodelist)}, Nodes: {nodelist}, in {fetch_from}")
         return nodelist
+
+    def get_installation_type(self):
+        hw_type = ConfigManager.get_hw_env()
+        if hw_type is not None:
+            install_type = hw_type.lower()
+        else:
+            Log.error("Error: Can not fetch h/w env from Config.")
+            raise HaConfigException("h/w env not present in config.")
+
+        nodes = self.get_nodelist(fetch_from=Cmd.HA_CONFSTORE)
+        if len(nodes) == 1 and install_type == const.INSTALLATION_TYPE.VM:
+            install_type = const.INSTALLATION_TYPE.SINGLE_VM
+
+        Log.info(f"Nodes count = {len(nodes)}, Install type = {install_type}")
+
+        return install_type
 
     def standby_node(self, node_name: str) -> None:
         """
@@ -352,9 +369,7 @@ class ConfigCmd(Cmd):
                         self._add_node(node, cluster_user, cluster_secret)
             else:
                 # Add node with SSH
-                for node in nodelist:
-                    if node != node_name:
-                        self._add_node_remotely(node, cluster_user, cluster_secret)
+                self._add_node_remotely(node_name, cluster_user, cluster_secret)
         else:
             for node in nodelist:
                 if node != node_name:
@@ -569,7 +584,17 @@ class TestCmd(Cmd):
         """
         Process test command.
         """
-        pass # TBD: Write code here to check that all resources have been configured.
+        path_to_comp_config = const.SOURCE_CONFIG_PATH
+
+        install_type = self.get_installation_type()
+        nodes = self.get_nodelist(fetch_from=Cmd.HA_CONFSTORE)
+        path_to_comp_config = path_to_comp_config + '/components/' + install_type
+
+        rc = TestExecutor.validate_cluster(node_list=nodes, comp_files_dir=path_to_comp_config)
+        Log.info(f"cluster validation rc = {rc}")
+
+        if not rc:
+            raise HaConfigException("Cluster is no healthy. Check HA logs for further information.")
 
 class UpgradeCmd(Cmd):
     """
@@ -738,7 +763,7 @@ def main(argv: dict):
         command = Cmd.get_command(desc, argv[1:])
         command.process()
 
-        sys.stdout.write(f"Mini Provisioning {sys.argv[1]} configured sussesfully.\n")
+        sys.stdout.write(f"Mini Provisioning {sys.argv[1]} configured successfully.\n")
     except Exception as err:
         Log.error("%s\n" % traceback.format_exc())
         sys.stderr.write(f"Setup command:{argv[1]} failed for cortx-ha. Error: {err}\n")
