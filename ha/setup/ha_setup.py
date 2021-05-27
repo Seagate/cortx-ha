@@ -32,6 +32,7 @@ from ha.execute import SimpleCommand
 from ha import const
 from ha.const import STATUSES
 from ha.setup.create_pacemaker_resources import create_all_resources
+from ha.setup.post_disruptive_upgrade import perform_post_upgrade
 from ha.core.cluster.cluster_manager import CortxClusterManager
 from ha.core.config.config_manager import ConfigManager
 from ha.remote_execution.ssh_communicator import SSHRemoteExecutor
@@ -39,6 +40,8 @@ from ha.core.error import HaPrerequisiteException
 from ha.core.error import HaConfigException
 from ha.core.error import HaInitException
 from ha.core.error import HaCleanupException
+from ha.core.error import SetupError
+from ha.setup.cluster_validator.cluster_test import TestExecutor
 
 class Cmd:
     """
@@ -46,6 +49,9 @@ class Cmd:
     """
     _index = "conf"
     DEV_CHECK = False
+    LOCAL_CHECK = False
+    PROV_CONFSTORE = "provisioner"
+    HA_CONFSTORE = "confstore"
 
     def __init__(self, args: dict):
         """
@@ -56,6 +62,7 @@ class Cmd:
         self._args = args.args
         self._execute = SimpleCommand()
         self._confstore = ConfigManager._get_confstore()
+        self._cluster_manager = None
 
     @property
     def args(self) -> str:
@@ -82,7 +89,6 @@ class Cmd:
         Return the Command after parsing the command line.
         """
         parser = argparse.ArgumentParser(desc)
-
         subparsers = parser.add_subparsers()
         cmds = inspect.getmembers(sys.modules[__name__])
         cmds = [(x, y) for x, y in cmds
@@ -91,6 +97,7 @@ class Cmd:
             cmd.add_args(subparsers, cmd, name)
         args = parser.parse_args(argv)
         Cmd.DEV_CHECK = args.dev
+        Cmd.LOCAL_CHECK = args.local
         return args.command(args)
 
     @staticmethod
@@ -101,6 +108,7 @@ class Cmd:
         setup_arg_parser = parser.add_parser(cls.name, help='setup %s' % name)
         setup_arg_parser.add_argument('--config', help='Config URL')
         setup_arg_parser.add_argument('--dev', action='store_true', help='Dev check')
+        setup_arg_parser.add_argument('--local', action='store_true', help='Local check')
         setup_arg_parser.add_argument('args', nargs='*', default=[], help='args')
         setup_arg_parser.set_defaults(command=cls)
 
@@ -110,10 +118,15 @@ class Cmd:
         Check if file exist and delete existing file.
 
         Args:
-            file ([str]): File name to be deleted.
+            file ([str]): File or Dir name to be deleted.
         """
         if os.path.exists(file):
-            os.remove(file)
+            if os.path.isfile(file):
+                os.remove(file)
+            elif os.path.isdir(file):
+                shutil.rmtree(file)
+            else:
+                raise SetupError(f"{file} is not dir and file, can not be deleted.")
 
     @staticmethod
     def copy_file(source: str, dest: str):
@@ -138,6 +151,82 @@ class Cmd:
         node_name = Conf.get(self._index, f"server_node.{machine_id}.network.data.private_fqdn")
         Log.info(f"Read node name: {node_name}")
         return node_name
+
+    def get_nodelist(self, fetch_from: str = None) -> list:
+        """
+        Get nodelist from provisioner or confstore
+
+        Args:
+            fetch_from (str): Options from where to fetch.
+
+        Returns:
+            list: List of nodes.
+        """
+        nodelist: list = []
+        fetch_from = Cmd.HA_CONFSTORE if fetch_from is None else fetch_from
+        if fetch_from == Cmd.HA_CONFSTORE:
+            cluster_nodes = self._confstore.get(const.CLUSTER_CONFSTORE_NODES_KEY)
+            if cluster_nodes is None:
+                return nodelist
+            for key in cluster_nodes:
+                nodelist.append(key.split('/')[-1])
+        elif fetch_from == Cmd.PROV_CONFSTORE:
+            nodes_schema = Conf.get(self._index, "server_node")
+            machine_ids: list = list(nodes_schema.keys())
+            for machine in machine_ids:
+                nodelist.append(Conf.get(self._index, f"server_node.{machine}.network.data.private_fqdn"))
+        else:
+            raise SetupError(f"Failed to get nodelist, Invalid options {fetch_from}")
+        Log.info(f"Found total Nodes: {len(nodelist)}, Nodes: {nodelist}, in {fetch_from}")
+        return nodelist
+
+    def get_installation_type(self):
+        hw_type = ConfigManager.get_hw_env()
+        if hw_type is not None:
+            install_type = hw_type.lower()
+        else:
+            Log.error("Error: Can not fetch h/w env from Config.")
+            raise HaConfigException("h/w env not present in config.")
+
+        nodes = self.get_nodelist(fetch_from=Cmd.HA_CONFSTORE)
+        if len(nodes) == 1 and install_type == const.INSTALLATION_TYPE.VM:
+            install_type = const.INSTALLATION_TYPE.SINGLE_VM
+
+        Log.info(f"Nodes count = {len(nodes)}, Install type = {install_type}")
+
+        return install_type
+
+    def standby_node(self, node_name: str) -> None:
+        """
+        Put node in standby
+
+        Args:
+            node_name (str): Node name.
+        """
+        standby_output: str = self._cluster_manager.node_controller.standby(node_name)
+        Log.info(f"Put node in standby output: {standby_output}")
+        if json.loads(standby_output).get("status") == STATUSES.FAILED.value:
+            raise HaConfigException(f"Failed to put cluster in standby mode. Error: {standby_output}")
+
+    @staticmethod
+    def get_s3_instance(machine_id: str) -> int:
+        """
+        Return s3 instance
+
+        Raises:
+            HaConfigException: Raise exception for in-valide s3 count.
+
+        Returns:
+            [int]: Return s3 count.
+        """
+        try:
+            s3_instances = Conf.get(Cmd._index, f"server_node.{machine_id}.s3_instances")
+            if int(s3_instances) < 1:
+                raise HaConfigException(f"Found {s3_instances} which is invalid s3 instance count.")
+            return int(s3_instances)
+        except Exception as e:
+            Log.error(f"Found {s3_instances} which is invalid s3 instance count. Error: {e}")
+            raise HaConfigException(f"Found {s3_instances} which is invalid s3 instance count.")
 
 class PostInstallCmd(Cmd):
     """
@@ -167,6 +256,8 @@ class PostInstallCmd(Cmd):
                             const.CM_CONTROLLER_SCHEMA)
             PostInstallCmd.copy_file(const.SOURCE_ALERT_FILTER_RULES_FILE, const.ALERT_FILTER_RULES_FILE)
             PostInstallCmd.copy_file(const.SOURCE_CLI_SCHEMA_FILE, const.CLI_SCHEMA_FILE)
+            PostInstallCmd.copy_file(const.SOURCE_SERVICE_FILE, const.SYSTEM_SERVICE_FILE)
+            self._execute.run_cmd("systemctl daemon-reload")
             Log.info(f"{self.name}: Copied HA configs file.")
             # Pre-requisite checks are done here.
             # Make sure that cortx necessary packages have been installed
@@ -227,9 +318,8 @@ class ConfigCmd(Cmd):
         Log.info("Processing config command")
         # Read machine-id and using machine-id read minion name from confstore
         # This minion name will be used for adding the node to the cluster.
-        nodelist = []
-        node_name = self.get_node_name()
-        nodelist.append(node_name)
+        node_name: str = self.get_node_name()
+        nodelist: list = self.get_nodelist(fetch_from=ConfigCmd.PROV_CONFSTORE)
 
         # Read cluster name and cluster user
         machine_id = self.get_machine_id()
@@ -242,110 +332,149 @@ class ConfigCmd(Cmd):
         cluster_secret = Conf.get(self._index, f"cortx.software.{const.HA_CLUSTER_SOFTWARE}.secret")
         key = Cipher.generate_key(cluster_id, const.HACLUSTER_KEY)
         cluster_secret = Cipher.decrypt(key, cluster_secret.encode('ascii')).decode()
-        s3_instances = self._get_s3_instance(machine_id)
         mgmt_info: dict = self._get_mgmt_vip(machine_id, cluster_id)
+        s3_instances = ConfigCmd.get_s3_instance(machine_id)
 
         self._update_env(node_name, node_type, const.HA_CLUSTER_SOFTWARE)
         self._fetch_fids()
         self._update_cluster_manager_config()
 
         # Update cluster and resources
-        self._cluster_manager = CortxClusterManager()
+        self._cluster_manager = CortxClusterManager(default_log_enable=False)
         Log.info("Checking if cluster exists already")
-        cluster_exists = self._confstore.key_exists(const.CLUSTER_CONFSTORE_NODES_KEY)
+        cluster_exists = bool(json.loads(self._cluster_manager.cluster_controller.cluster_exists()).get("msg"))
         Log.info(f"Cluster exists? {cluster_exists}")
-        if cluster_exists == False:
-            try:
-                # Create cluster
+
+        if not cluster_exists:
+            node_count: int = len(self.get_nodelist(fetch_from=ConfigCmd.HA_CONFSTORE))
+            if node_count == 0:
                 Log.info(f"Creating cluster: {cluster_name} with node: {node_name}")
-                cluster_output: str = self._cluster_manager.cluster_controller.create_cluster(
-                    cluster_name, cluster_user, cluster_secret, node_name)
-                Log.info(f"Cluster creation output: {cluster_output}")
-                if json.loads(cluster_output).get("status") == STATUSES.SUCCEEDED.value:
-                    # Put cluster in standby mode
-                    standby_output: str = self._cluster_manager.node_controller.standby(node_name)
-                    Log.info(f"Put node in standby output: {standby_output}")
-                    if json.loads(standby_output).get("status") != STATUSES.FAILED.value:
-                        Log.info("Creating pacemaker resources")
-                        create_all_resources(s3_instances=s3_instances, mgmt_info=mgmt_info)
-                        Log.info("Created pacemaker resources successfully")
-                        # Add this node to the cluster nodes list in the store.
-                        self._confstore.set(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
-                    else:
-                        raise HaConfigException(f"Failed to put cluster in standby mode. Error: {standby_output}")
-                else:
-                    raise HaConfigException(f"Cluster creation failed. Error: {cluster_output}")
-            except Exception as e:
-                Log.error(f"Cluster creation failed; destroying the cluster. Error: {e}")
-                output = self._execute.run_cmd(const.PCS_CLUSTER_DESTROY, check_error=True)
-                Log.info(f"Cluster destroyed. Output: {output}")
-                # Delete the node from nodelist if it was added in the store
-                if self._confstore.key_exists(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}"):
-                    self._confstore.delete(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
-                raise HaConfigException("Cluster creation failed")
-        else:
-            node_added = False
-            Log.info(f"Checking if node {node_name} is in cluster")
-            if self._confstore.key_exists(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}"):
-                node_added = True
-                Log.info(f"The node {node_name} present in the cluster already")
+                # Create cluster
+                try:
+                    self._create_cluster(cluster_name, cluster_user, cluster_secret, node_name)
+                    self._create_resource(s3_instances=s3_instances, mgmt_info=mgmt_info)
+                    self._confstore.set(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
+                except Exception as e:
+                    Log.error(f"Cluster creation failed; destroying the cluster. Error: {e}")
+                    output = self._execute.run_cmd(const.PCS_CLUSTER_DESTROY)
+                    Log.error(f"Cluster destroyed. Output: {output}")
+                    # Delete the node from nodelist if it was added in the store
+                    if self._confstore.key_exists(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}"):
+                        self._confstore.delete(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
+                    raise HaConfigException("Cluster creation failed")
+                # Add Other Node
+                for node in nodelist:
+                    if node != node_name:
+                        Log.info(f"Adding node {node} to Cluster {cluster_name}")
+                        self._add_node(node, cluster_user, cluster_secret)
             else:
-                # Cluster exists already, add this node to the existing cluster.
-                Log.info(f"The cluster exists already, adding new node: {node_name}")
-                # Get a list of current cluster nodes
-                cluster_nodes = self._confstore.get(const.CLUSTER_CONFSTORE_NODES_KEY)
-                # Try to connect to these nodes and add the current node.
-                for key in cluster_nodes:
-                    remote_node = key.split('/')[-1]
-                    Log.info(f"Adding {node_name} using remote node: {remote_node}")
-                    remote_executor = SSHRemoteExecutor(remote_node)
-                    try:
-                        remote_executor.execute(const.CORTX_CLUSTER_NODE_ADD.replace("<node>", node_name)
-                                                                            .replace("<user>", cluster_user)
-                                                                            .replace("<secret>", "'" + cluster_secret + "'"))
-                        # TODO: Change following PCS command to CLI when available.
-                        remote_executor.execute(const.PCS_NODE_STANDBY.replace("<node>", node_name))
-                        # Add this node to the cluster nodes list in the store.
-                        self._confstore.set(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
-                        Log.info(f"Added new node: {node_name}")
-                        node_added = True
-                        break
-                    except Exception as e:
-                        node_added = False
-                        Log.error(f"Adding {node_name} using remote node {remote_node} failed with error: {e}, \
-                                if available, will try with other node")
-                        # Try removing the node, it might be partially added.
-                        try:
-                            # TODO: Change following PCS command to CLI when available.
-                            remote_executor.execute(const.PCS_CLUSTER_NODE_REMOVE.replace("<node>", node_name))
-                        except Exception as e:
-                            Log.error(f"Node remove failed with Error: {e}")
-                        # Delete the node from nodelist if it was added in the store
-                        if self._confstore.key_exists(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}"):
-                            self._confstore.delete(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
-            if node_added == False:
-                Log.error(f"Adding {node_name} failed")
-                raise HaConfigException(f"Failed to add node {node_name}.")
+                # Add node with SSH
+                for node in nodelist:
+                    if node != node_name:
+                        self._add_node_remotely(node, cluster_user, cluster_secret)
+        else:
+            for node in nodelist:
+                if node != node_name:
+                    Log.info(f"Adding node {node} to Cluster {cluster_name}")
+                    self._add_node(node, cluster_user, cluster_secret)
+        self._execute.run_cmd(const.PCS_CLEANUP)
         Log.info("config command is successful")
 
-    def _get_s3_instance(self, machine_id: str) -> int:
+    def _create_resource(self, s3_instances, mgmt_info):
+        Log.info("Creating pacemaker resources")
+        try:
+            # TODO: create resource if not already exists.
+            create_all_resources(s3_instances=s3_instances, mgmt_info=mgmt_info)
+        except Exception as e:
+            Log.info(f"Resource creation failed. Error {e}")
+            raise HaConfigException("Resource creation failed.")
+        Log.info("Created pacemaker resources successfully")
+
+    def _create_cluster(self, cluster_name: str, cluster_user: str, cluster_secret: str, node_name: str):
         """
-        Return s3 instance
+        Create cluster on first node.
 
-        Raises:
-            HaConfigException: Raise exception for in-valide s3 count.
-
-        Returns:
-            [int]: Return s3 count.
+        Args:
+            cluster_name (str): Cluster Name
+            cluster_user (str): Cluster User
+            cluster_secret (str): Cluster Secret
+            node_name (str): Node name
         """
         try:
-            s3_instances = Conf.get(self._index, f"server_node.{machine_id}.s3_instances")
-            if int(s3_instances) < 1:
-                raise HaConfigException(f"Found {s3_instances} which is invalid s3 instance count.")
-            return int(s3_instances)
+            cluster_exists = self._confstore.key_exists(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
+            if cluster_exists:
+                Log.info(f"Cluster already created on node {node_name}")
+                return
+            cluster_output: str = self._cluster_manager.cluster_controller.create_cluster(
+                            cluster_name, cluster_user, cluster_secret, node_name)
+            Log.info(f"Cluster creation output: {cluster_output}")
+            if json.loads(cluster_output).get("status") != STATUSES.SUCCEEDED.value:
+                raise HaConfigException(f"Cluster creation failed. Error: {cluster_output}")
+            self.standby_node(node_name)
         except Exception as e:
-            Log.error(f"Found {s3_instances} which is invalid s3 instance count. Error: {e}")
-            raise HaConfigException(f"Found {s3_instances} which is invalid s3 instance count.")
+            raise HaConfigException(f"Failed to create cluster. Error: {e}")
+
+    def _add_node(self, node_name: str, cluster_user: str, cluster_secret: str) -> None:
+        """
+        Add Node
+
+        Args:
+            node_name (str): Node name
+            cluster_user (str): HA user
+            cluster_secret (str): Ha user password
+        """
+        try:
+            if self._confstore.key_exists(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}"):
+                Log.info(f"The node already {node_name} present in the cluster.")
+                return
+            add_node_cli = const.CORTX_CLUSTER_NODE_ADD.replace("<node>", node_name)\
+                .replace("<user>", cluster_user).replace("<secret>", cluster_secret)
+            self._execute.run_cmd(add_node_cli, check_error=False, secret=cluster_secret)
+            self.standby_node(node_name)
+            self._confstore.set(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
+            Log.info(f"The node {node_name} added in the existing cluster.")
+        except Exception as e:
+            Log.error(f"Adding {node_name} failed; destroying the cluster. Error: {e}")
+            output = self._execute.run_cmd(const.PCS_CLUSTER_NODE_REMOVE.replace("<node>", node_name), check_error=False)
+            Log.error(f"Node Removed. Output: {output}")
+            # Delete the node from nodelist if it was added in the store
+            if self._confstore.key_exists(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}"):
+                self._confstore.delete(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
+            raise HaConfigException(f"Adding {node_name} failed")
+
+    def _add_node_remotely(self, node_name: str, cluster_user: str, cluster_secret: str):
+        try:
+            if self._confstore.key_exists(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}"):
+                Log.info(f"The node already {node_name} present in the cluster.")
+                return
+            Log.info(f"The cluster exists already, adding new node: {node_name}")
+            nodelist: list = self.get_nodelist(fetch_from=ConfigCmd.HA_CONFSTORE)
+
+            for remote_node in nodelist:
+                try:
+                    Log.info(f"Adding {node_name} using remote node: {remote_node}")
+                    remote_executor = SSHRemoteExecutor(remote_node)
+                    remote_executor.execute(const.CORTX_CLUSTER_NODE_ADD.replace("<node>", node_name)
+                        .replace("<user>", cluster_user).replace("<secret>", "'" + cluster_secret + "'"),
+                        secret=cluster_secret)
+                    self.standby_node(node_name)
+                    self._confstore.set(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
+                    Log.info(f"Added new node: {node_name} using {remote_node}")
+                    break
+                except Exception as e:
+                    Log.error(f"Adding {node_name} using remote node {remote_node} failed with error: {e}, \
+                            if available, will try with other node")
+                    # Try removing the node, it might be partially added.
+                    try:
+                        # TODO: Change following PCS command to CLI when available.
+                        remote_executor.execute(const.PCS_CLUSTER_NODE_REMOVE.replace("<node>", node_name))
+                    except Exception as e:
+                        Log.error(f"Node remove failed with Error: {e}")
+                    # Delete the node from nodelist if it was added in the store
+                    if self._confstore.key_exists(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}"):
+                        self._confstore.delete(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
+        except Exception as e:
+            raise HaConfigException(f"Failed to add node {node_name} remotely. Error: {e}")
 
     def _get_mgmt_vip(self, machine_id: str, cluster_id: str) -> dict:
         """
@@ -457,7 +586,18 @@ class TestCmd(Cmd):
         """
         Process test command.
         """
-        pass # TBD: Write code here to check that all resources have been configured.
+        path_to_comp_config = const.SOURCE_CONFIG_PATH
+
+        install_type = self.get_installation_type()
+        nodes = self.get_nodelist(fetch_from=Cmd.HA_CONFSTORE)
+        path_to_comp_config = path_to_comp_config + '/components/' + install_type
+
+        rc = TestExecutor.validate_cluster(node_list=nodes, comp_files_dir=path_to_comp_config)
+        Log.info(f"cluster validation rc = {rc}")
+
+        if not rc:
+            raise HaConfigException("Cluster is no healthy. Check HA logs for further information.")
+
 
 class UpgradeCmd(Cmd):
     """
@@ -465,17 +605,19 @@ class UpgradeCmd(Cmd):
     """
     name = "upgrade"
 
-    def __init__(self, args):
+    def __init__(self, args=None):
         """
         Init method.
         """
         super().__init__(args)
+        machine_id = self.get_machine_id()
+        self.s3_instance = UpgradeCmd.get_s3_instance(machine_id)
 
     def process(self):
         """
         Process upgrade command.
         """
-        pass # TBD
+        perform_post_upgrade(self.s3_instance)
 
 class ResetCmd(Cmd):
     """
@@ -506,6 +648,7 @@ class CleanupCmd(Cmd):
         Init method.
         """
         super().__init__(args)
+        self._cluster_manager = CortxClusterManager()
 
     def process(self):
         """
@@ -513,45 +656,64 @@ class CleanupCmd(Cmd):
         """
         Log.info("Processing cleanup command")
         try:
+            nodes = self._confstore.get(const.CLUSTER_CONFSTORE_NODES_KEY)
+            node_count: int = 0 if nodes is None else len(nodes)
             node_name = self.get_node_name()
-            # Get a list of current cluster nodes
-            cluster_nodes = self._confstore.get(const.CLUSTER_CONFSTORE_NODES_KEY)
-            # Try to connect to these nodes and remove the current node.
-            node_removed = False
-            if cluster_nodes is not None:
-                for key in cluster_nodes:
-                    remote_node = key.split('/')[-1]
-                    if remote_node != node_name:
-                        Log.info(f"Removing {node_name} using remote node: {remote_node}")
-                        remote_executor = SSHRemoteExecutor(remote_node)
-                        try:
-                            # TODO: Change following PCS command to CLI when available.
-                            remote_executor.execute(const.PCS_CLUSTER_NODE_REMOVE.replace("<node>", node_name))
-                            Log.info(f"Removed {node_name} from the cluster")
-                            node_removed = True
-                            break
-                        except Exception as e:
-                            Log.error(f"Removing {node_name} using remote node {remote_node} failed with error: {e}, \
-                                    if available, will try with other node")
+            # Standby
+            self.standby_node(node_name)
+            if CleanupCmd.LOCAL_CHECK and node_count > 1:
+                # Remove SSH
+                self._remove_node(node_name)
+            else:
+                # Destroy
+                self._destroy_cluster(node_name)
 
-            if node_removed == False:
-                Log.info(f"{node_name} remove failed/last node in the cluster, destroy the cluster")
-                output = self._execute.run_cmd(const.PCS_CLUSTER_DESTROY, check_error=True)
-                Log.info(f"Cluster destroyed. Output: {output}")
-
-            # Delete the node from nodelist if it is present the store
             if self._confstore.key_exists(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}"):
                 self._confstore.delete(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
             # Delete the config file
-            CleanupCmd.remove_file(const.HA_CONFIG_FILE)
-            CleanupCmd.remove_file(const.CM_CONTROLLER_SCHEMA)
-            CleanupCmd.remove_file(const.FIDS_CONFIG_FILE)
-            CleanupCmd.remove_file(const.ALERT_FILTER_RULES_FILE)
-            CleanupCmd.remove_file(const.CLI_SCHEMA_FILE)
+            self.remove_config_files()
         except Exception as e:
             Log.error(f"Cluster cleanup command failed. Error: {e}")
             raise HaCleanupException("Cluster cleanup failed")
         Log.info("cleanup command is successful")
+
+    def _remove_node(self, node_name: str):
+        """
+        Remove node remotely.
+
+        Args:
+            node_name (str): Node Name.
+        """
+        nodelist: list = self.get_nodelist(fetch_from=CleanupCmd.HA_CONFSTORE)
+        for remote_node in nodelist:
+            if remote_node == node_name:
+                continue
+            Log.error(f"Removing {node_name} using remote node {remote_node}")
+            # Try removing the node, it might be partially added.
+            try:
+                # TODO: Change following PCS command to CLI when available.
+                remote_executor = SSHRemoteExecutor(node_name)
+                remote_executor.execute(const.PCS_CLUSTER_NODE_REMOVE.replace("<node>", node_name))
+                break
+            except Exception as e:
+                Log.error(f"Node remove failed with Error: {e}, Trying with other node.")
+
+    def _destroy_cluster(self, node_name: str):
+        """
+        Destroy Cluster on current node.
+
+        Args:
+            node_name (str): Node name
+        """
+        Log.error(f"Destroying the cluster on {node_name}.")
+        output = self._execute.run_cmd(const.PCS_CLUSTER_DESTROY)
+        Log.error(f"Cluster destroyed. Output: {output}")
+
+    def remove_config_files(self):
+        """
+        Remove file created by ha.
+        """
+        CleanupCmd.remove_file(const.CONFIG_DIR)
 
 class BackupCmd(Cmd):
     """
@@ -604,7 +766,7 @@ def main(argv: dict):
         command = Cmd.get_command(desc, argv[1:])
         command.process()
 
-        sys.stdout.write(f"Mini Provisioning {sys.argv[1]} configured sussesfully.\n")
+        sys.stdout.write(f"Mini Provisioning {sys.argv[1]} configured successfully.\n")
     except Exception as err:
         Log.error("%s\n" % traceback.format_exc())
         sys.stderr.write(f"Setup command:{argv[1]} failed for cortx-ha. Error: {err}\n")

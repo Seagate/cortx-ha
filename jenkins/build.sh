@@ -137,10 +137,11 @@ fi
 sed -i -e "s|<HA_PATH>|${TMPDIR}/cortx|g" ${PYINSTALLER_FILE}
 python3 -m PyInstaller --clean -y --distpath ${HA_DIR} --key ${KEY} ${PYINSTALLER_FILE}
 
-mkdir -p $HA_DIR/conf/etc/ $HA_DIR/conf/script/
+mkdir -p $HA_DIR/conf/etc/ $HA_DIR/conf/script/ $HA_DIR/conf/service/
 cp -rf $BASE_DIR/conf/etc/common/* $HA_DIR/conf/etc/
 cp -rf $BASE_DIR/conf/script/common/* $HA_DIR/conf/script/
 cp -rf $BASE_DIR/conf/logrotate/ $HA_DIR/conf/
+
 if [ "$MAJ_VER" == "${HA1}" ]
 then
      cp -rf $BASE_DIR/conf/etc/v1/* $HA_DIR/conf/etc/
@@ -155,6 +156,7 @@ then
 else
      cp -rf $BASE_DIR/conf/etc/v2/* $HA_DIR/conf/etc/
      cp -rf $BASE_DIR/conf/script/v2/* $HA_DIR/conf/script/
+     cp -rf $BASE_DIR/conf/service/* $HA_DIR/conf/service/
      cp -rf $BASE_DIR/conf/mini_provisioner/v2/* $HA_DIR/conf/
      # pcswrap will only present in v1, hence removing it from v2
      rm -rf ${TMPHA}/pcswrap
