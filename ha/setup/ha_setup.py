@@ -369,14 +369,11 @@ class ConfigCmd(Cmd):
                         self._add_node(node, cluster_user, cluster_secret)
             else:
                 # Add node with SSH
-                for node in nodelist:
-                    if node != node_name:
-                        self._add_node_remotely(node, cluster_user, cluster_secret)
+                self._add_node_remotely(node_name, cluster_user, cluster_secret)
         else:
-            for node in nodelist:
-                if node != node_name:
-                    Log.info(f"Adding node {node} to Cluster {cluster_name}")
-                    self._add_node(node, cluster_user, cluster_secret)
+            for node in self.get_nodelist(fetch_from=ConfigCmd.HA_CONFSTORE):
+                Log.info(f"Adding node {node_name} to Cluster {cluster_name} from {node}")
+                self._add_node(node, cluster_user, cluster_secret)
         self._execute.run_cmd(const.PCS_CLEANUP)
         Log.info("config command is successful")
 
@@ -597,7 +594,6 @@ class TestCmd(Cmd):
 
         if not rc:
             raise HaConfigException("Cluster is no healthy. Check HA logs for further information.")
-
 
 class UpgradeCmd(Cmd):
     """
