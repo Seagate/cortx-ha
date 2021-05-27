@@ -293,3 +293,10 @@ class AlertEventConstants(Enum):
     ALERT_RESOURCE_TYPE = f"alert{_DELIM}resource_type"
     IEM_COMPONENTS = f"iem{_DELIM}components"
     IEM_MODULES = f"iem{_DELIM}modules"
+
+class CLUSTER_STATUS(Enum):
+    OFFLINE = "offline"
+    STANDBY = "standby"
+    DEGRADED = "degraded"
+    UNHEALTHY = "unhealthy"
+    ONLINE = "online"
