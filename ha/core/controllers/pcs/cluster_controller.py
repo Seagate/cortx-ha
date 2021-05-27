@@ -294,7 +294,6 @@ class PcsClusterController(ClusterController, PcsController):
             Log.error(f"Failed to get status of the cluster. Error: {e}")
             return {"status": const.STATUSES.FAILED.value, "output": "Retry Suggested.", "error" : str(e)}
 
-
     @controller_error_handler
     def standby(self, sync=False, timeout=30) -> dict:
         """
