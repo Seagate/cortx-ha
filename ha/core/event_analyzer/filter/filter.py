@@ -26,25 +26,10 @@ from ha.const import ALERT_ATTRIBUTES
 from ha.core.event_analyzer.event_analyzer_exceptions import EventFilterException
 from ha.core.event_analyzer.event_analyzer_exceptions import InvalidFilterRules
 
-class MESSAGETYPE(Enum):
-    ALERT = "ALERT"
-    IEM = "IEM"
-
 
 class MESSAGETYPE(Enum):
     ALERT = "ALERT"
     IEM = "IEM"
-
-
-class MESSAGETYPE(Enum):
-    ALERT = "ALERT"
-    IEM = "IEM"
-
-
-class MESSAGETYPE(Enum):
-    ALERT = "ALERT"
-    IEM = "IEM"
-
 
 class Filter(metaclass=abc.ABCMeta):
     """ Base class to filter alert """
