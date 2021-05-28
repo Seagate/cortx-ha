@@ -70,7 +70,12 @@ class AlertMonitor:
         try:
              event_type = self.validate_event()
              # Redirect the alert to appropriate monitor for further processing
-             self.redirect_alert(event_type)
+             if event_type:
+                 Log.info(f"Handling the event: {str(self.crm_env)}")
+                 self.redirect_alert(event_type)
+             else:
+                 Log.info(f"Identified unknown event: {str(self.crm_env)}")
+
         except Exception as e:
             Log.error(f"{traceback.format_exc()}, {e}")
 
