@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
 #
 # This program is free software: you can redistribute it and/or modify it under the
@@ -13,16 +15,24 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-# TODO: convert event_analyzer.service to event_analyzer@consumer_id.service for scaling
-[Unit]
-Description=HA event analyzer daemon process
+import sys
+import json
 
-[Service]
-Type=simple
-ExecStart=/usr/bin/event_analyzerd
-TimeoutStopSec=30sec
-# TODO: user to be changed to hauser
-User=root
+from cortx.utils.message_bus import MessageConsumer
 
-[Install]
-WantedBy=multi-user.target
+if __name__ == '__main__':
+    consumer = MessageConsumer(consumer_id="1",
+                                consumer_group='ha_event_analyzer',
+                                message_types=["alerts"],
+                                auto_ack=False, offset='latest')
+
+    while True:
+        try:
+            print("In receiver")
+            message = consumer.receive(timeout=0)
+            msg = json.loads(message.decode('utf-8'))
+            print(msg)
+            consumer.ack()
+        except Exception as e:
+            print(e)
+            sys.exit(0)

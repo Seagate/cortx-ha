@@ -37,6 +37,8 @@ ha_path="<HA_PATH>"
 cmd_hidden_import = ["ha.cli.exec.clusterExecutor", "ha.cli.exec.nodeExecutor", "ha.cli.exec.serviceExecutor", "ha.cli.exec.storagesetExecutor", "ha.cli.exec.supportBundleExecutor"]
 product_module_list = import_list(ha_path, ha_path + "/ha/core/controllers")
 product_module_list.extend(cmd_hidden_import)
+product_module_list.extend("ha.core.event_analyzer.filter.filter.IEMFilter")
+product_module_list.extend("ha.core.event_analyzer.parser.parser.IEMParser")
 
 # Analysis
 cortxha =  Analysis([ha_path + '/ha/cli/cortxha.py'],
