@@ -30,7 +30,7 @@ from ha.const import IEM_DESCRIPTION, PVTFQDN_TO_NODEID_KEY, ALERT_ATTRIBUTES, E
 # Test case for iem parser
 if __name__ == '__main__':
     ConfigManager.init("test_iem_parser")
-    confstore = ConfigManager._get_confstore()
+    confstore = ConfigManager.get_confstore()
     iem_parser = IEMParser()
     print("********iem Parser********")
     resource_type = "node"
