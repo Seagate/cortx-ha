@@ -58,7 +58,7 @@ class AlertParser(Parser):
         Init method.
         """
         super(AlertParser, self).__init__()
-        Log.info(f"Alert Parser is initialized ...")
+        Log.info("Alert Parser is initialized ...")
 
     def parse_event(self, msg: str) -> HealthEvent:
         """
@@ -102,7 +102,7 @@ class IEMParser(Parser):
         Init method.
         """
         super(IEMParser, self).__init__()
-        Log.info(f"IEM Parser is initialized ...")
+        Log.info("IEM Parser is initialized ...")
 
     def parse_event(self, msg: str) -> HealthEvent:
         """

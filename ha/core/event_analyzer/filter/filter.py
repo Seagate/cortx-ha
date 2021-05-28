@@ -79,7 +79,7 @@ class AlertFilter(Filter):
         # Get filter type and resource types list from the alert rule file
         self.filter_type = Conf.get(const.ALERT_FILTER_INDEX, const.AlertEventConstants.ALERT_FILTER_TYPE.value)
         self.resource_types_list = Conf.get(const.ALERT_FILTER_INDEX, const.AlertEventConstants.ALERT_RESOURCE_TYPE.value)
-        Log.info(f"Alert Filter is initialized ...")
+        Log.info("Alert Filter is initialized ...")
 
     def filter_event(self, msg: str) -> bool:
         """
@@ -125,7 +125,7 @@ class IEMFilter(Filter):
         self.filter_type = Conf.get(const.ALERT_FILTER_INDEX, const.AlertEventConstants.IEM_FILTER_TYPE.value)
         self.components_list = Conf.get(const.ALERT_FILTER_INDEX, const.AlertEventConstants.IEM_COMPONENTS.value)
         self.modules_dict = Conf.get(const.ALERT_FILTER_INDEX, const.AlertEventConstants.IEM_MODULES.value)
-        Log.info(f"IEM Filter is initialized ...")
+        Log.info("IEM Filter is initialized ...")
 
     def filter_event(self, msg: str) -> bool:
         """
