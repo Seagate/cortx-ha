@@ -211,7 +211,6 @@ def event_analyzer(cib_xml, push=False, **kwargs):
     if push:
         cib_push(cib_xml)
 
-
 def uds(cib_xml, push=False, **kwargs):
     """Create uds resource."""
     with_uds = kwargs["uds"] if "uds" in kwargs else False
@@ -300,7 +299,6 @@ def ha_group(cib_xml, push=False, **kwargs):
     if push:
         cib_push(cib_xml)
 
-
 def create_all_resources(cib_xml=const.CIB_FILE, push=True, **kwargs):
     """Populate the cluster with all Cortx resources.
 
@@ -333,3 +331,8 @@ def create_all_resources(cib_xml=const.CIB_FILE, push=True, **kwargs):
         Log.info("HA Rules: Successfully configured all HA resources and its configuration.")
     except Exception:
         raise CreateResourceError("Failed to populate cluster with resources")
+
+def create_alert_resource():
+    pass
+    process.run_cmd("pcs alert create id=alert_file description='Log events to a file.' path=/var/lib/pacemaker/alert_file.sh")
+    process.run_cmd("pcs alert recipient add alert_file id=my-alert_logfile value=/var/log/pcmk_alert_file.log")
