@@ -22,6 +22,7 @@ from cortx.utils.conf_store.conf_store import Conf
 from cortx.utils.log import Log
 from ha import const
 from ha.core.config.config_manager import ConfigManager
+from ha.const import ALERT_ATTRIBUTES
 from ha.core.event_analyzer.event_analyzer_exceptions import EventFilterException
 from ha.core.event_analyzer.event_analyzer_exceptions import InvalidFilterRules
 
@@ -44,7 +45,7 @@ class Filter(metaclass=abc.ABCMeta):
         """
         Filter type should be one of INCLUSION or EXCLUSION
         """
-        filter_type = Conf.get(const.ALERT_FILTER_INDEX, f"{message_type}.filter_type")
+        filter_type = Conf.get(const.ALERT_FILTER_INDEX, message_type)
         if filter_type not in [const.INCLUSION, const.EXCLUSION]:
             raise InvalidFilterRules(f"Invalid filter type {filter_type}")
 
@@ -63,8 +64,8 @@ class Filter(metaclass=abc.ABCMeta):
         """
         Check if the msg type is iem or alert
         """
-        msg_type = msg.get(const.SENSOR_RESPONSE_TYPE)
-        return msg_type[const.INFO][const.RESOURCE_TYPE]
+        msg_type = msg.get(ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE)
+        return msg_type[ALERT_ATTRIBUTES.INFO][ALERT_ATTRIBUTES.RESOURCE_TYPE]
 
 class AlertFilter(Filter):
     """ Filter unnecessary alert. """
@@ -74,10 +75,11 @@ class AlertFilter(Filter):
         Init method
         """
         super(AlertFilter, self).__init__()
-        AlertFilter.validate_filter(AlertFilter.MESSAGE_TYPE)
+        AlertFilter.validate_filter(const.AlertEventConstants.ALERT_FILTER_TYPE.value)
         # Get filter type and resource types list from the alert rule file
         self.filter_type = Conf.get(const.ALERT_FILTER_INDEX, const.AlertEventConstants.ALERT_FILTER_TYPE.value)
         self.resource_types_list = Conf.get(const.ALERT_FILTER_INDEX, const.AlertEventConstants.ALERT_RESOURCE_TYPE.value)
+        Log.info("Alert Filter is initialized ...")
 
     def filter_event(self, msg: str) -> bool:
         """
@@ -87,14 +89,14 @@ class AlertFilter(Filter):
         """
         try:
             Alert_required = False
-            message = json.loads(msg)
+            message = json.loads(msg).get(ALERT_ATTRIBUTES.MESSAGE)
 
-            msg_type = message.get(const.ACTUATOR_RESPONSE_TYPE)
+            msg_type = message.get(ALERT_ATTRIBUTES.ACTUATOR_RESPONSE_TYPE)
             if msg_type is not None:
                 return Alert_required
 
-            msg_type = message.get(const.SENSOR_RESPONSE_TYPE)
-            resource_type = msg_type[const.INFO][const.RESOURCE_TYPE]
+            msg_type = message.get(ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE)
+            resource_type = msg_type[ALERT_ATTRIBUTES.INFO][ALERT_ATTRIBUTES.RESOURCE_TYPE]
 
             if self.filter_type == const.INCLUSION:
                 if resource_type in self.resource_types_list:
@@ -103,7 +105,8 @@ class AlertFilter(Filter):
                 # EXCLUSION Rules
                 if resource_type not in self.resource_types_list:
                     Alert_required = True
-
+            event_id = message.get(ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE).get(ALERT_ATTRIBUTES.ALERT_ID)
+            Log.info(f"Successfully filtered event {event_id} ...")
             return Alert_required
 
         except Exception as e:
@@ -117,11 +120,12 @@ class IEMFilter(Filter):
         Init method
         """
         super(IEMFilter, self).__init__()
-        IEMFilter.validate_filter(IEMFilter.MESSAGE_TYPE)
+        IEMFilter.validate_filter(const.AlertEventConstants.IEM_FILTER_TYPE.value)
         # Get filter type and resource types list from the IEM rule file
         self.filter_type = Conf.get(const.ALERT_FILTER_INDEX, const.AlertEventConstants.IEM_FILTER_TYPE.value)
         self.components_list = Conf.get(const.ALERT_FILTER_INDEX, const.AlertEventConstants.IEM_COMPONENTS.value)
         self.modules_dict = Conf.get(const.ALERT_FILTER_INDEX, const.AlertEventConstants.IEM_MODULES.value)
+        Log.info("IEM Filter is initialized ...")
 
     def filter_event(self, msg: str) -> bool:
         """
@@ -131,19 +135,19 @@ class IEMFilter(Filter):
         """
         try:
             iem_required = False
-            message = json.loads(msg)
+            message = json.loads(msg).get(ALERT_ATTRIBUTES.MESSAGE)
 
-            actuator_response_type = message.get(const.ACTUATOR_RESPONSE_TYPE)
+            actuator_response_type = message.get(ALERT_ATTRIBUTES.ACTUATOR_RESPONSE_TYPE)
             if actuator_response_type is not None:
                 return iem_required
 
-            msg_type = Filter.get_msg_type(message)
+            msg_type = IEMFilter.get_msg_type(message)
             if msg_type.lower() != MESSAGETYPE.IEM.value.lower():
                 return iem_required
 
-            sensor_response_type = message.get(const.SENSOR_RESPONSE_TYPE)
-            component_type = sensor_response_type[const.SPECIFIC_INFO][const.COMPONENT]
-            module_type = sensor_response_type[const.SPECIFIC_INFO][const.MODULE]
+            sensor_response_type = message.get(ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE)
+            component_type = sensor_response_type[ALERT_ATTRIBUTES.SPECIFIC_INFO][ALERT_ATTRIBUTES.COMPONENT]
+            module_type = sensor_response_type[ALERT_ATTRIBUTES.SPECIFIC_INFO][ALERT_ATTRIBUTES.MODULE]
 
             if self.filter_type == const.INCLUSION:
                 if component_type in self.components_list and module_type in self.modules_dict.get(component_type):
@@ -154,6 +158,8 @@ class IEMFilter(Filter):
                         component_type):
                     iem_required = True
 
+            event_id = message.get(ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE).get(ALERT_ATTRIBUTES.ALERT_ID)
+            Log.info(f"Successfully filtered event {event_id} ...")
             return iem_required
 
         except Exception as e:
