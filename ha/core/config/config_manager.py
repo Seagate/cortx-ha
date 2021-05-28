@@ -61,7 +61,7 @@ class ConfigManager:
         Log.init(service_name=log_name, log_path=log_path, level=log_level)
 
     @staticmethod
-    def _get_confstore():
+    def get_confstore():
         """
         Initalize and get confstore if not _cluster_confstore is None.
         Used by config manager methods to check and initalize confstore if needed.

@@ -61,7 +61,7 @@ class Cmd:
         Conf.load(self._index, self._url)
         self._args = args.args
         self._execute = SimpleCommand()
-        self._confstore = ConfigManager._get_confstore()
+        self._confstore = ConfigManager.get_confstore()
         self._cluster_manager = None
 
     @property

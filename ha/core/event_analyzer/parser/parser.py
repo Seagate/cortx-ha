@@ -18,7 +18,9 @@
 import abc
 import json
 import re
-from ha.core.error import EventAnalyzerError
+
+from ha.core.system_health.model.health_event import HealthEvent
+from ha.core.event_analyzer.event_analyzer_exceptions import EventParserException
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.config.config_manager import ConfigManager
 from ha.const import PVTFQDN_TO_NODEID_KEY, ALERT_ATTRIBUTES, EVENT_ATTRIBUTES
@@ -32,12 +34,13 @@ class Parser(metaclass=abc.ABCMeta):
         """
         Init method.
         """
-        self._confstore = ConfigManager._get_confstore()
+        self._confstore = ConfigManager.get_confstore()
 
     @abc.abstractmethod
     def parse_event(self, msg: str) -> HealthEvent:
         """
         Parse event.
+
         Args:
             msg (str): Msg
         """
@@ -78,11 +81,11 @@ class AlertParser(Parser):
             return health_event
 
         except Exception as e:
-            raise EventAnalyzerError(f"Failed to parse alert. Message: {msg}, Error: {e}")
+            raise EventParserException(f"Failed to parse alert. Message: {msg}, Error: {e}")
 
 class IEMParser(Parser):
     """
-    Parser for IEMs.
+    Subscriber for event analyzer to pass msg.
     """
 
     def parse_event(self, msg: str) -> HealthEvent:
@@ -120,4 +123,4 @@ class IEMParser(Parser):
             return health_event
 
         except Exception as e:
-            raise EventAnalyzerError(f"Failed to parse IEM. Message: {msg}, Error: {e}")
+            raise EventParserException(f"Failed to parse IEM. Message: {msg}, Error: {e}")

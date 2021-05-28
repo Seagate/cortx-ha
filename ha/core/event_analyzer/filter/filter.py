@@ -22,28 +22,37 @@ from cortx.utils.conf_store.conf_store import Conf
 from cortx.utils.log import Log
 from ha import const
 from ha.core.config.config_manager import ConfigManager
-from ha.core.error import EventAnalyzerError
-
+from ha.core.event_analyzer.event_analyzer_exceptions import EventFilterException
+from ha.core.event_analyzer.event_analyzer_exceptions import InvalidFilterRules
 
 class MESSAGETYPE(Enum):
     ALERT = "ALERT"
     IEM = "IEM"
-
 
 class Filter(metaclass=abc.ABCMeta):
     """ Base class to filter alert """
 
     def __init__(self):
         """
-        Init method
+        Load filter rules.
         """
-        # Loads IEM filter rules in the configuration
+        #Loads alert filter rules in the configuration
         ConfigManager.load_filter_rules()
+
+    @staticmethod
+    def validate_filter(message_type: str):
+        """
+        Filter type should be one of INCLUSION or EXCLUSION
+        """
+        filter_type = Conf.get(const.ALERT_FILTER_INDEX, f"{message_type}.filter_type")
+        if filter_type not in [const.INCLUSION, const.EXCLUSION]:
+            raise InvalidFilterRules(f"Invalid filter type {filter_type}")
 
     @abc.abstractmethod
     def filter_event(self, msg: str) -> bool:
         """
         Filter event.
+
         Args:
             msg (str): Msg
         """
@@ -57,7 +66,6 @@ class Filter(metaclass=abc.ABCMeta):
         msg_type = msg.get(const.SENSOR_RESPONSE_TYPE)
         return msg_type[const.INFO][const.RESOURCE_TYPE]
 
-
 class AlertFilter(Filter):
     """ Filter unnecessary alert. """
 
@@ -65,8 +73,8 @@ class AlertFilter(Filter):
         """
         Init method
         """
-        super().__init__()
-
+        super(AlertFilter, self).__init__()
+        AlertFilter.validate_filter(AlertFilter.MESSAGE_TYPE)
         # Get filter type and resource types list from the alert rule file
         self.filter_type = Conf.get(const.ALERT_FILTER_INDEX, const.AlertEventConstants.ALERT_FILTER_TYPE.value)
         self.resource_types_list = Conf.get(const.ALERT_FILTER_INDEX, const.AlertEventConstants.ALERT_RESOURCE_TYPE.value)
@@ -91,17 +99,15 @@ class AlertFilter(Filter):
             if self.filter_type == const.INCLUSION:
                 if resource_type in self.resource_types_list:
                     Alert_required = True
-            elif self.filter_type == const.EXCLUSION:
+            else:
+                # EXCLUSION Rules
                 if resource_type not in self.resource_types_list:
                     Alert_required = True
-            else:
-                Log.error("Invalid filter type in the event filter rules")
 
             return Alert_required
 
         except Exception as e:
-            raise EventAnalyzerError(f"Failed to filter event. Message: {msg}, Error: {e}")
-
+            raise EventFilterException(f"Failed to filter event. Message: {msg}, Error: {e}")
 
 class IEMFilter(Filter):
     """ Filter IEM consumed by watcher """
@@ -110,21 +116,12 @@ class IEMFilter(Filter):
         """
         Init method
         """
-        super().__init__()
-
+        super(IEMFilter, self).__init__()
+        IEMFilter.validate_filter(IEMFilter.MESSAGE_TYPE)
         # Get filter type and resource types list from the IEM rule file
         self.filter_type = Conf.get(const.ALERT_FILTER_INDEX, const.AlertEventConstants.IEM_FILTER_TYPE.value)
         self.components_list = Conf.get(const.ALERT_FILTER_INDEX, const.AlertEventConstants.IEM_COMPONENTS.value)
         self.modules_dict = Conf.get(const.ALERT_FILTER_INDEX, const.AlertEventConstants.IEM_MODULES.value)
-        self.validate()
-
-    def validate(self):
-        """
-        validate filter type
-        """
-        if self.filter_type not in [const.INCLUSION, const.EXCLUSION]:
-            Log.error("Invalid IEM filter type in the event IEM filter rules")
-            raise EventAnalyzerError(f"Invalid IEM filter type `{self.filter_type}` in the event IEM filter rules")
 
     def filter_event(self, msg: str) -> bool:
         """
@@ -136,27 +133,28 @@ class IEMFilter(Filter):
             iem_required = False
             message = json.loads(msg)
 
-            _actuator_response_type = message.get(const.ACTUATOR_RESPONSE_TYPE)
-            if _actuator_response_type is not None:
+            actuator_response_type = message.get(const.ACTUATOR_RESPONSE_TYPE)
+            if actuator_response_type is not None:
                 return iem_required
 
-            _msg_type = Filter.get_msg_type(message)
-            if _msg_type.lower() != MESSAGETYPE.IEM.value.lower():
+            msg_type = Filter.get_msg_type(message)
+            if msg_type.lower() != MESSAGETYPE.IEM.value.lower():
                 return iem_required
 
-            _sensor_response_type = message.get(const.SENSOR_RESPONSE_TYPE)
-            _component_type = _sensor_response_type[const.SPECIFIC_INFO][const.COMPONENT]
-            _module_type = _sensor_response_type[const.SPECIFIC_INFO][const.MODULE]
+            sensor_response_type = message.get(const.SENSOR_RESPONSE_TYPE)
+            component_type = sensor_response_type[const.SPECIFIC_INFO][const.COMPONENT]
+            module_type = sensor_response_type[const.SPECIFIC_INFO][const.MODULE]
 
             if self.filter_type == const.INCLUSION:
-                if _component_type in self.components_list and _module_type in self.modules_dict.get(_component_type):
+                if component_type in self.components_list and module_type in self.modules_dict.get(component_type):
                     iem_required = True
-            elif self.filter_type == const.EXCLUSION:
-                if _component_type not in self.components_list or _module_type not in self.modules_dict.get(
-                        _component_type):
+            else:
+                # EXCLUSION Rules
+                if component_type not in self.components_list or module_type not in self.modules_dict.get(
+                        component_type):
                     iem_required = True
 
             return iem_required
 
         except Exception as e:
-            raise EventAnalyzerError(f"Failed to filter IEM event. Message: {msg}, Error: {e}")
+            raise EventFilterException(f"Failed to filter IEM event. Message: {msg}, Error: {e}")

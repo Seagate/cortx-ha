@@ -19,6 +19,7 @@ import time
 
 from cortx.utils.log import Log
 from ha import const
+from ha.core.event_analyzer.subscriber import Subscriber
 from ha.core.system_health.system_health_metadata import SystemHealthComponents, SystemHealthHierarchy
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.system_health.model.entity_health import EntityEvent, EntityAction, EntityHealth
@@ -26,7 +27,7 @@ from ha.core.system_health.status_mapper import StatusMapper
 from ha.core.system_health.system_health_manager import SystemHealthManager
 from ha.core.error import HaSystemHealthException
 
-class SystemHealth:
+class SystemHealth(Subscriber):
     """
     System Health. This class implements an interface to the HA System Health module.
     """
