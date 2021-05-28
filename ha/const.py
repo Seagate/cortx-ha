@@ -154,6 +154,15 @@ ALERT_FILTER_RULES_FILE = "{}/alert_filter_rules.json".format(CONFIG_DIR)
 SOURCE_ALERT_FILTER_RULES_FILE = "{}/alert_filter_rules.json".format(SOURCE_CONFIG_PATH)
 SYSTEM_SERVICE_FILE = "{}/event_analyzer.service".format(SYSTEM_DIR)
 SOURCE_SERVICE_FILE = "{}/conf/service/event_analyzer.service".format(SOURCE_PATH)
+ACTUATOR_RESPONSE_TYPE= "actuator_response_type"
+SENSOR_RESPONSE_TYPE= "sensor_response_type"
+SPECIFIC_INFO = "specific_info"
+INFO = "info"
+COMPONENT = "component"
+MODULE = "module"
+RESOURCE_TYPE = "resource_type"
+IEM_DESCRIPTION="WS0080010001, Node, The cluster has lost $host server. System is running in degraded mode. " \
+                "For more information refer the Troubleshooting guide. Extra Info: host=$host; status=$status;"
 
 class STATUSES(Enum):
     IN_PROGRESS = "InProgress"
@@ -194,8 +203,15 @@ class ACTION_STATUS(Enum):
     PENDING = "pending"
     COMPLETE = "complete"
 
-
 class INSTALLATION_TYPE(Enum):
     HW = "hw"
     VM = "vm"
     SINGLE_VM = "single_vm"
+
+# Alert constants
+class AlertEventConstants(Enum):
+    ALERT_FILTER_TYPE = "alert.filter_type"
+    IEM_FILTER_TYPE = "iem.filter_type"
+    ALERT_RESOURCE_TYPE = "alert.resource_type"
+    IEM_COMPONENTS = "iem.components"
+    IEM_MODULES = "iem.modules"
