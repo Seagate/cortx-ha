@@ -54,6 +54,20 @@ class PcsClusterController(ClusterController, PcsController):
             return False
         return True
 
+    def _wait_for_node_online(self, nodeid: str) -> bool:
+        """
+        Wait till the node becomes online
+        """
+        for retry_index in range(0, const.CLUSTER_RETRY_COUNT):
+            node_status = self.nodes_status([nodeid]).get(nodeid)
+            if node_status == const.NODE_STATUSES.ONLINE.value:
+                Log.info(f"Node {nodeid} is online.")
+                return True
+            # Sleep for some time and try again.
+            Log.info(f"Node {nodeid} is not online, retry index #{retry_index}")
+            time.sleep(const.BASE_WAIT_TIME)
+        return False
+
     def _pcs_cluster_start(self):
         """
         Start pcs cluster
@@ -278,6 +292,7 @@ class PcsClusterController(ClusterController, PcsController):
             Log.error(f"Failed to get status of the cluster. Error: {e}")
             return {"status": const.STATUSES.FAILED.value, "output": "Retry Suggested.", "error" : str(e)}
 
+
     @controller_error_handler
     def standby(self, sync=False, timeout=30) -> dict:
         """
@@ -399,7 +414,10 @@ class PcsClusterController(ClusterController, PcsController):
         cluster_node_count = self._get_cluster_size()
         if cluster_node_count < 32:
             _output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_NODE_ADD.replace("<node>", nodeid))
-            return {"status": const.STATUSES.IN_PROGRESS.value, "output": f"Node {nodeid} add operation started successfully in the cluster", "error": ""}
+            if self._wait_for_node_online(nodeid):
+                return {"status": const.STATUSES.SUCCEEDED.value, "output": f"Node {nodeid} added successfully in the cluster", "error": ""}
+            else:
+                return {"status": const.STATUSES.FAILED.value, "output": "", "error": f"Node {nodeid} add operation failed, node not online"}
         else:
             return {"status": const.STATUSES.FAILED.value, "output": "", "error": "Cluster size is already filled to 32, "
                                                "Please use add-remote node mechanism"}
@@ -443,12 +461,15 @@ class PcsClusterController(ClusterController, PcsController):
                 self._execute.run_cmd(const.PCS_CLUSTER_START_NODE)
                 self._execute.run_cmd(const.PCS_CLUSTER_ENABLE)
                 Log.info("Node started and enabled successfully.")
-                # TODO: Divide class into vm, hw when stonith is needed.
-                self._execute.run_cmd(const.PCS_STONITH_DISABLE)
                 time.sleep(const.BASE_WAIT_TIME * 2)
             if self._is_pcs_cluster_running():
-                return {"status": const.STATUSES.SUCCEEDED.value,
-                        "output": "Cluster created successfully.", "error": ""}
+                if self._wait_for_node_online(nodeid):
+                    # TODO: Divide class into vm, hw when stonith is needed.
+                    self._execute.run_cmd(const.PCS_STONITH_DISABLE)
+                    return {"status": const.STATUSES.SUCCEEDED.value,
+                            "output": "Cluster created successfully.", "error": ""}
+                else:
+                    raise ClusterManagerError("Node is not online.")
             else:
                 raise ClusterManagerError("Cluster is not started.")
         except Exception as e:

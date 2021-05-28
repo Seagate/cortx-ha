@@ -79,6 +79,7 @@ class PcsClusterStatus:
             Get status of the cluster using "pcs status --full xml" command.
         """
         self._initialize_node_health()
+
         error = None
         try:
             self._output, error, rc = SimpleCommand().run_cmd(PcsConstants.PCS_STATUS_XML)
@@ -136,6 +137,7 @@ class PcsClusterStatus:
         node_path = "./nodes/node"
         nodes = self._output.findall(node_path)
         self._nodes_by_health[PcsConstants.COUNT] = len(nodes)
+
 
         for a_node in nodes:
             node_name = a_node.attrib[PcsConstants.NAME]
@@ -245,4 +247,4 @@ class PcsClusterStatus:
             return {"status": const.STATUSES.FAILED.value, "output": "", "error": "Health is not loaded."}
 
         return {"status": const.STATUSES.SUCCEEDED.value, "output": self._nodes[node_name], "error": ""}
-
+      
