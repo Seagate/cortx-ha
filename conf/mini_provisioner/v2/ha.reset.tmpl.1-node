@@ -11,6 +11,7 @@ cortx:
       user: TMPL_USER
 server_node:
   TMPL_MACHINE_ID:
+    node_id: TMPL_NODE_ID
     cluster_id: TMPL_CLUSTER_ID
     network:
       data:
