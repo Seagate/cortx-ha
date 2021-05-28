@@ -27,6 +27,7 @@ from ha.core.event_analyzer.event_analyzer_exceptions import EventFilterExceptio
 from ha.core.event_analyzer.event_analyzer_exceptions import InvalidFilterRules
 
 
+
 class MESSAGETYPE(Enum):
     ALERT = "ALERT"
     IEM = "IEM"
