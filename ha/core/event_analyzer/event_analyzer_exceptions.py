@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
 #
 # This program is free software: you can redistribute it and/or modify it under the
@@ -13,16 +15,34 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-# TODO: convert event_analyzer.service to event_analyzer@consumer_id.service for scaling
-[Unit]
-Description=HA event analyzer daemon process
+from ha.core.error import EventAnalyzerError
 
-[Service]
-Type=simple
-ExecStart=/usr/bin/event_analyzerd
-TimeoutStopSec=30sec
-# TODO: user to be changed to hauser
-User=root
+class EventParserException(EventAnalyzerError):
+    """
+    Exception to detect event analyzer parser error
+    """
+    pass
 
-[Install]
-WantedBy=multi-user.target
+class EventFilterException(EventAnalyzerError):
+    """
+    Exception to detect event analyzer filter error
+    """
+    pass
+
+class InvalidSubscriber(EventAnalyzerError):
+    """
+    Exception to detect invalid Subscriber
+    """
+    pass
+
+class InvalidFilterRules(EventAnalyzerError):
+    """
+    Exception to detect invalid filter rules
+    """
+    pass
+
+class SubscriberException(EventAnalyzerError):
+    """
+    Exception to detect subscriber process event.
+    """
+    pass
