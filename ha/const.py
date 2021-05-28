@@ -56,6 +56,9 @@ COMPONENTS_CONFIG_DIR = "{}/components".format(CONFIG_DIR)
 # Mini-provisioning
 CLUSTER_CONFSTORE_NODES_KEY="nodes"
 
+# Node name mapping keys
+PVTFQDN_TO_NODEID_KEY="pvtfqdn_to_nodeid"
+
 # Cortx commands
 CORTX_CLUSTER_NODE_ADD="cortx cluster add node --nodeid=<node> --username=<user> --password=<secret>"
 
