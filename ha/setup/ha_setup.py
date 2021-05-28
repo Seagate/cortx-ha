@@ -369,9 +369,7 @@ class ConfigCmd(Cmd):
                         self._add_node(node, cluster_user, cluster_secret)
             else:
                 # Add node with SSH
-                for node in nodelist:
-                    if node != node_name:
-                        self._add_node_remotely(node, cluster_user, cluster_secret)
+                self._add_node_remotely(node_name, cluster_user, cluster_secret)
         else:
             for node in nodelist:
                 if node != node_name:
@@ -597,7 +595,6 @@ class TestCmd(Cmd):
 
         if not rc:
             raise HaConfigException("Cluster is no healthy. Check HA logs for further information.")
-
 
 class UpgradeCmd(Cmd):
     """

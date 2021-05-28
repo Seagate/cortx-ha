@@ -183,6 +183,7 @@ class PcsClusterController(ClusterController, PcsController):
             for node_subgroup in node_group:
                 for node_id in node_subgroup:
                     res = json.loads(self._controllers[const.NODE_CONTROLLER].start(node_id))
+                    Log.info(f'res: {res}')
                     if res.get("status") == const.STATUSES.FAILED.value:
                         msg = res.get("error")
                         Log.error(f"Node {node_id} : {msg}")

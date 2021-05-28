@@ -205,6 +205,24 @@ class PcsVMNodeController(PcsNodeController):
             _output, _err, _rc = self._execute.run_cmd(const.PCS_NODE_START.replace("<node>", nodeid), check_error=False)
             if _rc != 0:
                 raise ClusterManagerError(f"Failed to start node {nodeid}")
+
+            Log.info(f'Node: {nodeid} started successfully. Now, waiting for \
+                       cluster to stabalize and then get the node status')
+
+            time.sleep(const.BASE_WAIT_TIME * 2)
+
+            # Get the status of the node again
+            _node_status = self.nodes_status([nodeid])[nodeid]
+
+            # If the node is in standby mode, unstandby here
+            if _node_status == NODE_STATUSES.STANDBY.value:
+                Log.warn(f'Node: {nodeid} is still in standby mode')
+                _output, _err, _rc = self._execute.run_cmd(const.PCS_NODE_UNSTANDBY.replace("<node>", nodeid),
+                                                           check_error=False)
+                if _rc != 0:
+                    raise ClusterManagerError(f"Failed to unstandby the node: {nodeid}")
+                return {"status": const.STATUSES.IN_PROGRESS.value, "output": f"Node {nodeid}: Node was in offline and then switched to standby mode, " f"Cluster started on node successfully", "error": ""}
+
             return {"status": const.STATUSES.IN_PROGRESS.value, "output": f"Node {nodeid} : Node was in cluster_offline mode, "
                                                        f"Cluster started on node successfully", "error": ""}
         elif _node_status == NODE_STATUSES.POWEROFF.value:
