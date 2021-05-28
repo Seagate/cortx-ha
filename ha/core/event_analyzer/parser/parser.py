@@ -113,23 +113,6 @@ class IEMParser(Parser):
         try:
             iem_alert = json.loads(msg).get(ALERT_ATTRIBUTES.MESSAGE)
 
-<<<<<<< HEAD
-=======
-class IEMParser(Parser):
-    """
-    Parser for IEMs.
-    """
-
-    def parse_event(self, msg: str) -> HealthEvent:
-        """
-        Parse event.
-        Args:
-            msg (str): Msg
-        """
-        try:
-            iem_alert = json.loads(msg)
-
->>>>>>> EOS-19913: Add IEM parser to event analyzer (#408)
             # Parse hostname and convert to node id
             iem_description = iem_alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.INFO][ALERT_ATTRIBUTES.DESCRIPTION]
             hostname = re.split("=", re.split(";", re.findall("host=.+", iem_description)[0])[0])[1]
@@ -156,15 +139,8 @@ class IEMParser(Parser):
                 event[EVENT_ATTRIBUTES.EVENT_TYPE] = HEALTH_EVENTS.FAULT.value
 
             health_event = HealthEvent.dict_to_object(event)
-<<<<<<< HEAD
             Log.info(f"Event {event[EVENT_ATTRIBUTES.EVENT_ID]} is parsed and converted to object.")
             return health_event
 
         except Exception as e:
             raise EventParserException(f"Failed to parse IEM. Message: {msg}, Error: {e}")
-=======
-            return health_event
-
-        except Exception as e:
-            raise EventAnalyzerError(f"Failed to parse IEM. Message: {msg}, Error: {e}")
->>>>>>> EOS-19913: Add IEM parser to event analyzer (#408)
