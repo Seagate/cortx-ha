@@ -19,6 +19,8 @@ import abc
 import json
 import re
 
+from cortx.utils.log import Log
+
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.event_analyzer.event_analyzer_exceptions import EventParserException
 from ha.core.system_health.model.health_event import HealthEvent
@@ -51,6 +53,13 @@ class AlertParser(Parser):
     Subscriber for event analyzer to pass msg.
     """
 
+    def __init__(self):
+        """
+        Init method.
+        """
+        super(AlertParser, self).__init__()
+        Log.info(f"Alert Parser is initialized ...")
+
     def parse_event(self, msg: str) -> HealthEvent:
         """
         Parse event.
@@ -58,7 +67,7 @@ class AlertParser(Parser):
             msg (str): Msg
         """
         try:
-            alert = json.loads(msg)
+            alert = json.loads(msg).get(ALERT_ATTRIBUTES.MESSAGE)
 
             event = {
                 EVENT_ATTRIBUTES.EVENT_ID : alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.ALERT_ID],
@@ -77,7 +86,7 @@ class AlertParser(Parser):
             }
 
             health_event = HealthEvent.dict_to_object(event)
-
+            Log.info(f"Event {event[EVENT_ATTRIBUTES.EVENT_ID]} is parsed and converted to object.")
             return health_event
 
         except Exception as e:
@@ -88,6 +97,13 @@ class IEMParser(Parser):
     Subscriber for event analyzer to pass msg.
     """
 
+    def __init__(self):
+        """
+        Init method.
+        """
+        super(IEMParser, self).__init__()
+        Log.info(f"IEM Parser is initialized ...")
+
     def parse_event(self, msg: str) -> HealthEvent:
         """
         Parse event.
@@ -95,7 +111,7 @@ class IEMParser(Parser):
             msg (str): Msg
         """
         try:
-            iem_alert = json.loads(msg)
+            iem_alert = json.loads(msg).get(ALERT_ATTRIBUTES.MESSAGE)
 
             # Parse hostname and convert to node id
             iem_description = iem_alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.INFO][ALERT_ATTRIBUTES.DESCRIPTION]
@@ -120,6 +136,7 @@ class IEMParser(Parser):
             }
 
             health_event = HealthEvent.dict_to_object(event)
+            Log.info(f"Event {event[EVENT_ATTRIBUTES.EVENT_ID]} is parsed and converted to object.")
             return health_event
 
         except Exception as e:
