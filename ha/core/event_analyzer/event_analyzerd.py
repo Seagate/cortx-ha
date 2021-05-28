@@ -36,7 +36,7 @@ from ha.core.config.config_manager import ConfigManager
 from ha.core.system_health.system_health import SystemHealth
 from ha.core.event_analyzer.watcher.watcher import Watcher
 
-class EventAnalyserService:
+class EventAnalyzerService:
 
     @staticmethod
     def get_class(class_path: str):
@@ -49,7 +49,7 @@ class EventAnalyserService:
 
     def init(self):
         """
-        Initalize EventAnalyserService
+        Initalize EventAnalyzerService
         """
         ConfigManager.init("event_analyzerd")
         Log.info("Event analyzer daemon initializations...")
@@ -74,9 +74,9 @@ class EventAnalyserService:
         for watcher in watchers:
             Log.info(f"Initializing watcher {watcher}....")
             event_filter_class = Conf.get(const.HA_GLOBAL_INDEX, f"EVENT_ANALYZER.watcher.{watcher}.event_filter")
-            event_filter_instance = EventAnalyserService.get_class(event_filter_class)()
+            event_filter_instance = EventAnalyzerService.get_class(event_filter_class)()
             event_parser_class = Conf.get(const.HA_GLOBAL_INDEX, f"EVENT_ANALYZER.watcher.{watcher}.event_parser")
-            event_parser_instance = EventAnalyserService.get_class(event_parser_class)()
+            event_parser_instance = EventAnalyzerService.get_class(event_parser_class)()
             watcher_list[watcher] = Watcher(
                 consumer_id = Conf.get(const.HA_GLOBAL_INDEX, f"EVENT_ANALYZER.watcher.{watcher}.consumer_id"),
                 message_type = Conf.get(const.HA_GLOBAL_INDEX, f"EVENT_ANALYZER.watcher.{watcher}.message_type"),
@@ -92,7 +92,7 @@ class EventAnalyserService:
         Run server
         """
         for watcher in self._watcher_list.keys():
-            Log.info(f"Starting watcher {watcher} service for event analyser.")
+            Log.info(f"Starting watcher {watcher} service for event analyzer.")
             self._watcher_list[watcher].start()
         Log.info(f"Running the daemon for HA event analyzer with PID {os.getpid()}...")
         while True:
@@ -104,11 +104,11 @@ def main(argv):
     """
     # argv can be used later when config parameters are needed
     try:
-        event_analyser_service = EventAnalyserService()
-        event_analyser_service.init()
-        event_analyser_service.run()
+        event_analyzer_service = EventAnalyzerService()
+        event_analyzer_service.init()
+        event_analyzer_service.run()
     except Exception as e:
-        Log.error(f"Event analyser service failed. Error: {e} {traceback.format_exc()}")
+        Log.error(f"Event analyzer service failed. Error: {e} {traceback.format_exc()}")
         sys.exit(1)
 
 if __name__ == '__main__':

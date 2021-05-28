@@ -62,10 +62,10 @@ class Watcher(Thread):
         Validate watcher and raise exception.
 
         Raises:
-            EventAnalyzer: event analyser exception.
+            EventAnalyzer: event analyzer exception.
         """
         if not isinstance(self.subscriber, Subscriber):
-            raise InvalidSubscriber(f"Invaid subscriber {self.subscriber}")
+            raise InvalidSubscriber(f"Invalid subscriber {self.subscriber}")
 
     def _get_connection(self) -> MessageConsumer:
         """
@@ -86,8 +86,8 @@ class Watcher(Thread):
         Returns:
             str: JSON object of message
         """
+        message = self.consumer.receive(timeout=0)
         try:
-            message = self.consumer.receive(timeout=0)
             return json.loads(message.decode('utf-8'))
         except Exception as e:
             Log.error(f"Invalid format of message failed due to {e}. Message : {str(message)}")
@@ -111,6 +111,7 @@ class Watcher(Thread):
                         self.subscriber.process_event(event)
                     except Exception as e:
                         raise SubscriberException(f"Failed to process event {message}. Error: {e}")
+                self.consumer.ack()
             except EventFilterException as e:
                 Log.error(f"Filter exception {e} {traceback.format_exc()} for {message}")
                 self.consumer.ack()

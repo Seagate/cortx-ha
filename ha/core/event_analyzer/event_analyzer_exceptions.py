@@ -19,13 +19,13 @@ from ha.core.error import EventAnalyzerError
 
 class EventParserException(EventAnalyzerError):
     """
-    Exception to detect event analyser parser error
+    Exception to detect event analyzer parser error
     """
     pass
 
 class EventFilterException(EventAnalyzerError):
     """
-    Exception to detect event analyser filter error
+    Exception to detect event analyzer filter error
     """
     pass
 

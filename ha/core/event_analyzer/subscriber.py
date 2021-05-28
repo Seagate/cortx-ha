@@ -26,7 +26,7 @@ class Subscriber(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def process_event(self, event: HealthEvent) -> None:
         """
-        Get event from event analyser and process them.
+        Get event from event analyzer and process them.
 
         Raise:
             Exception: raise exception to avoid ack of unprocessed event.
