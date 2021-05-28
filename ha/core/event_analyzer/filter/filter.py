@@ -32,7 +32,6 @@ class MESSAGETYPE(Enum):
     ALERT = "ALERT"
     IEM = "IEM"
 
-
 class Filter(metaclass=abc.ABCMeta):
     """ Base class to filter alert """
 
