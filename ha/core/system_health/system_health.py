@@ -87,8 +87,16 @@ class SystemHealth:
         """
         try:
             # Prepare key and read the health value.
-            key = self._prepare_key(component='node', node_id=node_id, **kwargs)
-            return self.healthmanager.get_key(key)
+            key = self._prepare_key(const.COMPONENTS.NODE_MAP.value, node_id=node_id)
+            node_map_val = self.healthmanager.get_key(key)
+            if node_map_val is not None:
+                node_map_dict = eval(node_map_val)
+                key = self._prepare_key(component='node', cluster_id=node_map_dict['cluster_id'],
+                                        site_id=node_map_dict['site_id'], rack_id=node_map_dict['rack_id'],
+                                        storageset_id=node_map_dict['storageset_id'], node_id=self.node_id, **kwargs)
+                return self.healthmanager.get_key(key)
+            else:
+                return
 
         except Exception as e:
             Log.error(f"Failed reading status for component: node with Error: {e}")
@@ -113,7 +121,10 @@ class SystemHealth:
                                 comp_type=comp_type, comp_id=comp_id)
         self.healthmanager.set_key(key, healthvalue)
 
-        # TODO: Check and if not present already, store the node map.
+        key = self._prepare_key(const.COMPONENTS.NODE_MAP.value, node_id=self.node_id)
+        node_map_val = self.healthmanager.get_key(key)
+        if node_map_val is None:
+            self.healthmanager.set_key(key, str(self.node_map))
 
         # Check the next component to be updated, if none then return.
         if next_component is None:

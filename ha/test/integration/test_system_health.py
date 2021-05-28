@@ -41,10 +41,10 @@ if __name__ == '__main__':
     # To test update health API
     store = ConfigManager._get_confstore()
     health = SystemHealth(store)
-    event = HealthEvent("event_id", "fault", "severity", "site_id", "rack_id", "cluster_id", "node_id",
+    event = HealthEvent("event_id", "fault", "severity", "site_id", "rack_id", "cluster_id", "storageset_id",
                         "node_5", "srvnode-1.mgmt.public", "node", "16215009572", "iem", "Description")
     health.process_event(event)
 
     # To test querying the node health API
-    node_status = health.get_node_status(node_id="node_5", cluster_id="cluster_id", rack_id="rack_id", site_id="site_id")
+    node_status = health.get_node_status(node_id="node_5")
     sys.exit(main(sys.argv))

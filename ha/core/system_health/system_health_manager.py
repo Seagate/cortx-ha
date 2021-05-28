@@ -30,11 +30,11 @@ class SystemHealthManager:
         """
         Get key method.
         """
-        kv_val = self._store.get(key)
-        if kv_val is not None:
-            _, value = kv_val.popitem()
+        key_val = self._store.get(key)
+        if key_val is not None:
+            _, value = key_val.popitem()
             return value
-        return kv_val
+        return key_val
 
     def set_key(self, key: str, value: str):
         """
