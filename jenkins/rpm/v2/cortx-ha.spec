@@ -77,9 +77,9 @@ rm -f $HA_DIR/bin/ha_setup 2> /dev/null;
 rm -f /usr/local/bin/event_analyzerd 2> /dev/null;
 rm -f /usr/bin/event_analyzerd 2> /dev/null;
 rm -f $HA_DIR/bin/event_analyzerd 2> /dev/null;
-rm -f /usr/local/bin/pcmk_alert d2> /dev/null;
+rm -f /usr/local/bin/pcmk_alert 2> /dev/null;
 rm -f /usr/bin/pcmk_alert 2> /dev/null;
-rm -f $HA_DIR/bin/pcmk_alert d2> /dev/null;
+rm -f $HA_DIR/bin/pcmk_alert 2> /dev/null;
 exit 0
 
 %clean
