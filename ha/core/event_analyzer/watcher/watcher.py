@@ -86,11 +86,16 @@ class Watcher(Thread):
         Returns:
             str: JSON object of message
         """
-        message = self.consumer.receive(timeout=0)
+        try:
+            message = self.consumer.receive(timeout=0)
+        except Exception as e:
+            Log.error(f"Failed to receive message, error: {e}. Retrying to receive.")
+            return None
         try:
             return json.loads(message.decode('utf-8'))
         except Exception as e:
             Log.error(f"Invalid format of message failed due to {e}. Message : {str(message)}")
+            self.consumer.ack()
             return None
 
     def run(self):
@@ -100,7 +105,6 @@ class Watcher(Thread):
         while True:
             message = self._get_message()
             if message is None:
-                self.consumer.ack()
                 continue
             try:
                 Log.debug(f"Captured message: {message}")
