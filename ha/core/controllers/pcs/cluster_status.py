@@ -59,9 +59,11 @@ class PcsClusterStatus:
 
     def __init__(self):
         self._nodes_configured = []
+        self._nodes_by_health = {}
         self._nodes = {}
         self._services = {}
         self._output = None
+        self._is_health_loaded = False
 
         # Read list of nodes from HA Conf store
         confstore = ConfigManager._get_confstore()
@@ -76,9 +78,7 @@ class PcsClusterStatus:
         """
             Get status of the cluster using "pcs status --full xml" command.
         """
-        self._nodes[PcsConstants.OFFLINE] = []
-        self._nodes[PcsConstants.COUNT] = 0
-
+        self._initialize_node_health()
         error = None
         try:
             self._output, error, rc = SimpleCommand().run_cmd(PcsConstants.PCS_STATUS_XML)
@@ -102,44 +102,62 @@ class PcsClusterStatus:
             remote_executor = SSHRemoteExecutor(remote_node)
             try:
                 res = remote_executor.execute(PcsConstants.PCS_STATUS_XML)
-                self._nodes[PcsConstants.OFFLINE] = []
+                self._nodes_by_health[PcsConstants.OFFLINE] = []
             except Exception:
                 Log.info(f"Failed to run pcs status on node: {remote_node}")
-                self._nodes[PcsConstants.OFFLINE].append(remote_node)
+                self._nodes_by_health[PcsConstants.OFFLINE].append(remote_node)
             else:
                 return res
+
+    def _initialize_node_health(self):
+
+        self._nodes_by_health = {}
+        self._nodes = {}
+        self._services = {}
+
+        for a_node in self._nodes_configured:
+            self._nodes[a_node] = PcsConstants.OFFLINE
+
+        self._nodes_by_health[PcsConstants.COUNT] = 0
+        self._nodes_by_health[PcsConstants.OFFLINE] = []
+        self._nodes_by_health[PcsConstants.STANDBY] = []
+        self._nodes_by_health[PcsConstants.ONLINE] = []
+        self._nodes_by_health[PcsConstants.UNHEALTHY] = []
+        self._services[PcsConstants.ONLINE] = []
+        self._services[PcsConstants.UNHEALTHY] = []
 
     def _load_nodes_health(self):
         """
             Read xml output and load online, standby and unhealthy nodes.
         """
-        self._nodes[PcsConstants.ONLINE] = []
-        self._nodes[PcsConstants.STANDBY] = []
-        self._nodes[PcsConstants.UNHEALTHY] = []
-
         if self._output is None:
             return
 
         node_path = "./nodes/node"
         nodes = self._output.findall(node_path)
-        self._nodes[PcsConstants.COUNT] = len(nodes)
+        self._nodes_by_health[PcsConstants.COUNT] = len(nodes)
 
         for a_node in nodes:
             node_name = a_node.attrib[PcsConstants.NAME]
             if a_node.attrib[PcsConstants.ONLINE] == PcsConstants.FALSE:
-                self._nodes[PcsConstants.OFFLINE].append(node_name)
+                self._nodes_by_health[PcsConstants.OFFLINE].append(node_name)
+                self._nodes[node_name] = PcsConstants.OFFLINE
             elif a_node.attrib[PcsConstants.STANDBY_ON_FAIL] == PcsConstants.TRUE or \
                     a_node.attrib[PcsConstants.MAINTENANCE] == PcsConstants.TRUE or \
                     a_node.attrib[PcsConstants.PENDING] == PcsConstants.TRUE or \
                     a_node.attrib[PcsConstants.SHUTDOWN] == PcsConstants.TRUE:
-                self._nodes[PcsConstants.UNHEALTHY].append(node_name)
+                self._nodes_by_health[PcsConstants.UNHEALTHY].append(node_name)
+                self._nodes[node_name] = PcsConstants.UNHEALTHY
             elif a_node.attrib[PcsConstants.ONLINE] == PcsConstants.TRUE and \
                     a_node.attrib[PcsConstants.STANDBY] == PcsConstants.TRUE:
-                self._nodes[PcsConstants.STANDBY].append(node_name)
+                self._nodes_by_health[PcsConstants.STANDBY].append(node_name)
+                self._nodes[node_name] = PcsConstants.STANDBY
             elif a_node.attrib[PcsConstants.ONLINE] == PcsConstants.TRUE:
-                self._nodes[PcsConstants.ONLINE].append(node_name)
+                self._nodes_by_health[PcsConstants.ONLINE].append(node_name)
+                self._nodes[node_name] = PcsConstants.ONLINE
             else:
-                self._nodes[PcsConstants.UNHEALTHY].append(node_name)
+                self._nodes_by_health[PcsConstants.UNHEALTHY].append(node_name)
+                self._nodes[node_name] = PcsConstants.UNHEALTHY
 
     def _load_services_health(self):
         """
@@ -148,9 +166,6 @@ class PcsClusterStatus:
         resource_path = "./resources/resource"
         clone_group_resource_path = "./resources/clone/group/resource"
         group_resource_path = "./resources/clone/group/resource"
-
-        self._services[PcsConstants.ONLINE] = []
-        self._services[PcsConstants.UNHEALTHY] = []
 
         if self._output is None:
             return
@@ -178,36 +193,56 @@ class PcsClusterStatus:
         self._get_pcs_status()
         self._load_nodes_health()
         self._load_services_health()
+        self._is_health_loaded = True
 
     def refresh(self):
         """
             Refreshes the internal data structures.
         """
-        self._nodes_configured = 0
-        self._nodes = {}
-        self._services = {}
+        self._initialize_node_health()
         self.load()
 
-    def get_health_status(self):
+    def get_cluster_health(self):
         """
             Finds and returns the cluster health.
         """
-        if len(self._nodes_configured)//2 + 1 <= len(self._nodes[PcsConstants.OFFLINE]):
+
+        if not self._is_health_loaded:
+            return {"status": const.STATUSES.FAILED.value, "output": "", "error": "Health is not loaded."}
+
+        if len(self._nodes_configured)//2 + 1 <= len(self._nodes_by_health[PcsConstants.OFFLINE]):
             return {"status": const.STATUSES.SUCCEEDED.value, "output": CLUSTER_STATUS.OFFLINE.value, "error": ""}
 
-        if len(self._nodes_configured) == len(self._nodes[PcsConstants.STANDBY]):
+        if len(self._nodes_configured) == len(self._nodes_by_health[PcsConstants.STANDBY]):
             return {"status": const.STATUSES.SUCCEEDED.value, "output": CLUSTER_STATUS.STANDBY.value, "error": ""}
 
-        if len(self._nodes_configured) != self._nodes[PcsConstants.COUNT]:
+        if len(self._nodes_configured) != self._nodes_by_health[PcsConstants.COUNT]:
             return {"status": const.STATUSES.SUCCEEDED.value, "output": CLUSTER_STATUS.UNHEALTHY.value,
                     "error": f"Some nodes are missing from cluster. Expected: {self._nodes_configured}"}
-        if len(self._nodes_configured) > len(self._nodes[PcsConstants.ONLINE]):
+        if len(self._nodes_configured) > len(self._nodes_by_health[PcsConstants.ONLINE]):
             return {"status": const.STATUSES.SUCCEEDED.value, "output": CLUSTER_STATUS.DEGRADED.value,
-                    "error": f"All nodes are not online. online: {self._nodes[PcsConstants.ONLINE]}"}
+                    "error": f"All nodes are not online. online: {self._nodes_by_health[PcsConstants.ONLINE]}"}
 
         if len(self._services[PcsConstants.UNHEALTHY]) > 0:
             return {"status": const.STATUSES.SUCCEEDED.value, "output": CLUSTER_STATUS.DEGRADED.value,
                     "error": f"All services are not started. Sample: {self._services[PcsConstants.UNHEALTHY][:2]}"}
 
         return {"status": const.STATUSES.SUCCEEDED.value, "output": CLUSTER_STATUS.ONLINE.value, "error" : ""}
+
+    def get_node_health(self, node_name):
+        """
+        Get the current status of a node.
+
+        Args:
+            node_name (str): Name of the node configured in pacemaker.
+
+        Returns:
+            ([dict]): Return dictionary. {"status": "", "output":"", "error":""}
+                status: Succeeded, Failed
+        """
+
+        if not self._is_health_loaded:
+            return {"status": const.STATUSES.FAILED.value, "output": "", "error": "Health is not loaded."}
+
+        return {"status": const.STATUSES.SUCCEEDED.value, "output": self._nodes[node_name], "error": ""}
 
