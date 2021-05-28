@@ -108,10 +108,11 @@ class Watcher(Thread):
                 continue
             try:
                 Log.debug(f"Captured message: {message}")
-                if self.filter.filter_event(message):
-                    Log.info(f"Found filtered alert: {message}")
-                    event = self.parser.parse_event(message)
+                if self.filter.filter_event(json.dumps(message)):
+                    Log.info(f"Filtered Event detected: {message}")
+                    event = self.parser.parse_event(json.dumps(message))
                     try:
+                        Log.info(f"Processing event {event} to subscriber...")
                         self.subscriber.process_event(event)
                     except Exception as e:
                         raise SubscriberException(f"Failed to process event {message}. Error: {e}")

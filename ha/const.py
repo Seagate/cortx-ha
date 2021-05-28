@@ -213,11 +213,13 @@ class INSTALLATION_TYPE(Enum):
 
 # Alert attribute constants
 class ALERT_ATTRIBUTES:
+    MESSAGE = "message"
     HEADER = "sspl_ll_msg_header"
     MSG_VERSION = "msg_version"
     SCHEMA_VERSION = "schema_version"
     SSPL_VERSION = "sspl_version"
     SENSOR_RESPONSE_TYPE = "sensor_response_type"
+    ACTUATOR_RESPONSE_TYPE= "actuator_response_type"
     INFO = "info"
     EVENT_TIME = "event_time"
     RESOURCE_ID = "resource_id"
