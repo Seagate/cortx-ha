@@ -68,7 +68,7 @@ class AlertParser(Parser):
             msg (str): Msg
         """
         try:
-            alert = json.loads(msg)
+            alert = json.loads(msg).get(ALERT_ATTRIBUTES.MESSAGE)
 
             event = {
                 EVENT_ATTRIBUTES.EVENT_ID : alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.ALERT_ID],
@@ -112,7 +112,7 @@ class IEMParser(Parser):
             msg (str): Msg
         """
         try:
-            iem_alert = json.loads(msg)
+            iem_alert = json.loads(msg).get(ALERT_ATTRIBUTES.MESSAGE)
 
             # Parse hostname and convert to node id
             iem_description = iem_alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.INFO][ALERT_ATTRIBUTES.DESCRIPTION]

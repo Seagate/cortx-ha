@@ -39,34 +39,42 @@ if __name__ == '__main__':
     status = "offline"
     iem_description = IEM_DESCRIPTION
     iem_description = Template(iem_description).substitute(host=host, status=status)
-    TestMsg = {
-        ALERT_ATTRIBUTES.HEADER: {
-        ALERT_ATTRIBUTES.MSG_VERSION: "1.0.0",
-        ALERT_ATTRIBUTES.SCHEMA_VERSION: "1.0.0",
-        ALERT_ATTRIBUTES.SSPL_VERSION: "1.0.0"
-        },
-        ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE: {
-            ALERT_ATTRIBUTES.INFO: {
-                ALERT_ATTRIBUTES.EVENT_TIME: "1574075909",
-                ALERT_ATTRIBUTES.RESOURCE_ID: "Fan Module 4",
-                ALERT_ATTRIBUTES.SITE_ID: 1,
-                ALERT_ATTRIBUTES.NODE_ID: 1,
-                ALERT_ATTRIBUTES.CLUSTER_ID: 1,
-                ALERT_ATTRIBUTES.RACK_ID: 1,
-                ALERT_ATTRIBUTES.RESOURCE_TYPE: resource_type,
-                ALERT_ATTRIBUTES.DESCRIPTION: iem_description
+    TestIEM = {
+        ALERT_ATTRIBUTES.USERNAME: "sspl-ll",
+        ALERT_ATTRIBUTES.DESCRIPTION: "Seagate Storage Platform Library - Sensor Response",
+        ALERT_ATTRIBUTES.TITLE: "SSPL Sensor Response",
+        ALERT_ATTRIBUTES.EXPIRES: 3600,
+        ALERT_ATTRIBUTES.SIGNATURE: "None",
+        ALERT_ATTRIBUTES.TITLE: "1621581798",
+        ALERT_ATTRIBUTES.MESSAGE: {
+            ALERT_ATTRIBUTES.HEADER: {
+            ALERT_ATTRIBUTES.MSG_VERSION: "1.0.0",
+            ALERT_ATTRIBUTES.SCHEMA_VERSION: "1.0.0",
+            ALERT_ATTRIBUTES.SSPL_VERSION: "1.0.0"
             },
-            ALERT_ATTRIBUTES.ALERT_TYPE: "get",
-            ALERT_ATTRIBUTES.SEVERITY: "warning",
-            ALERT_ATTRIBUTES.SPECIFIC_INFO: {
-                ALERT_ATTRIBUTES.SOURCE: "Software",
-                ALERT_ATTRIBUTES.COMPONENT: "ha",
-                ALERT_ATTRIBUTES.MODULE: "Node",
-                ALERT_ATTRIBUTES.EVENT: "The cluster has lost one server. System is running in degraded mode.",
-                ALERT_ATTRIBUTES.IEC: "WS0080010001"
-            },
-            ALERT_ATTRIBUTES.ALERT_ID: "15740759091a4e14bca51d46908ac3e9102605d560",
-            ALERT_ATTRIBUTES.HOST_ID: "abcd.com"
+            ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE: {
+                ALERT_ATTRIBUTES.INFO: {
+                    ALERT_ATTRIBUTES.EVENT_TIME: "1574075909",
+                    ALERT_ATTRIBUTES.RESOURCE_ID: "Fan Module 4",
+                    ALERT_ATTRIBUTES.SITE_ID: 1,
+                    ALERT_ATTRIBUTES.NODE_ID: 1,
+                    ALERT_ATTRIBUTES.CLUSTER_ID: 1,
+                    ALERT_ATTRIBUTES.RACK_ID: 1,
+                    ALERT_ATTRIBUTES.RESOURCE_TYPE: resource_type,
+                    ALERT_ATTRIBUTES.DESCRIPTION: iem_description
+                },
+                ALERT_ATTRIBUTES.ALERT_TYPE: "get",
+                ALERT_ATTRIBUTES.SEVERITY: "warning",
+                ALERT_ATTRIBUTES.SPECIFIC_INFO: {
+                    ALERT_ATTRIBUTES.SOURCE: "Software",
+                    ALERT_ATTRIBUTES.COMPONENT: "ha",
+                    ALERT_ATTRIBUTES.MODULE: "Node",
+                    ALERT_ATTRIBUTES.EVENT: "The cluster has lost one server. System is running in degraded mode.",
+                    ALERT_ATTRIBUTES.IEC: "WS0080010001"
+                },
+                ALERT_ATTRIBUTES.ALERT_ID: "15740759091a4e14bca51d46908ac3e9102605d560",
+                ALERT_ATTRIBUTES.HOST_ID: "abcd.com"
+            }
         }
     }
 
@@ -75,7 +83,7 @@ if __name__ == '__main__':
     confstore.set(f"{PVTFQDN_TO_NODEID_KEY}/{host}", node_id)
 
     try:
-        health_event = iem_parser.parse_event(json.dumps(TestMsg))
+        health_event = iem_parser.parse_event(json.dumps(TestIEM))
         if isinstance(health_event, HealthEvent):
             print(f"{EVENT_ATTRIBUTES.EVENT_ID} : {health_event.event_id}")
             print(f"{EVENT_ATTRIBUTES.EVENT_TYPE} : {health_event.event_type}")
@@ -98,9 +106,9 @@ if __name__ == '__main__':
 
     try:
         # Delete one key from the IEM msg and validate the exception handling
-        del TestMsg[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.ALERT_ID]
-        msg_test = json.dumps(TestMsg)
-        health_event = iem_parser.parse_event(json.dumps(TestMsg))
+        del TestIEM[ALERT_ATTRIBUTES.MESSAGE][ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.ALERT_ID]
+        msg_test = json.dumps(TestIEM)
+        health_event = iem_parser.parse_event(json.dumps(TestIEM))
         print("IEM parser negative test failed")
     except Exception as e:
         print(f"IEM parser negative test passed successfully, caught err: {e}")
