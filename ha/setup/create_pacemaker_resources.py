@@ -370,7 +370,8 @@ class ConfigAlertResource:
         """
         Delete alert on current node.
         """
-        # TODO: delete alert
+        if not self.is_alert_exists():
+            return
         Log.info("Deleating pacemaker alert ...")
         self._process.run_cmd(f"pcs alert remove {ConfigAlertResource.ALERT_ID}")
         Log.info(f"Alert {ConfigAlertResource.ALERT_ID} is deleted")
