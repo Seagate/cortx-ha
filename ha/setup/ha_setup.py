@@ -61,7 +61,7 @@ class Cmd:
         Conf.load(self._index, self._url)
         self._args = args.args
         self._execute = SimpleCommand()
-        self._confstore = ConfigManager._get_confstore()
+        self._confstore = ConfigManager.get_confstore()
         self._cluster_manager = None
 
     @property
@@ -338,6 +338,11 @@ class ConfigCmd(Cmd):
         self._update_env(node_name, node_type, const.HA_CLUSTER_SOFTWARE)
         self._fetch_fids()
         self._update_cluster_manager_config()
+
+        # Push node name mapping to store
+        if not self._confstore.key_exists(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_name}"):
+            node_id = Conf.get(self._index, f"server_node.{machine_id}.node_id")
+            self._confstore.set(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_name}", node_id)
 
         # Update cluster and resources
         self._cluster_manager = CortxClusterManager(default_log_enable=False)
@@ -667,6 +672,9 @@ class CleanupCmd(Cmd):
 
             if self._confstore.key_exists(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}"):
                 self._confstore.delete(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
+            # Delete node name mapping from store
+            if self._confstore.key_exists(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_name}"):
+                self._confstore.delete(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_name}")
             # Delete the config file
             self.remove_config_files()
         except Exception as e:

@@ -53,8 +53,14 @@ SOURCE_CLI_SCHEMA_FILE = "{}/cli_schema.json".format(SOURCE_CONFIG_PATH)
 CLI_SCHEMA_FILE = "{}/cli_schema.json".format(CONFIG_DIR)
 COMPONENTS_CONFIG_DIR = "{}/components".format(CONFIG_DIR)
 
+# IEM DESCRIPTION string: To be removed
+IEM_DESCRIPTION="WS0080010001,Node, The cluster has lost $host server. System is running in degraded mode. For more information refer the Troubleshooting guide. Extra Info: host=$host; status=$status;"
+
 # Mini-provisioning
 CLUSTER_CONFSTORE_NODES_KEY="nodes"
+
+# Node name mapping keys
+PVTFQDN_TO_NODEID_KEY="pvtfqdn_to_nodeid"
 
 # Cortx commands
 CORTX_CLUSTER_NODE_ADD="cortx cluster add node --nodeid=<node> --username=<user> --password=<secret>"
@@ -151,6 +157,15 @@ ALERT_FILTER_RULES_FILE = "{}/alert_filter_rules.json".format(CONFIG_DIR)
 SOURCE_ALERT_FILTER_RULES_FILE = "{}/alert_filter_rules.json".format(SOURCE_CONFIG_PATH)
 SYSTEM_SERVICE_FILE = "{}/event_analyzer.service".format(SYSTEM_DIR)
 SOURCE_SERVICE_FILE = "{}/conf/service/event_analyzer.service".format(SOURCE_PATH)
+ACTUATOR_RESPONSE_TYPE= "actuator_response_type"
+SENSOR_RESPONSE_TYPE= "sensor_response_type"
+SPECIFIC_INFO = "specific_info"
+INFO = "info"
+COMPONENT = "component"
+MODULE = "module"
+RESOURCE_TYPE = "resource_type"
+IEM_DESCRIPTION="WS0080010001, Node, The cluster has lost $host server. System is running in degraded mode. " \
+                "For more information refer the Troubleshooting guide. Extra Info: host=$host; status=$status;"
 
 class STATUSES(Enum):
     IN_PROGRESS = "InProgress"
@@ -191,8 +206,68 @@ class ACTION_STATUS(Enum):
     PENDING = "pending"
     COMPLETE = "complete"
 
-
 class INSTALLATION_TYPE(Enum):
     HW = "hw"
     VM = "vm"
     SINGLE_VM = "single_vm"
+
+# Alert attribute constants
+class ALERT_ATTRIBUTES:
+    HEADER = "sspl_ll_msg_header"
+    MSG_VERSION = "msg_version"
+    SCHEMA_VERSION = "schema_version"
+    SSPL_VERSION = "sspl_version"
+    SENSOR_RESPONSE_TYPE = "sensor_response_type"
+    INFO = "info"
+    EVENT_TIME = "event_time"
+    RESOURCE_ID = "resource_id"
+    SITE_ID = "site_id"
+    NODE_ID = "node_id"
+    CLUSTER_ID = "cluster_id"
+    RACK_ID = "rack_id"
+    RESOURCE_TYPE = "resource_type"
+    DESCRIPTION = "description"
+    ALERT_TYPE = "alert_type"
+    SEVERITY = "severity"
+    SPECIFIC_INFO = "specific_info"
+    SOURCE = "source"
+    COMPONENT = "component"
+    MODULE = "module"
+    EVENT = "event"
+    IEC = "IEC"
+    ALERT_ID = "alert_id"
+    HOST_ID = "host_id"
+    STATUS = "status"
+    NAME = "name"
+    ENCLOSURE_ID = "enclosure-id"
+    DURABLE_ID = "durable-id"
+    FANS = "fans"
+    HEALTH_REASON = "health-reason"
+    HEALTH = "health"
+    LOCATION = "location"
+    POSITION = "position"
+    HEALTH_RECOMMENDATION = "health-recommendation"
+
+# Health event attribute constants
+class EVENT_ATTRIBUTES:
+    EVENT_ID = "event_id"
+    EVENT_TYPE = "event_type"
+    SEVERITY = "severity"
+    SITE_ID = "site_id"
+    RACK_ID = "rack_id"
+    CLUSTER_ID = "cluster_id"
+    STORAGESET_ID = "storageset_id"
+    NODE_ID = "node_id"
+    HOST_ID = "host_id"
+    RESOURCE_TYPE = "resource_type"
+    TIMESTAMP = "timestamp"
+    RESOURCE_ID = "resource_id"
+    SPECIFIC_INFO = "specific_info"
+
+# Alert constants
+class AlertEventConstants(Enum):
+    ALERT_FILTER_TYPE = "alert.filter_type"
+    IEM_FILTER_TYPE = "iem.filter_type"
+    ALERT_RESOURCE_TYPE = "alert.resource_type"
+    IEM_COMPONENTS = "iem.components"
+    IEM_MODULES = "iem.modules"
