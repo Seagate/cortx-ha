@@ -59,7 +59,7 @@ class NodeAlertMonitor():
         _output, _err, _rc = self._execute.run_cmd(iec_command, check_error=False)
 
         if _rc != 0 or _err:
-            raise Exception(f'Failed to populate an IEC to syslog')
+            raise Exception('Failed to populate an IEC to syslog')
 
 
 if __name__ == '__main__':
