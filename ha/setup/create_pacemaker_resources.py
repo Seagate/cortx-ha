@@ -15,6 +15,7 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
+import os
 import argparse
 from ha.execute import SimpleCommand
 from cortx.utils.log import Log
@@ -332,7 +333,61 @@ def create_all_resources(cib_xml=const.CIB_FILE, push=True, **kwargs):
     except Exception:
         raise CreateResourceError("Failed to populate cluster with resources")
 
-def create_alert_resource():
-    pass
-    process.run_cmd("pcs alert create id=alert_file description='Log events to a file.' path=/var/lib/pacemaker/alert_file.sh")
-    process.run_cmd("pcs alert recipient add alert_file id=my-alert_logfile value=/var/log/pcmk_alert_file.log")
+class ConfigAlertResource:
+
+    ALERT_SCRIPT_PATH = ["/usr/local/bin/pcmk_alert", "/usr/bin/pcmk_alert"]
+    ALERT_ID = "iem_alert"
+    RECIPIENT_KEY = "sender_type"
+    RECIPIENT_VALUE = "syslog"
+
+    def __init__(self):
+        self._process = SimpleCommand()
+
+    def is_alert_exists(self) -> bool:
+        """
+        Check if alert already exists.
+        """
+        Log.info("Checking pacemaker alert if already exists ...")
+        output, error, rc = self._process.run_cmd(f"pcs alert")
+        for line in output.split("\n"):
+            if ConfigAlertResource.ALERT_ID in line:
+                return True
+        return False
+
+    def create_alert(self):
+        """
+        Manage alert resource.
+        """
+        Log.info("Creating pacemaker alert ...")
+        if self.is_alert_exists():
+            self.delete_alert()
+        path: str = ConfigAlertResource._get_script()
+        self._process.run_cmd(f"pcs alert create id={ConfigAlertResource.ALERT_ID} description=send_iem_alerts path={path}")
+        self._process.run_cmd(f"pcs alert recipient add {ConfigAlertResource.ALERT_ID} id={ConfigAlertResource.RECIPIENT_KEY} value={ConfigAlertResource.RECIPIENT_VALUE}")
+        Log.info(f"Alert {ConfigAlertResource.ALERT_ID} created successfully.")
+
+    def delete_alert(self):
+        """
+        Delete alert on current node.
+        """
+        # TODO: delete alert
+        Log.info("Deleating pacemaker alert ...")
+        self._process.run_cmd(f"pcs alert remove {ConfigAlertResource.ALERT_ID}")
+        Log.info(f"Alert {ConfigAlertResource.ALERT_ID} is deleted")
+
+    @staticmethod
+    def _get_script() -> str:
+        """
+        Get alert script
+
+        Raises:
+            CreateResourceConfigError: Raise error if script missing
+        """
+        path: str = None
+        for script in ConfigAlertResource.ALERT_SCRIPT_PATH:
+            if os.path.isfile(script):
+                path = script
+                break
+        if path is None:
+            raise CreateResourceConfigError(f"Failed to create alert missing {str(ConfigAlertResource.ALERT_SCRIPT_PATH)} file.")
+        return path
