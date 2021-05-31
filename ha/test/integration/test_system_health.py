@@ -17,6 +17,7 @@
 import os
 import sys
 import pathlib
+import json
 
 from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
@@ -38,13 +39,33 @@ if __name__ == '__main__':
     log_level = Conf.get(const.HA_GLOBAL_INDEX, "LOG.level")
     Log.init(service_name='ha_system_health', log_path=log_path, level=log_level)
 
-    # To test update health API
-    store = ConfigManager._get_confstore()
-    health = SystemHealth(store)
-    event = HealthEvent("event_id", "fault", "severity", "site_id", "rack_id", "cluster_id", "storageset_id",
-                        "node_5", "srvnode-1.mgmt.public", "node", "16215009572", "iem", "Description")
-    health.process_event(event)
+    try:
+        store = ConfigManager._get_confstore()
+        health = SystemHealth(store)
+        """
+        Test case 1
+        """
+        event = HealthEvent("event_id", "fault", "severity", "site_id", "rack_id", "cluster_id", "storageset_id",
+                            "node_5", "srvnode-1.mgmt.public", "node", "16215009572", "iem", "Description")
+        health.process_event(event)
+        node_info = health.get_node_status(node_id="node_5")
+        node_info_dict = json.loads(node_info)
+        node_status = node_info_dict['events'][0]['status']
+        if node_status != const.NODE_STATUSES.CLUSTER_OFFLINE.value:
+            Log.error("Test case 1 failed : node status must be 'offline' for event 'fault'")
 
-    # To test querying the node health API
-    node_status = health.get_node_status(node_id="node_5")
+        """
+        Test case 2
+        """
+        event = HealthEvent("event_id", "fault_resolved", "severity", "site_id", "rack_id", "cluster_id", "storageset_id",
+                            "node_5", "srvnode-1.mgmt.public", "node", "16215009572", "iem", "Description")
+        health.process_event(event)
+        node_info = health.get_node_status(node_id="node_5")
+        node_info_dict = json.loads(node_info)
+        node_status = node_info_dict['events'][0]['status']
+        if node_status != const.NODE_STATUSES.ONLINE.value:
+            Log.error("Test case 2 failed : node status must be 'online' for event 'fault_resolved'")
+
+    except Exception as e:
+            Log.error(f"Process event test failed : {e}")
     sys.exit(main(sys.argv))

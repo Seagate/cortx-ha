@@ -16,9 +16,11 @@
 
 import re
 import time
+import ast
 
 from cortx.utils.log import Log
 from ha import const
+from ha.core.system_health.const import COMPONENT_IDS
 from ha.core.system_health.system_health_metadata import SystemHealthComponents, SystemHealthHierarchy
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.system_health.model.entity_health import EntityEvent, EntityAction, EntityHealth
@@ -90,17 +92,17 @@ class SystemHealth:
             key = self._prepare_key(const.COMPONENTS.NODE_MAP.value, node_id=node_id)
             node_map_val = self.healthmanager.get_key(key)
             if node_map_val is not None:
-                node_map_dict = eval(node_map_val)
-                key = self._prepare_key(component='node', cluster_id=node_map_dict['cluster_id'],
-                                        site_id=node_map_dict['site_id'], rack_id=node_map_dict['rack_id'],
-                                        storageset_id=node_map_dict['storageset_id'], node_id=self.node_id, **kwargs)
+                node_map_dict = ast.literal_eval(node_map_val)
+                key = self._prepare_key(component='node', cluster_id=node_map_dict[COMPONENT_IDS.CLUSTER_ID.value],
+                                        site_id=node_map_dict[COMPONENT_IDS.SITE_ID.value], rack_id=node_map_dict[COMPONENT_IDS.RACK_ID.value],
+                                        storageset_id=node_map_dict[COMPONENT_IDS.STORAGESET_ID.value], node_id=self.node_id, **kwargs)
                 return self.healthmanager.get_key(key)
             else:
-                return
+                raise HaSystemHealthException(f"node_id : {node_id} doesn't exist")
 
         except Exception as e:
             Log.error(f"Failed reading status for component: node with Error: {e}")
-            raise HaSystemHealthException("Failed reading status")
+            raise HaSystemHealthException(f"Failed reading status for node with node_id : {node_id}")
 
     def get_storageset_status(self, storageset_id, **kwargs):
         """

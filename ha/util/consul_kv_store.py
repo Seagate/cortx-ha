@@ -39,7 +39,7 @@ class ConsulKvStore:
         self._prefix: str = prefix
         self._verify(prefix, host, port)
         self._consul = self._get_connection(prefix, host, port)
-        # self._consul.kv.put(self._prepare_key(""), None)
+        self._consul.kv.put(self._prepare_key(""), None)
 
     def _verify(self, prefix: str, host: str, port: int):
         """
