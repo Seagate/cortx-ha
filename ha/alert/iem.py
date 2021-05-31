@@ -23,7 +23,7 @@
 import json
 
 from cortx.utils.log import Log
-from ha.const import IEM_SCHEMA, ALERT_ATTRIBUTES, RA_LOG_DIR
+from ha.const import IEM_SCHEMA, logger_utility_iec_cmd, RA_LOG_DIR
 from ha.execute import SimpleCommand
 
 
@@ -60,7 +60,7 @@ class IemGenerator:
             desciption = desc.format(node)
 
             iec_string = f'"IEC:{severity}{source}{component}{module_id}{event_id}:{desciption}"'
-            iec_command = ALERT_ATTRIBUTES.logger_utility_iec_cmd + ' ' + iec_string
+            iec_command = logger_utility_iec_cmd + ' ' + iec_string
             Log.info(f'Sending an IEC: {iec_string} to syslog')
 
             _output, _err, _rc = self._execute.run_cmd(iec_command, check_error=False)

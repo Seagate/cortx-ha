@@ -170,6 +170,7 @@ MODULE = "module"
 RESOURCE_TYPE = "resource_type"
 IEM_DESCRIPTION="WS0080010001, Node, The cluster has lost $host server. System is running in degraded mode. " \
                 "For more information refer the Troubleshooting guide. Extra Info: host=$host; status=$status;"
+logger_utility_iec_cmd="logger -i -p local3.err"
 
 class STATUSES(Enum):
     IN_PROGRESS = "InProgress"
@@ -246,7 +247,6 @@ class ALERT_ATTRIBUTES:
     MODULE = "module"
     EVENT = "event"
     IEC = "IEC"
-    logger_utility_iec_cmd="logger -i -p local3.err"
     ALERT_ID = "alert_id"
     HOST_ID = "host_id"
     STATUS = "status"
