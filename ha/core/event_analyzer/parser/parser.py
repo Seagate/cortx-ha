@@ -24,6 +24,7 @@ from cortx.utils.log import Log
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.event_analyzer.event_analyzer_exceptions import EventParserException
 from ha.core.system_health.model.health_event import HealthEvent
+from ha.core.system_health.system_health_const import CLUSTERELEMENTS, HEALTH_EVENTS, EVENT_SEVERITIES
 from ha.core.config.config_manager import ConfigManager
 from ha.const import PVTFQDN_TO_NODEID_KEY, ALERT_ATTRIBUTES, EVENT_ATTRIBUTES
 
@@ -67,7 +68,7 @@ class AlertParser(Parser):
             msg (str): Msg
         """
         try:
-            alert = json.loads(msg).get(ALERT_ATTRIBUTES.MESSAGE)
+            alert = json.loads(msg)
 
             event = {
                 EVENT_ATTRIBUTES.EVENT_ID : alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.ALERT_ID],
@@ -111,7 +112,7 @@ class IEMParser(Parser):
             msg (str): Msg
         """
         try:
-            iem_alert = json.loads(msg).get(ALERT_ATTRIBUTES.MESSAGE)
+            iem_alert = json.loads(msg)
 
             # Parse hostname and convert to node id
             iem_description = iem_alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.INFO][ALERT_ATTRIBUTES.DESCRIPTION]
@@ -134,6 +135,9 @@ class IEMParser(Parser):
                 EVENT_ATTRIBUTES.RESOURCE_ID : node_id,
                 EVENT_ATTRIBUTES.SPECIFIC_INFO : iem_alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.SPECIFIC_INFO]
             }
+            # To be removed after HA starts populating IEM messages
+            if event.get(EVENT_ATTRIBUTES.RESOURCE_TYPE) == CLUSTERELEMENTS.NODE.value and event.get(EVENT_ATTRIBUTES.SEVERITY) == EVENT_SEVERITIES.WARNING.value:
+                event[EVENT_ATTRIBUTES.EVENT_TYPE] = HEALTH_EVENTS.FAULT.value
 
             health_event = HealthEvent.dict_to_object(event)
             Log.info(f"Event {event[EVENT_ATTRIBUTES.EVENT_ID]} is parsed and converted to object.")

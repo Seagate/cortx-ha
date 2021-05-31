@@ -56,7 +56,7 @@ if __name__ == '__main__':
                 ALERT_ATTRIBUTES.RESOURCE_TYPE: resource_type,
                 ALERT_ATTRIBUTES.DESCRIPTION: iem_description
             },
-            ALERT_ATTRIBUTES.ALERT_TYPE: "missing",
+            ALERT_ATTRIBUTES.ALERT_TYPE: "get",
             ALERT_ATTRIBUTES.SEVERITY: "warning",
             ALERT_ATTRIBUTES.SPECIFIC_INFO: {
                 ALERT_ATTRIBUTES.SOURCE: "Software",
