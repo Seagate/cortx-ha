@@ -99,11 +99,8 @@ class AlertMonitor:
         """
         Load recipient for pacemaker alert
         """
-        log_path = self.crm_env["CRM_alert_recipient"]
-        log_level = Conf.get(const.HA_GLOBAL_INDEX, "LOG.level")
-        if not os.path.exists(log_path):
-            syslog.syslog("Pacemaker Alert: Invalid path for pacemaker recipient alert")
-        Log.init(service_name="pcmk_alert", log_path=log_path, level=log_level)
+        # TODO to be implemented when recepient is required
+        pass
 
     def _validate_event(self):
         """
