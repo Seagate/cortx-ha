@@ -75,7 +75,7 @@ python3.6 setup.py bdist_rpm --version="${version}" --install-dir="${HA_INSTALL_
 --force-arch x86_64 --post-install jenkins/rpm/v2/post_install_script.sh \
 --post-uninstall jenkins/rpm/v2/post_uninstall_script.sh
 
-# Above --force-arch flag and below code is just for backward compatibility.
+# The --force-arch flag and below code is just for backward compatibility.
 # Can be removed once integration is done with RE.
 rpm_file=`ls -1 ${BASE_DIR}/dist/ | grep x86_64 | grep -v debug`
 mkdir -p ${BASE_DIR}/dist/rpmbuild/RPMS/x86_64
