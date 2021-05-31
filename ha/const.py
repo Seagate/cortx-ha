@@ -26,13 +26,15 @@ PCSD_LOG="/var/log/pcsd/pcsd.log"
 HA_CMDS_OUTPUT="{}/ha_cmds_output".format(RA_LOG_DIR)
 COROSYNC_LOG="/var/log/cluster"
 CONFIG_DIR="/etc/cortx/ha"
+SYSTEM_DIR="/etc/systemd/system"
 SUPPORT_BUNDLE_ERR="{}/support_bundle.err".format(RA_LOG_DIR)
 SUPPORT_BUNDLE_LOGS=[RA_LOG_DIR, PCSD_LOG, PACEMAKER_LOG, COROSYNC_LOG]
 CORTX_SUPPORT_BUNDLE_LOGS=[RA_LOG_DIR, PCSD_LOG, PACEMAKER_LOG, CONFIG_DIR, COROSYNC_LOG]
 DATASTORE_VERSION="v1"
 CLUSTER_CONFSTORE_PREFIX = "cortx/ha/{}/".format(DATASTORE_VERSION)
 HA_INIT_DIR="/var/cortx/ha/"
-SOURCE_CONFIG_PATH="/opt/seagate/cortx/ha/conf/etc"
+SOURCE_PATH="/opt/seagate/cortx/ha"
+SOURCE_CONFIG_PATH="{}/conf/etc".format(SOURCE_PATH)
 RESOURCE_SCHEMA="{}/decision_monitor_conf.json".format(CONFIG_DIR)
 RESOURCE_GLOBAL_INDEX="decision_monitor"
 RULE_ENGINE_SCHAMA="{}/rules_engine_schema.json".format(CONFIG_DIR)
@@ -43,14 +45,22 @@ HA_GLOBAL_INDEX="ha_conf"
 SOURCE_CONFIG_FILE="{}/ha.conf".format(SOURCE_CONFIG_PATH)
 BACKUP_DEST_DIR="/opt/seagate/cortx/ha_backup"
 BACKUP_DEST_DIR_CONF = "{}/conf".format(BACKUP_DEST_DIR)
+BACKUP_CONFIG_FILE="{}/ha.conf".format(BACKUP_DEST_DIR_CONF)
 BACKUP_DEST_DIR_CONSUL = "{}/Consul".format(BACKUP_DEST_DIR)
 CORTX_CLUSTER_PACKAGES=["pacemaker", "corosync", "pcs", "cortx-py-utils", "cortx-csm", "cortx-motr", "cortx-hare", "cortx-s3server", "cortx-sspl"]
 CIB_FILE="{}/cortx-r2-cib.xml".format(RA_LOG_DIR)
 SOURCE_CLI_SCHEMA_FILE = "{}/cli_schema.json".format(SOURCE_CONFIG_PATH)
 CLI_SCHEMA_FILE = "{}/cli_schema.json".format(CONFIG_DIR)
+COMPONENTS_CONFIG_DIR = "{}/components".format(CONFIG_DIR)
+
+# IEM DESCRIPTION string: To be removed
+IEM_DESCRIPTION="WS0080010001,Node, The cluster has lost $host server. System is running in degraded mode. For more information refer the Troubleshooting guide. Extra Info: host=$host; status=$status;"
 
 # Mini-provisioning
 CLUSTER_CONFSTORE_NODES_KEY="nodes"
+
+# Node name mapping keys
+PVTFQDN_TO_NODEID_KEY="pvtfqdn_to_nodeid"
 
 # Cortx commands
 CORTX_CLUSTER_NODE_ADD="cortx cluster add node --nodeid=<node> --username=<user> --password=<secret>"
@@ -104,13 +114,13 @@ HARE_FID_MAPPING_FILE="/var/lib/hare/consul-server-conf/consul-server-conf.json"
 PCS_CLUSTER_START="pcs cluster start --all"
 PCS_CLUSTER_START_NODE="pcs cluster start"
 PCS_NODE_START="pcs cluster start <node>"
-PCS_CLUSTER_ENABLE="pcs cluster enable <node>"
+PCS_CLUSTER_ENABLE="pcs cluster enable"
 PCS_CLUSTER_STATUS="pcs cluster status"
 PCS_CLUSTER_UNSTANDBY="pcs cluster unstandby --all"
 PCS_SETUP_CLUSTER="pcs cluster setup --start --name <cluster_name> <node>"
 PCS_CLUSTER_NODE_AUTH="pcs cluster auth <node> -u <username> -p <password>"
 PCS_CLUSTER_NODE_ADD="pcs cluster node add <node> --start --enable"
-PCS_CLUSTER_NODE_REMOVE="pcs cluster node remove <node>"
+PCS_CLUSTER_NODE_REMOVE="pcs cluster node remove <node> --force"
 PCS_CLUSTER_PCSD_STATUS="pcs status pcsd"
 PCS_STATUS_NODES="pcs status nodes"
 PCS_NODE_UNSTANDBY="pcs node unstandby <node>"
@@ -122,7 +132,10 @@ PCS_STOP_CLUSTER="pcs cluster stop --request-timeout=<seconds> --all"
 PCS_STATUS = "pcs status"
 PCS_CLUSTER_DESTROY="pcs cluster destroy"
 PCS_NODE_STANDBY="pcs node standby <node>"
+PCS_CLUSTER_STANDBY="pcs node standby --all"
 PCS_STONITH_DISABLE="pcs property set stonith-enabled=False"
+LIST_PCS_RESOURCES = '/usr/sbin/crm_resource --list-raw'
+CHECK_PCS_STANDBY_MODE = '/usr/sbin/crm_standby --query | awk \'{print $3}\''
 
 # Cluster manager
 CM_CONTROLLER_INDEX="cluster_controller_interfaces"
@@ -134,6 +147,7 @@ NODE_CONTROLLER = "node_controller"
 CLUSTER_RETRY_COUNT = 6
 BASE_WAIT_TIME = 5
 NODE_STOP_TIMEOUT = 300 # 300 sec to stop single node
+CLUSTER_STANDBY_UNSTANDBY_TIMEOUT = 600 # 600 sec to stop single node
 
 # Event Analyzer
 INCLUSION = "inclusion"
@@ -141,6 +155,17 @@ EXCLUSION = "exclusion"
 ALERT_FILTER_INDEX = "alert_filter_rules"
 ALERT_FILTER_RULES_FILE = "{}/alert_filter_rules.json".format(CONFIG_DIR)
 SOURCE_ALERT_FILTER_RULES_FILE = "{}/alert_filter_rules.json".format(SOURCE_CONFIG_PATH)
+SYSTEM_SERVICE_FILE = "{}/event_analyzer.service".format(SYSTEM_DIR)
+SOURCE_SERVICE_FILE = "{}/conf/service/event_analyzer.service".format(SOURCE_PATH)
+ACTUATOR_RESPONSE_TYPE= "actuator_response_type"
+SENSOR_RESPONSE_TYPE= "sensor_response_type"
+SPECIFIC_INFO = "specific_info"
+INFO = "info"
+COMPONENT = "component"
+MODULE = "module"
+RESOURCE_TYPE = "resource_type"
+IEM_DESCRIPTION="WS0080010001, Node, The cluster has lost $host server. System is running in degraded mode. " \
+                "For more information refer the Troubleshooting guide. Extra Info: host=$host; status=$status;"
 
 class STATUSES(Enum):
     IN_PROGRESS = "InProgress"
@@ -180,3 +205,71 @@ KEY = "key"
 class ACTION_STATUS(Enum):
     PENDING = "pending"
     COMPLETE = "complete"
+
+class INSTALLATION_TYPE(Enum):
+    HW = "hw"
+    VM = "vm"
+    SINGLE_VM = "single_vm"
+
+# Alert attribute constants
+class ALERT_ATTRIBUTES:
+    MESSAGE = "message"
+    HEADER = "sspl_ll_msg_header"
+    MSG_VERSION = "msg_version"
+    SCHEMA_VERSION = "schema_version"
+    SSPL_VERSION = "sspl_version"
+    SENSOR_RESPONSE_TYPE = "sensor_response_type"
+    ACTUATOR_RESPONSE_TYPE= "actuator_response_type"
+    INFO = "info"
+    EVENT_TIME = "event_time"
+    RESOURCE_ID = "resource_id"
+    SITE_ID = "site_id"
+    NODE_ID = "node_id"
+    CLUSTER_ID = "cluster_id"
+    RACK_ID = "rack_id"
+    RESOURCE_TYPE = "resource_type"
+    DESCRIPTION = "description"
+    ALERT_TYPE = "alert_type"
+    SEVERITY = "severity"
+    SPECIFIC_INFO = "specific_info"
+    SOURCE = "source"
+    COMPONENT = "component"
+    MODULE = "module"
+    EVENT = "event"
+    IEC = "IEC"
+    ALERT_ID = "alert_id"
+    HOST_ID = "host_id"
+    STATUS = "status"
+    NAME = "name"
+    ENCLOSURE_ID = "enclosure-id"
+    DURABLE_ID = "durable-id"
+    FANS = "fans"
+    HEALTH_REASON = "health-reason"
+    HEALTH = "health"
+    LOCATION = "location"
+    POSITION = "position"
+    HEALTH_RECOMMENDATION = "health-recommendation"
+
+# Health event attribute constants
+class EVENT_ATTRIBUTES:
+    EVENT_ID = "event_id"
+    EVENT_TYPE = "event_type"
+    SEVERITY = "severity"
+    SITE_ID = "site_id"
+    RACK_ID = "rack_id"
+    CLUSTER_ID = "cluster_id"
+    STORAGESET_ID = "storageset_id"
+    NODE_ID = "node_id"
+    HOST_ID = "host_id"
+    RESOURCE_TYPE = "resource_type"
+    TIMESTAMP = "timestamp"
+    RESOURCE_ID = "resource_id"
+    SPECIFIC_INFO = "specific_info"
+
+# Alert constants
+class AlertEventConstants(Enum):
+    ALERT_FILTER_TYPE = "alert.filter_type"
+    IEM_FILTER_TYPE = "iem.filter_type"
+    ALERT_RESOURCE_TYPE = "alert.resource_type"
+    IEM_COMPONENTS = "iem.components"
+    IEM_MODULES = "iem.modules"

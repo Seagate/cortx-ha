@@ -73,7 +73,7 @@ if __name__ == '__main__':
         filter_type = Conf.get(const.ALERT_FILTER_INDEX, "alert.filter_type")
         resource_types_list = Conf.get(const.ALERT_FILTER_INDEX, "alert.resource_type")
 
-        if "actuator_response_type" not in TestMsg.keys():
+        if const.ACTUATOR_RESPONSE_TYPE not in TestMsg.keys():
             if filter_type == const.INCLUSION:
                 if resource_type in resource_types_list:
                     Expected_result = True

@@ -1,0 +1,56 @@
+{
+    "motr-free-space-mon": {
+        "parameters": { },
+        "provider": {
+            "name": "systemd",
+            "service": "motr-free-space-monitor",
+            "intervals": [
+                "0s",
+                "30s",
+                "0s"
+            ],
+            "timeouts": [
+                "100s",
+                "30s",
+                "120s"
+            ],
+            "counters": []
+        }, 
+
+        "dependencies": {
+            "predecessors": [
+                "<resource>",
+                "<resource>"
+            ],
+            "colocation": [
+                "<resource>",
+                "<resource>"
+            ],
+            "relation": [
+                "<resource>",
+                "<resource>"
+            ]
+        },
+        "ha": {
+            "mode": "active_passive",
+            "clones": {
+                "active": [
+                    "1",
+                    "INFINITY"
+                ],
+                "primary": [
+                    "<max-primary-on-node>",
+                    "<total-primary>"
+                ],
+                "parameters": {
+                    "failure-timeout": "300s",
+                    "<key2>": "<value2>"
+                }
+            },
+            "location": {
+                "<hostname1>": "<priority1>",
+                "<hostname2>": "<priority2>"
+            }
+        }
+    }
+}
