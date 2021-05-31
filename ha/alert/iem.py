@@ -15,22 +15,31 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
+'''
+   Routine which helps for constrcting and sending an IEC to syslog for major
+   system level events
+'''
+
 import json
 
 from cortx.utils.log import Log
-from ha.const import IEM_SCHAMA, ALERT_ATTRIBUTES, RA_LOG_DIR
+from ha.const import IEM_SCHEMA, ALERT_ATTRIBUTES, RA_LOG_DIR
 from ha.execute import SimpleCommand
 
+
 class IemGenerator:
+    '''
+    Module responsible for constrcting an IEC and sending it to syslog
+    '''
     def __init__(self):
         """
         Init IEM generator
         """
         self._execute = SimpleCommand()
-        with open(IEM_SCHAMA, 'r') as iem_schema_file:
+        with open(IEM_SCHEMA, 'r') as iem_schema_file:
             self.iem_alert_data = json.load(iem_schema_file)
 
-    def generate_iem(self, module: str, node: str, event_type: str) -> None:
+    def generate_iem(self, node: str, module: str, event_type: str) -> None:
         '''
            Forms an IEC based on diffrent values such as module:<node/resource>
            and event_type<lost/member for a node scenario>
@@ -40,19 +49,29 @@ class IemGenerator:
            module : Module type (ex 'node' or 'resource' )
            event_type : Type of event based on module ( ex 'member' / 'lost' when module is 'node' )
         '''
-        severity = self.iem_alert_data.get(module).get('severity').get(event_type)
-        source = self.iem_alert_data.get(module).get('source')
-        component = self.iem_alert_data.get(module).get('component')
-        module = self.iem_alert_data.get(module).get('module')
-        event_id = self.iem_alert_data.get(module).get('event').get(event_type).get('ID')
-        desc = self.iem_alert_data.get(module).get('event').get(event_type).get('desc')
+        try:
+            module_type = self.iem_alert_data.get(module)
+            severity = module_type.get('severity').get(event_type)
+            source = module_type.get('source')
+            component = module_type.get('component')
+            module_id = module_type.get('module')
+            event_id = module_type.get('event').get(event_type).get('ID')
+            desc = module_type.get('event').get(event_type).get('desc')
+            desciption = desc.format(node)
 
-        iec_string = f'"IEC:{severity}{source}{component}{module}{event_id}:{desc}"'
-        iec_command = ALERT_ATTRIBUTES.logger_utility_iec_cmd + ' ' + iec_string
-        Log.info(f'Sending an IEC: {iec_string} to syslog')
-        _output, _err, _rc = self._execute.run_cmd(iec_command, check_error=False)
+            iec_string = f'"IEC:{severity}{source}{component}{module_id}{event_id}:{desciption}"'
+            iec_command = ALERT_ATTRIBUTES.logger_utility_iec_cmd + ' ' + iec_string
+            Log.info(f'Sending an IEC: {iec_string} to syslog')
 
-        if _rc != 0 or _err:
-            raise Exception(f'Failed to populate an IEC to syslog: {_err}')
+            _output, _err, _rc = self._execute.run_cmd(iec_command, check_error=False)
+            if _rc != 0 or _err:
+                raise Exception(f'Failed to populate an IEC to syslog: {_err}')
+        except KeyError as kerr:
+            Log.error(f'Key Error occured while parsing the IEM data while generating \
+                        an IEC for {module} for the event {event_type}: {kerr}')
+        except Exception as err:
+            Log.error(f'Problem occured while generating an IEC for {module} \
+                        for the event {event_type}: {err}')
+
 
 Log.init(service_name="alert_monitor", log_path=RA_LOG_DIR, level="INFO")
