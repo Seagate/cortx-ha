@@ -22,6 +22,12 @@ class IemGenerator:
         """
         #super(IemGenerator, self).__init__()
 
-    def generate_iem(self):
+    def generate_iem(self, node, module, event_type):
+        """
+        Required parameters
+        node : Node name
+        module : Module type (ex 'node' or 'resource' )
+        event_type : Type of event based on module ( ex 'member' / 'lost' when module is 'node' )
+        """
         # paceholder function for IEM generation
         pass
