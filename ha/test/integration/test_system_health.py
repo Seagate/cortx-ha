@@ -49,8 +49,7 @@ if __name__ == '__main__':
                             "2", "srvnode-1.mgmt.public", "node", "16215009572", "iem", "Description")
         health.process_event(event)
         node_info = health.get_node_status(node_id="2")
-        node_info_dict = json.loads(node_info)
-        node_status = node_info_dict['events'][0]['status']
+        node_status = node_info['status']
         if node_status != const.NODE_STATUSES.CLUSTER_OFFLINE.value:
             Log.error("Test case 1 failed : node status must be 'offline' for event 'fault'")
 
@@ -61,8 +60,7 @@ if __name__ == '__main__':
                             "2", "srvnode-1.mgmt.public", "node", "16215009572", "iem", "Description")
         health.process_event(event)
         node_info = health.get_node_status(node_id="2")
-        node_info_dict = json.loads(node_info)
-        node_status = node_info_dict['events'][0]['status']
+        node_status = node_info['status']
         if node_status != const.NODE_STATUSES.ONLINE.value:
             Log.error("Test case 2 failed : node status must be 'online' for event 'fault_resolved'")
 
