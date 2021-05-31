@@ -33,9 +33,6 @@ for argument in sys.argv:
         # remove it. setup doesn't need it.
         sys.argv.remove(argument)
 
-with open('LICENSE', 'r') as lf:
-    license = lf.read()
-
 with open('README.md', 'r') as rf:
     long_description = rf.read()
 
@@ -46,7 +43,7 @@ def get_data_files() -> list:
     v2 = 'v2'
     common = 'common'
     conf_dir = 'conf'
-    for root, directories, file_names in os.walk(conf_dir):
+    for root, _, file_names in os.walk(conf_dir):
         dest_root = root
         last_dir = root.split("/")[-1]
         if last_dir in ignore_dirs:
@@ -69,7 +66,7 @@ def get_packages() -> list:
     ignore_list = ['pcswrap', 'test', '__pycache__']
     packages = ['ha']
     package_root = 'ha'
-    for root, directories, file_names in os.walk(package_root):
+    for root, directories, _ in os.walk(package_root):
         for a_dir in directories:
             package = root + '/' + a_dir
             package = package.replace('/', '.')
