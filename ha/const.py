@@ -35,6 +35,7 @@ CLUSTER_CONFSTORE_PREFIX = "cortx/ha/{}/".format(DATASTORE_VERSION)
 HA_INIT_DIR="/var/cortx/ha/"
 SOURCE_PATH="/opt/seagate/cortx/ha"
 SOURCE_CONFIG_PATH="{}/conf/etc".format(SOURCE_PATH)
+SOURCE_IEM_SCHEMA_PATH="{}/conf/etc".format(SOURCE_PATH)
 RESOURCE_SCHEMA="{}/decision_monitor_conf.json".format(CONFIG_DIR)
 RESOURCE_GLOBAL_INDEX="decision_monitor"
 RULE_ENGINE_SCHAMA="{}/rules_engine_schema.json".format(CONFIG_DIR)
@@ -52,6 +53,7 @@ CIB_FILE="{}/cortx-r2-cib.xml".format(RA_LOG_DIR)
 SOURCE_CLI_SCHEMA_FILE = "{}/cli_schema.json".format(SOURCE_CONFIG_PATH)
 CLI_SCHEMA_FILE = "{}/cli_schema.json".format(CONFIG_DIR)
 COMPONENTS_CONFIG_DIR = "{}/components".format(CONFIG_DIR)
+IEM_SCHEMA="{}/iem_ha.json".format(CONFIG_DIR)
 
 # IEM DESCRIPTION string: To be removed
 IEM_DESCRIPTION="WS0080010001,Node, The cluster has lost $host server. System is running in degraded mode. For more information refer the Troubleshooting guide. Extra Info: host=$host; status=$status;"
@@ -244,6 +246,7 @@ class ALERT_ATTRIBUTES:
     MODULE = "module"
     EVENT = "event"
     IEC = "IEC"
+    logger_utility_iec_cmd="logger -i -p local3.err"
     ALERT_ID = "alert_id"
     HOST_ID = "host_id"
     STATUS = "status"

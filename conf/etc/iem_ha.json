@@ -1,0 +1,22 @@
+{
+    "node":{
+        "severity": {
+            "lost": "W",
+            "member": "I"
+        },
+        "source": "S",
+        "component": "008",
+        "module": "001",
+        "event": {
+            "lost":{
+                "ID": "0001",
+                "desc": "The cluster has lost the server. System is running in degraded mode."
+            },
+            "member": {
+                "ID": "0002",
+                "desc": "Server has joined back the cluster. System is restored."
+            }
+        }
+    }
+}
+
