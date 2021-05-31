@@ -41,7 +41,6 @@ if __name__ == '__main__':
 
     try:
         store = ConfigManager.get_confstore()
-        print(store)
         health = SystemHealth(store)
         """
         Test case 1

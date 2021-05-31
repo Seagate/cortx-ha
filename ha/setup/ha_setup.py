@@ -343,7 +343,7 @@ class ConfigCmd(Cmd):
         if not self._confstore.key_exists(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_name}"):
             node_id = Conf.get(self._index, f"server_node.{machine_id}.node_id")
             self._confstore.set(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_name}", node_id)
-            
+
         node_id = Conf.get(self._index, f"server_node.{machine_id}.node_id")
         cluster_id = Conf.get(self._index, f"server_node.{machine_id}.cluster_id")
         site_id = Conf.get(self._index, f"server_node.{machine_id}.site_id")
