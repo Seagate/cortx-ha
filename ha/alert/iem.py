@@ -24,7 +24,4 @@ class IemGenerator:
 
     def generate_iem(self):
         # paceholder function for IEM generation
-        print("In generate_iem") 
-
-
-
+        pass
