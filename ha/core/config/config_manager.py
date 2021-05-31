@@ -48,8 +48,8 @@ class ConfigManager:
         if len(ConfigManager._conf) == 0:
             Conf.init(delim='.')
         ConfigManager._safe_load(const.HA_GLOBAL_INDEX, f"yaml://{const.HA_CONFIG_FILE}")
-        ConfigManager._safe_load(const.RESOURCE_GLOBAL_INDEX, f"json://{const.RESOURCE_SCHEMA}")
-        ConfigManager._init_log(log_name)
+        if log_name is not None:
+            ConfigManager._init_log(log_name)
 
     @staticmethod
     def _init_log(log_name: str):
@@ -111,3 +111,10 @@ class ConfigManager:
         Get local node name.
         """
         return Conf.get(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.local_node")
+
+    @staticmethod
+    def get_hw_env() -> str:
+        """
+        Get if system is running on VM or actual h/w.
+        """
+        return Conf.get(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.env")
