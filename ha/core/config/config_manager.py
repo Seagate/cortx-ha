@@ -85,6 +85,13 @@ class ConfigManager:
         ConfigManager._safe_load(const.ALERT_FILTER_INDEX, f"json://{const.ALERT_FILTER_RULES_FILE}")
 
     @staticmethod
+    def load_alert_events_rules():
+        """
+        Loads alert filter rules.
+        """
+        ConfigManager._safe_load(const.ALERT_FILTER_INDEX, f"json://{const.ALERT_FILTER_RULES_FILE}")
+
+    @staticmethod
     def _safe_load(index: str, url: str):
         """
         Load config if not loaded
