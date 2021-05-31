@@ -26,9 +26,7 @@ from cortx.utils.log import Log
 from cortx.utils.conf_store.conf_store import Conf
 from ha.core.config.config_manager import ConfigManager
 from ha.alert.alert_factory import AlertFactory
-
-# Can be moved to const.py
-REQUIRED_EVENTS = ["node" , "resource"]
+from ha.alert.const import ALERTS
 
 class AlertMonitor:
 
@@ -40,9 +38,9 @@ class AlertMonitor:
         ConfigManager.init("alert_monitor")
 
         # get environment variables
-        self.crm_env = self.get_env()
+        self.crm_env = self._get_env()
 
-    def get_env(self):
+    def _get_env(self):
         """
         Get env variable and parameter provided by pacemaker
         """
@@ -63,23 +61,23 @@ class AlertMonitor:
         Process alert
         """
 
-        self.validate_pacemaker()
-        self.load_recipient()
+        self._validate_pacemaker()
+        self._load_recipient()
 
         # validate event type and get class
         try:
-             event_type = self.validate_event()
+             event_type = self._validate_event()
              # Redirect the alert to appropriate monitor for further processing
              if event_type:
                  Log.info(f"Handling the event: {str(self.crm_env)}")
-                 self.redirect_alert(event_type)
+                 self._redirect_alert(event_type)
              else:
                  Log.info(f"Identified unknown event: {str(self.crm_env)}")
 
         except Exception as e:
             Log.error(f"{traceback.format_exc()}, {e}")
 
-    def redirect_alert(self, event_type):
+    def _redirect_alert(self, event_type):
         """
         Get appropriate class based on event  and redirect alert to it
         """
@@ -88,7 +86,7 @@ class AlertMonitor:
         alert.process_alert()
 
 
-    def validate_pacemaker(self):
+    def _validate_pacemaker(self):
         """
         Validate pacemaker
         """
@@ -97,7 +95,7 @@ class AlertMonitor:
             Log.error(f"Pacemaker Alert: {sys.argv[0]} must be run by Pacemaker version 1.1.15 or later")
             sys.exit(1)
 
-    def load_recipient(self):
+    def _load_recipient(self):
         """
         Load recipient for pacemaker alert
         """
@@ -107,17 +105,14 @@ class AlertMonitor:
             syslog.syslog("Pacemaker Alert: Invalid path for pacemaker recipient alert")
         Log.init(service_name="pcmk_alert", log_path=log_path, level=log_level)
 
-    def validate_event(self):
+    def _validate_event(self):
         """
         Validate event
         """
         event_type = self.crm_env["CRM_alert_kind"]
 
-        if event_type in REQUIRED_EVENTS:
+        if event_type in ALERTS.REQUIRED_EVENTS:
             Log.debug(f" Validating event: {str(self.crm_env)}")
             return event_type
         Log.info(f"Identified unknown event: {str(self.crm_env)}")
         return ""
-
-    def create_IEM(self):
-        pass

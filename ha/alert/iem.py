@@ -15,21 +15,16 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-
-from cortx.utils.log import Log
-from ha.alert.alert_monitor import AlertMonitor
-from ha.alert.iem import IemGenerator
-
-class NodeAlertMonitor(AlertMonitor):
-
+class IemGenerator:
     def __init__(self):
         """
-        Init node alert monitor
+        Init IEM generator
         """
-        super(NodeAlertMonitor, self).__init__()
+        #super(IemGenerator, self).__init__()
 
-    def process_alert(self):
-        Log.debug("Processing event for NodeAlertMonitor")
-        # Environment variable are avilable in self.crm_env
-        self.iem = IemGenerator()
-        self.iem.generate_iem()
+    def generate_iem(self):
+        # paceholder function for IEM generation
+        print("In generate_iem") 
+
+
+

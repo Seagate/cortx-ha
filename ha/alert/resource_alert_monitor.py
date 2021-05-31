@@ -18,6 +18,7 @@
 
 from cortx.utils.log import Log
 from ha.alert.alert_monitor import AlertMonitor
+from ha.alert.iem import IemGenerator
 
 class ResourceAlertMonitor(AlertMonitor):
 
@@ -30,6 +31,3 @@ class ResourceAlertMonitor(AlertMonitor):
     def process_alert(self):
         Log.debug("Processing event for ResourceAlertMonitor")
         # Environment variable are avilable in self.crm_env
-
-    def create_IEM(self):
-        pass
