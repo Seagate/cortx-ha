@@ -10,11 +10,11 @@
         "event": {
             "lost":{
                 "ID": "0001",
-                "desc": "The cluster has lost the server. System is running in degraded mode."
+                "desc": "The cluster has lost the server {0}. System is running in degraded mode."
             },
             "member": {
                 "ID": "0002",
-                "desc": "Server has joined back the cluster. System is restored."
+                "desc": "The server {0} has joined back the cluster. System is restored."
             }
         }
     }
