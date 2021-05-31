@@ -40,15 +40,16 @@ if __name__ == '__main__':
     Log.init(service_name='ha_system_health', log_path=log_path, level=log_level)
 
     try:
-        store = ConfigManager._get_confstore()
+        store = ConfigManager.get_confstore()
+        print(store)
         health = SystemHealth(store)
         """
         Test case 1
         """
-        event = HealthEvent("event_id", "fault", "severity", "site_id", "rack_id", "cluster_id", "storageset_id",
-                            "node_5", "srvnode-1.mgmt.public", "node", "16215009572", "iem", "Description")
+        event = HealthEvent("event_id", "fault", "severity", "1", "1", "e766bd52-c19c-45b6-9c91-663fd8203c2e", "storage-set-1",
+                            "2", "srvnode-1.mgmt.public", "node", "16215009572", "iem", "Description")
         health.process_event(event)
-        node_info = health.get_node_status(node_id="node_5")
+        node_info = health.get_node_status(node_id="2")
         node_info_dict = json.loads(node_info)
         node_status = node_info_dict['events'][0]['status']
         if node_status != const.NODE_STATUSES.CLUSTER_OFFLINE.value:
@@ -57,10 +58,10 @@ if __name__ == '__main__':
         """
         Test case 2
         """
-        event = HealthEvent("event_id", "fault_resolved", "severity", "site_id", "rack_id", "cluster_id", "storageset_id",
-                            "node_5", "srvnode-1.mgmt.public", "node", "16215009572", "iem", "Description")
+        event = HealthEvent("event_id", "fault_resolved", "severity", "1", "1", "e766bd52-c19c-45b6-9c91-663fd8203c2e", "storage-set-1",
+                            "2", "srvnode-1.mgmt.public", "node", "16215009572", "iem", "Description")
         health.process_event(event)
-        node_info = health.get_node_status(node_id="node_5")
+        node_info = health.get_node_status(node_id="2")
         node_info_dict = json.loads(node_info)
         node_status = node_info_dict['events'][0]['status']
         if node_status != const.NODE_STATUSES.ONLINE.value:

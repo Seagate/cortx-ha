@@ -96,7 +96,7 @@ class SystemHealth(Subscriber):
                 node_map_dict = ast.literal_eval(node_map_val)
                 key = self._prepare_key(component='node', cluster_id=node_map_dict[COMPONENT_IDS.CLUSTER_ID.value],
                                         site_id=node_map_dict[COMPONENT_IDS.SITE_ID.value], rack_id=node_map_dict[COMPONENT_IDS.RACK_ID.value],
-                                        storageset_id=node_map_dict[COMPONENT_IDS.STORAGESET_ID.value], node_id=self.node_id, **kwargs)
+                                        storageset_id=node_map_dict[COMPONENT_IDS.STORAGESET_ID.value], node_id=node_id, **kwargs)
                 return self.healthmanager.get_key(key)
             else:
                 raise HaSystemHealthException(f"node_id : {node_id} doesn't exist")
@@ -123,11 +123,6 @@ class SystemHealth(Subscriber):
                                 node_id=self.node_id, server_id=self.node_id, storage_id=self.node_id,
                                 comp_type=comp_type, comp_id=comp_id)
         self.healthmanager.set_key(key, healthvalue)
-
-        key = self._prepare_key(const.COMPONENTS.NODE_MAP.value, node_id=self.node_id)
-        node_map_val = self.healthmanager.get_key(key)
-        if node_map_val is None:
-            self.healthmanager.set_key(key, str(self.node_map))
 
         # Check the next component to be updated, if none then return.
         if next_component is None:
