@@ -18,7 +18,6 @@
 
 from cortx.utils.log import Log
 from ha.alert.alert_monitor import AlertMonitor
-from ha.alert.iem import IemGenerator
 
 class ResourceAlertMonitor(AlertMonitor):
 

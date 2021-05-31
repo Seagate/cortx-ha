@@ -21,9 +21,7 @@ import sys
 import syslog
 import traceback
 
-from ha import const
 from cortx.utils.log import Log
-from cortx.utils.conf_store.conf_store import Conf
 from ha.core.config.config_manager import ConfigManager
 from ha.alert.alert_factory import AlertFactory
 from ha.alert.const import ALERTS
