@@ -20,7 +20,7 @@ import ast
 
 from cortx.utils.log import Log
 from ha import const
-from ha.core.system_health.const import COMPONENT_IDS
+from ha.core.system_health.const import NODE_MAP_ATTRIBUTES
 from ha.core.event_analyzer.subscriber import Subscriber
 from ha.core.system_health.system_health_metadata import SystemHealthComponents, SystemHealthHierarchy
 from ha.core.system_health.model.health_event import HealthEvent
@@ -94,9 +94,9 @@ class SystemHealth(Subscriber):
             node_map_val = self.healthmanager.get_key(key)
             if node_map_val is not None:
                 node_map_dict = ast.literal_eval(node_map_val)
-                key = self._prepare_key(component='node', cluster_id=node_map_dict[COMPONENT_IDS.CLUSTER_ID.value],
-                                        site_id=node_map_dict[COMPONENT_IDS.SITE_ID.value], rack_id=node_map_dict[COMPONENT_IDS.RACK_ID.value],
-                                        storageset_id=node_map_dict[COMPONENT_IDS.STORAGESET_ID.value], node_id=node_id, **kwargs)
+                key = self._prepare_key(component='node', cluster_id=node_map_dict[NODE_MAP_ATTRIBUTES.CLUSTER_ID.value],
+                                        site_id=node_map_dict[NODE_MAP_ATTRIBUTES.SITE_ID.value], rack_id=node_map_dict[NODE_MAP_ATTRIBUTES.RACK_ID.value],
+                                        storageset_id=node_map_dict[NODE_MAP_ATTRIBUTES.STORAGESET_ID.value], node_id=node_id, **kwargs)
                 return self.healthmanager.get_key(key)
             else:
                 raise HaSystemHealthException(f"node_id : {node_id} doesn't exist")
