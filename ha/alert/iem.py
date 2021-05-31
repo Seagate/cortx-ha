@@ -38,7 +38,7 @@ class IemGenerator:
            Required parameters
            node : Node name
            module : Module type (ex 'node' or 'resource' )
-           event_type : Type of event based on module ( ex 'member' / 'lost' when module is 'node' )
+        event_type : Type of event based on module ( ex 'member' / 'lost' when module is 'node' )
         '''
         severity = self.iem_alert_data.get(module).get('severity').get(event_type)
         source = self.iem_alert_data.get(module).get('source')
