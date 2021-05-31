@@ -35,7 +35,9 @@ class AlertConfig:
         Check if alert already exists.
         """
         Log.info("Checking pacemaker alert if already exists ...")
-        output, error, rc = self._process.run_cmd(f"pcs alert")
+        output, _, rc = self._process.run_cmd(f"pcs alert")
+        if rc != 0:
+            raise AlertConfigError("Failed to execute pcs alert.")
         for line in output.split("\n"):
             if AlertConfig.ALERT_ID in line:
                 return True
