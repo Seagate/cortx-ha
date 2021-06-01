@@ -86,6 +86,8 @@ class SystemHealth(Subscriber):
         """
         get node status method. This method is for returning a status of a node.
         """
+        node_status = {"status": "Online", "created_timestamp": "1234"}
+        return node_status
 
     def get_storageset_status(self, storageset_id, **kwargs):
         """

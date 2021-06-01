@@ -15,36 +15,17 @@
 
 from enum import Enum
 
-# Cluster elements supported by system health
-class CLUSTER_ELEMENTS(Enum):
-    CLUSTER = "cluster"
-    SITE = "site"
-    RACK = "rack"
-    NODE = "node"
+# System health output versions
+SYSTEM_HEALTH_OUTPUT_V1 = "1.0"
 
-# Health statuses
-class HEALTH_STATUSES(Enum):
-    ONLINE = "online"
-    DEGRADED = "degraded"
-    STANDBY = "standby"
-    UNHEALTHY = "unhealthy"
-    OFFLINE = "offline"
-    UNKNOWN = "unknown"
+# Variable arguments supported by get_system_health() API
+class GET_SYS_HEALTH_ARGS(Enum):
+    ID = "id"
 
-# Health event types
-class HEALTH_EVENTS(Enum):
-    FAULT = "fault"
-    FAULT_RESOLVED = "fault_resolved"
-    MISSING = "missing"
-    INSERTION = "insertion"
-    THRESHOLD_BREACHED_LOW = "threshold_breached:low"
-    THRESHOLD_BREACHED_HIGH = "threshold_breached:high"
-    UNKNOWN = "unknown"
-
-# Health event severities
-class EVENT_SEVERITIES(Enum):
-    ALERT = "alert"
-    CRITICAL = "critical"
-    ERROR = "error"
-    WARNING = "warning"
-    INFORMATIONAL = "informational"
+# System health output attributes
+class SYS_HEALTH_OP_ATTRS(Enum):
+    VERSION = "version"
+    RESOURCE = "resource"
+    ID = "id"
+    STATUS = "status"
+    UPDATE_TIMESTAMP = "update_timestamp"

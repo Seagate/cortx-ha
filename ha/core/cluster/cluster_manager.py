@@ -16,6 +16,7 @@
 # cortx-questions@seagate.com.
 
 import time
+import json
 
 from cortx.utils.log import Log
 from cortx.utils.conf_store.conf_store import Conf
@@ -28,6 +29,10 @@ from ha.execute import SimpleCommand
 from ha import const
 from ha.core.config.config_manager import ConfigManager
 from ha.core.controllers.element_controller_factory import ElementControllerFactory
+from ha.core.system_health.const import CLUSTER_ELEMENTS
+from ha.core.controllers.system_status_controller import SystemHealthController
+from ha.core.cluster.const import SYSTEM_HEALTH_OUTPUT_V1, GET_SYS_HEALTH_ARGS, SYS_HEALTH_OP_ATTRS
+from ha.core.cluster.model.health_status import StatusOutput, ElementStatus
 
 # Note: This class is used by version 1
 class PcsClusterManager:
@@ -278,6 +283,7 @@ class CortxClusterManager:
             ConfigManager.init(None)
         self._cluster_type = Conf.get(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.cluster_type")
         self._env = Conf.get(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.env")
+        self._confstore = ConfigManager.get_confstore()
         ConfigManager.load_controller_schema()
         self._controllers = ElementControllerFactory.init_controller(self._env, self._cluster_type)
         for controller in self._controllers.keys():
@@ -296,3 +302,36 @@ class CortxClusterManager:
             [list]: list of controllers.
         """
         return list(self._controllers.keys())
+
+    def get_system_health(self, element: CLUSTER_ELEMENTS = CLUSTER_ELEMENTS.CLUSTER.value, depth: int = 1, **kwargs) -> dict:
+        """
+        Return health status for the requested elements.
+
+        Args:
+            element ([CLUSTER_ELEMENTS]): The element whose health status is to be returned.
+            depth ([int]): A depth of elements starting from the input "element" that the health status
+                is to be returned.
+            **kwargs([dict]): Variable number of arguments that are used as filters,
+                e.g. "id" of the input "element".
+
+        Returns:
+            ([dict]): Returns dictionary. {"status": "Succeeded"/"Failed"/"Partial", "output": "", "error": ""}
+                status: Succeeded, Failed, Partial
+                output: Dictionary with element health status
+                error: Error information if the request "Failed"
+        """
+
+        # Currently, only node status with depth 1 is supported currently
+        if element != CLUSTER_ELEMENTS.NODE.value or \
+            depth != 1 or \
+            GET_SYS_HEALTH_ARGS.ID.value not in kwargs:
+            return {"status": const.STATUSES.FAILED.value, "output": "", "error": "Invalid argument(s)"}
+
+        # Fetch the health status, prepare and return the output.
+        system_health_controller = SystemHealthController(self._confstore)
+        status_dict = system_health_controller.get_node_status(node_id = kwargs[GET_SYS_HEALTH_ARGS.ID.value])
+        output = StatusOutput(SYSTEM_HEALTH_OUTPUT_V1)
+        element_status = ElementStatus(CLUSTER_ELEMENTS.NODE.value, kwargs[GET_SYS_HEALTH_ARGS.ID.value], 
+                            status_dict["status"], status_dict["created_timestamp"])
+        output.add_system_status(element_status)
+        return output.to_json()
