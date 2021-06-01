@@ -22,6 +22,9 @@ from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
 sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..', '..'))
 from ha import const
+from ha.core.config.config_manager import ConfigManager
+from ha.core.system_health.system_health import SystemHealth
+from ha.core.system_health.model.health_event import HealthEvent
 
 def main(argv: dict):
     # TODO: Add test cases.
@@ -34,4 +37,32 @@ if __name__ == '__main__':
     log_path = Conf.get(const.HA_GLOBAL_INDEX, "LOG.path")
     log_level = Conf.get(const.HA_GLOBAL_INDEX, "LOG.level")
     Log.init(service_name='ha_system_health', log_path=log_path, level=log_level)
+
+    try:
+        store = ConfigManager.get_confstore()
+        health = SystemHealth(store)
+        """
+        Test case 1
+        """
+        event = HealthEvent("event_id", "fault", "severity", "1", "1", "e766bd52-c19c-45b6-9c91-663fd8203c2e", "storage-set-1",
+                            "2", "srvnode-1.mgmt.public", "node", "16215009572", "iem", "Description")
+        health.process_event(event)
+        node_info = health.get_node_status(node_id="2")
+        node_status = node_info['status']
+        if node_status != const.NODE_STATUSES.CLUSTER_OFFLINE.value:
+            Log.error("Test case 1 failed : node status must be 'offline' for event 'fault'")
+
+        """
+        Test case 2
+        """
+        event = HealthEvent("event_id", "fault_resolved", "severity", "1", "1", "e766bd52-c19c-45b6-9c91-663fd8203c2e", "storage-set-1",
+                            "2", "srvnode-1.mgmt.public", "node", "16215009572", "iem", "Description")
+        health.process_event(event)
+        node_info = health.get_node_status(node_id="2")
+        node_status = node_info['status']
+        if node_status != const.NODE_STATUSES.ONLINE.value:
+            Log.error("Test case 2 failed : node status must be 'online' for event 'fault_resolved'")
+
+    except Exception as e:
+            Log.error(f"Process event test failed : {e}")
     sys.exit(main(sys.argv))
