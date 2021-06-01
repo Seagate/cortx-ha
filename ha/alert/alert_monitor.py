@@ -37,6 +37,10 @@ class AlertMonitor:
 
         # get environment variables
         self.crm_env = self._get_env()
+        # Modules like Node, Resource, Fencing
+        self.alert_event_module = None
+        # Module event like node became member or node lost
+        self.alert_event_type = None
 
     def _get_env(self):
         """

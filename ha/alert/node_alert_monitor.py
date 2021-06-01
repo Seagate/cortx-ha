@@ -32,4 +32,4 @@ class NodeAlertMonitor(AlertMonitor):
         Log.debug("Processing event for NodeAlertMonitor")
         # Environment variable are avilable in self.crm_env
         self.iem = IemGenerator()
-        self.iem.generate_iem()
+        self.iem.generate_iem(self.crm_env["CRM_alert_node"], self.alert_event_module, self.alert_event_type)
