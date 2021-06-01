@@ -267,10 +267,12 @@ class PcsClusterManager:
 
 # Note: This class is used by version 2
 class CortxClusterManager:
-    def __init__(self, default_log_enable=True):
+    def __init__(self, version = "2.0", default_log_enable=True):
         """
         Manage cluster operation
         """
+        self._version = version
+
         # TODO: Update Config manager if log utility changes.(reference EOS-17614)
         if default_log_enable is True:
             ConfigManager.init("cluster_manager")
@@ -296,3 +298,6 @@ class CortxClusterManager:
             [list]: list of controllers.
         """
         return list(self._controllers.keys())
+
+    def get_system_health(self, element, depth: int=1, **kwargs):
+        return {"version" : self._version, "sub_resources": []}
