@@ -53,6 +53,7 @@ def get_data_files() -> list:
         dest_root = install_dir + '/' + dest_root
         dest_root = dest_root.replace('/common/', '/')
         dest_root = dest_root.replace('/v2/', '/')
+        dest_root = dest_root.replace('/mini_provisioner/', '/')
         src_files = []
         for a_file in file_names:
             src_files.append(root+"/"+a_file)
