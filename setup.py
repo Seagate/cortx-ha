@@ -40,16 +40,18 @@ with open('README.md', 'r') as rf:
 def get_data_files() -> list:
     data_files = [(install_dir + '/meta-info', ['LICENSE', 'README.md', 'jenkins/requirements.txt'])]
     ignore_dirs = ['v1', 'iostack-ha']
-    v2 = 'v2'
-    common = 'common'
+    replace_dirs_in_dest = ('v2', 'common', 'mini_provisioner')
     conf_dir = 'conf'
     for root, _, file_names in os.walk(conf_dir):
         dest_root = root
         last_dir = root.split("/")[-1]
         if last_dir in ignore_dirs:
             continue
-        if last_dir == v2 or last_dir == common:
-            dest_root = "/".join(root.split("/")[:-1])
+        if dest_root.endswith(replace_dirs_in_dest):
+            dest_root = "/".join(dest_root.split("/")[:-1])
+        # Repeat the check for double such sufixes
+        if dest_root.endswith(replace_dirs_in_dest):
+            dest_root = "/".join(dest_root.split("/")[:-1])
         dest_root = install_dir + '/' + dest_root
         dest_root = dest_root.replace('/common/', '/')
         dest_root = dest_root.replace('/v2/', '/')
