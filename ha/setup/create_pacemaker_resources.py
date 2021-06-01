@@ -211,7 +211,6 @@ def event_analyzer(cib_xml, push=False, **kwargs):
     if push:
         cib_push(cib_xml)
 
-
 def uds(cib_xml, push=False, **kwargs):
     """Create uds resource."""
     with_uds = kwargs["uds"] if "uds" in kwargs else False
@@ -299,7 +298,6 @@ def ha_group(cib_xml, push=False, **kwargs):
         create_resource(cib_xml, push, **kwargs)
     if push:
         cib_push(cib_xml)
-
 
 def create_all_resources(cib_xml=const.CIB_FILE, push=True, **kwargs):
     """Populate the cluster with all Cortx resources.
