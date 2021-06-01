@@ -7,7 +7,7 @@
 
 BASE_DIR=$(realpath "$(dirname $0)")
 
-source ${BASE_DIR}/read_conf.sh
+source ${BASE_DIR}/read_conf.sh $1
 
 # Config if needed
 [ -z ${config[THIRD_PARTY]} ] && { echo "error: THIRD_PARTY is empty"; exit 1; }

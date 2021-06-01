@@ -1,6 +1,7 @@
 #!/bin/bash
 
 BASE_DIR=$(realpath "$(dirname $0)")
+DEV_CONF=$1
 
 typeset -A config # init array
 config=( # set default values in config array
@@ -17,7 +18,7 @@ do
         varname=$(echo "$line" | cut -d '=' -f 1)
         config[$varname]=$(echo "$line" | cut -d '=' -f 2-)
     fi
-done < ${BASE_DIR}/dev.conf
+done < ${DEV_CONF}
 
 #echo ${config[THIRD_PARTY]}
 #echo ${config[CORTX_ISO]}
