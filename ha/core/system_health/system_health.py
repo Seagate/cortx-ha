@@ -89,7 +89,6 @@ class SystemHealth(Subscriber):
         """
         get node status method. This method is for returning a status of a node.
         """
-
         try:
             # Prepare key and read the health value.
             key = self._prepare_key(const.COMPONENTS.NODE_MAP.value, node_id=node_id)
