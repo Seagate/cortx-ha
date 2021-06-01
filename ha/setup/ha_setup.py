@@ -27,6 +27,7 @@ from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
 from cortx.utils.validator.v_pkg import PkgV
 from cortx.utils.security.cipher import Cipher
+from ha.core.system_health.const import NODE_MAP_ATTRIBUTES
 
 from ha.execute import SimpleCommand
 from ha import const
@@ -42,6 +43,7 @@ from ha.core.error import HaInitException
 from ha.core.error import HaCleanupException
 from ha.core.error import SetupError
 from ha.setup.cluster_validator.cluster_test import TestExecutor
+from ha.core.system_health.system_health import SystemHealth
 
 class Cmd:
     """
@@ -344,6 +346,9 @@ class ConfigCmd(Cmd):
             node_id = Conf.get(self._index, f"server_node.{machine_id}.node_id")
             self._confstore.set(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_name}", node_id)
 
+        # Update node map
+        self._update_node_map()
+
         # Update cluster and resources
         self._cluster_manager = CortxClusterManager(default_log_enable=False)
         Log.info("Checking if cluster exists already")
@@ -553,6 +558,26 @@ class ConfigCmd(Cmd):
                         del controller_schema[env]["<HA_CLUSTER_SOFTWARE>"]
             with open(const.CM_CONTROLLER_SCHEMA, 'w') as fi:
                 json.dump(controller_schema, fi, indent=4)
+
+    def _update_node_map(self) -> None:
+        """
+        Update node map
+        """
+        machine_id = self.get_machine_id()
+        node_id = Conf.get(self._index, f"server_node.{machine_id}.node_id")
+        cluster_id = Conf.get(self._index, f"server_node.{machine_id}.{NODE_MAP_ATTRIBUTES.CLUSTER_ID.value}")
+        site_id = Conf.get(self._index, f"server_node.{machine_id}.{NODE_MAP_ATTRIBUTES.SITE_ID.value}")
+        rack_id = Conf.get(self._index, f"server_node.{machine_id}.{NODE_MAP_ATTRIBUTES.RACK_ID.value}")
+        storageset_id = Conf.get(self._index, f"server_node.{machine_id}.{NODE_MAP_ATTRIBUTES.STORAGESET_ID.value}")
+        node_map = {NODE_MAP_ATTRIBUTES.CLUSTER_ID.value: cluster_id, NODE_MAP_ATTRIBUTES.SITE_ID.value: site_id,
+                    NODE_MAP_ATTRIBUTES.RACK_ID.value: rack_id, NODE_MAP_ATTRIBUTES.STORAGESET_ID.value: storageset_id}
+        system_health = SystemHealth(self._confstore)
+        key = system_health._prepare_key(const.COMPONENTS.NODE_MAP.value, node_id=node_id)
+        # Check key is already exist if not, store the node map.
+        node_map_val = self._confstore.get(key)
+        if node_map_val is None:
+            self._confstore.set(key, str(node_map))
+
 
 class InitCmd(Cmd):
     """
