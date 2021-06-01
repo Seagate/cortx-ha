@@ -23,7 +23,7 @@
 import json
 
 from cortx.utils.log import Log
-from ha.const import IEM_SCHEMA, logger_utility_iec_cmd
+from ha.const import IEM_SCHEMA
 from ha.alert.const import ALERTS
 from ha.execute import SimpleCommand
 
