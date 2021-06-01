@@ -16,14 +16,15 @@
 # cortx-questions@seagate.com.
 
 '''
-   Routine which helps for constrcting and sending an IEC to syslog for major
+   Routine which helps for constructing and sending an IEC to syslog for major
    system level events
 '''
 
 import json
 
 from cortx.utils.log import Log
-from ha.const import IEM_SCHEMA, logger_utility_iec_cmd, RA_LOG_DIR
+from ha.const import IEM_SCHEMA, logger_utility_iec_cmd
+from ha.alert.const import ALERTS
 from ha.execute import SimpleCommand
 
 
@@ -43,6 +44,13 @@ class IemGenerator:
         '''
            Forms an IEC based on diffrent values such as module:<node/resource>
            and event_type<lost/member for a node scenario>
+           IEC code:
+           IEC:{severity}{source}{component}{module_id}{event_id}:{desciption}
+           severity of the event.
+           source (Hardware or Software) of the event
+           component who is generating an IEM
+           event_id: unique identification of the event (like node lost or node now became member)
+           module: sub-component of the module who generated an IEM
 
            Required parameters
            node : Node name
@@ -60,7 +68,7 @@ class IemGenerator:
             desciption = desc.format(node)
 
             iec_string = f'"IEC:{severity}{source}{component}{module_id}{event_id}:{desciption}"'
-            iec_command = logger_utility_iec_cmd + ' ' + iec_string
+            iec_command = ALERTS.logger_utility_iec_cmd + ' ' + iec_string
             Log.info(f'Sending an IEC: {iec_string} to syslog')
 
             _output, _err, _rc = self._execute.run_cmd(iec_command, check_error=False)
@@ -73,5 +81,5 @@ class IemGenerator:
             Log.error(f'Problem occured while generating an IEC for {module} \
                         for the event {event_type}: {err}')
 
-
-Log.init(service_name="alert_monitor", log_path=RA_LOG_DIR, level="INFO")
+ig = IemGenerator()
+ig.generate_iem('ssc-vm', 'node', 'lost')
