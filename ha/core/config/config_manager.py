@@ -87,9 +87,9 @@ class ConfigManager:
     @staticmethod
     def load_alert_events_rules():
         """
-        Loads alert filter rules.
+        Loads alert event rules.
         """
-        ConfigManager._safe_load(const.ALERT_FILTER_INDEX, f"json://{const.ALERT_FILTER_RULES_FILE}")
+        ConfigManager._safe_load(const.ALERT_EVENT_INDEX, f"json://{const.ALERT_EVENT_RULES_FILE}")
 
     @staticmethod
     def _safe_load(index: str, url: str):

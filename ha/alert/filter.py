@@ -18,9 +18,9 @@
 import abc
 from cortx.utils.conf_store.conf_store import Conf
 from cortx.utils.log import Log
-import const
+import ha.alert.const as const
 from ha.core.config.config_manager import ConfigManager
-from alert_filter_exceptions import AlertEventFilterError
+from ha.alert.alert_filter_exceptions import AlertEventFilterError
 
 
 class Filter(metaclass=abc.ABCMeta):
@@ -68,22 +68,22 @@ class AlertEventFilter(Filter):
         Args:
             msg (str): Msg
         """
-        _ha_required_alert_module = None
-        _ha_required_alert_module_operation = None
+        ha_required_alert_module = None
+        ha_required_alert_module_operation = None
 
         if self.crm_env is None:
             raise AlertEventFilterError(f"Identified empty events: {str(self.crm_env)}")
 
         try:
-            _alert_filter_module = self.crm_env["CRM_alert_kind"]
-            _alert_filter_module_operation = self.crm_env["CRM_alert_desc"]
+            alert_filter_module = self.crm_env["CRM_alert_kind"]
+            alert_filter_module_operation = self.crm_env["CRM_alert_desc"]
 
-            if _alert_filter_module in self.alert_filter_modules_list and \
-                    _alert_filter_module_operation in self.alert_filter_module_operations:
-                _ha_required_alert_module = _alert_filter_module
-                _ha_required_alert_module_operation = _alert_filter_module_operation
+            if alert_filter_module in self.alert_filter_modules_list and \
+                    alert_filter_module_operation in self.alert_filter_module_operations:
+                ha_required_alert_module = alert_filter_module
+                ha_required_alert_module_operation = alert_filter_module_operation
 
-            return _ha_required_alert_module, _ha_required_alert_module_operation
+            return ha_required_alert_module, ha_required_alert_module_operation
         except Exception as e:
             Log.error(f"Error occurred in alert event filter: {str(e)}")
-            return _ha_required_alert_module, _ha_required_alert_module_operation
+            return ha_required_alert_module, ha_required_alert_module_operation

@@ -25,7 +25,7 @@ from cortx.utils.log import Log
 from ha.core.config.config_manager import ConfigManager
 from ha.alert.alert_factory import AlertFactory
 from ha.alert.const import ALERTS
-from filter import AlertEventFilter
+from ha.alert.filter import AlertEventFilter
 
 
 class AlertMonitor:
@@ -39,10 +39,10 @@ class AlertMonitor:
 
         # get environment variables
         self.crm_env = self._get_env()
-        _alert_event_filter = AlertEventFilter()
-        _alert_event_filter.initialize_crm(self.crm_env)
+        alert_event_filter = AlertEventFilter()
+        alert_event_filter.initialize_crm(self.crm_env)
         # Modules like Node, Resource, Fencing / Modules event like node became member or node lost
-        self.alert_event_module, self.alert_event_type = _alert_event_filter.filter_event()
+        self.alert_event_module, self.alert_event_type = alert_event_filter.filter_event()
 
     def _get_env(self):
         """
@@ -74,7 +74,7 @@ class AlertMonitor:
                 Log.info(f"Handling the event: {str(self.crm_env)}")
                 self._redirect_alert()
             else:
-                Log.info(f"Identified unknown event by HA: {str(self.crm_env)}")
+                Log.info(f"Identified unknown / unsupported event by HA: {str(self.crm_env)}")
         except Exception as e:
             Log.error(f"{traceback.format_exc()}, {e}")
 
@@ -99,17 +99,6 @@ class AlertMonitor:
         """
         Load recipient for pacemaker alert
         """
-        # TODO to be implemented when recepient is required
+        # TODO to be implemented when recipient is required
         pass
 
-    def _validate_event(self):
-        """
-        Validate event
-        """
-        event_type = self.crm_env["CRM_alert_kind"]
-
-        if event_type in ALERTS.REQUIRED_EVENTS:
-            Log.debug(f" Validating event: {str(self.crm_env)}")
-            return event_type
-        Log.info(f"Identified unknown event: {str(self.crm_env)}")
-        return ""
