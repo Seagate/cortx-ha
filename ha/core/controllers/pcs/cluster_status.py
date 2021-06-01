@@ -247,4 +247,3 @@ class PcsClusterStatus:
             return {"status": const.STATUSES.FAILED.value, "output": "", "error": "Health is not loaded."}
 
         return {"status": const.STATUSES.SUCCEEDED.value, "output": self._nodes[node_name], "error": ""}
-      
