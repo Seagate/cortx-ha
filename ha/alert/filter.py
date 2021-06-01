@@ -20,7 +20,7 @@ from cortx.utils.conf_store.conf_store import Conf
 from cortx.utils.log import Log
 import ha.alert.const as const
 from ha.core.config.config_manager import ConfigManager
-from ha.alert.alert_filter_exceptions import AlertEventFilterError
+from ha.alert.alert_exceptions import AlertEventFilterError
 
 
 class Filter(metaclass=abc.ABCMeta):
