@@ -15,12 +15,16 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
+from ha.core.error import HAError
+from ha.core.error import HA_ALERT_EVENT_FILTER_ERROR
 
-# pacemaker alerts constants
-class ALERTS:
-    REQUIRED_EVENTS = ["node" , "resource"]
-    ALERT_FILTER_TYPE = "alert.filter_type"
-    PK_ALERT_EVENT_COMPONENTS = "alert.components"
-    PK_ALERT_EVENT_COMPONENT_MODULES = "alert.modules"
-    PK_ALERT_EVENT_OPERATIONS = "alert.operations"
 
+class AlertEventFilterError(HAError):
+    def __init__(self, desc=None):
+        """
+        Handle Event Alert Filter error.
+        """
+        _desc = "HA Alert Event Filter failure" if desc is None else desc
+        _message_id = HA_ALERT_EVENT_FILTER_ERROR
+        _rc = 1
+        super(AlertEventFilterError, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
