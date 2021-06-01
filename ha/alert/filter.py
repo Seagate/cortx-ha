@@ -16,8 +16,6 @@
 # cortx-questions@seagate.com.
 
 import abc
-import json
-from enum import Enum
 from cortx.utils.conf_store.conf_store import Conf
 from cortx.utils.log import Log
 import const
