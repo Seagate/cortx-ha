@@ -51,6 +51,9 @@ class IemGenerator:
            component who is generating an IEM
            event_id: unique identification of the event (like node lost or node now became member)
            module: sub-component of the module who generated an IEM
+           Ex:
+           IEC:WS0080010001: node is down(node lost)
+           IEC:IS0080010002: node is up(node is now member)
 
            Required parameters
            node : Node name
@@ -69,7 +72,7 @@ class IemGenerator:
 
             iec_string = f'"IEC:{severity}{source}{component}{module_id}{event_id}:{desciption}"'
             iec_command = ALERTS.logger_utility_iec_cmd + ' ' + iec_string
-            Log.info(f'Sending an IEC: {iec_string} to syslog')
+            # Log.info(f'Sending an IEC: {iec_string} to syslog')
 
             _output, _err, _rc = self._execute.run_cmd(iec_command, check_error=False)
             if _rc != 0 or _err:
@@ -81,5 +84,3 @@ class IemGenerator:
             Log.error(f'Problem occured while generating an IEC for {module} \
                         for the event {event_type}: {err}')
 
-ig = IemGenerator()
-ig.generate_iem('ssc-vm', 'node', 'lost')
