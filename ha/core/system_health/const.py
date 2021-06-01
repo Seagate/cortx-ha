@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 # Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
 #
 # This program is free software: you can redistribute it and/or modify it under the
@@ -15,21 +13,38 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
+from enum import Enum
 
-from cortx.utils.log import Log
-from ha.alert.alert_monitor import AlertMonitor
-from ha.alert.iem import IemGenerator
+# Cluster elements supported by system health
+class CLUSTERELEMENTS(Enum):
+    CLUSTER = "cluster"
+    SITE = "site"
+    RACK = "rack"
+    NODE = "node"
 
-class NodeAlertMonitor(AlertMonitor):
+# Health statuses
+class HEALTH_STATUSES(Enum):
+    ONLINE = "online"
+    DEGRADED = "degraded"
+    STANDBY = "standby"
+    UNHEALTHY = "unhealthy"
+    OFFLINE = "offline"
+    UNKNOWN = "unknown"
 
-    def __init__(self):
-        """
-        Init node alert monitor
-        """
-        super(NodeAlertMonitor, self).__init__()
+# Health event types
+class HEALTH_EVENTS(Enum):
+    FAULT = "fault"
+    FAULT_RESOLVED = "fault_resolved"
+    MISSING = "missing"
+    INSERTION = "insertion"
+    THRESHOLD_BREACHED_LOW = "threshold_breached:low"
+    THRESHOLD_BREACHED_HIGH = "threshold_breached:high"
+    UNKNOWN = "unknown"
 
-    def process_alert(self):
-        Log.debug("Processing event for NodeAlertMonitor")
-        # Environment variable are avilable in self.crm_env
-        self.iem = IemGenerator()
-        self.iem.generate_iem(self.crm_env["CRM_alert_node"], self.alert_event_module, self.alert_event_type)
+# Health event severities
+class EVENT_SEVERITIES(Enum):
+    ALERT = "alert"
+    CRITICAL = "critical"
+    ERROR = "error"
+    WARNING = "warning"
+    INFORMATIONAL = "informational"

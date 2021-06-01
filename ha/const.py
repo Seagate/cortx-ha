@@ -215,6 +215,11 @@ class INSTALLATION_TYPE(Enum):
 
 # Alert attribute constants
 class ALERT_ATTRIBUTES:
+    USERNAME = "username"
+    TITLE = "title"
+    EXPIRES = "expires"
+    SIGNATURE = "signature"
+    TIME = "time"
     MESSAGE = "message"
     HEADER = "sspl_ll_msg_header"
     MSG_VERSION = "msg_version"
