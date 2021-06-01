@@ -22,7 +22,7 @@ from ha.core.error import HA_ALERT_EVENT_FILTER_ERROR
 class AlertEventFilterError(HAError):
     def __init__(self, desc=None):
         """
-        Handle Event Analyzer error.
+        Handle Event Alert Filter error.
         """
         _desc = "HA Alert Event Filter failure" if desc is None else desc
         _message_id = HA_ALERT_EVENT_FILTER_ERROR

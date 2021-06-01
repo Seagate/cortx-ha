@@ -31,7 +31,7 @@ class Filter(metaclass=abc.ABCMeta):
         Init method
         """
         self.crm_env = None
-        # Loads IEM filter rules in the configuration
+        # Loads Alert event filter rules in the configuration
         ConfigManager.load_alert_events_rules()
 
     def initialize_crm(self, crm_env: dict):
