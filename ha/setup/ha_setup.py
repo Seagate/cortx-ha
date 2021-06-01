@@ -48,6 +48,7 @@ from ha.setup.cluster_validator.cluster_test import TestExecutor
 from ha.core.system_health.system_health import SystemHealth
 from ha.core.system_health.model.entity_health import EntityEvent, EntityAction, EntityHealth
 
+
 class Cmd:
     """
     Setup Command. This class provides methods for parsing arguments.
