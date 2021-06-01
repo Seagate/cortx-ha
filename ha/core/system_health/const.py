@@ -48,3 +48,10 @@ class EVENT_SEVERITIES(Enum):
     ERROR = "error"
     WARNING = "warning"
     INFORMATIONAL = "informational"
+
+# Node map attributes
+class NODE_MAP_ATTRIBUTES(Enum):
+    CLUSTER_ID = "cluster_id"
+    SITE_ID = "site_id"
+    RACK_ID = "rack_id"
+    STORAGESET_ID = "storageset_id"
