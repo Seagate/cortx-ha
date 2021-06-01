@@ -313,7 +313,6 @@ class CortxClusterManager:
         """
         return list(self._controllers.keys())
 
-
     def get_system_health(self, element: CLUSTER_ELEMENTS = CLUSTER_ELEMENTS.CLUSTER.value, depth: int = 1, **kwargs) -> json:
         """
         Return health status for the requested elements.
