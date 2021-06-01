@@ -33,6 +33,7 @@ from ha.execute import SimpleCommand
 from ha import const
 from ha.const import STATUSES
 from ha.setup.create_pacemaker_resources import create_all_resources
+from ha.setup.pcs_config.alert_config import AlertConfig
 from ha.setup.post_disruptive_upgrade import perform_post_upgrade
 from ha.core.cluster.cluster_manager import CortxClusterManager
 from ha.core.config.config_manager import ConfigManager
@@ -275,7 +276,7 @@ class PostInstallCmd(Cmd):
                 raise HaPrerequisiteException("post_install command failed")
             else:
                 Log.info("hacluster is a part of the haclient group")
-
+            self._execute.run_cmd(f"setfacl -R -m g:{const.USER_GROUP_HACLIENT}:rwx {const.RA_LOG_DIR}")
         except Exception as e:
             Log.error(f"Failed prerequisite with Error: {e}")
             raise HaPrerequisiteException("post_install command failed")
@@ -312,6 +313,7 @@ class ConfigCmd(Cmd):
         Init method.
         """
         super().__init__(args)
+        self._alert_config = AlertConfig()
 
     def process(self):
         """
@@ -362,10 +364,12 @@ class ConfigCmd(Cmd):
                 # Create cluster
                 try:
                     self._create_cluster(cluster_name, cluster_user, cluster_secret, node_name)
-                    self._create_resource(s3_instances=s3_instances, mgmt_info=mgmt_info, node_count=len(nodelist))
+                    self._create_resource(s3_instances=s3_instances, mgmt_info=mgmt_info)
+                    self._alert_config.create_alert()
                     self._confstore.set(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
                 except Exception as e:
                     Log.error(f"Cluster creation failed; destroying the cluster. Error: {e}")
+                    self._alert_config.delete_alert()
                     output = self._execute.run_cmd(const.PCS_CLUSTER_DESTROY)
                     Log.error(f"Cluster destroyed. Output: {output}")
                     # Delete the node from nodelist if it was added in the store
