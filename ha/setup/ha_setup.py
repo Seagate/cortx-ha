@@ -43,6 +43,7 @@ from ha.core.error import HaInitException
 from ha.core.error import HaCleanupException
 from ha.core.error import SetupError
 from ha.setup.cluster_validator.cluster_test import TestExecutor
+from ha.core.system_health.system_health import SystemHealth
 
 class Cmd:
     """
@@ -570,7 +571,12 @@ class ConfigCmd(Cmd):
         storageset_id = Conf.get(self._index, f"server_node.{machine_id}.{NODE_MAP_ATTRIBUTES.STORAGESET_ID.value}")
         node_map = {NODE_MAP_ATTRIBUTES.CLUSTER_ID.value: cluster_id, NODE_MAP_ATTRIBUTES.SITE_ID.value: site_id,
                     NODE_MAP_ATTRIBUTES.RACK_ID.value: rack_id, NODE_MAP_ATTRIBUTES.STORAGESET_ID.value: storageset_id}
-        self._confstore.set(f"/cortx/ha/system/cluster/node_map/{node_id}", str(node_map))
+        system_health = SystemHealth(self._confstore)
+        key = system_health._prepare_key(const.COMPONENTS.NODE_MAP.value, node_id=node_id)
+        # Check key is already exist if not, store the node map.
+        node_map_val = self._confstore.get(key)
+        if node_map_val is None:
+            self._confstore.set(key, str(node_map))
 
 
 class InitCmd(Cmd):
