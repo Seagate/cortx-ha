@@ -17,7 +17,6 @@
 import os
 import sys
 import pathlib
-import json
 
 from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
