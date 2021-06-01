@@ -72,7 +72,7 @@ class IemGenerator:
 
             iec_string = f'"IEC:{severity}{source}{component}{module_id}{event_id}:{desciption}"'
             iec_command = ALERTS.logger_utility_iec_cmd + ' ' + iec_string
-            # Log.info(f'Sending an IEC: {iec_string} to syslog')
+            Log.info(f'Sending an IEC: {iec_string} to syslog')
 
             _output, _err, _rc = self._execute.run_cmd(iec_command, check_error=False)
             if _rc != 0 or _err:
