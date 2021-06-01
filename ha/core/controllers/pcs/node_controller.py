@@ -136,7 +136,24 @@ class PcsNodeController(NodeController, PcsController):
             ([dict]): Return dictionary. {"status": "", "output": "", "error": ""}
                 status: Succeeded, Failed, InProgress
         """
-        raise HAUnimplemented("This operation is not implemented.")
+        # TODO: Future: Check if cluster is online on the current node. Current code will work for cluster active operation.
+        node_status = self.nodes_status([nodeid]).get(nodeid)
+        Log.info(f"Current {nodeid} status is {node_status}")
+        if node_status != NODE_STATUSES.STANDBY.value:
+            return {"status": const.STATUSES.FAILED.value, "output": "Node is not in standby.",
+                    "error": f"Current state = {node_status}"}
+
+        self._execute.run_cmd(const.PCS_NODE_UNSTANDBY.replace("<node>", nodeid))
+        Log.info(f"Waiting  for node to become active. Node = {nodeid}.")
+        time.sleep(const.BASE_WAIT_TIME)
+
+        node_status = self.nodes_status([nodeid]).get(nodeid)
+        Log.info(f"Current {nodeid} status is {node_status}")
+        if node_status == NODE_STATUSES.STANDBY.value:
+            status = const.STATUSES.SUCCEEDED.value
+        else:
+            status = const.STATUSES.FAILED.value
+        return {"status": status, "output": node_status, "error": ""}
 
     @controller_error_handler
     def status(self, nodeids: list = None) -> dict:
