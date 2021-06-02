@@ -9,6 +9,7 @@ CLI_EXEC=${SITE_PACKAGES}/ha/cli/cortxha.py
 DYNAMIC_RA=${SITE_PACKAGES}/ha/resource/dynamic_fid_service_ra.py
 SRV_COUNTER_RA=${SITE_PACKAGES}/ha/resource/service_instances_counter.py
 EVENT_ANALYZER=${SITE_PACKAGES}/ha/core/event_analyzer/event_analyzerd.py
+PCMK_ALERT=${SITE_PACKAGES}/ha/alert/pcmk_alert.py
 
 chmod +x ${HA_SETUP}
 ln -sf ${HA_SETUP} ${BIN_DIR}/ha_setup
@@ -34,6 +35,11 @@ chmod +x ${EVENT_ANALYZER}
 ln -sf ${EVENT_ANALYZER} ${BIN_DIR}/event_analyzerd
 ln -sf ${EVENT_ANALYZER} /usr/local/bin/event_analyzerd
 ln -sf ${EVENT_ANALYZER} /usr/bin/event_analyzerd
+
+chmod +x ${PCMK_ALERT}
+ln -sf ${PCMK_ALERT} ${BIN_DIR}/pcmk_alert
+ln -sf ${PCMK_ALERT} /usr/local/bin/pcmk_alert
+ln -sf ${PCMK_ALERT} /usr/bin/pcmk_alert
 
 chown -R root:root /opt/seagate/cortx/ha
 
