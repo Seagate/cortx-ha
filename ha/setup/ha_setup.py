@@ -786,7 +786,7 @@ class RestoreCmd(Cmd):
         """
         pass # TBD
 
-def main(argv: dict):
+def main(argv: list):
     try:
         if sys.argv[1] == "post_install":
             Conf.init(delim='.')
