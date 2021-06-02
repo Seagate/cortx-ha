@@ -23,4 +23,5 @@ class ALERTS:
     PK_ALERT_EVENT_COMPONENTS = "alert.components"
     PK_ALERT_EVENT_COMPONENT_MODULES = "alert.modules"
     PK_ALERT_EVENT_OPERATIONS = "alert.operations"
+    logger_utility_iec_cmd="logger -i -p local3.err"
 
