@@ -16,9 +16,12 @@
 
 import re
 import time
+import ast
+import json
 
 from cortx.utils.log import Log
 from ha import const
+from ha.core.system_health.const import NODE_MAP_ATTRIBUTES
 from ha.core.event_analyzer.subscriber import Subscriber
 from ha.core.system_health.system_health_metadata import SystemHealthComponents, SystemHealthHierarchy
 from ha.core.system_health.model.health_event import HealthEvent
@@ -86,8 +89,26 @@ class SystemHealth(Subscriber):
         """
         get node status method. This method is for returning a status of a node.
         """
-        node_status = {"status": "Online", "created_timestamp": "1234"}
-        return node_status
+
+        try:
+            # Prepare key and read the health value.
+            key = self._prepare_key(const.COMPONENTS.NODE_MAP.value, node_id=node_id)
+            node_map_val = self.healthmanager.get_key(key)
+            if node_map_val is not None:
+                node_map_dict = ast.literal_eval(node_map_val)
+                key = self._prepare_key(component='node', cluster_id=node_map_dict[NODE_MAP_ATTRIBUTES.CLUSTER_ID.value],
+                                        site_id=node_map_dict[NODE_MAP_ATTRIBUTES.SITE_ID.value], rack_id=node_map_dict[NODE_MAP_ATTRIBUTES.RACK_ID.value],
+                                        storageset_id=node_map_dict[NODE_MAP_ATTRIBUTES.STORAGESET_ID.value], node_id=node_id, **kwargs)
+                node_health_dict = json.loads(self.healthmanager.get_key(key))
+                node_status = {"status": node_health_dict['events'][0]['status'],
+                               "created_timestamp": node_health_dict['events'][0]['created_timestamp']}
+                return node_status
+            else:
+                raise HaSystemHealthException(f"node_id : {node_id} doesn't exist")
+
+        except Exception as e:
+            Log.error(f"Failed reading status for component: node with Error: {e}")
+            raise HaSystemHealthException(f"Failed reading status for node with node_id : {node_id}")
 
     def get_storageset_status(self, storageset_id, **kwargs):
         """
@@ -107,8 +128,6 @@ class SystemHealth(Subscriber):
                                 node_id=self.node_id, server_id=self.node_id, storage_id=self.node_id,
                                 comp_type=comp_type, comp_id=comp_id)
         self.healthmanager.set_key(key, healthvalue)
-
-        # TODO: Check and if not present already, store the node map.
 
         # Check the next component to be updated, if none then return.
         if next_component is None:

@@ -15,12 +15,9 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
+from ha.core.error import SetupError
 
-# pacemaker alerts constants
-class ALERTS:
-    REQUIRED_EVENTS = ["node" , "resource"]
-    ALERT_FILTER_TYPE = "alert.filter_type"
-    PK_ALERT_EVENT_COMPONENTS = "alert.components"
-    PK_ALERT_EVENT_COMPONENT_MODULES = "alert.modules"
-    PK_ALERT_EVENT_OPERATIONS = "alert.operations"
+# TODO: Move all error.py setup related error to setup_error.py
 
+class AlertConfigError(SetupError):
+    """Failed to configure alert"""

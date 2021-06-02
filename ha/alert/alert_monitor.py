@@ -25,6 +25,8 @@ from cortx.utils.log import Log
 from ha.core.config.config_manager import ConfigManager
 from ha.alert.alert_factory import AlertFactory
 from ha.alert.const import ALERTS
+from ha.alert.filter import AlertEventFilter
+
 
 class AlertMonitor:
 
@@ -37,17 +39,17 @@ class AlertMonitor:
 
         # get environment variables
         self.crm_env = self._get_env()
-        # Modules like Node, Resource, Fencing
-        self.alert_event_module = None
-        # Module event like node became member or node lost
-        self.alert_event_type = None
+        alert_event_filter = AlertEventFilter()
+        alert_event_filter.initialize_crm(self.crm_env)
+        # Modules like Node, Resource, Fencing / Modules event like node became member or node lost
+        self.alert_event_module, self.alert_event_type = alert_event_filter.filter_event()
 
     def _get_env(self):
         """
         Get env variable and parameter provided by pacemaker
         """
+        crm_env = None
         try:
-            key = None
             crm_env = {}
             env = os.environ
             for key in env.keys():
@@ -62,31 +64,27 @@ class AlertMonitor:
         """
         Process alert
         """
-
         self._validate_pacemaker()
         self._load_recipient()
 
         # validate event type and get class
         try:
-             event_type = self._validate_event()
-             # Redirect the alert to appropriate monitor for further processing
-             if event_type:
-                 Log.info(f"Handling the event: {str(self.crm_env)}")
-                 self._redirect_alert(event_type)
-             else:
-                 Log.info(f"Identified unknown event: {str(self.crm_env)}")
-
+            # Redirect the alert to appropriate monitor for further processing
+            if self.alert_event_module and self.alert_event_type:
+                Log.info(f"Handling the event: {str(self.crm_env)}")
+                self._redirect_alert()
+            else:
+                Log.info(f"Identified unknown / unsupported event by HA: {str(self.crm_env)}")
         except Exception as e:
             Log.error(f"{traceback.format_exc()}, {e}")
 
-    def _redirect_alert(self, event_type):
+    def _redirect_alert(self):
         """
         Get appropriate class based on event  and redirect alert to it
         """
-        alert_monitor = AlertFactory.get_alert_monitor_instance(event_type)
+        alert_monitor = AlertFactory.get_alert_monitor_instance(self.alert_event_module)
         alert = alert_monitor()
         alert.process_alert()
-
 
     def _validate_pacemaker(self):
         """
@@ -101,17 +99,6 @@ class AlertMonitor:
         """
         Load recipient for pacemaker alert
         """
-        # TODO to be implemented when recepient is required
+        # TODO to be implemented when recipient is required
         pass
 
-    def _validate_event(self):
-        """
-        Validate event
-        """
-        event_type = self.crm_env["CRM_alert_kind"]
-
-        if event_type in ALERTS.REQUIRED_EVENTS:
-            Log.debug(f" Validating event: {str(self.crm_env)}")
-            return event_type
-        Log.info(f"Identified unknown event: {str(self.crm_env)}")
-        return ""
