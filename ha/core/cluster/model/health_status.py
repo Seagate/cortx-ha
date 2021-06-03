@@ -27,9 +27,9 @@ class StatusOutput:
         return json.dumps(self, default=lambda a: a.__dict__)
 
 class ElementStatus:
-    def __init__(self, resource: str, id: str, status: str, update_timestamp: str):
+    def __init__(self, resource: str, element_id: str, status: str, update_timestamp: str):
         self.resource = resource
-        self.id = id
+        self.id = element_id
         self.status = status
         self.update_timestamp = update_timestamp
         self.sub_resource = None
