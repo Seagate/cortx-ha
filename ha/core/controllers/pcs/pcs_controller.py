@@ -195,7 +195,7 @@ class PcsController(ElementController):
         # TODO: change this logic and validate the node_id from the
         # list coming from system health
         ip_validator_regex = "^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])$"
-    
+
         # node_id can be passed as IP address or FQDN or
         # some random number or just sequence of chars
 

@@ -283,7 +283,7 @@ class CortxClusterManager:
 
         # Raise exception if user does not have proper permissions
         self.validate_permissions()
-        
+
         self._cluster_type = Conf.get(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.cluster_type")
         self._env = Conf.get(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.env")
         ConfigManager.load_controller_schema()
@@ -304,7 +304,7 @@ class CortxClusterManager:
             [list]: list of controllers.
         """
         return list(self._controllers.keys())
-    
+
     def validate_permissions(self) -> None:
 
         # confirm that user is root or part of haclient group"
