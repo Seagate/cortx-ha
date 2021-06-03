@@ -280,8 +280,8 @@ class CortxClusterManager:
             ConfigManager.init("cluster_manager")
         else:
             ConfigManager.init(None)
-        
-        # Raise exception if user does not have proper permissions    
+
+        # Raise exception if user does not have proper permissions
         self.validate_permissions()
         
         self._cluster_type = Conf.get(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.cluster_type")

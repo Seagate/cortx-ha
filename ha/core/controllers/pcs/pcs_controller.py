@@ -184,7 +184,7 @@ class PcsController(ElementController):
             if node_status[node] in status:
                 nodelist.append(node)
         return nodelist
-    
+
     def is_valid_node_id(self, node_id) -> bool:
         '''
            Checks if node id gets resolved to some IP address or not
