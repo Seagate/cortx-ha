@@ -17,6 +17,7 @@
 
 set -ex
 BASE_DIR=$(realpath "$(dirname $0)/..")
+DIST_DIR="$BASE_DIR/dist/cortx-ha"
 PROG_NAME=$(basename $0)
 HA_INSTALL_PATH="/opt/seagate/cortx/ha"
 HA2="2"
@@ -68,16 +69,30 @@ cd $BASE_DIR
 echo "Using MAJOR_VERSION=${MAJ_VER} MINOR_VERSION=${MIN_VER} REVISION=${PATCH_VER} BUILD=${BUILD}"
 version="${MAJ_VER}.${MIN_VER}.${PATCH_VER}"
 
-# Update version in conf file
-sed -i -e "s|<VERSION>|${version}|g" ${BASE_DIR}/conf/etc/v2/ha.conf
+# Cleanup
+rm -rf $BASE_DIR/dist
 
-python3.6 setup.py bdist_rpm --version="${version}" --install-dir="${HA_INSTALL_PATH}" --release="$BUILD" \
+# Copy
+mkdir -p $DIST_DIR
+cp -rf `ls -A | grep -v "dist" | grep -v ".git*"` $DIST_DIR/
+
+cd $DIST_DIR
+
+# Update version in conf file
+sed -i -e "s|<VERSION>|${version}|g" ${DIST_DIR}/conf/etc/v2/ha.conf
+
+/usr/bin/env python3 setup.py bdist_rpm --version="${version}" --install-dir="${HA_INSTALL_PATH}" --release="$BUILD" \
 --force-arch x86_64 --post-install jenkins/rpm/v2/post_install_script.sh \
 --post-uninstall jenkins/rpm/v2/post_uninstall_script.sh
 
 # Above --force-arch flag and below code is just for backward compatibility.
 # Can be removed once integration is done with RE.
-rpm_file=`ls -1 ${BASE_DIR}/dist/ | grep x86_64 | grep -v debug`
+rpm_file=`ls -1 ${DIST_DIR}/dist/ | grep x86_64 | grep -v debug`
 mkdir -p ${BASE_DIR}/dist/rpmbuild/RPMS/x86_64
-cp ${BASE_DIR}/dist/${rpm_file} ${BASE_DIR}/dist/rpmbuild/RPMS/x86_64/
+cp ${DIST_DIR}/dist/${rpm_file} ${BASE_DIR}/dist/rpmbuild/RPMS/x86_64/
 
+cd ${BASE_DIR}/dist
+rm -rf $DIST_DIR
+
+echo "********** RPM ****************"
+realpath $(find -name "*.rpm")
