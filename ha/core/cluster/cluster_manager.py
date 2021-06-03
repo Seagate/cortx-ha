@@ -16,6 +16,9 @@
 # cortx-questions@seagate.com.
 
 import time
+import grp
+import getpass
+import os
 
 from cortx.utils.log import Log
 from cortx.utils.conf_store.conf_store import Conf
@@ -28,6 +31,7 @@ from ha.execute import SimpleCommand
 from ha import const
 from ha.core.config.config_manager import ConfigManager
 from ha.core.controllers.element_controller_factory import ElementControllerFactory
+from ha.core.error import HAInvalidPermission
 
 # Note: This class is used by version 1
 class PcsClusterManager:
@@ -276,6 +280,10 @@ class CortxClusterManager:
             ConfigManager.init("cluster_manager")
         else:
             ConfigManager.init(None)
+        
+        # Raise exception if user does not have proper permissions    
+        self.validate_permissions()
+        
         self._cluster_type = Conf.get(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.cluster_type")
         self._env = Conf.get(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.env")
         ConfigManager.load_controller_schema()
@@ -296,3 +304,35 @@ class CortxClusterManager:
             [list]: list of controllers.
         """
         return list(self._controllers.keys())
+    
+    def validate_permissions(self) -> None:
+
+        # confirm that user is root or part of haclient group"
+
+        user = getpass.getuser()
+        group_id = os.getgid()
+
+        try:
+            # find group id for root and haclient
+            id_ha = grp.getgrnam(const.USER_GROUP_HACLIENT)
+            id_root = grp.getgrnam(const.USER_GROUP_ROOT)
+
+            # if group not root or haclient return error
+            if group_id != id_ha.gr_gid and group_id != id_root.gr_gid:
+                Log.error(f"User {user} does not have necessary permissions to execute this CLI")
+                raise HAInvalidPermission(
+                            f"User {user} does not have necessary permissions to execute this CLI")
+
+            # The user name "hauser"; which is part of the "haclient" group;
+            # is used by HA.
+            # internal commands are allowed only if the user is "hauser"
+            # As of now, every HA CLI will be internal command. So, we
+            # do not need this change. We can revisit this if needed in future
+            #if user == const.USER_HA_INTERNAL:
+            #    self._is_hauser = True
+
+
+        # TBD : If required raise seperate exception  for root and haclient
+        except KeyError:
+            Log.error("Group root / haclient is not defined")
+            raise HAInvalidPermission("Group root / haclient is not defined ")

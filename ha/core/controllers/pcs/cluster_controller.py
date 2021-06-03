@@ -302,18 +302,19 @@ class PcsClusterController(ClusterController, PcsController):
             ([dict]): Return dictionary. {"status": "", "msg":""}
                 status: Succeeded, Failed, InProgress
         """
-        self._check_non_empty(nodeid=nodeid, cluster_user=cluster_user, cluster_password=cluster_password)
-        self._auth_node(nodeid, cluster_user, cluster_password)
-        cluster_node_count = self._get_cluster_size()
-        if cluster_node_count < 32:
-            _output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_NODE_ADD.replace("<node>", nodeid))
-            if self._wait_for_node_online(nodeid):
-                return {"status": const.STATUSES.SUCCEEDED.value, "msg": f"Node {nodeid} added successfully in the cluster"}
+        if self.is_valid_node_id(node_id=nodeid):
+            self._check_non_empty(nodeid=nodeid, cluster_user=cluster_user, cluster_password=cluster_password)
+            self._auth_node(nodeid, cluster_user, cluster_password)
+            cluster_node_count = self._get_cluster_size()
+            if cluster_node_count < 32:
+                _output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_NODE_ADD.replace("<node>", nodeid))
+                if self._wait_for_node_online(nodeid):
+                    return {"status": const.STATUSES.SUCCEEDED.value, "msg": f"Node {nodeid} added successfully in the cluster"}
+                else:
+                    return {"status": const.STATUSES.FAILED.value, "msg": f"Node {nodeid} add operation failed, node not online"}
             else:
-                return {"status": const.STATUSES.FAILED.value, "msg": f"Node {nodeid} add operation failed, node not online"}
-        else:
-            return {"status": const.STATUSES.FAILED.value, "msg": "Cluster size is already filled to 32, "
-                                               "Please use add-remote node mechanism"}
+                return {"status": const.STATUSES.FAILED.value, "msg": "Cluster size is already filled to 32, "
+                                                "Please use add-remote node mechanism"}
 
     @controller_error_handler
     def add_storageset(self, nodeid: str = None, descfile: str = None) -> dict:
@@ -345,25 +346,26 @@ class PcsClusterController(ClusterController, PcsController):
             dict: Return dictionary. {"status": "", "msg":""}
         """
         try:
-            self._check_non_empty(name=name, user=user, secret=secret, nodeid=nodeid)
-            if not self._is_pcs_cluster_running():
-                self._auth_node(nodeid, user, secret)
-                self._execute.run_cmd(const.PCS_SETUP_CLUSTER.replace("<cluster_name>", name)
-                                        .replace("<node>", nodeid))
-                Log.info("Pacmaker cluster created, waiting to start node.")
-                self._execute.run_cmd(const.PCS_CLUSTER_START_NODE)
-                self._execute.run_cmd(const.PCS_CLUSTER_ENABLE)
-                Log.info("Node started and enabled successfully.")
-                time.sleep(const.BASE_WAIT_TIME * 2)
-            if self._is_pcs_cluster_running():
-                if self._wait_for_node_online(nodeid):
-                    # TODO: Divide class into vm, hw when stonith is needed.
-                    self._execute.run_cmd(const.PCS_STONITH_DISABLE)
-                    return {"status": const.STATUSES.SUCCEEDED.value,
-                            "msg": "Cluster created successfully."}
+            if self.is_valid_node_id(node_id=nodeid):
+                self._check_non_empty(name=name, user=user, secret=secret, nodeid=nodeid)
+                if not self._is_pcs_cluster_running():
+                    self._auth_node(nodeid, user, secret)
+                    self._execute.run_cmd(const.PCS_SETUP_CLUSTER.replace("<cluster_name>", name)
+                                            .replace("<node>", nodeid))
+                    Log.info("Pacmaker cluster created, waiting to start node.")
+                    self._execute.run_cmd(const.PCS_CLUSTER_START_NODE)
+                    self._execute.run_cmd(const.PCS_CLUSTER_ENABLE)
+                    Log.info("Node started and enabled successfully.")
+                    time.sleep(const.BASE_WAIT_TIME * 2)
+                if self._is_pcs_cluster_running():
+                    if self._wait_for_node_online(nodeid):
+                        # TODO: Divide class into vm, hw when stonith is needed.
+                        self._execute.run_cmd(const.PCS_STONITH_DISABLE)
+                        return {"status": const.STATUSES.SUCCEEDED.value,
+                                "msg": "Cluster created successfully."}
+                    else:
+                        raise ClusterManagerError("Node is not online.")
                 else:
-                    raise ClusterManagerError("Node is not online.")
-            else:
-                raise ClusterManagerError("Cluster is not started.")
+                    raise ClusterManagerError("Cluster is not started.")
         except Exception as e:
             raise ClusterManagerError(f"Failed to create cluster. Error: {e}")
