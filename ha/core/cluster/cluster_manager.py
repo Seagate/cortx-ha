@@ -15,7 +15,6 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-from posixpath import split
 import time
 import re
 import json
@@ -33,7 +32,7 @@ from ha.core.config.config_manager import ConfigManager
 from ha.core.controllers.element_controller_factory import ElementControllerFactory
 from ha.core.system_health.const import CLUSTER_ELEMENTS, HEALTH_STATUSES
 from ha.core.controllers.system_status_controller import SystemHealthController
-from ha.core.cluster.const import SYSTEM_HEALTH_OUTPUT_V1, GET_SYS_HEALTH_ARGS, SYS_HEALTH_OP_ATTRS
+from ha.core.cluster.const import SYSTEM_HEALTH_OUTPUT_V1, GET_SYS_HEALTH_ARGS
 from ha.core.cluster.model.health_status import StatusOutput, ElementStatus
 from ha.core.cluster.cluster_health_hierarchy import HealthHierarchy
 
@@ -341,9 +340,9 @@ class CortxClusterManager:
             if kwargs and GET_SYS_HEALTH_ARGS.ID.value not in kwargs:
                 return {"status": const.STATUSES.FAILED.value, "output": "", "error": "Invalid filter argument(s)"}
 
-            id = HEALTH_STATUSES.UNKNOWN.value
+            element_id = HEALTH_STATUSES.UNKNOWN.value
             if kwargs:
-                id = kwargs["id"]
+                element_id = kwargs["id"]
 
             # Fetch the health status
             system_health_controller = SystemHealthController(self._confstore)
@@ -365,19 +364,19 @@ class CortxClusterManager:
             depth = self._health_hierarchy.get_total_depth()
             # Prepare and return the output
             output = StatusOutput(SYSTEM_HEALTH_OUTPUT_V1)
-            self.get_status(element, id = id, start_level = element_level, level = element_level, depth = depth, parent = output)
+            self.get_status(element, element_id = element_id, start_level = element_level, level = element_level, depth = depth, parent = output)
             return output.to_json()
         except Exception as e:
             Log.error(f"Failed returning system health . Error: {e}")
             return {"status": const.STATUSES.FAILED.value, "output": "", "error": "Internal error"}
 
-    def get_status(self, element, id: str = HEALTH_STATUSES.UNKNOWN.value, start_level: int = 1, level: int = 1, depth: int = 1, parent: object = None):
+    def get_status(self, element, element_id: str = HEALTH_STATUSES.UNKNOWN.value, start_level: int = 1, level: int = 1, depth: int = 1, parent: object = None):
         # At requested level in the hierarchy
         if level == depth:
             # If request was with depth = 1 and id was provided.
-            if id != HEALTH_STATUSES.UNKNOWN.value:
-                status_key = self.is_status_present(element, id = id)
-                element_status = self.prapare_element_status(element, id = id, key = status_key)
+            if element_id != HEALTH_STATUSES.UNKNOWN.value:
+                status_key = self.is_status_present(element, element_id = element_id)
+                element_status = self.prapare_element_status(element, element_id = element_id, key = status_key)
                 if level == start_level:
                     parent.add_system_status(element_status)
                 else:
@@ -396,9 +395,9 @@ class CortxClusterManager:
                     del self._status_dict[status_key]
         else:
             # Prepare and return status for all available elements at this and further levels
-            if id != HEALTH_STATUSES.UNKNOWN.value:
-                status_key = self.is_status_present(element, id = id)
-                element_status = self.prapare_element_status(element, id = id, key = status_key)
+            if element_id != HEALTH_STATUSES.UNKNOWN.value:
+                status_key = self.is_status_present(element, element_id = element_id)
+                element_status = self.prapare_element_status(element, element_id = element_id, key = status_key)
                 if level == start_level:
                     parent.add_system_status(element_status)
                 else:
@@ -406,8 +405,8 @@ class CortxClusterManager:
                 if status_key:
                     del self._status_dict[status_key]
                 next_elements = self._health_hierarchy.get_next_elements(element)
-                for number in range(len(next_elements)):
-                    self.get_status(next_elements[number], start_level = start_level, level = level + 1, depth = depth, parent = element_status)
+                for count, value in enumerate(next_elements):
+                    self.get_status(value, start_level = start_level, level = level + 1, depth = depth, parent = element_status)
             else:
                 # Prepare and return status for all available elements at this and further levels
                 while True:
@@ -425,11 +424,11 @@ class CortxClusterManager:
                     else:
                         break
 
-    def is_status_present(self, element, id: str = HEALTH_STATUSES.UNKNOWN.value) -> str:
+    def is_status_present(self, element, element_id: str = HEALTH_STATUSES.UNKNOWN.value) -> str:
         status_key = None
-        if id is not HEALTH_STATUSES.UNKNOWN.value:
+        if element_id is not HEALTH_STATUSES.UNKNOWN.value:
             for key in self._status_dict:
-                if re.search(f"{element}/{id}/health", key):
+                if re.search(f"{element}/{element_id}/health", key):
                     status_key = key
                     break
         else:
@@ -441,16 +440,16 @@ class CortxClusterManager:
                         break
         return status_key
 
-    def prapare_element_status(self, element: str, id: str = HEALTH_STATUSES.UNKNOWN.value, key: str = None) -> object:
+    def prapare_element_status(self, element: str, element_id: str = HEALTH_STATUSES.UNKNOWN.value, key: str = None) -> object:
             status = HEALTH_STATUSES.UNKNOWN.value
             created_timestamp = HEALTH_STATUSES.UNKNOWN.value
             if key is not None:
                 entity_health = self._status_dict[key]
                 entity_health = json.loads(entity_health)
                 split_key = re.split("/", key)
-                id = split_key[-2]
+                element_id = split_key[-2]
                 status = entity_health["events"][0]["status"]
                 created_timestamp = entity_health['events'][0]['created_timestamp']
 
-            element_status = ElementStatus(element, id, status, created_timestamp)
+            element_status = ElementStatus(element, element_id, status, created_timestamp)
             return element_status

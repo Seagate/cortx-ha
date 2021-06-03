@@ -39,9 +39,9 @@ class HealthHierarchy:
         try:
             schema = HealthHierarchy.get_schema()
             elements = schema["elements"]
-            for number in range(len(elements)):
-                if elements[number] == element:
-                    element_level = number + 1
+            for count, value in enumerate(elements):
+                if value == element:
+                    element_level = count + 1
         except Exception as e:
             Log.error(f"Failed to fetch element level. Error: {e}")
 
