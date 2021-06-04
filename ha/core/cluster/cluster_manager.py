@@ -378,7 +378,7 @@ class CortxClusterManager:
                 status_key = self.is_status_present(element, element_id = element_id)
                 element_status = self.prapare_element_status(element, element_id = element_id, key = status_key)
                 if level == start_level:
-                    parent.add_system_status(element_status)
+                    parent.add_health(element_status)
                 else:
                     parent.add_resource(element_status)
             else:
@@ -389,7 +389,7 @@ class CortxClusterManager:
                         break
                     element_status = self.prapare_element_status(element, key = status_key)
                     if level == start_level:
-                        parent.add_system_status(element_status)
+                        parent.add_health(element_status)
                     else:
                         parent.add_resource(element_status)
                     del self._status_dict[status_key]
@@ -399,13 +399,13 @@ class CortxClusterManager:
                 status_key = self.is_status_present(element, element_id = element_id)
                 element_status = self.prapare_element_status(element, element_id = element_id, key = status_key)
                 if level == start_level:
-                    parent.add_system_status(element_status)
+                    parent.add_health(element_status)
                 else:
                     parent.add_resource(element_status)
                 if status_key:
                     del self._status_dict[status_key]
                 next_elements = self._health_hierarchy.get_next_elements(element)
-                for count, value in enumerate(next_elements):
+                for _, value in enumerate(next_elements):
                     self.get_status(value, start_level = start_level, level = level + 1, depth = depth, parent = element_status)
             else:
                 # Prepare and return status for all available elements at this and further levels
@@ -413,11 +413,11 @@ class CortxClusterManager:
                     status_key = self.is_status_present(element)
                     element_status = self.prapare_element_status(element, key = status_key)
                     if level == start_level:
-                        parent.add_system_status(element_status)
+                        parent.add_health(element_status)
                     else:
                         parent.add_resource(element_status)
                     next_elements = self._health_hierarchy.get_next_elements(element)
-                    for count, value in enumerate(next_elements):
+                    for _, value in enumerate(next_elements):
                         self.get_status(value, start_level = start_level, level = level + 1, depth = depth, parent = element_status)
                     if status_key:
                         del self._status_dict[status_key]

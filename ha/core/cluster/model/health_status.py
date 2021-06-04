@@ -18,10 +18,10 @@ import json
 class StatusOutput:
     def __init__(self, version: str):
         self.version = version
-        self.system_health = []
+        self.health = []
 
-    def add_system_status(self, system_health: dict) -> None:
-        self.system_health.append(system_health)
+    def add_health(self, health: dict) -> None:
+        self.health.append(health)
 
     def to_json(self):
         return json.dumps(self, default=lambda a: a.__dict__)

@@ -71,10 +71,10 @@ class HealthHierarchy:
         try:
             schema = HealthHierarchy.get_schema()
             elements = schema["elements"]
-            for number in range(len(elements)):
-                if elements[number] == element:
-                    if number < (len(elements) -1 ):
-                        next_elements.append(elements[number + 1])
+            for count, value in enumerate(elements):
+                if value == element:
+                    if count < (len(elements) -1 ):
+                        next_elements.append(elements[count + 1])
         except Exception as e:
             Log.error(f"Failed fetching next element. Error: {e}")
         return next_elements
