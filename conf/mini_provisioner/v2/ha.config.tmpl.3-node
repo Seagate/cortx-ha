@@ -24,6 +24,10 @@ server_node:
     storage_set_id: TMPL_STORAGE_SET_ID_1
     s3_instances: '1'
     type: TMPL_TYPE
+    bmc:
+      ip: TMPL_BMC_IP
+      user: TMPL_BMC_USER
+      secret: TMPL_BMC_SECRET
   TMPL_MACHINE_ID_2:
     node_id: TMPL_NODE_ID_2
     cluster_id: TMPL_CLUSTER_ID
@@ -38,6 +42,10 @@ server_node:
     storage_set_id: TMPL_STORAGE_SET_ID_2
     s3_instances: '1'
     type: TMPL_TYPE
+    bmc:
+      ip: TMPL_BMC_IP
+      user: TMPL_BMC_USER
+      secret: TMPL_BMC_SECRET
   TMPL_MACHINE_ID_3:
     node_id: TMPL_NODE_ID_3
     cluster_id: TMPL_CLUSTER_ID
@@ -52,3 +60,8 @@ server_node:
     storage_set_id: TMPL_STORAGE_SET_ID_3
     s3_instances: '1'
     type: TMPL_TYPE
+    bmc:
+      ip: TMPL_BMC_IP
+      user: TMPL_BMC_USER
+      secret: TMPL_BMC_SECRET
+

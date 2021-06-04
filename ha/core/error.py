@@ -249,3 +249,15 @@ class EventAnalyzerError(HAError):
         _message_id = HA_EVENT_ANALYZER_ERROR
         _rc = 1
         super(EventAnalyzerError, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
+
+class ConfigureStonithResourceError(SetupError):
+    '''
+    Exception to indicate any failure happened during stonith resource creation.
+    '''
+
+    def __init__(self, desc=None):
+        """
+        Handle Configure Stonith Resource Error.
+        """
+        _desc = "Stonith configuration failed." if desc is None else desc
+        super(ConfigureStonithResourceError, self).__init__(desc=_desc)
