@@ -35,6 +35,6 @@ class ElementStatus:
         self.sub_resources = None
 
     def add_resource(self, resource: dict) -> None:
-        if self.sub_resource is None:
-            self.sub_resource = []
-        self.sub_resource.append(resource)
+        if self.sub_resources is None:
+            self.sub_resources = []
+        self.sub_resources.append(resource)
