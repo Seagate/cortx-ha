@@ -67,14 +67,20 @@ class SystemHealth(Subscriber):
                 break
         return key
 
-    def get_status(self, component: str, component_id: str, **kwargs):
+    def get_status(self, component: str, component_id: str=None, **kwargs):
         """
         get status method. This is a generic method which can return status of any component(s).
         """
+        status = None
         try:
             # Prepare key and read the health value.
-            key = self._prepare_key(component, comp_id=component_id, **kwargs)
-            return self.healthmanager.get_key(key)
+            if component_id != None:
+                key = self._prepare_key(component, comp_id=component_id, **kwargs)
+                status = self.healthmanager.get_key(key)
+            else:
+                key = self._prepare_key(component, **kwargs)
+                status = self.healthmanager.get_key(key, just_value=False)
+            return status
 
         except Exception as e:
             Log.error(f"Failed reading status for component: {component} with Error: {e}")
