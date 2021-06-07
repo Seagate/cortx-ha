@@ -31,7 +31,7 @@ from ha import const
 from ha.core.config.config_manager import ConfigManager
 from ha.core.controllers.element_controller_factory import ElementControllerFactory
 from ha.core.system_health.const import CLUSTER_ELEMENTS, HEALTH_STATUSES
-from ha.core.controllers.system_status_controller import SystemHealthController
+from ha.core.controllers.system_health_controller import SystemHealthController
 from ha.core.cluster.const import SYSTEM_HEALTH_OUTPUT_V1, GET_SYS_HEALTH_ARGS
 from ha.core.cluster.model.health_status import StatusOutput, ElementStatus
 from ha.core.cluster.cluster_health_hierarchy import HealthHierarchy

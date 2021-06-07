@@ -18,7 +18,7 @@
 from ha.core.system_health.system_health import SystemHealth
 
 class SystemHealthController(SystemHealth):
-    """ System haelth controller to perform system health operations. """
+    """ System health controller to perform system health operations. """
 
     def __init__(self, store):
         """
