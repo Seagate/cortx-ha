@@ -632,7 +632,19 @@ class ResetCmd(Cmd):
         """
         Process reset command.
         """
-        pass # TBD
+        Log.info("Processing reset command")
+        # list of log folders
+        logs = [const.RA_LOG_DIR,const.COROSYNC_LOG, const.PACEMAKER_LOG, const.PCSD_LOG]
+        # Delete the logs 
+        self.remove_logs(logs)
+        Log.info("reset command is successful")
+    
+    def remove_logs(self, logs: list):
+        """
+        Remove logs created by ha.
+        """
+        for log in logs:
+            ResetCmd.remove_file(log)
 
 class CleanupCmd(Cmd):
     """
