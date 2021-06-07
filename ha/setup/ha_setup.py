@@ -27,11 +27,13 @@ from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
 from cortx.utils.validator.v_pkg import PkgV
 from cortx.utils.security.cipher import Cipher
+from ha.core.system_health.const import NODE_MAP_ATTRIBUTES
 
 from ha.execute import SimpleCommand
 from ha import const
 from ha.const import STATUSES
 from ha.setup.create_pacemaker_resources import create_all_resources
+from ha.setup.pcs_config.alert_config import AlertConfig
 from ha.setup.post_disruptive_upgrade import perform_post_upgrade
 from ha.core.cluster.cluster_manager import CortxClusterManager
 from ha.core.config.config_manager import ConfigManager
@@ -42,6 +44,7 @@ from ha.core.error import HaInitException
 from ha.core.error import HaCleanupException
 from ha.core.error import SetupError
 from ha.setup.cluster_validator.cluster_test import TestExecutor
+from ha.core.system_health.system_health import SystemHealth
 
 class Cmd:
     """
@@ -61,7 +64,7 @@ class Cmd:
         Conf.load(self._index, self._url)
         self._args = args.args
         self._execute = SimpleCommand()
-        self._confstore = ConfigManager._get_confstore()
+        self._confstore = ConfigManager.get_confstore()
         self._cluster_manager = None
 
     @property
@@ -257,6 +260,8 @@ class PostInstallCmd(Cmd):
             PostInstallCmd.copy_file(const.SOURCE_ALERT_FILTER_RULES_FILE, const.ALERT_FILTER_RULES_FILE)
             PostInstallCmd.copy_file(const.SOURCE_CLI_SCHEMA_FILE, const.CLI_SCHEMA_FILE)
             PostInstallCmd.copy_file(const.SOURCE_SERVICE_FILE, const.SYSTEM_SERVICE_FILE)
+            PostInstallCmd.copy_file(const.SOURCE_HEALTH_HIERARCHY_FILE, const.HEALTH_HIERARCHY_FILE)
+            PostInstallCmd.copy_file(const.SOURCE_IEM_SCHEMA_PATH, const.IEM_SCHEMA)
             self._execute.run_cmd("systemctl daemon-reload")
             Log.info(f"{self.name}: Copied HA configs file.")
             # Pre-requisite checks are done here.
@@ -273,7 +278,7 @@ class PostInstallCmd(Cmd):
                 raise HaPrerequisiteException("post_install command failed")
             else:
                 Log.info("hacluster is a part of the haclient group")
-
+            self._execute.run_cmd(f"setfacl -R -m g:{const.USER_GROUP_HACLIENT}:rwx {const.RA_LOG_DIR}")
         except Exception as e:
             Log.error(f"Failed prerequisite with Error: {e}")
             raise HaPrerequisiteException("post_install command failed")
@@ -310,6 +315,7 @@ class ConfigCmd(Cmd):
         Init method.
         """
         super().__init__(args)
+        self._alert_config = AlertConfig()
 
     def process(self):
         """
@@ -339,6 +345,14 @@ class ConfigCmd(Cmd):
         self._fetch_fids()
         self._update_cluster_manager_config()
 
+        # Push node name mapping to store
+        if not self._confstore.key_exists(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_name}"):
+            node_id = Conf.get(self._index, f"server_node.{machine_id}.node_id")
+            self._confstore.set(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_name}", node_id)
+
+        # Update node map
+        self._update_node_map()
+
         # Update cluster and resources
         self._cluster_manager = CortxClusterManager(default_log_enable=False)
         Log.info("Checking if cluster exists already")
@@ -353,9 +367,11 @@ class ConfigCmd(Cmd):
                 try:
                     self._create_cluster(cluster_name, cluster_user, cluster_secret, node_name)
                     self._create_resource(s3_instances=s3_instances, mgmt_info=mgmt_info)
+                    self._alert_config.create_alert()
                     self._confstore.set(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
                 except Exception as e:
                     Log.error(f"Cluster creation failed; destroying the cluster. Error: {e}")
+                    self._alert_config.delete_alert()
                     output = self._execute.run_cmd(const.PCS_CLUSTER_DESTROY)
                     Log.error(f"Cluster destroyed. Output: {output}")
                     # Delete the node from nodelist if it was added in the store
@@ -549,6 +565,26 @@ class ConfigCmd(Cmd):
             with open(const.CM_CONTROLLER_SCHEMA, 'w') as fi:
                 json.dump(controller_schema, fi, indent=4)
 
+    def _update_node_map(self) -> None:
+        """
+        Update node map
+        """
+        machine_id = self.get_machine_id()
+        node_id = Conf.get(self._index, f"server_node.{machine_id}.node_id")
+        cluster_id = Conf.get(self._index, f"server_node.{machine_id}.{NODE_MAP_ATTRIBUTES.CLUSTER_ID.value}")
+        site_id = Conf.get(self._index, f"server_node.{machine_id}.{NODE_MAP_ATTRIBUTES.SITE_ID.value}")
+        rack_id = Conf.get(self._index, f"server_node.{machine_id}.{NODE_MAP_ATTRIBUTES.RACK_ID.value}")
+        storageset_id = Conf.get(self._index, f"server_node.{machine_id}.{NODE_MAP_ATTRIBUTES.STORAGESET_ID.value}")
+        node_map = {NODE_MAP_ATTRIBUTES.CLUSTER_ID.value: cluster_id, NODE_MAP_ATTRIBUTES.SITE_ID.value: site_id,
+                    NODE_MAP_ATTRIBUTES.RACK_ID.value: rack_id, NODE_MAP_ATTRIBUTES.STORAGESET_ID.value: storageset_id}
+        system_health = SystemHealth(self._confstore)
+        key = system_health._prepare_key(const.COMPONENTS.NODE_MAP.value, node_id=node_id)
+        # Check key is already exist if not, store the node map.
+        node_map_val = self._confstore.get(key)
+        if node_map_val is None:
+            self._confstore.set(key, str(node_map))
+
+
 class InitCmd(Cmd):
     """
     Init Setup Cmd
@@ -667,6 +703,9 @@ class CleanupCmd(Cmd):
 
             if self._confstore.key_exists(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}"):
                 self._confstore.delete(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
+            # Delete node name mapping from store
+            if self._confstore.key_exists(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_name}"):
+                self._confstore.delete(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_name}")
             # Delete the config file
             self.remove_config_files()
         except Exception as e:

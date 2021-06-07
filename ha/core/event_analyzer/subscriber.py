@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
 #
 # This program is free software: you can redistribute it and/or modify it under the
@@ -13,16 +15,23 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-# TODO: convert event_analyzer.service to event_analyzer@consumer_id.service for scaling
-[Unit]
-Description=HA event analyzer daemon process
+import abc
+from ha.core.system_health.model.health_event import HealthEvent
 
-[Service]
-Type=simple
-ExecStart=/usr/bin/event_analyzerd
-TimeoutStopSec=30sec
-# TODO: user to be changed to hauser
-User=root
+class Subscriber(metaclass=abc.ABCMeta):
+    """
+    Subscriber for event analyzer to pass msg.
+    """
 
-[Install]
-WantedBy=multi-user.target
+    @abc.abstractmethod
+    def process_event(self, event: HealthEvent) -> None:
+        """
+        Get event from event analyzer and process them.
+
+        Raise:
+            Exception: raise exception to avoid ack of unprocessed event.
+
+        Args:
+            event (Event): Event object.
+        """
+        pass

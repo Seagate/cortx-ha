@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
 #
 # This program is free software: you can redistribute it and/or modify it under the
@@ -13,16 +15,21 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-# TODO: convert event_analyzer.service to event_analyzer@consumer_id.service for scaling
-[Unit]
-Description=HA event analyzer daemon process
 
-[Service]
-Type=simple
-ExecStart=/usr/bin/event_analyzerd
-TimeoutStopSec=30sec
-# TODO: user to be changed to hauser
-User=root
+from cortx.utils.log import Log
+from ha.alert.alert_monitor import AlertMonitor
+from ha.alert.iem import IemGenerator
 
-[Install]
-WantedBy=multi-user.target
+class NodeAlertMonitor(AlertMonitor):
+
+    def __init__(self):
+        """
+        Init node alert monitor
+        """
+        super(NodeAlertMonitor, self).__init__()
+
+    def process_alert(self):
+        Log.debug("Processing event for NodeAlertMonitor")
+        # Environment variable are avilable in self.crm_env
+        self.iem = IemGenerator()
+        self.iem.generate_iem(self.crm_env["CRM_alert_node"], self.alert_event_module, self.alert_event_type)

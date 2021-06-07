@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
 #
 # This program is free software: you can redistribute it and/or modify it under the
@@ -13,16 +15,13 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-# TODO: convert event_analyzer.service to event_analyzer@consumer_id.service for scaling
-[Unit]
-Description=HA event analyzer daemon process
 
-[Service]
-Type=simple
-ExecStart=/usr/bin/event_analyzerd
-TimeoutStopSec=30sec
-# TODO: user to be changed to hauser
-User=root
+# pacemaker alerts constants
+class ALERTS:
+    REQUIRED_EVENTS = ["node" , "resource"]
+    ALERT_FILTER_TYPE = "alert.filter_type"
+    PK_ALERT_EVENT_COMPONENTS = "alert.components"
+    PK_ALERT_EVENT_COMPONENT_MODULES = "alert.modules"
+    PK_ALERT_EVENT_OPERATIONS = "alert.operations"
+    logger_utility_iec_cmd="logger -i -p local3.err"
 
-[Install]
-WantedBy=multi-user.target

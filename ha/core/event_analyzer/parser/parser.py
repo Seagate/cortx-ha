@@ -17,18 +17,33 @@
 
 import abc
 import json
-from ha.core.error import EventAnalyzerError
+import re
+
+from cortx.utils.log import Log
+
 from ha.core.system_health.model.health_event import HealthEvent
+from ha.core.event_analyzer.event_analyzer_exceptions import EventParserException
+from ha.core.system_health.model.health_event import HealthEvent
+from ha.core.system_health.const import CLUSTER_ELEMENTS, HEALTH_EVENTS, EVENT_SEVERITIES
+from ha.core.config.config_manager import ConfigManager
+from ha.const import PVTFQDN_TO_NODEID_KEY, ALERT_ATTRIBUTES, EVENT_ATTRIBUTES
 
 class Parser(metaclass=abc.ABCMeta):
     """
     Subscriber for event analyzer to pass msg.
     """
 
+    def __init__(self):
+        """
+        Init method.
+        """
+        self._confstore = ConfigManager.get_confstore()
+
     @abc.abstractmethod
     def parse_event(self, msg: str) -> HealthEvent:
         """
         Parse event.
+
         Args:
             msg (str): Msg
         """
@@ -39,6 +54,13 @@ class AlertParser(Parser):
     Subscriber for event analyzer to pass msg.
     """
 
+    def __init__(self):
+        """
+        Init method.
+        """
+        super(AlertParser, self).__init__()
+        Log.info("Alert Parser is initialized ...")
+
     def parse_event(self, msg: str) -> HealthEvent:
         """
         Parse event.
@@ -46,28 +68,80 @@ class AlertParser(Parser):
             msg (str): Msg
         """
         try:
-            alert = json.loads(msg)
+            alert = json.loads(msg).get(ALERT_ATTRIBUTES.MESSAGE)
 
             event = {
-                "event_id" : alert['sensor_response_type']['alert_id'],
-                "event_type" : alert['sensor_response_type']['alert_type'],
-                "severity" : alert['sensor_response_type']['severity'],
-                "site_id" : alert['sensor_response_type']['info']['site_id'],
-                "rack_id" : alert['sensor_response_type']['info']['rack_id'],
-                "cluster_id" : alert['sensor_response_type']['info']['cluster_id'],
-                "storageset_id" : "TBD",
-                "node_id" : alert['sensor_response_type']['info']['node_id'],
-                "host_id" : alert['sensor_response_type']['host_id'],
-                "resource_type" : alert['sensor_response_type']['info']['resource_type'],
-                "timestamp" : alert['sensor_response_type']['info']['event_time'],
-                "resource_id" : alert['sensor_response_type']['info']['resource_id'],
-                "specific_info" : alert['sensor_response_type']['specific_info']
+                EVENT_ATTRIBUTES.EVENT_ID : alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.ALERT_ID],
+                EVENT_ATTRIBUTES.EVENT_TYPE : alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.ALERT_TYPE],
+                EVENT_ATTRIBUTES.SEVERITY : alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.SEVERITY],
+                EVENT_ATTRIBUTES.SITE_ID : alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.INFO][ALERT_ATTRIBUTES.SITE_ID],
+                EVENT_ATTRIBUTES.RACK_ID : alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.INFO][ALERT_ATTRIBUTES.RACK_ID],
+                EVENT_ATTRIBUTES.CLUSTER_ID : alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.INFO][ALERT_ATTRIBUTES.CLUSTER_ID],
+                EVENT_ATTRIBUTES.STORAGESET_ID : "TBD",
+                EVENT_ATTRIBUTES.NODE_ID : alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.INFO][ALERT_ATTRIBUTES.NODE_ID],
+                EVENT_ATTRIBUTES.HOST_ID : alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.HOST_ID],
+                EVENT_ATTRIBUTES.RESOURCE_TYPE : alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.INFO][ALERT_ATTRIBUTES.RESOURCE_TYPE],
+                EVENT_ATTRIBUTES.TIMESTAMP : alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.INFO][ALERT_ATTRIBUTES.EVENT_TIME],
+                EVENT_ATTRIBUTES.RESOURCE_ID : alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.INFO][ALERT_ATTRIBUTES.RESOURCE_ID],
+                EVENT_ATTRIBUTES.SPECIFIC_INFO : alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.SPECIFIC_INFO]
             }
 
             health_event = HealthEvent.dict_to_object(event)
-
+            Log.info(f"Event {event[EVENT_ATTRIBUTES.EVENT_ID]} is parsed and converted to object.")
             return health_event
 
         except Exception as e:
-            raise EventAnalyzerError(f"Failed to parse alert. Message: {msg}, Error: {e}")
+            raise EventParserException(f"Failed to parse alert. Message: {msg}, Error: {e}")
 
+class IEMParser(Parser):
+    """
+    Subscriber for event analyzer to pass msg.
+    """
+
+    def __init__(self):
+        """
+        Init method.
+        """
+        super(IEMParser, self).__init__()
+        Log.info("IEM Parser is initialized ...")
+
+    def parse_event(self, msg: str) -> HealthEvent:
+        """
+        Parse event.
+        Args:
+            msg (str): Msg
+        """
+        try:
+            iem_alert = json.loads(msg).get(ALERT_ATTRIBUTES.MESSAGE)
+
+            # Parse hostname and convert to node id
+            iem_description = iem_alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.INFO][ALERT_ATTRIBUTES.DESCRIPTION]
+            hostname = re.split("=", re.split(";", re.findall("host=.+", iem_description)[0])[0])[1]
+            key_val = self._confstore.get(f"{PVTFQDN_TO_NODEID_KEY}/{hostname}")
+            _, node_id = key_val.popitem()
+
+            event = {
+                EVENT_ATTRIBUTES.EVENT_ID : iem_alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.ALERT_ID],
+                EVENT_ATTRIBUTES.EVENT_TYPE : iem_alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.ALERT_TYPE],
+                EVENT_ATTRIBUTES.SEVERITY : iem_alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.SEVERITY],
+                EVENT_ATTRIBUTES.SITE_ID : iem_alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.INFO][ALERT_ATTRIBUTES.SITE_ID],
+                EVENT_ATTRIBUTES.RACK_ID : iem_alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.INFO][ALERT_ATTRIBUTES.RACK_ID],
+                EVENT_ATTRIBUTES.CLUSTER_ID : iem_alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.INFO][ALERT_ATTRIBUTES.CLUSTER_ID],
+                EVENT_ATTRIBUTES.STORAGESET_ID : "TBD",
+                EVENT_ATTRIBUTES.NODE_ID : iem_alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.INFO][ALERT_ATTRIBUTES.NODE_ID],
+                EVENT_ATTRIBUTES.HOST_ID : iem_alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.HOST_ID],
+                EVENT_ATTRIBUTES.RESOURCE_TYPE : iem_alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.SPECIFIC_INFO][ALERT_ATTRIBUTES.MODULE].lower(),
+                EVENT_ATTRIBUTES.TIMESTAMP : iem_alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.INFO][ALERT_ATTRIBUTES.EVENT_TIME],
+                EVENT_ATTRIBUTES.RESOURCE_ID : node_id,
+                EVENT_ATTRIBUTES.SPECIFIC_INFO : iem_alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.SPECIFIC_INFO]
+            }
+            # To be removed after HA starts populating IEM messages
+            if event.get(EVENT_ATTRIBUTES.RESOURCE_TYPE) == CLUSTER_ELEMENTS.NODE.value and event.get(EVENT_ATTRIBUTES.SEVERITY) == EVENT_SEVERITIES.WARNING.value:
+                event[EVENT_ATTRIBUTES.EVENT_TYPE] = HEALTH_EVENTS.FAULT.value
+
+            health_event = HealthEvent.dict_to_object(event)
+            Log.info(f"Event {event[EVENT_ATTRIBUTES.EVENT_ID]} is parsed and converted to object.")
+            return health_event
+
+        except Exception as e:
+            raise EventParserException(f"Failed to parse IEM. Message: {msg}, Error: {e}")

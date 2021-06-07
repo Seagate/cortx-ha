@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
 #
 # This program is free software: you can redistribute it and/or modify it under the
@@ -13,16 +15,26 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-# TODO: convert event_analyzer.service to event_analyzer@consumer_id.service for scaling
-[Unit]
-Description=HA event analyzer daemon process
+from cortx.utils.log import Log
 
-[Service]
-Type=simple
-ExecStart=/usr/bin/event_analyzerd
-TimeoutStopSec=30sec
-# TODO: user to be changed to hauser
-User=root
+class AlertFactory:
 
-[Install]
-WantedBy=multi-user.target
+    @staticmethod
+    def get_alert_monitor_instance(alert_type: str):
+
+        alert_class = None
+
+        from ha.alert.node_alert_monitor import NodeAlertMonitor
+        from ha.alert.resource_alert_monitor import ResourceAlertMonitor
+
+        # Mapping of REQUIRED_EVENTS to class
+        alert_class_mapping = {"node": NodeAlertMonitor,
+            "resource": ResourceAlertMonitor
+        }
+
+        try:
+            alert_class = alert_class_mapping[alert_type]
+        except Exception as e:
+            Log.error(e)
+
+        return alert_class

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
 #
 # This program is free software: you can redistribute it and/or modify it under the
@@ -13,16 +15,16 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-# TODO: convert event_analyzer.service to event_analyzer@consumer_id.service for scaling
-[Unit]
-Description=HA event analyzer daemon process
+from ha.core.error import HAError
+from ha.core.error import HA_ALERT_EVENT_FILTER_ERROR
 
-[Service]
-Type=simple
-ExecStart=/usr/bin/event_analyzerd
-TimeoutStopSec=30sec
-# TODO: user to be changed to hauser
-User=root
 
-[Install]
-WantedBy=multi-user.target
+class AlertEventFilterError(HAError):
+    def __init__(self, desc=None):
+        """
+        Handle Event Alert Filter error.
+        """
+        _desc = "HA Alert Event Filter failure" if desc is None else desc
+        _message_id = HA_ALERT_EVENT_FILTER_ERROR
+        _rc = 1
+        super(AlertEventFilterError, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)

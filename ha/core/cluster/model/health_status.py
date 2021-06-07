@@ -13,16 +13,28 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-# TODO: convert event_analyzer.service to event_analyzer@consumer_id.service for scaling
-[Unit]
-Description=HA event analyzer daemon process
+import json
 
-[Service]
-Type=simple
-ExecStart=/usr/bin/event_analyzerd
-TimeoutStopSec=30sec
-# TODO: user to be changed to hauser
-User=root
+class StatusOutput:
+    def __init__(self, version: str):
+        self.version = version
+        self.health = []
 
-[Install]
-WantedBy=multi-user.target
+    def add_health(self, health: dict) -> None:
+        self.health.append(health)
+
+    def to_json(self):
+        return json.dumps(self, default=lambda a: a.__dict__)
+
+class ElementStatus:
+    def __init__(self, resource: str, element_id: str, status: str, update_timestamp: str):
+        self.resource = resource
+        self.id = element_id
+        self.status = status
+        self.last_updated_time = update_timestamp
+        self.sub_resources = None
+
+    def add_resource(self, resource: dict) -> None:
+        if self.sub_resources is None:
+            self.sub_resources = []
+        self.sub_resources.append(resource)

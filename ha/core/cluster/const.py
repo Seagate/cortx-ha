@@ -13,16 +13,19 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-# TODO: convert event_analyzer.service to event_analyzer@consumer_id.service for scaling
-[Unit]
-Description=HA event analyzer daemon process
+from enum import Enum
 
-[Service]
-Type=simple
-ExecStart=/usr/bin/event_analyzerd
-TimeoutStopSec=30sec
-# TODO: user to be changed to hauser
-User=root
+# System health output versions
+SYSTEM_HEALTH_OUTPUT_V1 = "1.0"
 
-[Install]
-WantedBy=multi-user.target
+# Variable arguments supported by get_system_health() API
+class GET_SYS_HEALTH_ARGS(Enum):
+    ID = "id"
+
+# System health output attributes
+class SYS_HEALTH_OP_ATTRS(Enum):
+    VERSION = "version"
+    RESOURCE = "resource"
+    ID = "id"
+    STATUS = "status"
+    UPDATE_TIMESTAMP = "update_timestamp"

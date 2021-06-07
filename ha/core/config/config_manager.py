@@ -61,7 +61,7 @@ class ConfigManager:
         Log.init(service_name=log_name, log_path=log_path, level=log_level)
 
     @staticmethod
-    def _get_confstore():
+    def get_confstore():
         """
         Initalize and get confstore if not _cluster_confstore is None.
         Used by config manager methods to check and initalize confstore if needed.
@@ -83,6 +83,13 @@ class ConfigManager:
         Loads alert filter rules.
         """
         ConfigManager._safe_load(const.ALERT_FILTER_INDEX, f"json://{const.ALERT_FILTER_RULES_FILE}")
+
+    @staticmethod
+    def load_alert_events_rules():
+        """
+        Loads alert event rules.
+        """
+        ConfigManager._safe_load(const.ALERT_EVENT_INDEX, f"json://{const.ALERT_EVENT_RULES_FILE}")
 
     @staticmethod
     def _safe_load(index: str, url: str):
