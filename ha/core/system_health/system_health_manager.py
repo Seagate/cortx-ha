@@ -26,14 +26,15 @@ class SystemHealthManager:
         """
         self._store = store
 
-    def get_key(self, key: str):
+    def get_key(self, key: str, just_value: str=True):
         """
         Get key method.
         """
         key_val = self._store.get(key)
-        if key_val is not None:
-            _, value = key_val.popitem()
-            return value
+        if just_value:
+            if key_val is not None:
+                _, value = key_val.popitem()
+                return value
         return key_val
 
     def set_key(self, key: str, value: str):
