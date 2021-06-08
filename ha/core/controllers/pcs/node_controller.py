@@ -218,24 +218,12 @@ class PcsVMNodeController(PcsNodeController):
             Log.error(f"{nodeid} status is {_node_status}, node may not be started.")
             raise ClusterManagerError(f"Failed to start {nodeid} as found unhandled status {_node_status}")
 
-class PcsHWNodeController(PcsNodeController):
+class PcsHWNodeController(PcsVMNodeController):
     def initialize(self, controllers):
         """
         Initialize the storageset controller
         """
         self._controllers = controllers
-
-    @controller_error_handler
-    def start(self, nodeid: str) -> dict:
-        """
-        Start node with nodeid.
-        Args:
-            nodeid (str): Node ID from cluster nodes.
-        Returns:
-            ([dict]): Return dictionary. {"status": "", "msg":""}
-                status: Succeeded, Failed, InProgress
-        """
-        raise HAUnimplemented("This operation is not implemented.")
 
     @controller_error_handler
     def shutdown(self, nodeid: str) -> dict:

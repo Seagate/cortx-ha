@@ -16,6 +16,8 @@
 # cortx-questions@seagate.com.
 
 import time
+import re
+import json
 
 from cortx.utils.log import Log
 from cortx.utils.conf_store.conf_store import Conf
@@ -28,6 +30,11 @@ from ha.execute import SimpleCommand
 from ha import const
 from ha.core.config.config_manager import ConfigManager
 from ha.core.controllers.element_controller_factory import ElementControllerFactory
+from ha.core.system_health.const import CLUSTER_ELEMENTS, HEALTH_STATUSES
+from ha.core.controllers.system_health_controller import SystemHealthController
+from ha.core.cluster.const import SYSTEM_HEALTH_OUTPUT_V1, GET_SYS_HEALTH_ARGS
+from ha.core.cluster.model.health_status import StatusOutput, ElementStatus
+from ha.core.cluster.cluster_health_hierarchy import HealthHierarchy
 
 # Note: This class is used by version 1
 class PcsClusterManager:
@@ -278,6 +285,7 @@ class CortxClusterManager:
             ConfigManager.init(None)
         self._cluster_type = Conf.get(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.cluster_type")
         self._env = Conf.get(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.env")
+        self._confstore = ConfigManager.get_confstore()
         ConfigManager.load_controller_schema()
         self._controllers = ElementControllerFactory.init_controller(self._env, self._cluster_type)
         for controller in self._controllers.keys():
@@ -296,3 +304,152 @@ class CortxClusterManager:
             [list]: list of controllers.
         """
         return list(self._controllers.keys())
+
+    def get_system_health(self, element: CLUSTER_ELEMENTS = CLUSTER_ELEMENTS.CLUSTER.value, depth: int = 1, **kwargs) -> dict:
+        """
+        Return health status for the requested elements.
+
+        Args:
+            element ([CLUSTER_ELEMENTS]): The element whose health status is to be returned.
+            depth ([int]): A depth of elements starting from the input "element" that the health status
+                is to be returned.
+            **kwargs([dict]): Variable number of arguments that are used as filters,
+                e.g. "id" of the input "element".
+
+        Returns:
+            ([dict]): Returns dictionary. {"status": "Succeeded"/"Failed"/"Partial", "output": "", "error": ""}
+                status: Succeeded, Failed, Partial
+                output: Dictionary with element health status
+                error: Error information if the request "Failed"
+        """
+
+        try:
+            # Currently, only "id" supported in the variable arguments.
+            unsupported_element = True
+            for supported_element in CLUSTER_ELEMENTS:
+                if element == supported_element.value:
+                    unsupported_element = False
+                    break
+
+            # TODO: Fix below temporary code
+            if element != CLUSTER_ELEMENTS.NODE.value:
+                unsupported_element = True
+
+            if unsupported_element:
+                return {"status": const.STATUSES.FAILED.value, "output": "", "error": "Invalid element"}
+            if kwargs and GET_SYS_HEALTH_ARGS.ID.value not in kwargs:
+                return {"status": const.STATUSES.FAILED.value, "output": "", "error": "Invalid filter argument(s)"}
+
+            element_id = HEALTH_STATUSES.UNKNOWN.value
+            if kwargs:
+                element_id = kwargs["id"]
+
+            # Fetch the health status
+            system_health_controller = SystemHealthController(self._confstore)
+            self._status_dict = system_health_controller.get_status(CLUSTER_ELEMENTS.CLUSTER.value)
+
+            # Remove any keys which are not for the health status.
+            ignore_keys = []
+            for key in self._status_dict:
+                if "health" not in key:
+                    ignore_keys.append(key)
+            for key in ignore_keys:
+                del self._status_dict[key]
+
+            # Get the requested element level in the health hierarchy
+            self._health_hierarchy = HealthHierarchy()
+            element_level = self._health_hierarchy.get_element_level(element)
+
+            # TODO: Fix below
+            depth = self._health_hierarchy.get_total_depth()
+            # Prepare and return the output
+            output = StatusOutput(SYSTEM_HEALTH_OUTPUT_V1)
+            self.get_status(element, element_id = element_id, start_level = element_level, level = element_level, depth = depth, parent = output)
+            return output.to_json()
+        except Exception as e:
+            Log.error(f"Failed returning system health . Error: {e}")
+            return {"status": const.STATUSES.FAILED.value, "output": "", "error": "Internal error"}
+
+    def get_status(self, element, element_id: str = HEALTH_STATUSES.UNKNOWN.value, start_level: int = 1, level: int = 1, depth: int = 1, parent: object = None):
+        # At requested level in the hierarchy
+        if level == depth:
+            # If request was with depth = 1 and id was provided.
+            if element_id != HEALTH_STATUSES.UNKNOWN.value:
+                status_key = self.is_status_present(element, element_id = element_id)
+                element_status = self.prapare_element_status(element, element_id = element_id, key = status_key)
+                if level == start_level:
+                    parent.add_health(element_status)
+                else:
+                    parent.add_resource(element_status)
+            else:
+                # Prepare and return status for all available elements at this level
+                while True:
+                    status_key = self.is_status_present(element)
+                    if status_key == None:
+                        break
+                    element_status = self.prapare_element_status(element, key = status_key)
+                    if level == start_level:
+                        parent.add_health(element_status)
+                    else:
+                        parent.add_resource(element_status)
+                    del self._status_dict[status_key]
+        else:
+            # Prepare and return status for all available elements at this and further levels
+            if element_id != HEALTH_STATUSES.UNKNOWN.value:
+                status_key = self.is_status_present(element, element_id = element_id)
+                element_status = self.prapare_element_status(element, element_id = element_id, key = status_key)
+                if level == start_level:
+                    parent.add_health(element_status)
+                else:
+                    parent.add_resource(element_status)
+                if status_key:
+                    del self._status_dict[status_key]
+                next_elements = self._health_hierarchy.get_next_elements(element)
+                for _, value in enumerate(next_elements):
+                    self.get_status(value, start_level = start_level, level = level + 1, depth = depth, parent = element_status)
+            else:
+                # Prepare and return status for all available elements at this and further levels
+                while True:
+                    status_key = self.is_status_present(element)
+                    element_status = self.prapare_element_status(element, key = status_key)
+                    if level == start_level:
+                        parent.add_health(element_status)
+                    else:
+                        parent.add_resource(element_status)
+                    next_elements = self._health_hierarchy.get_next_elements(element)
+                    for _, value in enumerate(next_elements):
+                        self.get_status(value, start_level = start_level, level = level + 1, depth = depth, parent = element_status)
+                    if status_key:
+                        del self._status_dict[status_key]
+                    else:
+                        break
+
+    def is_status_present(self, element, element_id: str = HEALTH_STATUSES.UNKNOWN.value) -> str:
+        status_key = None
+        if element_id is not HEALTH_STATUSES.UNKNOWN.value:
+            for key in self._status_dict:
+                if re.search(f"{element}/{element_id}/health", key):
+                    status_key = key
+                    break
+        else:
+            for key in self._status_dict:
+                if re.search(f"{element}/.+\w/health", key):
+                    split_key = re.split("/", key)
+                    if element == split_key[-3]:
+                        status_key = key
+                        break
+        return status_key
+
+    def prapare_element_status(self, element: str, element_id: str = HEALTH_STATUSES.UNKNOWN.value, key: str = None) -> object:
+            status = HEALTH_STATUSES.UNKNOWN.value
+            created_timestamp = HEALTH_STATUSES.UNKNOWN.value
+            if key is not None:
+                entity_health = self._status_dict[key]
+                entity_health = json.loads(entity_health)
+                split_key = re.split("/", key)
+                element_id = split_key[-2]
+                status = entity_health["events"][0]["status"]
+                created_timestamp = entity_health['events'][0]['created_timestamp']
+
+            element_status = ElementStatus(element, element_id, status, created_timestamp)
+            return element_status

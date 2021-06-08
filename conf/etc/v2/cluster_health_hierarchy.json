@@ -1,0 +1,8 @@
+{
+    "elements": [
+        "cluster",
+        "site",
+        "rack",
+        "node"
+    ]
+}

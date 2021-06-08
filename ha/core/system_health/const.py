@@ -18,7 +18,7 @@
 from enum import Enum
 
 # Cluster elements supported by system health
-class CLUSTERELEMENTS(Enum):
+class CLUSTER_ELEMENTS(Enum):
     CLUSTER = "cluster"
     SITE = "site"
     RACK = "rack"
