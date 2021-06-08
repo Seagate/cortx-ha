@@ -43,7 +43,7 @@ class StorageSetController(ElementController):
             storagesetid (str): Storageset ID from cluster nodes.
 
         Returns:
-            ([dict]): Return dictionary. {"status": "", "output": "", "error": ""}
+            ([dict]): Return dictionary. {"status": "", "msg":""}
                 status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
@@ -57,7 +57,7 @@ class StorageSetController(ElementController):
             storagesetid (str): Storageset ID from cluster nodes.
 
         Returns:
-            ([dict]): Return dictionary. {"status": "", "output": "", "error": ""}
+            ([dict]): Return dictionary. {"status": "", "msg":""}
                 status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
@@ -71,7 +71,7 @@ class StorageSetController(ElementController):
             storagesetid (str): Storageset ID from cluster nodes.
 
         Returns:
-            ([dict]): Return dictionary. {"status": "", "output": "", "error": ""}
+            ([dict]): Return dictionary. {"status": "", "msg":""}
                 status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
@@ -85,7 +85,7 @@ class StorageSetController(ElementController):
             storagesetid (str): Storageset ID from cluster nodes.
 
         Returns:
-            ([dict]): Return dictionary. {"status": "", "output": "", "error": ""}
+            ([dict]): Return dictionary. {"status": "", "msg":""}
                 status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
@@ -99,7 +99,7 @@ class StorageSetController(ElementController):
             storagesetid (str): Storageset ID from cluster nodes.
 
         Returns:
-            ([dict]): Return dictionary. {"status": "", "output": "", "error": ""}
+            ([dict]): Return dictionary. {"status": "", "msg":""}
                 status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")

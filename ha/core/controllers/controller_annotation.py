@@ -27,7 +27,7 @@ def controller_error_handler(func):
             return json.dumps(result)
         except Exception as e:
             Log.error(f"ClusterManagerException. {func.__name__} failed. {traceback.format_exc()}, {e}")
-            result: dict = {"status": const.STATUSES.FAILED.value, "output": "",
-                "error": f"ClusterManagerException. {func.__name__} failed. Error: {e}"}
+            result: dict = {"status": const.STATUSES.FAILED.value,
+                "msg": f"ClusterManagerException. {func.__name__} failed. Error: {e}"}
             return json.dumps(result)
     return inner_function

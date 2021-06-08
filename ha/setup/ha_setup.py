@@ -342,7 +342,7 @@ class ConfigCmd(Cmd):
         # Update cluster and resources
         self._cluster_manager = CortxClusterManager(default_log_enable=False)
         Log.info("Checking if cluster exists already")
-        cluster_exists = bool(json.loads(self._cluster_manager.cluster_controller.cluster_exists()).get("output"))
+        cluster_exists = bool(json.loads(self._cluster_manager.cluster_controller.cluster_exists()).get("msg"))
         Log.info(f"Cluster exists? {cluster_exists}")
 
         if not cluster_exists:

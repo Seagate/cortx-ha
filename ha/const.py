@@ -196,11 +196,3 @@ class INSTALLATION_TYPE(Enum):
     HW = "hw"
     VM = "vm"
     SINGLE_VM = "single_vm"
-
-
-class CLUSTER_STATUS(Enum):
-    OFFLINE = "offline"
-    STANDBY = "standby"
-    DEGRADED = "degraded"
-    UNHEALTHY = "unhealthy"
-    ONLINE = "online"
