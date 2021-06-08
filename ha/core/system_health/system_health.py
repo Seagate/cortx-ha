@@ -29,6 +29,7 @@ from ha.core.system_health.model.entity_health import EntityEvent, EntityAction,
 from ha.core.system_health.status_mapper import StatusMapper
 from ha.core.system_health.system_health_manager import SystemHealthManager
 from ha.core.error import HaSystemHealthException
+from ha.core.system_health.cluster_element_factory import ClusterElementFactory
 
 class SystemHealth(Subscriber):
     """
@@ -39,6 +40,7 @@ class SystemHealth(Subscriber):
         """
         Init method.
         """
+        ClusterElementFactory.build_elements()
         self.update_hierarchy = []
         self.node_id = None
         self.node_map = {}
@@ -118,6 +120,7 @@ class SystemHealth(Subscriber):
         """
         get cluster status method. This method is for returning a status of a cluster.
         """
+
     def _update(self, component: str, comp_type: str, comp_id: str, healthvalue: str, next_component: str=None):
         """
         update method. This is an internal method for updating the system health.
@@ -141,9 +144,17 @@ class SystemHealth(Subscriber):
         """
 
         # TODO: Check the user and see if allowed to update the system health.
+        try:
+            component = SystemHealthComponents.get_component(healthevent.resource_type)
+            hierarchy = SystemHealthHierarchy.get_hierarchy(component)
+            for element in hierarchy:
+                print(element)
+                #cluster_element = ClusterElementFactory.get_element(component)
+                #cluster_element.process_event(healthevent)
+        except Exception as e:
+            pass
 
         try:
-            status = self.statusmapper.map_event(healthevent.event_type)
             component = SystemHealthComponents.get_component(healthevent.resource_type)
 
             # Get the health update hierarchy
@@ -170,6 +181,7 @@ class SystemHealth(Subscriber):
                 updated_health = EntityHealth()
 
             # Create a new event and action
+            status = self.statusmapper.map_event(healthevent.event_type)
             current_timestamp = str(int(time.time()))
             entity_event = EntityEvent(healthevent.timestamp, current_timestamp, status, healthevent.specific_info)
             entity_action = EntityAction(current_timestamp, const.ACTION_STATUS.PENDING.value)

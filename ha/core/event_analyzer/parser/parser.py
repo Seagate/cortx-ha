@@ -104,6 +104,10 @@ class IEMParser(Parser):
         """
         super(IEMParser, self).__init__()
         Log.info("IEM Parser is initialized ...")
+        self._node_id_map: dict = {}
+        fqdn_keys = self._confstore.get(f"{PVTFQDN_TO_NODEID_KEY}")
+        for key in fqdn_keys.keys():
+            self._node_id_map[key.split("/")[-1]] = fqdn_keys[key]
 
     def parse_event(self, msg: str) -> HealthEvent:
         """
@@ -117,8 +121,7 @@ class IEMParser(Parser):
             # Parse hostname and convert to node id
             iem_description = iem_alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.INFO][ALERT_ATTRIBUTES.DESCRIPTION]
             hostname = re.split("=", re.split(";", re.findall("host=.+", iem_description)[0])[0])[1]
-            key_val = self._confstore.get(f"{PVTFQDN_TO_NODEID_KEY}/{hostname}")
-            _, node_id = key_val.popitem()
+            node_id = self._node_id_map.get(hostname)
 
             event = {
                 EVENT_ATTRIBUTES.EVENT_ID : iem_alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.ALERT_ID],
@@ -138,7 +141,7 @@ class IEMParser(Parser):
             # To be removed after HA starts populating IEM messages
             if event.get(EVENT_ATTRIBUTES.RESOURCE_TYPE) == CLUSTERELEMENTS.NODE.value and event.get(EVENT_ATTRIBUTES.SEVERITY) == EVENT_SEVERITIES.WARNING.value:
                 event[EVENT_ATTRIBUTES.EVENT_TYPE] = HEALTH_EVENTS.FAULT.value
-
+            Log.debug(f"Parsed event: {event}")
             health_event = HealthEvent.dict_to_object(event)
             Log.info(f"Event {event[EVENT_ATTRIBUTES.EVENT_ID]} is parsed and converted to object.")
             return health_event

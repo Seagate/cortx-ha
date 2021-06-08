@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
 #
 # This program is free software: you can redistribute it and/or modify it under the
@@ -55,3 +57,12 @@ class NODE_MAP_ATTRIBUTES(Enum):
     SITE_ID = "site_id"
     RACK_ID = "rack_id"
     STORAGESET_ID = "storageset_id"
+
+class CLUSTER_ELEMENT_CLASSES:
+    CLASS_MODULE = "ha.core.system_health.cluster_elements"
+    CLASS_TO_ELEMENT_MAP: dict = {
+        CLUSTERELEMENTS.CLUSTER.value: f"{CLASS_MODULE}.cluster_element.ClusterElement",
+        CLUSTERELEMENTS.SITE.value: f"{CLASS_MODULE}.site_element.SiteElement",
+        CLUSTERELEMENTS.RACK.value: f"{CLASS_MODULE}.rack_element.RackElement",
+        CLUSTERELEMENTS.NODE.value: f"{CLASS_MODULE}.node_element.NodeElement"
+    }
