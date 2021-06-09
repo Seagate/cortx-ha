@@ -79,10 +79,10 @@ class AlertEventFilter(Filter):
             alert_filter_module = self.crm_env["CRM_alert_kind"]
             alert_filter_module_operation = self.crm_env["CRM_alert_desc"]
 
-            if alert_filter_module in self.alert_filter_modules.get(ALERTS.REQUIRED_COMPONENT):
+            if alert_filter_module.lower() in self.alert_filter_modules.get(ALERTS.REQUIRED_COMPONENT):
                 ha_required_alert_module = alert_filter_module
 
-            if ha_required_alert_module and alert_filter_module_operation in self.alert_filter_module_operations.get(
+            if ha_required_alert_module and alert_filter_module_operation.lower() in self.alert_filter_module_operations.get(
                     ha_required_alert_module):
                 ha_required_alert_module_operation = alert_filter_module_operation
 
