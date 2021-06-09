@@ -106,6 +106,7 @@ class PcsNodeController(NodeController, PcsController):
             ([dict]): Return dictionary. {"status": "", "msg":""}
                 status: Succeeded, Failed, InProgress
         """
+        raise Exception("fix failed")
         status: str = ""
         # Check node status
         node_status = self.nodes_status([nodeid]).get(nodeid)
