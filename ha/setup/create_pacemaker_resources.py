@@ -61,6 +61,12 @@ def cib_get(cib_xml):
     process.run_cmd(f"pcs cluster cib {cib_xml}")
     return cib_xml
 
+def change_pcs_default(cib_xml, push=False, **kwargs):
+    """Modify pcs defaults here"""
+    process.run_cmd(f"pcs -f {cib_xml} resource defaults resource-stickiness=1")
+    if push:
+        cib_push(cib_xml)
+
 def hax(cib_xml, push=False, **kwargs):
     """Create resources that belong to hax and clone the group."""
     # hax
