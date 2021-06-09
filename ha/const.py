@@ -25,6 +25,7 @@ PACEMAKER_LOG="/var/log/pacemaker.log"
 PCSD_LOG="/var/log/pcsd/pcsd.log"
 HA_CMDS_OUTPUT="{}/ha_cmds_output".format(RA_LOG_DIR)
 COROSYNC_LOG="/var/log/cluster"
+CLUSTER_LOG="/var/log/cluster/*"
 CONFIG_DIR="/etc/cortx/ha"
 SYSTEM_DIR="/etc/systemd/system"
 SUPPORT_BUNDLE_ERR="{}/support_bundle.err".format(RA_LOG_DIR)
