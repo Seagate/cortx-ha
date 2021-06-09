@@ -40,58 +40,29 @@ class SystemHealth(Subscriber):
         """
         Init method.
         """
-        ClusterElementFactory.build_elements()
         self.update_hierarchy = []
         self.node_id = None
         self.node_map = {}
         self.statusmapper = StatusMapper()
         self.healthmanager = SystemHealthManager(store)
-
-    def _prepare_key(self, component: str, **kwargs) -> str:
-        """
-        Prepare Key. This is an internal method for preparing component status key.
-        This will be used when updating/querying a component status.
-        """
-
-        # Get the key template.
-        key = SystemHealthComponents.get_key(component)
-        # Check what all substitutions with actual values passed in kwargs to be done.
-        subs = re.findall("\$\w+", key)
-        # Check if the related argument present in kwargs, if yes substitute the same.
-        for sub in subs:
-            argument = re.split("\$", sub)
-            if argument[1] in kwargs:
-                key = re.sub("\$\w+", kwargs[argument[1]], key, 1)
-            else:
-                # Argument not present, break and return the key till this missing argument.
-                key = re.split("\$", key)
-                key = key[0]
-                break
-        return key
-
-    def get_status(self, component: str, component_id: str=None, **kwargs):
-        """
-        get status method. This is a generic method which can return status of any component(s).
-        """
-        status = None
-        try:
-            # Prepare key and read the health value.
-            if component_id != None:
-                key = self._prepare_key(component, comp_id=component_id, **kwargs)
-                status = self.healthmanager.get_key(key)
-            else:
-                key = self._prepare_key(component, **kwargs)
-                status = self.healthmanager.get_key(key, just_value=False)
-            return status
-
-        except Exception as e:
-            Log.error(f"Failed reading status for component: {component} with Error: {e}")
-            raise HaSystemHealthException("Failed reading status")
+        ClusterElementFactory.build_elements()
 
     def get_service_status(self, service_type=None, node_id=None):
         """
         get service status method. This method is for returning a status of a service.
         """
+        pass
+
+    def get_status(self, component: str, component_id: str=None, **kwargs):
+        """
+        get status method. This is a generic method which can return status of any component(s).
+        """
+        try:
+            cluster_element = ClusterElementFactory.get_element(component)
+            return cluster_element.get_status(component, component_id, **kwargs)
+        except Exception as e:
+            Log.error(f"Failed reading status for component: {component} with Error: {e}")
+            raise HaSystemHealthException("Failed reading status")
 
     def get_node_status(self, node_id, **kwargs):
         """
@@ -127,23 +98,6 @@ class SystemHealth(Subscriber):
         get cluster status method. This method is for returning a status of a cluster.
         """
 
-    def _update(self, component: str, comp_type: str, comp_id: str, healthvalue: str, next_component: str=None):
-        """
-        update method. This is an internal method for updating the system health.
-        """
-        key = self._prepare_key(component, cluster_id=self.node_map['cluster_id'], site_id=self.node_map['site_id'],
-                                rack_id=self.node_map['rack_id'], storageset_id=self.node_map['storageset_id'],
-                                node_id=self.node_id, server_id=self.node_id, storage_id=self.node_id,
-                                comp_type=comp_type, comp_id=comp_id)
-        self.healthmanager.set_key(key, healthvalue)
-
-        # Check the next component to be updated, if none then return.
-        if next_component is None:
-            return
-        else:
-            # TODO: Calculate and update the health of the next component in the hierarchy.
-            return
-
     def process_event(self, healthevent: HealthEvent):
         """
         Process Event method. This method could be called for updating the health status.
@@ -154,58 +108,8 @@ class SystemHealth(Subscriber):
             component = SystemHealthComponents.get_component(healthevent.resource_type)
             hierarchy = SystemHealthHierarchy.get_hierarchy(component)
             for element in hierarchy:
-                print(element)
-                #cluster_element = ClusterElementFactory.get_element(component)
-                #cluster_element.process_event(healthevent)
-        except Exception as e:
-            pass
-
-        try:
-            component = SystemHealthComponents.get_component(healthevent.resource_type)
-
-            # Get the health update hierarchy
-            self.update_hierarchy = SystemHealthHierarchy.get_hierarchy(component)
-            if (len(self.update_hierarchy) - 1) > self.update_hierarchy.index(component):
-                next_component = self.update_hierarchy[self.update_hierarchy.index(component) + 1]
-            else:
-                next_component = None
-
-            # Get the component type and id received in the event.
-            component_type = healthevent.resource_type.split(':')[-1]
-            component_id = healthevent.resource_id
-            # Read the currently stored health value
-            current_health = self.get_status(component, component_id, comp_type=component_type,
-                                        cluster_id=healthevent.cluster_id, site_id=healthevent.site_id,
-                                        rack_id=healthevent.rack_id, storageset_id=healthevent.storageset_id,
-                                        node_id=healthevent.node_id, server_id=healthevent.node_id,
-                                        storage_id=healthevent.node_id)
-            if current_health:
-                # Update the current health value itself.
-                updated_health = EntityHealth.read(current_health)
-            else:
-                # Health value not present in the store currently, create now.
-                updated_health = EntityHealth()
-
-            # Create a new event and action
-            status = self.statusmapper.map_event(healthevent.event_type)
-            current_timestamp = str(int(time.time()))
-            entity_event = EntityEvent(healthevent.timestamp, current_timestamp, status, healthevent.specific_info)
-            entity_action = EntityAction(current_timestamp, const.ACTION_STATUS.PENDING.value)
-            # Add the new event and action to the health value
-            updated_health.add_event(entity_event)
-            updated_health.set_action(entity_action)
-            # Convert the health value as appropriate for writing to the store.
-            updated_health = EntityHealth.write(updated_health)
-
-            # Update the node map
-            self.node_id = healthevent.node_id
-            self.node_map = {'cluster_id':healthevent.cluster_id, 'site_id':healthevent.site_id,
-                             'rack_id':healthevent.rack_id, 'storageset_id':healthevent.storageset_id}
-
-            # Update in the store.
-            self._update(component, component_type, component_id, updated_health, next_component=next_component)
-            Log.info(f"Updated health for component: {component}, Type: {component_type}, Id: {component_id}")
-
+                cluster_element = ClusterElementFactory.get_element(component)
+                cluster_element.process_event(healthevent)
         except Exception as e:
             Log.error(f"Failed processing system health event with Error: {e}")
             raise HaSystemHealthException("Failed processing system health event")

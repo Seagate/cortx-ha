@@ -22,6 +22,7 @@ class CLUSTER_ELEMENTS(Enum):
     CLUSTER = "cluster"
     SITE = "site"
     RACK = "rack"
+    STORAGE_SET = "storageset"
     NODE = "node"
 
 # Health statuses
@@ -61,8 +62,9 @@ class NODE_MAP_ATTRIBUTES(Enum):
 class CLUSTER_ELEMENT_CLASSES:
     CLASS_MODULE = "ha.core.system_health.cluster_elements"
     CLASS_TO_ELEMENT_MAP: dict = {
-        CLUSTERELEMENTS.CLUSTER.value: f"{CLASS_MODULE}.cluster_element.ClusterElement",
-        CLUSTERELEMENTS.SITE.value: f"{CLASS_MODULE}.site_element.SiteElement",
-        CLUSTERELEMENTS.RACK.value: f"{CLASS_MODULE}.rack_element.RackElement",
-        CLUSTERELEMENTS.NODE.value: f"{CLASS_MODULE}.node_element.NodeElement"
+        CLUSTER_ELEMENTS.CLUSTER.value: f"{CLASS_MODULE}.cluster_element.ClusterElement",
+        CLUSTER_ELEMENTS.SITE.value: f"{CLASS_MODULE}.site_element.SiteElement",
+        CLUSTER_ELEMENTS.RACK.value: f"{CLASS_MODULE}.rack_element.RackElement",
+        CLUSTER_ELEMENTS.STORAGE_SET.value: f"{CLASS_MODULE}.storage_set_element.StorageSetElement",
+        CLUSTER_ELEMENTS.NODE.value: f"{CLASS_MODULE}.node_element.NodeElement"
     }

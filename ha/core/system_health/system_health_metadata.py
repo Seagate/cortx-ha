@@ -97,7 +97,7 @@ class SystemHealthHierarchy:
     """
 
     _common_hierarchy = [const.COMPONENTS.NODE.value, const.COMPONENTS.RACK.value, const.COMPONENTS.SITE.value,
-                         const.COMPONENTS.STORAGESET.value, const.COMPONENTS.CLUSTER.value]
+                         const.COMPONENTS.CLUSTER.value]
     _server = [const.COMPONENTS.SERVER.value] + _common_hierarchy
     _server_service = [const.COMPONENTS.SERVER_SERVICE.value, const.COMPONENTS.AGG_SERVICE.value] + _server
     _server_hw = [const.COMPONENTS.SERVER_HARDWARE.value] + _server

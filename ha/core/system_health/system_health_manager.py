@@ -19,12 +19,23 @@ class SystemHealthManager:
     System Health Manager. This class provides low level get/put methods
     for storing/reading health keys to/from the store.
     """
+    __instance = None
 
     def __init__(self, store):
         """
         Init method.
         """
+        if SystemHealthManager.__instance != None:
+            raise Exception("SystemHealthManager class is already initialized")
+        else:
+            SystemHealthManager.__instance = self
         self._store = store
+
+    @staticmethod
+    def get_instance():
+      if SystemHealthManager.__instance == None:
+         raise Exception("SystemHealthManager class is not initialized")
+      return SystemHealthManager.__instance
 
     def get_key(self, key: str, just_value: str=True):
         """
