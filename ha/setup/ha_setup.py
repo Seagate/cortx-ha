@@ -661,7 +661,7 @@ class CleanupCmd(Cmd):
             # TODO: handle multiple case for standby EOS-20855
             standby_output: str = self._cluster_manager.node_controller.standby(node_name)
             if json.loads(standby_output).get("status") == STATUSES.FAILED.value:
-                Log.warn(f"Standby for {node_name} failed with output: {standby_output}.\n"
+                Log.warn(f"Standby for {node_name} failed with output: {standby_output}."
                         "Cluster will be destroyed forcefully")
             if CleanupCmd.LOCAL_CHECK and node_count > 1:
                 # TODO: Update cluster kill for --local option also
