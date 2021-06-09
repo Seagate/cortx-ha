@@ -21,11 +21,11 @@ import json
 
 from cortx.utils.log import Log
 from ha import const
+from ha.core.system_health.const import CLUSTER_ELEMENTS
 from ha.core.system_health.const import NODE_MAP_ATTRIBUTES
 from ha.core.event_analyzer.subscriber import Subscriber
 from ha.core.system_health.system_health_metadata import SystemHealthComponents, SystemHealthHierarchy
 from ha.core.system_health.model.health_event import HealthEvent
-from ha.core.system_health.model.entity_health import EntityEvent, EntityAction, EntityHealth
 from ha.core.system_health.status_mapper import StatusMapper
 from ha.core.system_health.system_health_manager import SystemHealthManager
 from ha.core.error import HaSystemHealthException
@@ -69,21 +69,9 @@ class SystemHealth(Subscriber):
         get node status method. This method is for returning a status of a node.
         """
         try:
-            # Prepare key and read the health value.
-            key = self._prepare_key(const.COMPONENTS.NODE_MAP.value, node_id=node_id)
-            node_map_val = self.healthmanager.get_key(key)
-            if node_map_val is not None:
-                node_map_dict = ast.literal_eval(node_map_val)
-                key = self._prepare_key(component='node', cluster_id=node_map_dict[NODE_MAP_ATTRIBUTES.CLUSTER_ID.value],
-                                        site_id=node_map_dict[NODE_MAP_ATTRIBUTES.SITE_ID.value], rack_id=node_map_dict[NODE_MAP_ATTRIBUTES.RACK_ID.value],
-                                        storageset_id=node_map_dict[NODE_MAP_ATTRIBUTES.STORAGESET_ID.value], node_id=node_id, **kwargs)
-                node_health_dict = json.loads(self.healthmanager.get_key(key))
-                node_status = {"status": node_health_dict['events'][0]['status'],
-                               "created_timestamp": node_health_dict['events'][0]['created_timestamp']}
-                return node_status
-            else:
-                raise HaSystemHealthException(f"node_id : {node_id} doesn't exist")
-
+            component = CLUSTER_ELEMENTS.NODE.value
+            element = ClusterElementFactory.get_element(component)
+            return element.get_node_status(node_id, kwargs)
         except Exception as e:
             Log.error(f"Failed reading status for component: node with Error: {e}")
             raise HaSystemHealthException(f"Failed reading status for node with node_id : {node_id}")
@@ -92,11 +80,13 @@ class SystemHealth(Subscriber):
         """
         get storageset status method. This method is for returning a status of a storageset.
         """
+        pass
 
     def get_cluster_status(self, cluster_id, **kwargs):
         """
         get cluster status method. This method is for returning a status of a cluster.
         """
+        pass
 
     def process_event(self, healthevent: HealthEvent):
         """
