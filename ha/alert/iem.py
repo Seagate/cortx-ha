@@ -21,6 +21,7 @@
 '''
 
 import json
+import re
 
 from cortx.utils.log import Log
 from ha.const import IEM_SCHEMA
@@ -68,8 +69,8 @@ class IemGenerator:
             module_id = module_type.get('module')
             event_id = module_type.get('event').get(event_type).get('ID')
             desc = module_type.get('event').get(event_type).get('desc')
-            desciption = desc.format(node)
-
+            desciption = re.sub("\$host", node, desc)
+            desciption = re.sub("\$status", event_type, desciption)
             iec_string = f'"IEC:{severity}{source}{component}{module_id}{event_id}:{desciption}"'
             iec_command = ALERTS.logger_utility_iec_cmd + ' ' + iec_string
             Log.info(f'Sending an IEC: {iec_string} to syslog')
