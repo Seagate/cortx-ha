@@ -433,7 +433,7 @@ class CortxClusterManager:
                     break
         else:
             for key in self._status_dict:
-                if re.search(f"{element}/.+\w/health", key):
+                if re.search(f"{element}/.+/health", key):
                     split_key = re.split("/", key)
                     if element == split_key[-3]:
                         status_key = key
