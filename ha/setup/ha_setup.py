@@ -355,6 +355,7 @@ class ConfigCmd(Cmd):
 
         # Update node map
         self._update_node_map()
+        self._add_node_health()
 
         # Update cluster and resources
         self._cluster_manager = CortxClusterManager(default_log_enable=False)
@@ -572,6 +573,26 @@ class ConfigCmd(Cmd):
         """
         Update node map
         """
+        machine_id = self.get_machine_id()
+        node_id = Conf.get(self._index, f"server_node.{machine_id}.node_id")
+        cluster_id = Conf.get(self._index, f"server_node.{machine_id}.{NODE_MAP_ATTRIBUTES.CLUSTER_ID.value}")
+        site_id = Conf.get(self._index, f"server_node.{machine_id}.{NODE_MAP_ATTRIBUTES.SITE_ID.value}")
+        rack_id = Conf.get(self._index, f"server_node.{machine_id}.{NODE_MAP_ATTRIBUTES.RACK_ID.value}")
+        storageset_id = Conf.get(self._index, f"server_node.{machine_id}.{NODE_MAP_ATTRIBUTES.STORAGESET_ID.value}")
+        node_map = {NODE_MAP_ATTRIBUTES.CLUSTER_ID.value: cluster_id, NODE_MAP_ATTRIBUTES.SITE_ID.value: site_id,
+                    NODE_MAP_ATTRIBUTES.RACK_ID.value: rack_id, NODE_MAP_ATTRIBUTES.STORAGESET_ID.value: storageset_id}
+        system_health = SystemHealth(self._confstore)
+        key = system_health._prepare_key(const.COMPONENTS.NODE_MAP.value, node_id=node_id)
+        # Check key is already exist if not, store the node map.
+        node_map_val = self._confstore.get(key)
+        if node_map_val is None:
+            self._confstore.set(key, str(node_map))
+
+    # TBD: Temporary code till EOS-17892 is implemented
+    def _add_node_health(self) -> None:
+        """
+        Add node health
+        """
         try:
             machine_id = self.get_machine_id()
             node_id = Conf.get(self._index, f"server_node.{machine_id}.node_id")
@@ -579,16 +600,7 @@ class ConfigCmd(Cmd):
             site_id = Conf.get(self._index, f"server_node.{machine_id}.{NODE_MAP_ATTRIBUTES.SITE_ID.value}")
             rack_id = Conf.get(self._index, f"server_node.{machine_id}.{NODE_MAP_ATTRIBUTES.RACK_ID.value}")
             storageset_id = Conf.get(self._index, f"server_node.{machine_id}.{NODE_MAP_ATTRIBUTES.STORAGESET_ID.value}")
-            node_map = {NODE_MAP_ATTRIBUTES.CLUSTER_ID.value: cluster_id, NODE_MAP_ATTRIBUTES.SITE_ID.value: site_id,
-                        NODE_MAP_ATTRIBUTES.RACK_ID.value: rack_id, NODE_MAP_ATTRIBUTES.STORAGESET_ID.value: storageset_id}
-            system_health = SystemHealth(self._confstore)
-            key = system_health._prepare_key(const.COMPONENTS.NODE_MAP.value, node_id=node_id)
-            # Check key is already exist if not, store the node map.
-            node_map_val = self._confstore.get(key)
-            if node_map_val is None:
-                self._confstore.set(key, str(node_map))
 
-            # TBD: Temporary code till EOS-17892 is implemented
             initial_health = EntityHealth()
             # Create an event and action
             current_timestamp = str(int(time.time()))
@@ -599,6 +611,7 @@ class ConfigCmd(Cmd):
             initial_health.set_action(entity_action)
             # Convert the health value as appropriate for writing to the store.
             initial_health = EntityHealth.write(initial_health)
+            system_health = SystemHealth(self._confstore)
             key = system_health._prepare_key(component="node", cluster_id=cluster_id, site_id=site_id, rack_id=rack_id, storageset_id=storageset_id, node_id=node_id)
             # Check key already exists, if yes, delete and set.
             junk_health = self._confstore.get(key)
@@ -606,8 +619,8 @@ class ConfigCmd(Cmd):
                 self._confstore.delete(key)
             self._confstore.set(key, initial_health)
         except Exception as e:
-            Log.error(f"Failed updating node map. Error: {e}")
-            raise HaConfigException("Failed updating node map.")
+            Log.error(f"Failed adding node health. Error: {e}")
+            raise HaConfigException("Failed adding node health.")
 
 class InitCmd(Cmd):
     """
