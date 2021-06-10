@@ -26,27 +26,25 @@ from ha import const
 """
 # List of resource
 motr-free-space-mon
-io_conf_group-clone
+io_stack
     motr-confd-1
-io_group-clone
     hax
-    motr-ios-1
+    motr-ios-<i>
     haproxy
     s3auth
-    s3server-1
-    s3server-2
-    s3server-3
-    s3server-4
+    s3server-<i>
     s3backcons
-s3backprod
-sspl-ll-clone
+    s3backprod
+monitor
     sspl-ll
 management
     mgmt-vip
     kibana
     csm-agent
     csm-web
-event_analyzer
+ha
+    event_analyzer
+    srv_counter
 """
 
 process = SimpleCommand()
@@ -92,6 +90,10 @@ def motr_conf(cib_xml, push=False, **kwargs):
 
     # Constraint
     process.run_cmd(f"pcs -f {cib_xml} constraint order hax-clone then motr-confd-1-clone")
+    process.run_cmd(f"pcs -f {cib_xml} constraint colocation add motr-confd-1-clone with hax-clone")
+
+    if push:
+        cib_push(cib_xml)
 
 
 def motr(cib_xml, push=False, **kwargs):
@@ -108,9 +110,8 @@ def motr(cib_xml, push=False, **kwargs):
             op stop timeout=120s interval=0s")
         process.run_cmd(f"pcs -f {cib_xml} resource clone motr-ios-{i}")
         try:
-            quorum_size = int(kwargs["node_count"])
             process.run_cmd(f"pcs -f {cib_xml} constraint location motr-ios-{i}-clone rule score=-INFINITY \
-                    not_defined motr-confd-count or motr-confd-count lt integer {quorum_size}")
+                    not_defined motr-confd-1 or motr-confd-1 lt integer 1")
         except Exception as e:
             raise CreateResourceConfigError(f"Invalid node_count. Error: {e}")
     if push:
@@ -145,6 +146,7 @@ def s3servers(cib_xml, push=False, **kwargs):
         process.run_cmd(f"pcs -f {cib_xml} resource clone s3server-{i}")
         process.run_cmd(f"pcs -f {cib_xml} constraint location s3server-{i}-clone rule score=-INFINITY \
                         not_defined motr-ios-count or  motr-ios-count lt integer 1")
+        process.run_cmd(f"pcs -f {cib_xml} constraint colocation add s3server-{i}-clone with s3auth-clone")
     if push:
         cib_push(cib_xml)
 
@@ -255,7 +257,7 @@ def event_analyzer(cib_xml, push=False, **kwargs):
         cib_push(cib_xml)
 
 def instance_counter(cib_xml, push=False, **kwargs):
-    """Create instance counter resource resource."""
+    """Create service instance counter resource."""
     process.run_cmd(f"pcs -f {cib_xml} resource create srv_counter ocf:seagate:service_instances_counter \
         op start timeout=60s interval=0s \
         op monitor timeout=3s interval=3s \
@@ -275,30 +277,6 @@ def uds(cib_xml, push=False, **kwargs):
             op stop timeout=60s interval=0s")
         if push:
             cib_push(cib_xml)
-
-def config_constraint(cib_xml, push=False, **kwargs):
-    """
-    Configure all constaints
-
-    Args:
-        cib_xml (str): cib cluster file.
-    """
-    constraints = [
-            f"pcs -f {cib_xml} constraint order set io_conf_group-clone io_group-clone",
-            f"pcs -f {cib_xml} constraint order io_group-clone then motr-free-space-mon",
-            f"pcs -f {cib_xml} constraint colocation add motr-free-space-mon with io_group-clone",
-            f"pcs -f {cib_xml} constraint colocation add s3backprod with io_group-clone"
-            # According to EOS-9258, there is a bug which requires UDS to be started after csm_agent
-            f"pcs -f {cib_xml} constraint colocation add uds with csm-agent score=INFINITY",
-            f"pcs -f {cib_xml} constraint order csm-agent then uds"
-        ]
-    with_uds = kwargs["uds"] if "uds" in kwargs else False
-    for c in constraints:
-        if with_uds == False and "uds" in c:
-            continue
-        process.run_cmd(c)
-    if push:
-        cib_push(cib_xml)
 
 core_io = [hax, motr_conf, motr, s3auth, s3servers, haproxy]
 io_helper_aa = [s3bc]
@@ -378,9 +356,8 @@ def create_all_resources(cib_xml=const.CIB_FILE, push=True, **kwargs):
         management_group(cib_xml, False, **kwargs)
         # Configure HA management group
         ha_group(cib_xml, False, **kwargs)
-        # Configure constraint
-        Log.info("HA Rules: Start configuring HA Rules.")
-        #config_constraint(cib_xml, False, **kwargs)
+        # Change the defaults
+        change_pcs_default(cib_xml, False, **kwargs)
         if push:
             cib_push(cib_xml)
         Log.info("HA Rules: Successfully configured all HA resources and its configuration.")
