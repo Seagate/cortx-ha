@@ -40,6 +40,14 @@ class AttribScope:
 class AttribUpdater:
     @staticmethod
     def _get_count_from_output(output: str, node_name: str) -> int:
+        """
+        Parses output of attrd_updater query command -
+            name="motr-confd-1" host="srvnode-1" value="1"
+            name="motr-confd-1" host="srvnode-2" value=""
+            name="motr-confd-1" host="srvnode-3" value="1"
+        if node_name is none, then instances are counted cluster wide,
+        otherwise it's counted for just that node.
+        """
         count = 0
         lines = output.split('\n')
         if len(lines) > 0:
@@ -162,7 +170,7 @@ class ServiceInstancesCounter(CortxServiceRA):
 
     def monitor(self) -> int:
         """
-        Monitor updates the count of every
+        Monitor - updates the count of every
         service present in ha.conf
         """
         if self._local_node is None:
