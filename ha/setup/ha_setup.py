@@ -634,7 +634,9 @@ class ResetCmd(Cmd):
         """
         Log.info("Processing reset command")
         # list of log folders
-        logs = [const.RA_LOG_DIR, const.CLUSTER_LOG, const.PACEMAKER_LOG, const.PCSD_LOG]
+        logs = [const.RA_LOG_DIR, const.PACEMAKER_LOG, const.PCSD_LOG]
+        for file in os.listdir(const.COROSYNC_LOG):
+            logs.append(os.path.join(const.COROSYNC_LOG, file))
         # Delete the logs
         self.remove_logs(logs)
         Log.info("reset command is successful")
