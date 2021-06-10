@@ -23,6 +23,7 @@ import os
 import shutil
 import json
 import grp, pwd
+import time
 from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
 from cortx.utils.validator.v_pkg import PkgV
@@ -45,6 +46,7 @@ from ha.core.error import HaCleanupException
 from ha.core.error import SetupError
 from ha.setup.cluster_validator.cluster_test import TestExecutor
 from ha.core.system_health.system_health import SystemHealth
+from ha.core.system_health.model.entity_health import EntityEvent, EntityAction, EntityHealth
 
 class Cmd:
     """
@@ -353,6 +355,7 @@ class ConfigCmd(Cmd):
 
         # Update node map
         self._update_node_map()
+        self._add_node_health()
 
         # Update cluster and resources
         self._cluster_manager = CortxClusterManager(default_log_enable=False)
@@ -586,6 +589,39 @@ class ConfigCmd(Cmd):
         if node_map_val is None:
             self._confstore.set(key, str(node_map))
 
+    # TBD: Temporary code till EOS-17892 is implemented
+    def _add_node_health(self) -> None:
+        """
+        Add node health
+        """
+        try:
+            machine_id = self.get_machine_id()
+            node_id = Conf.get(self._index, f"server_node.{machine_id}.node_id")
+            cluster_id = Conf.get(self._index, f"server_node.{machine_id}.{NODE_MAP_ATTRIBUTES.CLUSTER_ID.value}")
+            site_id = Conf.get(self._index, f"server_node.{machine_id}.{NODE_MAP_ATTRIBUTES.SITE_ID.value}")
+            rack_id = Conf.get(self._index, f"server_node.{machine_id}.{NODE_MAP_ATTRIBUTES.RACK_ID.value}")
+            storageset_id = Conf.get(self._index, f"server_node.{machine_id}.{NODE_MAP_ATTRIBUTES.STORAGESET_ID.value}")
+
+            initial_health = EntityHealth()
+            # Create an event and action
+            current_timestamp = str(int(time.time()))
+            entity_event = EntityEvent(current_timestamp, current_timestamp, "online", None)
+            entity_action = EntityAction(current_timestamp, const.ACTION_STATUS.PENDING.value)
+            # Add the event and action to the health value
+            initial_health.add_event(entity_event)
+            initial_health.set_action(entity_action)
+            # Convert the health value as appropriate for writing to the store.
+            initial_health = EntityHealth.write(initial_health)
+            system_health = SystemHealth(self._confstore)
+            key = system_health._prepare_key(component="node", cluster_id=cluster_id, site_id=site_id, rack_id=rack_id, storageset_id=storageset_id, node_id=node_id)
+            # Check key already exists, if yes, delete and set.
+            junk_health = self._confstore.get(key)
+            if junk_health:
+                self._confstore.delete(key)
+            self._confstore.set(key, initial_health)
+        except Exception as e:
+            Log.error(f"Failed adding node health. Error: {e}")
+            raise HaConfigException("Failed adding node health.")
 
 class InitCmd(Cmd):
     """
@@ -622,6 +658,7 @@ class TestCmd(Cmd):
         """
         Process test command.
         """
+        Log.info("Processing test command")
         path_to_comp_config = const.SOURCE_CONFIG_PATH
 
         install_type = self.get_installation_type()
@@ -633,6 +670,7 @@ class TestCmd(Cmd):
 
         if not rc:
             raise HaConfigException("Cluster is no healthy. Check HA logs for further information.")
+        Log.info("test command is successful")
 
 class UpgradeCmd(Cmd):
     """
