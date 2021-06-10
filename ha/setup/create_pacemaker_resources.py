@@ -84,7 +84,7 @@ def motr_conf(cib_xml, push=False, **kwargs):
         op stop timeout=120s interval=0s")
     try:
         quorum_size = int(kwargs["node_count"])
-        process.run_cmd(f"pcs -f {cib_xml} resource clone motr-confd-1 clone-min={quorum_size}")
+        process.run_cmd(f"pcs -f {cib_xml} resource clone motr-confd-1 interleave=true clone-min={quorum_size}")
     except Exception as e:
         raise CreateResourceConfigError(f"Invalid node_count. Error: {e}")
 
@@ -110,8 +110,12 @@ def motr(cib_xml, push=False, **kwargs):
             op stop timeout=120s interval=0s")
         process.run_cmd(f"pcs -f {cib_xml} resource clone motr-ios-{i}")
         try:
+            quorum_size = int(kwargs["node_count"])//2
+            quorum_size += 1
             process.run_cmd(f"pcs -f {cib_xml} constraint location motr-ios-{i}-clone rule score=-INFINITY \
-                    not_defined motr-confd-1 or motr-confd-1 lt integer 1")
+                        not_defined motr-confd-1 or motr-confd-1 lt integer 1")
+            process.run_cmd(f"pcs -f {cib_xml} constraint location motr-ios-{i}-clone rule score=-INFINITY \
+                    not_defined motr-confd-count or motr-confd-count lt integer {quorum_size}")
         except Exception as e:
             raise CreateResourceConfigError(f"Invalid node_count. Error: {e}")
     if push:
@@ -143,7 +147,7 @@ def s3servers(cib_xml, push=False, **kwargs):
             op start timeout=60s interval=0s \
             op monitor timeout=30s interval=30s \
             op stop timeout=60s interval=0s")
-        process.run_cmd(f"pcs -f {cib_xml} resource clone s3server-{i}")
+        process.run_cmd(f"pcs -f {cib_xml} resource clone s3server-{i} interleave=true")
         process.run_cmd(f"pcs -f {cib_xml} constraint location s3server-{i}-clone rule score=-INFINITY \
                         not_defined motr-ios-count or  motr-ios-count lt integer 1")
         process.run_cmd(f"pcs -f {cib_xml} constraint colocation add s3server-{i}-clone with s3auth-clone")
@@ -267,6 +271,16 @@ def instance_counter(cib_xml, push=False, **kwargs):
     if push:
         cib_push(cib_xml)
 
+def mbus_rest(cib_xml, push=False, **kwargs):
+    """Create service instance counter resource."""
+    process.run_cmd(f"pcs -f {cib_xml} resource create mbus_rest systemd:cortx_message_bus \
+        op start timeout=60s interval=0s \
+        op monitor timeout=3s interval=3s \
+        op stop timeout=60s interval=0s")
+    process.run_cmd(f"pcs -f {cib_xml} resource clone mbus_rest")
+    if push:
+        cib_push(cib_xml)
+
 def uds(cib_xml, push=False, **kwargs):
     """Create uds resource."""
     with_uds = kwargs["uds"] if "uds" in kwargs else False
@@ -284,6 +298,7 @@ io_helper_ap = [free_space_monitor, s3bp]
 monitor_config = [sspl]
 management_config = [mgmt_vip, kibana, csm, uds]
 ha_group_config = [event_analyzer, instance_counter]
+base_services_config = [mbus_rest]
 
 def io_stack(cib_xml, push=False, **kwargs):
     """Create IO stack related resources."""
@@ -331,6 +346,15 @@ def ha_group(cib_xml, push=False, **kwargs):
     if push:
         cib_push(cib_xml)
 
+def base_services(cib_xml, push=False, **kwargs):
+    """Configure base services (Foundation)"""
+    Log.info("HA Rules: ******* base services *********")
+    for create_resource in base_services_config:
+        Log.info(f"HA Rules: Configure {str(create_resource)}")
+        create_resource(cib_xml, push, **kwargs)
+    if push:
+        cib_push(cib_xml)
+
 
 def create_all_resources(cib_xml=const.CIB_FILE, push=True, **kwargs):
     """Populate the cluster with all Cortx resources.
@@ -356,6 +380,8 @@ def create_all_resources(cib_xml=const.CIB_FILE, push=True, **kwargs):
         management_group(cib_xml, False, **kwargs)
         # Configure HA management group
         ha_group(cib_xml, False, **kwargs)
+        # Configure base services
+        base_services(cib_xml, False, **kwargs)
         # Change the defaults
         change_pcs_default(cib_xml, False, **kwargs)
         if push:
