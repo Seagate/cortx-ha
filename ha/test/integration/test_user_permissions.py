@@ -35,9 +35,10 @@ def test_validate_user_permissions():
     R for conf for other user
     """
     from ha.setup.ha_setup import PostInstallCmd
+    from ha.execute import SimpleCommand
     try:
         print("********Validate user and permissions.********")
-        PostInstallCmd.validate_user_permissions()
+        PostInstallCmd.validate_user_permissions(execute=SimpleCommand())
         print("Validate user and permission test success.")
     except Exception as e:
         print("Validate user and permission test failed.")
