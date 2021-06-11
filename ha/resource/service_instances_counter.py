@@ -48,6 +48,10 @@ class AttribUpdater:
         if node_name is none, then instances are counted cluster wide,
         otherwise it's counted for just that node.
         """
+        count = -1
+        if output is None:
+            return count
+
         count = 0
         lines = output.split('\n')
         if len(lines) > 0:
@@ -68,10 +72,10 @@ class AttribUpdater:
             executor = SimpleCommand()
             for instance in range(1, instances_per_node+1):
                 service = resource + "-" + str(instance)
-                out, err, rc = executor.run_cmd(f"attrd_updater -Q -A -n {service}", check_error=False)
+                out, _, _ = executor.run_cmd(f"attrd_updater -Q -A -n {service}", check_error=False)
                 count += AttribUpdater._get_count_from_output(out, node_name)
         except Exception as e:
-            Log.error(f"Problem in fetching attr. resource: {resource}")
+            Log.error(f"Problem in fetching attr. resource: {resource}. Error: {e}")
             count = -1
 
         return count

@@ -66,7 +66,7 @@ class AttribUpdater:
             executor = SimpleCommand()
             executor.run_cmd(f"attrd_updater -U 1 -n {resource}", check_error=False)
         except Exception as e:
-            Log.error(f"Problem in updating attr - resource: {resource}")
+            Log.error(f"Problem in updating attr - resource: {resource}. Error: {e}")
 
     @staticmethod
     def del_attr(resource: str):
