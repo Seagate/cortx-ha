@@ -243,35 +243,6 @@ class PostInstallCmd(Cmd):
         """
         super().__init__(args)
 
-    @staticmethod
-    def validate_user_permissions(execute):
-        """
-        R/W for log for root and other user
-        R/W for conf for root
-        R for conf for other user
-        """
-        read_write_permission = "rwx"
-        read_permission = "r-x"
-        root_user = "# owner: root"
-        root_user_rw_permissions = f"user::{read_write_permission}"
-        other_user_rw_permissions = f"other::{read_write_permission}"
-        other_user_r_permissions = f"other::{read_permission}"
-        _output, _err, _rc = execute.run_cmd(f"getfacl {const.RA_LOG_DIR}")
-        if root_user in _output and root_user_rw_permissions in _output and other_user_rw_permissions in _output:
-            Log.info(f"{root_user}: user has {root_user_rw_permissions} on dir {const.RA_LOG_DIR}.")
-        else:
-            Log.error(f"{root_user}: user don't have {root_user_rw_permissions} on dir {const.RA_LOG_DIR}.")
-            raise HaPrerequisiteException("post_install command failed")
-
-        _output, _err, _rc = execute.run_cmd(f"getfacl {const.CONFIG_DIR}")
-        if root_user in _output and root_user_rw_permissions in _output and other_user_r_permissions in _output:
-            Log.info(f"{root_user}: user has {root_user_rw_permissions} on dir {const.CONFIG_DIR}.")
-            Log.info(f"Other user has {read_permission} on dir {const.CONFIG_DIR}.")
-        else:
-            Log.error(f"{root_user}: user don't have {root_user_rw_permissions} on dir {const.CONFIG_DIR}.")
-            Log.error(f"Other user don't have {read_permission} on dir {const.CONFIG_DIR}.")
-            raise HaPrerequisiteException("post_install command failed")
-
     def process(self):
         """
         Process post_install command.
@@ -312,7 +283,6 @@ class PostInstallCmd(Cmd):
             Log.error(f"Failed prerequisite with Error: {e}")
             raise HaPrerequisiteException("post_install command failed")
 
-        PostInstallCmd.validate_user_permissions(self._execute)
         Log.info("post_install command is successful")
 
 class PrepareCmd(Cmd):
