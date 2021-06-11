@@ -92,7 +92,7 @@ class AttribUpdater:
                 executor = SimpleCommand()
                 executor.run_cmd(f"attrd_updater -U {count} -n {attrib_name}", check_error=False)
         except Exception as e:
-            Log.error(f"Problem in updating attr - count of resource: {resource}")
+            Log.error(f"Problem in updating attr - count of resource: {resource}. Error: {e}")
 
 
 class ServiceInstancesCounter(CortxServiceRA):

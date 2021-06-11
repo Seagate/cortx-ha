@@ -74,7 +74,7 @@ class AttribUpdater:
             executor = SimpleCommand()
             executor.run_cmd(f"attrd_updater -D -n {resource}", check_error=False)
         except Exception as e:
-            Log.error(f"Problem in deleting attr - resource: {resource}")
+            Log.error(f"Problem in deleting attr - resource: {resource}, Error: {e}")
 
 
 class DynamicFidServiceRA(CortxServiceRA):
