@@ -29,6 +29,8 @@ from ha.core.system_health.model.entity_health import EntityEvent, EntityAction,
 from ha.core.system_health.status_mapper import StatusMapper
 from ha.core.system_health.system_health_manager import SystemHealthManager
 from ha.core.error import HaSystemHealthException
+from ha.core.system_health.cluster_elements.element import Element
+from ha.core.system_health.cluster_element_factory import ClusterElementFactory
 
 class SystemHealth(Subscriber):
     """
@@ -44,6 +46,10 @@ class SystemHealth(Subscriber):
         self.node_map = {}
         self.statusmapper = StatusMapper()
         self.healthmanager = SystemHealthManager(store)
+
+    def load_elements(self):
+        ClusterElementFactory.build_elements()
+        Log.info("All cluster element are loaded, Ready to process alerts .................")
 
     def _prepare_key(self, component: str, **kwargs) -> str:
         """
@@ -124,10 +130,14 @@ class SystemHealth(Subscriber):
         """
         get cluster status method. This method is for returning a status of a cluster.
         """
-    def _update(self, component: str, comp_type: str, comp_id: str, healthvalue: str, next_component: str=None):
+
+    def _update(self, healthevent: HealthEvent, healthvalue: str, next_component: str=None):
         """
         update method. This is an internal method for updating the system health.
         """
+        component = SystemHealthComponents.get_component(healthevent.resource_type)
+        comp_type = healthevent.resource_type.split(':')[-1]
+        comp_id = healthevent.resource_id
         key = self._prepare_key(component, cluster_id=self.node_map['cluster_id'], site_id=self.node_map['site_id'],
                                 rack_id=self.node_map['rack_id'], storageset_id=self.node_map['storageset_id'],
                                 node_id=self.node_id, server_id=self.node_id, storage_id=self.node_id,
@@ -138,7 +148,10 @@ class SystemHealth(Subscriber):
         if next_component is None:
             return
         else:
-            # TODO: Calculate and update the health of the next component in the hierarchy.
+            Log.info(f"Updating element {next_component} status")
+            element = ClusterElementFactory.get_element(next_component)
+            new_event = element.get_event_from_subelement(healthevent)
+            self.process_event(new_event)
             return
 
     def process_event(self, healthevent: HealthEvent):
@@ -191,7 +204,7 @@ class SystemHealth(Subscriber):
                              'rack_id':healthevent.rack_id, 'storageset_id':healthevent.storageset_id}
 
             # Update in the store.
-            self._update(component, component_type, component_id, updated_health, next_component=next_component)
+            self._update(healthevent, updated_health, next_component=next_component)
             Log.info(f"Updated health for component: {component}, Type: {component_type}, Id: {component_id}")
 
         except Exception as e:

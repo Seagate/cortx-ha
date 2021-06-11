@@ -21,6 +21,7 @@ class CLUSTER_ELEMENTS(Enum):
     SITE = "site"
     RACK = "rack"
     NODE = "node"
+    STORAGE_SET = "storageset"
 
 # Health statuses
 class HEALTH_STATUSES(Enum):
@@ -30,6 +31,8 @@ class HEALTH_STATUSES(Enum):
     UNHEALTHY = "unhealthy"
     OFFLINE = "offline"
     UNKNOWN = "unknown"
+    PENDING = "pending"
+    COMPLETE = "complete"
 
 # Health event types
 class HEALTH_EVENTS(Enum):
@@ -55,3 +58,13 @@ class NODE_MAP_ATTRIBUTES(Enum):
     SITE_ID = "site_id"
     RACK_ID = "rack_id"
     STORAGESET_ID = "storageset_id"
+
+class CLUSTER_ELEMENT_CLASSES:
+    CLASS_MODULE = "ha.core.system_health.cluster_elements"
+    CLASS_TO_ELEMENT_MAP: dict = {
+        CLUSTER_ELEMENTS.CLUSTER.value: f"{CLASS_MODULE}.cluster_element.ClusterElement",
+        CLUSTER_ELEMENTS.SITE.value: f"{CLASS_MODULE}.site_element.SiteElement",
+        CLUSTER_ELEMENTS.RACK.value: f"{CLASS_MODULE}.rack_element.RackElement",
+        CLUSTER_ELEMENTS.STORAGE_SET.value: f"{CLASS_MODULE}.storage_set_element.StorageSetElement",
+        CLUSTER_ELEMENTS.NODE.value: f"{CLASS_MODULE}.node_element.NodeElement"
+    }

@@ -573,6 +573,7 @@ class ConfigCmd(Cmd):
         """
         Update node map
         """
+        # TODO: update node map should failed if any key is missing
         machine_id = self.get_machine_id()
         node_id = Conf.get(self._index, f"server_node.{machine_id}.node_id")
         cluster_id = Conf.get(self._index, f"server_node.{machine_id}.{NODE_MAP_ATTRIBUTES.CLUSTER_ID.value}")
@@ -586,7 +587,7 @@ class ConfigCmd(Cmd):
         # Check key is already exist if not, store the node map.
         node_map_val = self._confstore.get(key)
         if node_map_val is None:
-            self._confstore.set(key, str(node_map))
+            self._confstore.set(key, json.dumps(node_map))
 
     # TBD: Temporary code till EOS-17892 is implemented
     def _add_node_health(self) -> None:
