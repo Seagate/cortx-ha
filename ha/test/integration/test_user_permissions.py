@@ -26,6 +26,7 @@ import os
 import pathlib
 import sys
 import traceback
+from cortx.utils.log import Log
 
 
 def test_validate_user_permissions():
@@ -47,4 +48,6 @@ def test_validate_user_permissions():
 
 if __name__ == '__main__':
     sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..', '..'))
+    Log.init(service_name="ha_setup",
+             log_path="/var/log/seagate/cortx/ha", level="INFO")
     test_validate_user_permissions()
