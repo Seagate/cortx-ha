@@ -336,9 +336,9 @@ class CortxClusterManager:
                 unsupported_element = True
 
             if unsupported_element:
-                return {"status": const.STATUSES.FAILED.value, "output": "", "error": "Invalid element"}
+                return json.dumps({"status": const.STATUSES.FAILED.value, "output": "", "error": "Invalid element"})
             if kwargs and GET_SYS_HEALTH_ARGS.ID.value not in kwargs:
-                return {"status": const.STATUSES.FAILED.value, "output": "", "error": "Invalid filter argument(s)"}
+                return json.dumps({"status": const.STATUSES.FAILED.value, "output": "", "error": "Invalid filter argument(s)"})
 
             element_id = HEALTH_STATUSES.UNKNOWN.value
             if kwargs:
@@ -365,10 +365,10 @@ class CortxClusterManager:
             # Prepare and return the output
             output = StatusOutput(SYSTEM_HEALTH_OUTPUT_V1)
             self.get_status(element, element_id = element_id, start_level = element_level, level = element_level, depth = depth, parent = output)
-            return output.to_json()
+            return json.dumps({"status": const.STATUSES.SUCCEEDED.value, "output": json.loads(output.to_json()), "error": ""})
         except Exception as e:
             Log.error(f"Failed returning system health . Error: {e}")
-            return {"status": const.STATUSES.FAILED.value, "output": "", "error": "Internal error"}
+            return json.dumps({"status": const.STATUSES.FAILED.value, "output": "", "error": "Internal error"})
 
     def get_status(self, element, element_id: str = HEALTH_STATUSES.UNKNOWN.value, start_level: int = 1, level: int = 1, depth: int = 1, parent: object = None):
         # At requested level in the hierarchy
