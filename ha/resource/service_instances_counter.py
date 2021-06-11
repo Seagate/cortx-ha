@@ -16,9 +16,9 @@
 # cortx-questions@seagate.com.
 
 """
- ****************************************************************************
- Description:       Generic resource agent used to map fid to cloneids.
- ****************************************************************************
+ **************************************************************************************
+ Description:       Generic resource agent for counting running instances of resources.
+ **************************************************************************************
 """
 
 import sys
