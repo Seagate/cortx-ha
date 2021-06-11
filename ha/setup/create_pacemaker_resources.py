@@ -109,6 +109,8 @@ def motr(cib_xml, push=False, **kwargs):
             op monitor timeout=30s interval=30s \
             op stop timeout=120s interval=0s")
         process.run_cmd(f"pcs -f {cib_xml} resource clone motr-ios-{i}")
+
+        # Constraint
         try:
             quorum_size = int(kwargs["node_count"])//2
             quorum_size += 1
@@ -127,6 +129,8 @@ def free_space_monitor(cib_xml, push=False, **kwargs):
         op start timeout=100s interval=0s \
         op monitor timeout=30s interval=30s \
         op stop timeout=120s interval=0s meta failure-timeout=300s")
+
+    # Constraint
     process.run_cmd(f"pcs -f {cib_xml} constraint location motr-free-space-mon rule score=-INFINITY \
                     not_defined motr-ios-count or motr-ios-count lt integer 1")
     if push:
@@ -148,6 +152,8 @@ def s3servers(cib_xml, push=False, **kwargs):
             op monitor timeout=30s interval=30s \
             op stop timeout=60s interval=0s")
         process.run_cmd(f"pcs -f {cib_xml} resource clone s3server-{i} interleave=true")
+
+        # Constraint
         process.run_cmd(f"pcs -f {cib_xml} constraint location s3server-{i}-clone rule score=-INFINITY \
                         not_defined motr-ios-count or  motr-ios-count lt integer 1")
         process.run_cmd(f"pcs -f {cib_xml} constraint colocation add s3server-{i}-clone with s3auth-clone")
@@ -161,6 +167,8 @@ def s3bc(cib_xml, push=False, **kwargs):
         op monitor timeout=30s interval=30s \
         op stop timeout=120s interval=0s")
     process.run_cmd(f"pcs -f {cib_xml} resource clone s3backcons")
+
+    # Constraint
     process.run_cmd(f"pcs -f {cib_xml} constraint location s3backcons-clone rule score=-INFINITY \
                     not_defined s3server-count or s3server-count lt integer 1")
     if push:
@@ -176,6 +184,8 @@ def s3bp(cib_xml, push=False, **kwargs):
         op start timeout=60s interval=0s \
         op monitor timeout=30s interval=30s \
         op stop timeout=60s interval=0s")
+
+    # Constraint
     process.run_cmd(f"pcs -f {cib_xml} constraint location s3backprod rule score=-INFINITY \
                     not_defined s3server-count or s3server-count lt integer 1")
     if push:
@@ -198,6 +208,8 @@ def haproxy(cib_xml, push=False, **kwargs):
         op monitor timeout=30s interval=30s \
         op stop timeout=60s interval=0s")
     process.run_cmd(f"pcs -f {cib_xml} resource clone haproxy")
+
+    # Constraint
     process.run_cmd(f"pcs -f {cib_xml} constraint location haproxy-clone rule score=-INFINITY \
                     not_defined s3server-count or s3server-count lt integer 1")
     if push:
@@ -289,6 +301,11 @@ def uds(cib_xml, push=False, **kwargs):
             op start timeout=60s interval=0s \
             op monitor timeout=30s interval=30s \
             op stop timeout=60s interval=0s")
+
+        # Constraints
+        process.run_cmd(f"pcs -f {cib_xml} pcs -f {cib_xml} constraint colocation add uds with csm-agent score=INFINITY")
+        process.run_cmd(f"pcs -f {cib_xml} pcs -f {cib_xml} constraint order csm-agent then uds")
+
         if push:
             cib_push(cib_xml)
 
