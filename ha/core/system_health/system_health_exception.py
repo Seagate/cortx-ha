@@ -14,21 +14,10 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
-from ha.core.system_health.cluster_elements.element import Element
-from ha.core.system_health.model.health_event import HealthEvent
+from ha.core.error import HaSystemHealthException
 
-class StorageSetElement(Element):
-    """
-    site.
-    """
-    pass
-    #TODO: add into health map
+class HealthNotFoundException(HaSystemHealthException):
+    """Exception to indicate health missing for element."""
 
-    def get_event_from_subelement(self, subelement_event: HealthEvent) -> HealthEvent:
-        """
-        Get element id for given healthevent.
-
-        Args:
-            subelement_event (HealthEvent): Health event for node.
-        """
-        pass
+class InvalidElement(HaSystemHealthException):
+    """Exception to indicate health missing for element."""

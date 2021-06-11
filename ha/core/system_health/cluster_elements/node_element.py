@@ -45,6 +45,15 @@ class NodeElement(Element):
         """
         pass
 
+    def get_event_from_subelement(self, subelement_event: HealthEvent) -> HealthEvent:
+        """
+        Get element id for given healthevent.
+
+        Args:
+            subelement_event (HealthEvent): Health event for node.
+        """
+        pass
+
     def get_node_status(self, node_id: str, **kwargs):
         """
         get node status method. This method is for returning a status of a node.

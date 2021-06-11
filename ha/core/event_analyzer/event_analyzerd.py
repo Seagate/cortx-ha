@@ -56,7 +56,6 @@ class EventAnalyzerService:
         # Initialize system health
         confstore = ConfigManager.get_confstore()
         system_health = SystemHealth(confstore)
-        system_health.load_elements()
         # Initalize watcher
         self._watcher_list: dict = self._initalize_watcher(system_health)
 

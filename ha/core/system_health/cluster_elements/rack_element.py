@@ -19,8 +19,11 @@ from cortx.utils.log import Log
 from ha import const
 import json
 from ha.core.system_health.const import NODE_MAP_ATTRIBUTES
+from ha.core.system_health.const import HEALTH_STATUSES, HEALTH_EVENTS, CLUSTER_ELEMENTS
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.system_health.system_health_metadata import SystemHealthComponents
+from ha.core.system_health.model.entity_health import EntityEvent, EntityAction, EntityHealth
+from ha.core.system_health.system_health_exception import HealthNotFoundException
 
 class RackElement(Element):
     """
@@ -53,33 +56,43 @@ class RackElement(Element):
                     rack_map[rack_id].append(node_id)
         return rack_map
 
-    def get_event_from_subelement(self, subelement_event: HealthEvent):
+    def get_event_from_subelement(self, subelement_event: HealthEvent) -> HealthEvent:
         """
         Get element id for given healthevent.
 
         Args:
             subelement_event (HealthEvent): Health event for node.
         """
-        node_status_map: dict = {}
         rack_id = subelement_event.rack_id
-        self._get_node_status_map(rack_id, subelement_event)
+        node_status_map: dict = self.get_status_map(rack_id, subelement_event, self._rack_node_map)
+        status = self._get_rack_status(node_status_map)
+        Log.info(f"Evaluated rack {rack_id} status as {status}")
+        return self.get_new_event(
+            event_id=subelement_event.event_id + "rack",
+            event_type=status,
+            resource_type=CLUSTER_ELEMENTS.RACK.value,
+            resource_id=rack_id,
+            subelement_event=subelement_event)
 
-    def _get_node_status_map(self, rack_id: str, subelement_event) -> dict:
+    def _get_rack_status(self, status_map: dict) -> str:
         """
-        Get all nodes status for given rack.
-
-        Args:
-            rack_id (str): Rack id
+        Apply rules and get status.
 
         Returns:
-            dict: node status map
+            str: Rack status.
         """
-        component = SystemHealthComponents.get_component(subelement_event.resource_type)
-        component_type = subelement_event.resource_type.split(':')[-1]
-        for element in self._rack_node_map.get(rack_id):
-            component_id = element
-            current_health = self.get_status(component, component_id, comp_type=component_type,
-                                        cluster_id=subelement_event.cluster_id, site_id=subelement_event.site_id,
-                                        rack_id=subelement_event.rack_id, storageset_id=subelement_event.storageset_id,
-                                        node_id=subelement_event.node_id, server_id=subelement_event.node_id,
-                                        storage_id=subelement_event.node_id)
+        rack_status = None
+        quorum_size = (len(status_map.keys())/2) + 1
+        # offline online unknown degraded pending
+        if self.count_status(status_map, HEALTH_STATUSES.ONLINE.value) == len(status_map.keys()):
+            rack_status = HEALTH_EVENTS.FAULT_RESOLVED.value
+        # TODO: apply quorum property
+        elif self.count_status(status_map, HEALTH_STATUSES.ONLINE.value) == quorum_size:
+            rack_status = HEALTH_EVENTS.THRESHOLD_BREACHED_LOW.value
+        elif self.count_status(status_map, HEALTH_STATUSES.PENDING.value) >= quorum_size:
+            rack_status = HEALTH_EVENTS.UNKNOWN.value
+        elif self.count_status(status_map, HEALTH_STATUSES.UNKNOWN.value) >= quorum_size:
+            rack_status = HEALTH_EVENTS.UNKNOWN.value
+        else:
+            rack_status = HEALTH_EVENTS.FAULT.value
+        return rack_status

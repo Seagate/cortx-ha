@@ -119,6 +119,15 @@ class EntityHealth:
 
         return vars(self)
 
+    def get_latest_event(self) -> EntityEvent:
+        """
+        Get latest event object.
+
+        Returns:
+            [EntityEvent]: last event
+        """
+        return self.events[0]
+
     @staticmethod
     def write(entity_health) -> str:
         """
@@ -150,6 +159,7 @@ class EntityHealth:
                                                    current_health_dict[key][num_events]["created_timestamp"],
                                                    current_health_dict[key][num_events]["status"],
                                                    current_health_dict[key][num_events]["specific_info"])
+                        # TODO: Read method should not write new event
                         entity_health.add_event(entity_event)
                 elif key == "action":
                     entity_action = EntityAction(current_health_dict[key]["modified_timestamp"], current_health_dict[key]["status"])

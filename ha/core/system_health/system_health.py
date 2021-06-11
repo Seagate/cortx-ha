@@ -46,8 +46,6 @@ class SystemHealth(Subscriber):
         self.node_map = {}
         self.statusmapper = StatusMapper()
         self.healthmanager = SystemHealthManager(store)
-
-    def load_elements(self):
         ClusterElementFactory.build_elements()
         Log.info("All cluster element are loaded, Ready to process alerts .................")
 
@@ -146,8 +144,10 @@ class SystemHealth(Subscriber):
 
         # Check the next component to be updated, if none then return.
         if next_component is None:
+            Log.info(f"SystemHealth: Updated status for {component}:{comp_type}:{comp_id}")
             return
         else:
+            Log.info(f"SystemHealth: Updated status for {component}:{comp_type}:{comp_id}")
             Log.info(f"Updating element {next_component} status")
             element = ClusterElementFactory.get_element(next_component)
             new_event = element.get_event_from_subelement(healthevent)
@@ -175,6 +175,8 @@ class SystemHealth(Subscriber):
             # Get the component type and id received in the event.
             component_type = healthevent.resource_type.split(':')[-1]
             component_id = healthevent.resource_id
+            Log.info(f"SystemHealth: Processing {component}:{component_type}:{component_id} with status {status}")
+
             # Read the currently stored health value
             current_health = self.get_status(component, component_id, comp_type=component_type,
                                         cluster_id=healthevent.cluster_id, site_id=healthevent.site_id,

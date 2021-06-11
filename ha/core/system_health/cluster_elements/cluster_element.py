@@ -21,6 +21,13 @@ from ha.core.system_health.model.health_event import HealthEvent
 import json
 from cortx.utils.log import Log
 
+from ha.core.system_health.const import NODE_MAP_ATTRIBUTES
+from ha.core.system_health.const import HEALTH_STATUSES, HEALTH_EVENTS, CLUSTER_ELEMENTS
+from ha.core.system_health.model.health_event import HealthEvent
+from ha.core.system_health.system_health_metadata import SystemHealthComponents
+from ha.core.system_health.model.entity_health import EntityEvent, EntityAction, EntityHealth
+from ha.core.system_health.system_health_exception import HealthNotFoundException
+
 class ClusterElement(Element):
     """
     cluster.
@@ -33,15 +40,6 @@ class ClusterElement(Element):
         super(ClusterElement, self).__init__()
         self._site_cluster_map: dict = self._get_site_cluster_map()
         Log.info(f"Loaded Cluster element with cluster-site map {self._site_cluster_map}")
-
-    def get_event_from_subelement(self, children_event: HealthEvent):
-        """
-        Get element id for given healthevent.
-
-        Args:
-            healthevent (HealthEvent): Health event.
-        """
-        pass
 
     def _get_site_cluster_map(self) -> dict:
         """
@@ -62,3 +60,24 @@ class ClusterElement(Element):
                 if site_id not in cluster_map[cluster_id]:
                     cluster_map[cluster_id].append(site_id)
         return cluster_map
+
+    def get_event_from_subelement(self, subelement_event: HealthEvent) -> HealthEvent:
+        """
+        Get element id for given healthevent.
+
+        Args:
+            subelement_event (HealthEvent): Health event for cluster.
+        """
+        cluster_id = subelement_event.cluster_id
+        status_map: dict = self.get_status_map(cluster_id, subelement_event, self._site_cluster_map)
+        status = self._get_cluster_status(status_map)
+        Log.info(f"Evaluated cluster {cluster_id} status as {status}")
+        return self.get_new_event(
+            event_id=subelement_event.event_id + "cluster",
+            event_type=status,
+            resource_type=CLUSTER_ELEMENTS.CLUSTER.value,
+            resource_id=cluster_id,
+            subelement_event=subelement_event)
+
+    def _get_cluster_status(self, node_status_map):
+        return "fault"

@@ -20,6 +20,10 @@ from ha import const
 import json
 from ha.core.system_health.const import NODE_MAP_ATTRIBUTES
 from ha.core.system_health.model.health_event import HealthEvent
+from ha.core.system_health.const import HEALTH_STATUSES, HEALTH_EVENTS, CLUSTER_ELEMENTS
+from ha.core.system_health.system_health_metadata import SystemHealthComponents
+from ha.core.system_health.model.entity_health import EntityEvent, EntityAction, EntityHealth
+from ha.core.system_health.system_health_exception import HealthNotFoundException
 
 class SiteElement(Element):
     """
@@ -33,15 +37,6 @@ class SiteElement(Element):
         super(SiteElement, self).__init__()
         self._rack_site_map: dict = self._get_rack_site_map()
         Log.info(f"Loaded Site element with rack-site map {self._rack_site_map}")
-
-    def get_event_from_subelement(self, children_event: HealthEvent):
-        """
-        Get element id for given healthevent.
-
-        Args:
-            healthevent (HealthEvent): Health event.
-        """
-        pass
 
     def _get_rack_site_map(self) -> dict:
         """
@@ -62,3 +57,24 @@ class SiteElement(Element):
                 if rack_id not in site_map[site_id]:
                     site_map[site_id].append(site_id)
         return site_map
+
+    def get_event_from_subelement(self, subelement_event: HealthEvent) -> HealthEvent:
+        """
+        Get element id for given healthevent.
+
+        Args:
+            subelement_event (HealthEvent): Health event for site.
+        """
+        site_id = subelement_event.site_id
+        status_map: dict = self.get_status_map(site_id, subelement_event, self._rack_site_map)
+        status = self._get_site_status(status_map)
+        Log.info(f"Evaluated site {site_id} status as {status}")
+        return self.get_new_event(
+            event_id=subelement_event.event_id + "site",
+            event_type=status,
+            resource_type=CLUSTER_ELEMENTS.SITE.value,
+            resource_id=site_id,
+            subelement_event=subelement_event)
+
+    def _get_site_status(self, node_status_map):
+        return "fault"
