@@ -243,7 +243,8 @@ class PostInstallCmd(Cmd):
         """
         super().__init__(args)
 
-    def validate_user_permissions(self):
+    @staticmethod
+    def validate_user_permissions():
         """
         R/W for log for root and other user
         R/W for conf for root
@@ -311,7 +312,7 @@ class PostInstallCmd(Cmd):
             Log.error(f"Failed prerequisite with Error: {e}")
             raise HaPrerequisiteException("post_install command failed")
 
-        self.validate_user_permissions()
+        PostInstallCmd.validate_user_permissions()
         Log.info("post_install command is successful")
 
 class PrepareCmd(Cmd):
