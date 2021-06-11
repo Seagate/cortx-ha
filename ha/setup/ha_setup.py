@@ -659,7 +659,8 @@ class CleanupCmd(Cmd):
         Init method.
         """
         super().__init__(args)
-        self._cluster_manager = CortxClusterManager()
+        # TODO: cluster_manager fails if cleanup run multiple time EOS-20947
+        self._cluster_manager = CortxClusterManager(default_log_enable=False)
 
     def process(self):
         """
@@ -671,8 +672,13 @@ class CleanupCmd(Cmd):
             node_count: int = 0 if nodes is None else len(nodes)
             node_name = self.get_node_name()
             # Standby
-            self.standby_node(node_name)
+            # TODO: handle multiple case for standby EOS-20855
+            standby_output: str = self._cluster_manager.node_controller.standby(node_name)
+            if json.loads(standby_output).get("status") == STATUSES.FAILED.value:
+                Log.warn(f"Standby for {node_name} failed with output: {standby_output}."
+                        "Cluster will be destroyed forcefully")
             if CleanupCmd.LOCAL_CHECK and node_count > 1:
+                # TODO: Update cluster kill for --local option also
                 # Remove SSH
                 self._remove_node(node_name)
             else:
@@ -716,9 +722,10 @@ class CleanupCmd(Cmd):
         Args:
             node_name (str): Node name
         """
-        Log.error(f"Destroying the cluster on {node_name}.")
+        Log.info(f"Destroying the cluster on {node_name}.")
+        output = self._execute.run_cmd(const.PCS_CLUSTER_KILL)
         output = self._execute.run_cmd(const.PCS_CLUSTER_DESTROY)
-        Log.error(f"Cluster destroyed. Output: {output}")
+        Log.info(f"Cluster destroyed. Output: {output}")
 
     def remove_config_files(self):
         """
