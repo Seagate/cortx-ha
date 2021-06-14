@@ -18,6 +18,7 @@
 
 # pacemaker alerts constants
 class ALERTS:
+    REQUIRED_COMPONENT = "ha"
     REQUIRED_EVENTS = ["node" , "resource"]
     ALERT_FILTER_TYPE = "alert.filter_type"
     PK_ALERT_EVENT_COMPONENTS = "alert.components"
