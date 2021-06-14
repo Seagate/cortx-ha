@@ -135,6 +135,7 @@ PCS_STOP_NODE="pcs cluster stop <node> --request-timeout=<seconds>"
 PCS_STOP_CLUSTER="pcs cluster stop --request-timeout=<seconds> --all"
 PCS_STATUS = "pcs status"
 PCS_CLUSTER_DESTROY="pcs cluster destroy"
+PCS_CLUSTER_KILL="pcs cluster kill"
 PCS_NODE_STANDBY="pcs node standby <node>"
 PCS_CLUSTER_STANDBY="pcs node standby --all"
 PCS_STONITH_DISABLE="pcs property set stonith-enabled=False"
@@ -161,6 +162,7 @@ ALERT_EVENT_INDEX = "alert_event_rules"
 ALERT_FILTER_RULES_FILE = "{}/alert_filter_rules.json".format(CONFIG_DIR)
 ALERT_EVENT_RULES_FILE = "{}/alert_event_rules.json".format(CONFIG_DIR)
 SOURCE_ALERT_FILTER_RULES_FILE = "{}/alert_filter_rules.json".format(SOURCE_CONFIG_PATH)
+SOURCE_ALERT_EVENT_RULES_FILE = "{}/alert_event_rules.json".format(SOURCE_CONFIG_PATH)
 SYSTEM_SERVICE_FILE = "{}/event_analyzer.service".format(SYSTEM_DIR)
 SOURCE_SERVICE_FILE = "{}/conf/service/event_analyzer.service".format(SOURCE_PATH)
 ACTUATOR_RESPONSE_TYPE= "actuator_response_type"
