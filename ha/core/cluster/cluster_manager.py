@@ -16,7 +16,6 @@
 # cortx-questions@seagate.com.
 
 import time
-import re
 import json
 
 from cortx.utils.log import Log
