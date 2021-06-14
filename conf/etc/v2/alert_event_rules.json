@@ -6,18 +6,18 @@
     ],
     "modules": {
       "ha": [
-        "Node",
-        "Resource",
-        "Fencing"
+        "node",
+        "resource",
+        "fencing"
       ]
     },
     "operations": {
-      "Node": [
+      "node": [
         "member",
         "lost"
       ],
-      "Resource": [],
-      "Fencing": []
+      "resource": [],
+      "fencing": []
     }
   }
 }

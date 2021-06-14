@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 # Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
 #
 # This program is free software: you can redistribute it and/or modify it under the
@@ -15,14 +13,28 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
+import json
 
-# pacemaker alerts constants
-class ALERTS:
-    REQUIRED_COMPONENT = "ha"
-    REQUIRED_EVENTS = ["node" , "resource"]
-    ALERT_FILTER_TYPE = "alert.filter_type"
-    PK_ALERT_EVENT_COMPONENTS = "alert.components"
-    PK_ALERT_EVENT_COMPONENT_MODULES = "alert.modules"
-    PK_ALERT_EVENT_OPERATIONS = "alert.operations"
-    logger_utility_iec_cmd="logger -i -p local3.err"
+class StatusOutput:
+    def __init__(self, version: str):
+        self.version = version
+        self.health = []
 
+    def add_health(self, health: dict) -> None:
+        self.health.append(health)
+
+    def to_json(self):
+        return json.dumps(self, default=lambda a: a.__dict__)
+
+class ElementStatus:
+    def __init__(self, resource: str, element_id: str, status: str, update_timestamp: str):
+        self.resource = resource
+        self.id = element_id
+        self.status = status
+        self.last_updated_time = update_timestamp
+        self.sub_resources = None
+
+    def add_resource(self, resource: dict) -> None:
+        if self.sub_resources is None:
+            self.sub_resources = []
+        self.sub_resources.append(resource)
