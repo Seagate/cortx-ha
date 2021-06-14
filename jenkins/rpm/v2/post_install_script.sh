@@ -1,5 +1,7 @@
 RES_AGENT="/usr/lib/ocf/resource.d/seagate"
 HA_INSTALL_DIR=/opt/seagate/cortx/ha
+CONFIG_DIR="/etc/cortx/ha"
+RA_LOG_DIR="/var/log/seagate/cortx/ha"
 BIN_DIR=${HA_INSTALL_DIR}/bin
 mkdir -p ${BIN_DIR} ${RES_AGENT}
 
@@ -42,5 +44,9 @@ ln -sf ${PCMK_ALERT} /usr/local/bin/pcmk_alert
 ln -sf ${PCMK_ALERT} /usr/bin/pcmk_alert
 
 chown -R root:root /opt/seagate/cortx/ha
+
+# give permissions to conf and log dir
+setfacl -R -m g:haclient:rwx ${RA_LOG_DIR}
+setfacl -R -m g:haclient:r-x ${CONFIG_DIR}
 
 exit 0
