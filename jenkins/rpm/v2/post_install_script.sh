@@ -7,6 +7,7 @@ SITE_PACKAGES=`python3 -c 'import sysconfig; print(sysconfig.get_paths()["pureli
 HA_SETUP=${SITE_PACKAGES}/ha/setup/ha_setup.py
 CLI_EXEC=${SITE_PACKAGES}/ha/cli/cortxha.py
 DYNAMIC_RA=${SITE_PACKAGES}/ha/resource/dynamic_fid_service_ra.py
+SRV_COUNTER_RA=${SITE_PACKAGES}/ha/resource/service_instances_counter.py
 EVENT_ANALYZER=${SITE_PACKAGES}/ha/core/event_analyzer/event_analyzerd.py
 
 chmod +x ${HA_SETUP}
@@ -23,6 +24,11 @@ chmod +x ${DYNAMIC_RA}
 ln -sf ${DYNAMIC_RA} ${BIN_DIR}/dynamic_fid_service_ra
 ln -sf ${DYNAMIC_RA} /usr/bin/dynamic_fid_service_ra
 ln -sf ${DYNAMIC_RA} $RES_AGENT/dynamic_fid_service_ra
+
+chmod +x ${SRV_COUNTER_RA}
+ln -sf ${SRV_COUNTER_RA} ${BIN_DIR}/service_instances_counter
+ln -sf ${SRV_COUNTER_RA} /usr/bin/service_instances_counter
+ln -sf ${SRV_COUNTER_RA} $RES_AGENT/service_instances_counter
 
 chmod +x ${EVENT_ANALYZER}
 ln -sf ${EVENT_ANALYZER} ${BIN_DIR}/event_analyzerd
