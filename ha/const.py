@@ -53,8 +53,8 @@ CIB_FILE="{}/cortx-r2-cib.xml".format(RA_LOG_DIR)
 SOURCE_CLI_SCHEMA_FILE = "{}/cli_schema.json".format(SOURCE_CONFIG_PATH)
 CLI_SCHEMA_FILE = "{}/cli_schema.json".format(CONFIG_DIR)
 COMPONENTS_CONFIG_DIR = "{}/components".format(CONFIG_DIR)
-SOURCE_HEALTH_HIERARCHY_FILE = "{}/cluster_health_hierarchy.json".format(SOURCE_CONFIG_PATH)
-HEALTH_HIERARCHY_FILE = "{}/cluster_health_hierarchy.json".format(CONFIG_DIR)
+SOURCE_HEALTH_HIERARCHY_FILE = "{}/system_health_hierarchy.json".format(SOURCE_CONFIG_PATH)
+HEALTH_HIERARCHY_FILE = "{}/system_health_hierarchy.json".format(CONFIG_DIR)
 IEM_SCHEMA="{}/iem_ha.json".format(CONFIG_DIR)
 
 # IEM DESCRIPTION string: To be removed
@@ -177,6 +177,7 @@ logger_utility_iec_cmd="logger -i -p local3.err"
 class STATUSES(Enum):
     IN_PROGRESS = "InProgress"
     SUCCEEDED = "Succeeded"
+    PARTIAL = "Partial"
     FAILED = "Failed"
 
 class NODE_STATUSES(Enum):

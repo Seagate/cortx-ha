@@ -26,10 +26,10 @@ class StatusOutput:
     def to_json(self):
         return json.dumps(self, default=lambda a: a.__dict__)
 
-class ElementStatus:
-    def __init__(self, resource: str, element_id: str, status: str, update_timestamp: str):
+class ComponentStatus:
+    def __init__(self, resource: str, component_id: str, status: str, update_timestamp: str):
         self.resource = resource
-        self.id = element_id
+        self.id = component_id
         self.status = status
         self.last_updated_time = update_timestamp
         self.sub_resources = None
