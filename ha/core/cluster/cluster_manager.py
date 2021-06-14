@@ -284,7 +284,7 @@ class CortxClusterManager:
             ConfigManager.init(None)
 
         # Raise exception if user does not have proper permissions
-        self.validate_permissions()
+        self._validate_permissions()
 
         self._cluster_type = Conf.get(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.cluster_type")
         self._env = Conf.get(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.env")
@@ -310,7 +310,7 @@ class CortxClusterManager:
     def get_system_health(self, element, depth: int=1, **kwargs):
         return {"version" : self._version, "sub_resources": []}
 
-    def validate_permissions(self) -> None:
+    def _validate_permissions(self) -> None:
 
         # confirm that user is root or part of haclient group"
 
@@ -339,5 +339,5 @@ class CortxClusterManager:
 
         # TBD : If required raise seperate exception  for root and haclient
         except KeyError:
-            Log.error("Group root / haclient is not defined")
-            raise HAInvalidPermission("Group root / haclient is not defined ")
+            Log.error("root / haclient group is not present on the system")
+            raise HAInvalidPermission("root / haclient group is not present on the system")
