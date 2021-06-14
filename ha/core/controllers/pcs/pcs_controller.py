@@ -26,6 +26,7 @@ from ha import const
 from ha.core.error import HAInvalidNode, ClusterManagerError, HAClusterCLIError
 from ha.const import NODE_STATUSES
 from cortx.utils.log import Log
+from ha.core.config.config_manager import ConfigManager
 
 
 class PcsController(ElementController):
@@ -37,6 +38,7 @@ class PcsController(ElementController):
         """
         super(PcsController, self).__init__()
         self._execute = SimpleCommand()
+        self._confstore = ConfigManager._get_confstore()
 
     def _check_non_empty(self, **kwargs):
         """
@@ -217,3 +219,13 @@ class PcsController(ElementController):
             except Exception as err:
                 raise HAClusterCLIError(f'{node_id} not a valid node_id: {err}')
         return True
+
+    def is_node_exists(self, node_id):
+        '''
+           Checks if node_id present in cluster or not
+           Returns: bool
+           Exception: HAClusterCLIError
+        '''
+        if self._confstore.key_exists(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_id}"):
+            return True
+        raise HAInvalidNode(f"The node {node_id} is not present in the cluster.")
