@@ -63,7 +63,7 @@ class PcsNodeController(NodeController, PcsController):
                 status: Succeeded, Failed, InProgress
         """
         timeout = const.NODE_STOP_TIMEOUT if timeout < 0 else timeout
-        self.is_node_exists(node_id=nodeid)
+        self._is_node_in_cluster(node_id=nodeid)
         node_status = self.nodes_status([nodeid]).get(nodeid)
         if node_status == NODE_STATUSES.CLUSTER_OFFLINE.value:
             Log.info(f"For stop {nodeid}, Node already in offline state.")
@@ -138,7 +138,7 @@ class PcsNodeController(NodeController, PcsController):
                 status: Succeeded, Failed, InProgress
         """
         # TODO: Future: Check if cluster is online on the current node. Current code will work for cluster active operation.
-        self.is_node_exists(node_id=nodeid)
+        self._is_node_in_cluster(node_id=nodeid)
         node_status = self.nodes_status([nodeid]).get(nodeid)
         Log.info(f"Current {nodeid} status is {node_status}")
         if node_status != NODE_STATUSES.STANDBY.value:
@@ -188,7 +188,7 @@ class PcsVMNodeController(PcsNodeController):
             ([dict]): Return dictionary. {"status": "", "output": "", "error": ""}
                 status: Succeeded, Failed, InProgress
         """
-        self.is_node_exists(node_id=nodeid)
+        self._is_node_in_cluster(node_id=nodeid)
         _node_status = self.nodes_status([nodeid])[nodeid]
         if _node_status == NODE_STATUSES.ONLINE.value:
             return {"status": const.STATUSES.SUCCEEDED.value, "output": f"Node {nodeid}, is already in Online status", "error": ""}
@@ -196,21 +196,21 @@ class PcsVMNodeController(PcsNodeController):
             # make node unstandby
             if self.heal_resource(nodeid):
                 _output, _err, _rc = self._execute.run_cmd(const.PCS_NODE_UNSTANDBY.replace("<node>", nodeid),
-                                                        check_error=False)
+                                                           check_error=False)
                 return {"status": const.STATUSES.IN_PROGRESS.value, "output": f"Node {nodeid} : Node was in standby mode, "
-                                                    f"Unstandby operation started successfully", "error": ""}
+                                                       f"Unstandby operation started successfully", "error": ""}
             else:
                 Log.error(f"Node {nodeid} is in standby mode : Resource failcount found on the node, "
-                        f"cleanup not worked after 2 retries")
+                          f"cleanup not worked after 2 retries")
                 return {"status": const.STATUSES.FAILED.value, "output": "", "error": f"Node {nodeid} is in standby mode: Resource "
-                                                f"failcount found on the node cleanup not worked after 2 retries"}
+                                                   f"failcount found on the node cleanup not worked after 2 retries"}
         elif _node_status == NODE_STATUSES.CLUSTER_OFFLINE.value:
             _output, _err, _rc = self._execute.run_cmd(const.PCS_NODE_START.replace("<node>", nodeid), check_error=False)
             if _rc != 0:
                 raise ClusterManagerError(f"Failed to start node {nodeid}")
 
             Log.info(f'Node: {nodeid} started successfully. Now, waiting for \
-                    cluster to stabalize and then get the node status')
+                       cluster to stabalize and then get the node status')
 
             time.sleep(const.BASE_WAIT_TIME * 2)
 
@@ -221,18 +221,18 @@ class PcsVMNodeController(PcsNodeController):
             if _node_status == NODE_STATUSES.STANDBY.value:
                 Log.warn(f'Node: {nodeid} is still in standby mode')
                 _output, _err, _rc = self._execute.run_cmd(const.PCS_NODE_UNSTANDBY.replace("<node>", nodeid),
-                                                        check_error=False)
+                                                           check_error=False)
                 if _rc != 0:
                     raise ClusterManagerError(f"Failed to unstandby the node: {nodeid}")
                 return {"status": const.STATUSES.IN_PROGRESS.value, "output": f"Node {nodeid}: Node was in offline and then switched to standby mode, " f"Cluster started on node successfully", "error": ""}
 
             return {"status": const.STATUSES.IN_PROGRESS.value, "output": f"Node {nodeid} : Node was in cluster_offline mode, "
-                                                    f"Cluster started on node successfully", "error": ""}
+                                                       f"Cluster started on node successfully", "error": ""}
         elif _node_status == NODE_STATUSES.POWEROFF.value:
             # start node not in scope of VM
             Log.error("Operation not available for node type VM")
             raise ClusterManagerError(f"Node {nodeid} : Node was in poweroff mode, "
-                                    "Node start : Operation not available for VM")
+                                      "Node start : Operation not available for VM")
         else:
             Log.error(f"{nodeid} status is {_node_status}, node may not be started.")
             raise ClusterManagerError(f"Failed to start {nodeid} as found unhandled status {_node_status}")
