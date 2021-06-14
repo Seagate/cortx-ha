@@ -331,7 +331,7 @@ class CortxClusterManager:
 
             if unsupported_element:
                 return json.dumps({"status": const.STATUSES.FAILED.value, "output": "", "error": "Invalid element"})
-            # Currently only "id" is supported as a filter 
+            # Currently only "id" is supported as a filter
             if kwargs and GET_SYS_HEALTH_ARGS.ID.value not in kwargs:
                 return json.dumps({"status": const.STATUSES.FAILED.value, "output": "", "error": "Invalid filter argument(s)"})
 

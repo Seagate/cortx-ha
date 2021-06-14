@@ -108,7 +108,7 @@ class SystemHealth(Subscriber):
 
         try:
             component_id = None
-            if GET_SYS_HEALTH_ARGS.ID.value in kwargs and kwargs[GET_SYS_HEALTH_ARGS.ID.value] is not "":
+            if GET_SYS_HEALTH_ARGS.ID.value in kwargs and kwargs[GET_SYS_HEALTH_ARGS.ID.value] != "":
                 component_id = kwargs[GET_SYS_HEALTH_ARGS.ID.value]
 
             # Get raw status starting from cluster
