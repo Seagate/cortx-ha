@@ -17,6 +17,9 @@
 
 import time
 import json
+import grp
+import getpass
+import os
 
 from cortx.utils.log import Log
 from cortx.utils.conf_store.conf_store import Conf
@@ -33,6 +36,7 @@ from ha.core.system_health.const import CLUSTER_ELEMENTS
 from ha.core.controllers.system_health_controller import SystemHealthController
 from ha.core.error import ClusterManagerError
 from ha.const import _DELIM
+from ha.core.error import HAInvalidPermission
 
 # Note: This class is used by version 1
 class PcsClusterManager:
@@ -286,6 +290,10 @@ class CortxClusterManager:
         self._cluster_type = Conf.get(const.HA_GLOBAL_INDEX, f"CLUSTER_MANAGER{_DELIM}cluster_type")
         self._env = Conf.get(const.HA_GLOBAL_INDEX, f"CLUSTER_MANAGER{_DELIM}env")
         self._confstore = ConfigManager.get_confstore()
+
+        # Raise exception if user does not have proper permissions
+        self._validate_permissions()
+
         ConfigManager.load_controller_schema()
         self._controllers = ElementControllerFactory.init_controller(self._env, self._cluster_type)
         for controller in self._controllers.keys():
