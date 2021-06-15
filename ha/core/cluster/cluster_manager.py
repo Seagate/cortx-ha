@@ -321,19 +321,6 @@ class CortxClusterManager:
         """
 
         try:
-            # Check if unsupported element status requested.
-            unsupported_element = True
-            for supported_element in CLUSTER_ELEMENTS:
-                if element == supported_element.value:
-                    unsupported_element = False
-                    break
-
-            if unsupported_element:
-                return json.dumps({"status": const.STATUSES.FAILED.value, "output": "", "error": "Invalid element"})
-            # Currently only "id" is supported as a filter
-            if kwargs and GET_SYS_HEALTH_ARGS.ID.value not in kwargs:
-                return json.dumps({"status": const.STATUSES.FAILED.value, "output": "", "error": "Invalid filter argument(s)"})
-
             # Fetch the health status
             system_health_controller = SystemHealthController(self._confstore)
             return system_health_controller.get_status(component = element, depth = depth, version = SYSTEM_HEALTH_OUTPUT_V1, **kwargs)

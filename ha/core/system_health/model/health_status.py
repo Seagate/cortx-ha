@@ -38,3 +38,6 @@ class ComponentStatus:
         if self.sub_resources is None:
             self.sub_resources = []
         self.sub_resources.append(resource)
+
+    def to_json(self):
+        return json.dumps(self, default=lambda a: a.__dict__)
