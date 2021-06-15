@@ -410,6 +410,7 @@ class PcsClusterController(ClusterController, PcsController):
             ([dict]): Return dictionary. {"status": "", "output":"", "error":""}
                 status: Succeeded, Failed, InProgress
         """
+        self.is_valid_node_id(node_id=nodeid)
         self._check_non_empty(nodeid=nodeid, cluster_user=cluster_user, cluster_password=cluster_password)
         self._auth_node(nodeid, cluster_user, cluster_password)
         cluster_node_count = self._get_cluster_size()
