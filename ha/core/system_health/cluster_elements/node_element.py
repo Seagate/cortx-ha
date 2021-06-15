@@ -36,15 +36,6 @@ class NodeElement(Element):
         """
         super(NodeElement, self).__init__()
 
-    def get_event_from_subelement(self, children_event: HealthEvent):
-        """
-        Get element id for given healthevent.
-
-        Args:
-            healthevent (HealthEvent): Health event.
-        """
-        pass
-
     def get_event_from_subelement(self, subelement_event: HealthEvent) -> HealthEvent:
         """
         Get element id for given healthevent.

@@ -32,7 +32,7 @@ class ClusterElementFactory:
         """
         Build all elements.
         """
-        Log.info(f"Build all the element inside the cluster")
+        Log.info("Build all the element inside the cluster")
         elements = CLUSTER_ELEMENT_CLASSES.CLASS_TO_ELEMENT_MAP
         for element in elements.keys():
             class_path_list: list = elements[element].split('.')[:-1]

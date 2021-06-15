@@ -21,10 +21,9 @@ class StorageSetElement(Element):
     """
     site.
     """
-    pass
     #TODO: add into health map
 
-    def get_event_from_subelement(self, children_event: HealthEvent) -> HealthEvent:
+    def get_event_from_subelement(self, subelement_event: HealthEvent) -> HealthEvent:
         """
         Get element id for given healthevent.
 

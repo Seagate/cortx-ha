@@ -21,7 +21,6 @@ from ha.core.system_health.cluster_elements.element import Element
 from ha.core.system_health.const import NODE_MAP_ATTRIBUTES
 from ha.core.system_health.const import CLUSTER_ELEMENTS
 from ha.core.system_health.model.health_event import HealthEvent
-from ha.core.system_health.model.entity_health import EntityAction, EntityHealth
 
 class ClusterElement(Element):
     """

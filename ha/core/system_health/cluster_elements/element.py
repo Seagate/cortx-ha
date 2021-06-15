@@ -42,16 +42,6 @@ class Element(metaclass=abc.ABCMeta):
         Get element id for given healthevent.
 
         Args:
-            healthevent (HealthEvent): Health event.
-        """
-        pass
-
-    @abc.abstractmethod
-    def get_event_from_subelement(self, subelement_event: HealthEvent) -> HealthEvent:
-        """
-        Get element id for given healthevent.
-
-        Args:
             subelement_event (HealthEvent): Health event.
         """
         pass
