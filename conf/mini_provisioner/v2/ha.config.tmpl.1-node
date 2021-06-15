@@ -21,6 +21,6 @@ server_node:
         netmask: TMPL_NETMASK
     site_id: TMPL_SITE_ID
     rack_id: TMPL_RACK_ID
-    storageset_id: TMPL_STORAGESET_ID
+    storage_set_id: TMPL_STORAGE_SET_ID
     s3_instances: '1'
     type: TMPL_TYPE
