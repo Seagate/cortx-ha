@@ -58,6 +58,8 @@ class SystemHealth(Subscriber):
 
         # Get the key template.
         key = SystemHealthComponents.get_key(component)
+        if "comp_id" in kwargs:
+            key = key.replace(f"${component}_id",kwargs["comp_id"])
         # Check what all substitutions with actual values passed in kwargs to be done.
         subs = re.findall("\$\w+", key)
         # Check if the related argument present in kwargs, if yes substitute the same.

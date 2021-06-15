@@ -79,7 +79,7 @@ class RackElement(Element):
             str: Rack status.
         """
         rack_status = None
-        quorum_size = (len(status_map.keys())/2) + 1
+        quorum_size = int(len(status_map.keys())/2) + 1
         # offline online unknown degraded pending
         if self.count_status(status_map, HEALTH_STATUSES.ONLINE.value) == len(status_map.keys()):
             rack_status = HEALTH_EVENTS.FAULT_RESOLVED.value

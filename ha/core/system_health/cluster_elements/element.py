@@ -105,10 +105,11 @@ class Element(metaclass=abc.ABCMeta):
         Prepare Key. This is an internal method for preparing component status key.
         This will be used when updating/querying a component status.
         """
-
         # Get the key template.
         key = SystemHealthComponents.get_key(component)
         # Check what all substitutions with actual values passed in kwargs to be done.
+        if "comp_id" in kwargs:
+            key = key.replace(f"${component}_id",kwargs["comp_id"])
         subs = re.findall("\$\w+", key)
         # Check if the related argument present in kwargs, if yes substitute the same.
         for sub in subs:

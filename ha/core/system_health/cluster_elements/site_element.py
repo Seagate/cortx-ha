@@ -73,5 +73,16 @@ class SiteElement(Element):
             resource_id=site_id,
             subelement_event=subelement_event)
 
-    def _get_site_status(self, node_status_map):
+    def _get_site_status(self, rack_status_map) -> str:
+        """
+        Get site status from rack_status_map
+
+        Args:
+            rack_status_map (dict): rack ids and its status
+
+        Returns:
+            str: site status
+        """
+        site_status = None
+        # Optimize for n site
         return "fault"
