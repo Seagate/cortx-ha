@@ -21,6 +21,7 @@ from cortx.utils.log import Log
 from cortx.utils.conf_store.conf_store import Conf
 from ha import const
 from ha.core.controllers.element_controller import ElementController
+from ha.const import _DELIM
 
 class ElementControllerFactory:
 
@@ -37,7 +38,7 @@ class ElementControllerFactory:
             env (str): Detect controller as per env.
             cluster_type (str): Cluster type depend on cluster running on system.
         """
-        controllers: dict = Conf.get(const.CM_CONTROLLER_INDEX, f"{env}.{cluster_type}")
+        controllers: dict = Conf.get(const.CM_CONTROLLER_INDEX, f"{env}{_DELIM}{cluster_type}")
         for controller in controllers:
             Log.info(f"Initalizing controller api {controller['interface']}")
             class_path_list: list = controller["interface"].split('.')[:-1]
