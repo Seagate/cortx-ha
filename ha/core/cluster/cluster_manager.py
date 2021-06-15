@@ -16,7 +16,6 @@
 # cortx-questions@seagate.com.
 
 import time
-import re
 import json
 
 from cortx.utils.log import Log
@@ -30,11 +29,8 @@ from ha.execute import SimpleCommand
 from ha import const
 from ha.core.config.config_manager import ConfigManager
 from ha.core.controllers.element_controller_factory import ElementControllerFactory
-from ha.core.system_health.const import CLUSTER_ELEMENTS, HEALTH_STATUSES
+from ha.core.system_health.const import CLUSTER_ELEMENTS
 from ha.core.controllers.system_health_controller import SystemHealthController
-from ha.core.cluster.const import SYSTEM_HEALTH_OUTPUT_V1, GET_SYS_HEALTH_ARGS
-from ha.core.cluster.model.health_status import StatusOutput, ElementStatus
-from ha.core.cluster.cluster_health_hierarchy import HealthHierarchy
 
 # Note: This class is used by version 1
 class PcsClusterManager:
@@ -274,10 +270,12 @@ class PcsClusterManager:
 
 # Note: This class is used by version 2
 class CortxClusterManager:
-    def __init__(self, default_log_enable=True):
+    def __init__(self, version = "2.0", default_log_enable=True):
         """
         Manage cluster operation
         """
+        self._version = version
+
         # TODO: Update Config manager if log utility changes.(reference EOS-17614)
         if default_log_enable is True:
             ConfigManager.init("cluster_manager")
@@ -305,7 +303,7 @@ class CortxClusterManager:
         """
         return list(self._controllers.keys())
 
-    def get_system_health(self, element: CLUSTER_ELEMENTS = CLUSTER_ELEMENTS.CLUSTER.value, depth: int = 1, **kwargs) -> dict:
+    def get_system_health(self, element: CLUSTER_ELEMENTS = CLUSTER_ELEMENTS.CLUSTER.value, depth: int = 1, **kwargs) -> json:
         """
         Return health status for the requested elements.
 
@@ -324,48 +322,9 @@ class CortxClusterManager:
         """
 
         try:
-            # Currently, only "id" supported in the variable arguments.
-            unsupported_element = True
-            for supported_element in CLUSTER_ELEMENTS:
-                if element == supported_element.value:
-                    unsupported_element = False
-                    break
-
-            # TODO: Fix below temporary code
-            if element != CLUSTER_ELEMENTS.NODE.value:
-                unsupported_element = True
-
-            if unsupported_element:
-                return json.dumps({"status": const.STATUSES.FAILED.value, "output": "", "error": "Invalid element"})
-            if kwargs and GET_SYS_HEALTH_ARGS.ID.value not in kwargs:
-                return json.dumps({"status": const.STATUSES.FAILED.value, "output": "", "error": "Invalid filter argument(s)"})
-
-            element_id = HEALTH_STATUSES.UNKNOWN.value
-            if kwargs:
-                element_id = kwargs["id"]
-
             # Fetch the health status
             system_health_controller = SystemHealthController(self._confstore)
-            self._status_dict = system_health_controller.get_status(CLUSTER_ELEMENTS.CLUSTER.value)
-
-            # Remove any keys which are not for the health status.
-            ignore_keys = []
-            for key in self._status_dict:
-                if "health" not in key:
-                    ignore_keys.append(key)
-            for key in ignore_keys:
-                del self._status_dict[key]
-
-            # Get the requested element level in the health hierarchy
-            self._health_hierarchy = HealthHierarchy()
-            element_level = self._health_hierarchy.get_element_level(element)
-
-            # TODO: Fix below
-            depth = self._health_hierarchy.get_total_depth()
-            # Prepare and return the output
-            output = StatusOutput(SYSTEM_HEALTH_OUTPUT_V1)
-            self.get_status(element, element_id = element_id, start_level = element_level, level = element_level, depth = depth, parent = output)
-            return json.dumps({"status": const.STATUSES.SUCCEEDED.value, "output": json.loads(output.to_json()), "error": ""})
+            return system_health_controller.get_status(component = element, depth = depth, version = self._version, **kwargs)
         except Exception as e:
             Log.error(f"Failed returning system health . Error: {e}")
             return json.dumps({"status": const.STATUSES.FAILED.value, "output": "", "error": "Internal error"})
