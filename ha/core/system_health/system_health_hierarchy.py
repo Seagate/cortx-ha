@@ -34,29 +34,29 @@ class HealthHierarchy:
         return HealthHierarchy.SCHEMA
 
     @staticmethod
-    def get_element_level(element: str) -> int:
-        element_level = 0
+    def get_component_level(component: str) -> int:
+        component_level = 0
         try:
             schema = HealthHierarchy.get_schema()
-            elements = schema["elements"]
-            for count, value in enumerate(elements):
-                if value == element:
-                    element_level = count + 1
+            components = schema["components"]
+            for count, value in enumerate(components):
+                if value == component:
+                    component_level = count + 1
         except Exception as e:
-            Log.error(f"Failed to fetch element level. Error: {e}")
+            Log.error(f"Failed to fetch component level. Error: {e}")
 
-        if element_level != 0:
-            return element_level
+        if component_level != 0:
+            return component_level
         else:
-            raise Exception("Failed to fetch element level.")
+            raise Exception("Failed to fetch component level.")
 
     @staticmethod
     def get_total_depth() -> int:
         total_depth = 0
         try:
             schema = HealthHierarchy.get_schema()
-            elements = schema["elements"]
-            total_depth = len(elements)
+            components = schema["components"]
+            total_depth = len(components)
         except Exception as e:
             Log.error(f"Failed to fetch total depth. Error: {e}")
 
@@ -66,15 +66,15 @@ class HealthHierarchy:
             raise Exception("Failed to fetch total depth.")
 
     @staticmethod
-    def get_next_elements(element: str) -> list:
-        next_elements = []
+    def get_next_components(component: str) -> list:
+        next_components = []
         try:
             schema = HealthHierarchy.get_schema()
-            elements = schema["elements"]
-            for count, value in enumerate(elements):
-                if value == element:
-                    if count < (len(elements) -1 ):
-                        next_elements.append(elements[count + 1])
+            components = schema["components"]
+            for count, value in enumerate(components):
+                if value == component:
+                    if count < (len(components) -1 ):
+                        next_components.append(components[count + 1])
         except Exception as e:
-            Log.error(f"Failed fetching next element. Error: {e}")
-        return next_elements
+            Log.error(f"Failed fetching next component. Error: {e}")
+        return next_components

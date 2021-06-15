@@ -29,6 +29,10 @@ from ha.core.system_health.model.entity_health import EntityEvent, EntityAction,
 from ha.core.system_health.status_mapper import StatusMapper
 from ha.core.system_health.system_health_manager import SystemHealthManager
 from ha.core.error import HaSystemHealthException
+from ha.core.cluster.const import SYSTEM_HEALTH_OUTPUT_V2, GET_SYS_HEALTH_ARGS
+from ha.core.system_health.const import CLUSTER_ELEMENTS, HEALTH_STATUSES
+from ha.core.system_health.model.health_status import StatusOutput, ComponentStatus
+from ha.core.system_health.system_health_hierarchy import HealthHierarchy
 
 class SystemHealth(Subscriber):
     """
@@ -67,7 +71,7 @@ class SystemHealth(Subscriber):
                 break
         return key
 
-    def get_status(self, component: str, component_id: str=None, **kwargs):
+    def get_status_raw(self, component: str, component_id: str=None, **kwargs):
         """
         get status method. This is a generic method which can return status of any component(s).
         """
@@ -80,11 +84,157 @@ class SystemHealth(Subscriber):
             else:
                 key = self._prepare_key(component, **kwargs)
                 status = self.healthmanager.get_key(key, just_value=False)
+                # Remove any keys which are not for the health status.
+                ignore_keys = []
+                for key in status:
+                    if "health" not in key:
+                        ignore_keys.append(key)
+                for key in ignore_keys:
+                    del status[key]
             return status
 
         except Exception as e:
             Log.error(f"Failed reading status for component: {component} with Error: {e}")
             raise HaSystemHealthException("Failed reading status")
+
+    def get_status(self, component: CLUSTER_ELEMENTS = CLUSTER_ELEMENTS.CLUSTER.value, depth: int = 1, version: str = SYSTEM_HEALTH_OUTPUT_V2, **kwargs):
+        """
+        Return health status for the requested components.
+        Args:
+            component ([CLUSTER_ELEMENTS]): The component whose health status is to be returned.
+            depth ([int]): A depth of elements starting from the input "component" that the health status
+                is to be returned.
+            version ([str]): The health status json output version
+            **kwargs([dict]): Variable number of arguments that are used as filters,
+                e.g. "id" of the input "component".
+        Returns:
+            ([dict]): Returns dictionary. {"status": "Succeeded"/"Failed"/"Partial", "output": "", "error": ""}
+                status: Succeeded, Failed, Partial
+                output: Dictionary with element health status
+                error: Error information if the request "Failed"
+        """
+
+        try:
+            Log.debug(f"Get {component} health status version {version} with depth {depth} and filters {kwargs}")
+            component_id = None
+            if GET_SYS_HEALTH_ARGS.ID.value in kwargs and kwargs[GET_SYS_HEALTH_ARGS.ID.value] != "":
+                component_id = kwargs[GET_SYS_HEALTH_ARGS.ID.value]
+
+            # Get the requested component level in the health hierarchy
+            component_level = HealthHierarchy.get_component_level(component)
+            # Set the depth to be returned, check for partial status.
+            self._partial_status = False
+            total_depth = HealthHierarchy.get_total_depth()
+            if depth == 0:
+                depth = total_depth
+            else:
+                depth += component_level - 1 # Decrement by 1 for the component level itself.
+                if depth > HealthHierarchy.get_total_depth():
+                    depth = total_depth
+                    self._partial_status = True
+            Log.debug(f"{component} level {component_level}, depth to return {depth}, total available depth {total_depth}")
+
+            # Get raw status starting from cluster
+            self._status_dict = self.get_status_raw(CLUSTER_ELEMENTS.CLUSTER.value)
+            # Prepare and return the output
+            output = StatusOutput(version)
+            self._prepare_status(component, component_id = component_id, start_level = component_level, current_level = component_level, depth = depth, parent = output)
+            status = const.STATUSES.SUCCEEDED.value
+            if self._partial_status:
+                status = const.STATUSES.PARTIAL.value
+            output_json = json.dumps({"status": status, "output": json.loads(output.to_json()), "error": ""})
+            Log.debug(f"Output json {output_json}")
+            return output_json
+        except Exception as e:
+            Log.error(f"Failed reading status. Error: {e}")
+            raise HaSystemHealthException("Failed reading status")
+
+    def _prepare_status(self, component, component_id: str = None, start_level: int = 1, current_level: int = 1, depth: int = 1, parent: object = None):
+        Log.debug(f"Prepare status for component {component}, id {component_id}, level {current_level}, depth {depth}")
+        # At requested level in the hierarchy
+        if current_level == depth:
+            # If request was with depth = 1 and id was provided.
+            if component_id != None:
+                status_key = self._is_status_present(component, component_id = component_id)
+                component_status = self._prapare_component_status(component, component_id = component_id, key = status_key)
+                parent.add_health(component_status)
+            else:
+                # Prepare and return status for all available components at this level
+                while True:
+                    status_key = self._is_status_present(component)
+                    if status_key == None:
+                        break
+                    component_status = self._prapare_component_status(component, key = status_key)
+                    if current_level == start_level:
+                        parent.add_health(component_status)
+                    else:
+                        parent.add_resource(component_status)
+                    del self._status_dict[status_key]
+        else:
+            # Prepare and return status for all available components at this and further levels
+            if component_id != None:
+                status_key = self._is_status_present(component, component_id = component_id)
+                component_status = self._prapare_component_status(component, component_id = component_id, key = status_key)
+                parent.add_health(component_status)
+                if status_key:
+                    del self._status_dict[status_key]
+                else:
+                    self._partial_status = True
+                    return
+                next_components = HealthHierarchy.get_next_components(component)
+                for _, value in enumerate(next_components):
+                    self._prepare_status(value, start_level = start_level, current_level = current_level + 1, depth = depth, parent = component_status)
+            else:
+                # Prepare and return status for all available components at this and further levels
+                found_any_components = False
+                while True:
+                    status_key = self._is_status_present(component)
+                    if status_key == None:
+                        break
+                    found_any_components = True
+                    component_status = self._prapare_component_status(component, key = status_key)
+                    if current_level == start_level:
+                        parent.add_health(component_status)
+                    else:
+                        parent.add_resource(component_status)
+                    del self._status_dict[status_key]
+                    next_components = HealthHierarchy.get_next_components(component)
+                    for _, value in enumerate(next_components):
+                        self._prepare_status(value, start_level = start_level, current_level = current_level + 1, depth = depth, parent = component_status)
+                if found_any_components == False:
+                    self._partial_status = True
+
+    def _is_status_present(self, component, component_id: str = None) -> str:
+        status_key = None
+        if component_id is not None:
+            for key in self._status_dict:
+                if re.search(f"{component}/{component_id}/health", key):
+                    status_key = key
+                    break
+        else:
+            for key in self._status_dict:
+                if re.search(f"{component}/.+/health", key):
+                    split_key = re.split("/", key)
+                    if component == split_key[-3]:
+                        status_key = key
+                        break
+        Log.debug(f"Status key {status_key} present for component {component}, id {component_id}")
+        return status_key
+
+    def _prapare_component_status(self, component: str, component_id: str = None, key: str = None) -> object:
+            status = HEALTH_STATUSES.UNKNOWN.value
+            created_timestamp = HEALTH_STATUSES.UNKNOWN.value
+            if key is not None:
+                entity_health = self._status_dict[key]
+                entity_health = json.loads(entity_health)
+                split_key = re.split("/", key)
+                component_id = split_key[-2]
+                status = entity_health["events"][0]["status"]
+                created_timestamp = entity_health['events'][0]['created_timestamp']
+
+            component_status = ComponentStatus(component, component_id, status, created_timestamp)
+            Log.debug(f"Component {component}, id {component_id} health status is {component_status.to_json()}")
+            return component_status
 
     def get_service_status(self, service_type=None, node_id=None):
         """
@@ -163,7 +313,7 @@ class SystemHealth(Subscriber):
             component_type = healthevent.resource_type.split(':')[-1]
             component_id = healthevent.resource_id
             # Read the currently stored health value
-            current_health = self.get_status(component, component_id, comp_type=component_type,
+            current_health = self.get_status_raw(component, component_id, comp_type=component_type,
                                         cluster_id=healthevent.cluster_id, site_id=healthevent.site_id,
                                         rack_id=healthevent.rack_id, storageset_id=healthevent.storageset_id,
                                         node_id=healthevent.node_id, server_id=healthevent.node_id,

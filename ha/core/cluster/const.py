@@ -16,7 +16,7 @@
 from enum import Enum
 
 # System health output versions
-SYSTEM_HEALTH_OUTPUT_V1 = "1.0"
+SYSTEM_HEALTH_OUTPUT_V2 = "2.0"
 
 # Variable arguments supported by get_system_health() API
 class GET_SYS_HEALTH_ARGS(Enum):

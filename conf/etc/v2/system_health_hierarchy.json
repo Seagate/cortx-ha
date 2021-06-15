@@ -1,5 +1,5 @@
 {
-    "elements": [
+    "components": [
         "cluster",
         "site",
         "rack",
