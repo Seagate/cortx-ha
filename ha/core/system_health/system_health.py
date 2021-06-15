@@ -29,7 +29,6 @@ from ha.core.system_health.model.entity_health import EntityEvent, EntityAction,
 from ha.core.system_health.status_mapper import StatusMapper
 from ha.core.system_health.system_health_manager import SystemHealthManager
 from ha.core.error import HaSystemHealthException
-from ha.core.system_health.cluster_elements.element import Element
 from ha.core.system_health.cluster_element_factory import ClusterElementFactory
 
 class SystemHealth(Subscriber):
@@ -37,7 +36,7 @@ class SystemHealth(Subscriber):
     System Health. This class implements an interface to the HA System Health module.
     """
 
-    def __init__(self, store):
+    def __init__(self, store, build_elements=True):
         """
         Init method.
         """
@@ -46,7 +45,9 @@ class SystemHealth(Subscriber):
         self.node_map = {}
         self.statusmapper = StatusMapper()
         self.healthmanager = SystemHealthManager(store)
-        ClusterElementFactory.build_elements()
+        # Build element needs config phase to be completed, build_elements is False during setup
+        if build_elements is True:
+            ClusterElementFactory.build_elements()
         Log.info("All cluster element are loaded, Ready to process alerts .................")
 
     def _prepare_key(self, component: str, **kwargs) -> str:

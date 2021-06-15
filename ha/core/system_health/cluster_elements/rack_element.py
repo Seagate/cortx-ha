@@ -14,15 +14,14 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
-from ha.core.system_health.cluster_elements.element import Element
+import json
 from cortx.utils.log import Log
 from ha import const
-import json
+from ha.core.system_health.cluster_elements.element import Element
 from ha.core.system_health.const import NODE_MAP_ATTRIBUTES
 from ha.core.system_health.const import HEALTH_STATUSES, HEALTH_EVENTS, CLUSTER_ELEMENTS
 from ha.core.system_health.model.health_event import HealthEvent
-from ha.core.system_health.system_health_metadata import SystemHealthComponents
-from ha.core.system_health.model.entity_health import EntityEvent, EntityAction, EntityHealth
+from ha.core.system_health.model.entity_health import EntityAction, EntityHealth
 from ha.core.system_health.system_health_exception import HealthNotFoundException
 
 class RackElement(Element):

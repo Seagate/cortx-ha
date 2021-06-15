@@ -582,7 +582,7 @@ class ConfigCmd(Cmd):
         storageset_id = Conf.get(self._index, f"server_node.{machine_id}.{NODE_MAP_ATTRIBUTES.STORAGESET_ID.value}")
         node_map = {NODE_MAP_ATTRIBUTES.CLUSTER_ID.value: cluster_id, NODE_MAP_ATTRIBUTES.SITE_ID.value: site_id,
                     NODE_MAP_ATTRIBUTES.RACK_ID.value: rack_id, NODE_MAP_ATTRIBUTES.STORAGESET_ID.value: storageset_id}
-        system_health = SystemHealth(self._confstore)
+        system_health = SystemHealth(self._confstore, build_elements=False)
         key = system_health._prepare_key(const.COMPONENTS.NODE_MAP.value, node_id=node_id)
         # Check key is already exist if not, store the node map.
         node_map_val = self._confstore.get(key)
@@ -602,6 +602,7 @@ class ConfigCmd(Cmd):
             rack_id = Conf.get(self._index, f"server_node.{machine_id}.{NODE_MAP_ATTRIBUTES.RACK_ID.value}")
             storageset_id = Conf.get(self._index, f"server_node.{machine_id}.{NODE_MAP_ATTRIBUTES.STORAGESET_ID.value}")
 
+            # TODO: Event should be created from system_health.process_event
             initial_health = EntityHealth()
             # Create an event and action
             current_timestamp = str(int(time.time()))

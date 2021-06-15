@@ -37,7 +37,7 @@ class Element(metaclass=abc.ABCMeta):
         self.healthmanager = SystemHealthManager(self._confstore)
 
     @abc.abstractmethod
-    def get_event_from_subelement(self, children_event: HealthEvent):
+    def get_event_from_subelement(self, subelement_event: HealthEvent) -> HealthEvent:
         """
         Get element id for given healthevent.
 
