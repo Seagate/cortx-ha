@@ -335,7 +335,7 @@ class ConfigCmd(Cmd):
         mgmt_info: dict = self._get_mgmt_vip(machine_id, cluster_id)
         s3_instances = ConfigCmd.get_s3_instance(machine_id)
 
-        self._update_env(node_name, node_type, const.HA_CLUSTER_SOFTWARE)
+        self._update_env(node_name, node_type, const.HA_CLUSTER_SOFTWARE, s3_instances)
         self._fetch_fids()
         self._update_cluster_manager_config()
 
@@ -352,7 +352,7 @@ class ConfigCmd(Cmd):
                 # Create cluster
                 try:
                     self._create_cluster(cluster_name, cluster_user, cluster_secret, node_name)
-                    self._create_resource(s3_instances=s3_instances, mgmt_info=mgmt_info)
+                    self._create_resource(s3_instances=s3_instances, mgmt_info=mgmt_info, node_count=len(nodelist))
                     self._confstore.set(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
                 except Exception as e:
                     Log.error(f"Cluster creation failed; destroying the cluster. Error: {e}")
@@ -378,11 +378,11 @@ class ConfigCmd(Cmd):
         self._execute.run_cmd(const.PCS_CLEANUP)
         Log.info("config command is successful")
 
-    def _create_resource(self, s3_instances, mgmt_info):
+    def _create_resource(self, s3_instances, mgmt_info, node_count):
         Log.info("Creating pacemaker resources")
         try:
             # TODO: create resource if not already exists.
-            create_all_resources(s3_instances=s3_instances, mgmt_info=mgmt_info)
+            create_all_resources(s3_instances=s3_instances, mgmt_info=mgmt_info, node_count=node_count)
         except Exception as e:
             Log.info(f"Resource creation failed. Error {e}")
             raise HaConfigException("Resource creation failed.")
@@ -505,7 +505,7 @@ class ConfigCmd(Cmd):
             Log.error(f"Failed to get mgmt ip address. Error: {e}")
             raise HaConfigException(f"Failed to get mgmt ip address. Error: {e}.")
 
-    def _update_env(self, node_name: str, node_type: str, cluster_type: str) -> None:
+    def _update_env(self, node_name: str, node_type: str, cluster_type: str, s3_instances: int) -> None:
         """
         Update env like VM, HW
         """
@@ -517,6 +517,7 @@ class ConfigCmd(Cmd):
             Conf.set(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.env", "HW")
         Conf.set(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.cluster_type", cluster_type)
         Conf.set(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.local_node", node_name)
+        Conf.set(const.HA_GLOBAL_INDEX, "SERVICE_INSTANCE_COUNTER[1].instances", s3_instances)
         Log.info("CONFIG: Update ha configuration files")
         Conf.save(const.HA_GLOBAL_INDEX)
 
@@ -645,7 +646,8 @@ class CleanupCmd(Cmd):
         Init method.
         """
         super().__init__(args)
-        self._cluster_manager = CortxClusterManager()
+        # TODO: cluster_manager fails if cleanup run multiple time EOS-20947
+        self._cluster_manager = CortxClusterManager(default_log_enable=False)
 
     def process(self):
         """
@@ -657,8 +659,13 @@ class CleanupCmd(Cmd):
             node_count: int = 0 if nodes is None else len(nodes)
             node_name = self.get_node_name()
             # Standby
-            self.standby_node(node_name)
+            # TODO: handle multiple case for standby EOS-20855
+            standby_output: str = self._cluster_manager.node_controller.standby(node_name)
+            if json.loads(standby_output).get("status") == STATUSES.FAILED.value:
+                Log.warn(f"Standby for {node_name} failed with output: {standby_output}."
+                        "Cluster will be destroyed forcefully")
             if CleanupCmd.LOCAL_CHECK and node_count > 1:
+                # TODO: Update cluster kill for --local option also
                 # Remove SSH
                 self._remove_node(node_name)
             else:
@@ -702,9 +709,10 @@ class CleanupCmd(Cmd):
         Args:
             node_name (str): Node name
         """
-        Log.error(f"Destroying the cluster on {node_name}.")
+        Log.info(f"Destroying the cluster on {node_name}.")
+        output = self._execute.run_cmd(const.PCS_CLUSTER_KILL)
         output = self._execute.run_cmd(const.PCS_CLUSTER_DESTROY)
-        Log.error(f"Cluster destroyed. Output: {output}")
+        Log.info(f"Cluster destroyed. Output: {output}")
 
     def remove_config_files(self):
         """
