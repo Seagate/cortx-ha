@@ -120,12 +120,8 @@ class SystemHealth(Subscriber):
             if GET_SYS_HEALTH_ARGS.ID.value in kwargs and kwargs[GET_SYS_HEALTH_ARGS.ID.value] != "":
                 component_id = kwargs[GET_SYS_HEALTH_ARGS.ID.value]
 
-            # Get raw status starting from cluster
-            self._status_dict = self.get_status_raw(CLUSTER_ELEMENTS.CLUSTER.value)
-
             # Get the requested component level in the health hierarchy
             component_level = HealthHierarchy.get_component_level(component)
-
             # Set the depth to be returned, check for partial status.
             self._partial_status = False
             total_depth = HealthHierarchy.get_total_depth()
@@ -137,6 +133,9 @@ class SystemHealth(Subscriber):
                     depth = total_depth
                     self._partial_status = True
             Log.debug(f"{component} level {component_level}, depth to return {depth}, total available depth {total_depth}")
+
+            # Get raw status starting from cluster
+            self._status_dict = self.get_status_raw(CLUSTER_ELEMENTS.CLUSTER.value)
             # Prepare and return the output
             output = StatusOutput(version)
             self._prepare_status(component, component_id = component_id, start_level = component_level, current_level = component_level, depth = depth, parent = output)
@@ -158,10 +157,7 @@ class SystemHealth(Subscriber):
             if component_id != None:
                 status_key = self._is_status_present(component, component_id = component_id)
                 component_status = self._prapare_component_status(component, component_id = component_id, key = status_key)
-                if current_level == start_level:
-                    parent.add_health(component_status)
-                else:
-                    parent.add_resource(component_status)
+                parent.add_health(component_status)
             else:
                 # Prepare and return status for all available components at this level
                 while True:
@@ -183,16 +179,19 @@ class SystemHealth(Subscriber):
                 if status_key:
                     del self._status_dict[status_key]
                 else:
+                    self._partial_status = True
                     return
                 next_components = HealthHierarchy.get_next_components(component)
                 for _, value in enumerate(next_components):
                     self._prepare_status(value, start_level = start_level, current_level = current_level + 1, depth = depth, parent = component_status)
             else:
                 # Prepare and return status for all available components at this and further levels
+                found_any_components = False
                 while True:
                     status_key = self._is_status_present(component)
                     if status_key == None:
                         break
+                    found_any_components = True
                     component_status = self._prapare_component_status(component, key = status_key)
                     if current_level == start_level:
                         parent.add_health(component_status)
@@ -202,6 +201,8 @@ class SystemHealth(Subscriber):
                     next_components = HealthHierarchy.get_next_components(component)
                     for _, value in enumerate(next_components):
                         self._prepare_status(value, start_level = start_level, current_level = current_level + 1, depth = depth, parent = component_status)
+                if found_any_components == False:
+                    self._partial_status = True
 
     def _is_status_present(self, component, component_id: str = None) -> str:
         status_key = None
