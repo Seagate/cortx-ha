@@ -63,6 +63,7 @@ class PcsNodeController(NodeController, PcsController):
                 status: Succeeded, Failed, InProgress
         """
         timeout = const.NODE_STOP_TIMEOUT if timeout < 0 else timeout
+        self._is_node_in_cluster(node_id=nodeid)
         node_status = self.nodes_status([nodeid]).get(nodeid)
         if node_status == NODE_STATUSES.CLUSTER_OFFLINE.value:
             Log.info(f"For stop {nodeid}, Node already in offline state.")
@@ -137,6 +138,7 @@ class PcsNodeController(NodeController, PcsController):
                 status: Succeeded, Failed, InProgress
         """
         # TODO: Future: Check if cluster is online on the current node. Current code will work for cluster active operation.
+        self._is_node_in_cluster(node_id=nodeid)
         node_status = self.nodes_status([nodeid]).get(nodeid)
         Log.info(f"Current {nodeid} status is {node_status}")
         if node_status != NODE_STATUSES.STANDBY.value:
@@ -186,6 +188,7 @@ class PcsVMNodeController(PcsNodeController):
             ([dict]): Return dictionary. {"status": "", "output": "", "error": ""}
                 status: Succeeded, Failed, InProgress
         """
+        self._is_node_in_cluster(node_id=nodeid)
         _node_status = self.nodes_status([nodeid])[nodeid]
         if _node_status == NODE_STATUSES.ONLINE.value:
             return {"status": const.STATUSES.SUCCEEDED.value, "output": f"Node {nodeid}, is already in Online status", "error": ""}
