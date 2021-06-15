@@ -31,7 +31,6 @@ from ha.core.config.config_manager import ConfigManager
 from ha.core.controllers.element_controller_factory import ElementControllerFactory
 from ha.core.system_health.const import CLUSTER_ELEMENTS
 from ha.core.controllers.system_health_controller import SystemHealthController
-from ha.core.cluster.const import SYSTEM_HEALTH_OUTPUT_V1, GET_SYS_HEALTH_ARGS
 
 # Note: This class is used by version 1
 class PcsClusterManager:
@@ -271,10 +270,12 @@ class PcsClusterManager:
 
 # Note: This class is used by version 2
 class CortxClusterManager:
-    def __init__(self, default_log_enable=True):
+    def __init__(self, version = "2.0", default_log_enable=True):
         """
         Manage cluster operation
         """
+        self._version = version
+
         # TODO: Update Config manager if log utility changes.(reference EOS-17614)
         if default_log_enable is True:
             ConfigManager.init("cluster_manager")
@@ -323,7 +324,7 @@ class CortxClusterManager:
         try:
             # Fetch the health status
             system_health_controller = SystemHealthController(self._confstore)
-            return system_health_controller.get_status(component = element, depth = depth, version = SYSTEM_HEALTH_OUTPUT_V1, **kwargs)
+            return system_health_controller.get_status(component = element, depth = depth, version = self._version, **kwargs)
         except Exception as e:
             Log.error(f"Failed returning system health . Error: {e}")
             return json.dumps({"status": const.STATUSES.FAILED.value, "output": "", "error": "Internal error"})

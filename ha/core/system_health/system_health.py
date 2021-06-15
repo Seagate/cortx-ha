@@ -29,7 +29,7 @@ from ha.core.system_health.model.entity_health import EntityEvent, EntityAction,
 from ha.core.system_health.status_mapper import StatusMapper
 from ha.core.system_health.system_health_manager import SystemHealthManager
 from ha.core.error import HaSystemHealthException
-from ha.core.cluster.const import SYSTEM_HEALTH_OUTPUT_V1, GET_SYS_HEALTH_ARGS
+from ha.core.cluster.const import SYSTEM_HEALTH_OUTPUT_V2, GET_SYS_HEALTH_ARGS
 from ha.core.system_health.const import CLUSTER_ELEMENTS, HEALTH_STATUSES
 from ha.core.system_health.model.health_status import StatusOutput, ComponentStatus
 from ha.core.system_health.system_health_hierarchy import HealthHierarchy
@@ -97,7 +97,7 @@ class SystemHealth(Subscriber):
             Log.error(f"Failed reading status for component: {component} with Error: {e}")
             raise HaSystemHealthException("Failed reading status")
 
-    def get_status(self, component: CLUSTER_ELEMENTS = CLUSTER_ELEMENTS.CLUSTER.value, depth: int = 1, version: str = SYSTEM_HEALTH_OUTPUT_V1, **kwargs):
+    def get_status(self, component: CLUSTER_ELEMENTS = CLUSTER_ELEMENTS.CLUSTER.value, depth: int = 1, version: str = SYSTEM_HEALTH_OUTPUT_V2, **kwargs):
         """
         Return health status for the requested components.
         Args:

@@ -20,7 +20,7 @@ import json
 from ha.core.system_health.system_health import SystemHealth
 from ha.core.system_health.const import CLUSTER_ELEMENTS
 from ha import const
-from ha.core.cluster.const import SYSTEM_HEALTH_OUTPUT_V1, GET_SYS_HEALTH_ARGS
+from ha.core.cluster.const import SYSTEM_HEALTH_OUTPUT_V2, GET_SYS_HEALTH_ARGS
 
 class SystemHealthController(SystemHealth):
     """ System health controller to perform system health operations. """
@@ -31,7 +31,7 @@ class SystemHealthController(SystemHealth):
         """
         super().__init__(store)
 
-    def get_status(self, component: CLUSTER_ELEMENTS = CLUSTER_ELEMENTS.CLUSTER.value, depth: int = 1, version: str = SYSTEM_HEALTH_OUTPUT_V1, **kwargs) -> json:
+    def get_status(self, component: CLUSTER_ELEMENTS = CLUSTER_ELEMENTS.CLUSTER.value, depth: int = 1, version: str = SYSTEM_HEALTH_OUTPUT_V2, **kwargs) -> json:
         """
         Return health status for the requested components.
         Args:
@@ -59,5 +59,9 @@ class SystemHealthController(SystemHealth):
         # Currently only "id" is supported as a filter
         if kwargs and GET_SYS_HEALTH_ARGS.ID.value not in kwargs:
             return json.dumps({"status": const.STATUSES.FAILED.value, "output": "", "error": "Invalid filter argument(s)"})
+
+        # Currently only version "2.0" output json is supported
+        if version != SYSTEM_HEALTH_OUTPUT_V2:
+            return json.dumps({"status": const.STATUSES.FAILED.value, "output": "", "error": "Invalid output json version requested"})
 
         return super().get_status(component, depth, version, **kwargs)
