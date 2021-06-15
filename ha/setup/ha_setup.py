@@ -23,6 +23,7 @@ import os
 import shutil
 import json
 import grp, pwd
+import time
 from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
 from cortx.utils.validator.v_pkg import PkgV
@@ -45,6 +46,7 @@ from ha.core.error import HaCleanupException
 from ha.core.error import SetupError
 from ha.setup.cluster_validator.cluster_test import TestExecutor
 from ha.core.system_health.system_health import SystemHealth
+from ha.core.system_health.model.entity_health import EntityEvent, EntityAction, EntityHealth
 
 class Cmd:
     """
@@ -258,6 +260,7 @@ class PostInstallCmd(Cmd):
             PostInstallCmd.copy_file(f"{const.SOURCE_CONFIG_PATH}/{const.CM_CONTROLLER_INDEX}.json",
                             const.CM_CONTROLLER_SCHEMA)
             PostInstallCmd.copy_file(const.SOURCE_ALERT_FILTER_RULES_FILE, const.ALERT_FILTER_RULES_FILE)
+            PostInstallCmd.copy_file(const.SOURCE_ALERT_EVENT_RULES_FILE, const.ALERT_EVENT_RULES_FILE)
             PostInstallCmd.copy_file(const.SOURCE_CLI_SCHEMA_FILE, const.CLI_SCHEMA_FILE)
             PostInstallCmd.copy_file(const.SOURCE_SERVICE_FILE, const.SYSTEM_SERVICE_FILE)
             PostInstallCmd.copy_file(const.SOURCE_HEALTH_HIERARCHY_FILE, const.HEALTH_HIERARCHY_FILE)
@@ -352,6 +355,7 @@ class ConfigCmd(Cmd):
 
         # Update node map
         self._update_node_map()
+        self._add_node_health()
 
         # Update cluster and resources
         self._cluster_manager = CortxClusterManager(default_log_enable=False)
@@ -584,6 +588,39 @@ class ConfigCmd(Cmd):
         if node_map_val is None:
             self._confstore.set(key, str(node_map))
 
+    # TBD: Temporary code till EOS-17892 is implemented
+    def _add_node_health(self) -> None:
+        """
+        Add node health
+        """
+        try:
+            machine_id = self.get_machine_id()
+            node_id = Conf.get(self._index, f"server_node.{machine_id}.node_id")
+            cluster_id = Conf.get(self._index, f"server_node.{machine_id}.{NODE_MAP_ATTRIBUTES.CLUSTER_ID.value}")
+            site_id = Conf.get(self._index, f"server_node.{machine_id}.{NODE_MAP_ATTRIBUTES.SITE_ID.value}")
+            rack_id = Conf.get(self._index, f"server_node.{machine_id}.{NODE_MAP_ATTRIBUTES.RACK_ID.value}")
+            storageset_id = Conf.get(self._index, f"server_node.{machine_id}.{NODE_MAP_ATTRIBUTES.STORAGESET_ID.value}")
+
+            initial_health = EntityHealth()
+            # Create an event and action
+            current_timestamp = str(int(time.time()))
+            entity_event = EntityEvent(current_timestamp, current_timestamp, "online", None)
+            entity_action = EntityAction(current_timestamp, const.ACTION_STATUS.PENDING.value)
+            # Add the event and action to the health value
+            initial_health.add_event(entity_event)
+            initial_health.set_action(entity_action)
+            # Convert the health value as appropriate for writing to the store.
+            initial_health = EntityHealth.write(initial_health)
+            system_health = SystemHealth(self._confstore)
+            key = system_health._prepare_key(component="node", cluster_id=cluster_id, site_id=site_id, rack_id=rack_id, storageset_id=storageset_id, node_id=node_id)
+            # Check key already exists, if yes, delete and set.
+            junk_health = self._confstore.get(key)
+            if junk_health:
+                self._confstore.delete(key)
+            self._confstore.set(key, initial_health)
+        except Exception as e:
+            Log.error(f"Failed adding node health. Error: {e}")
+            raise HaConfigException("Failed adding node health.")
 
 class InitCmd(Cmd):
     """
@@ -620,6 +657,7 @@ class TestCmd(Cmd):
         """
         Process test command.
         """
+        Log.info("Processing test command")
         path_to_comp_config = const.SOURCE_CONFIG_PATH
 
         install_type = self.get_installation_type()
@@ -631,6 +669,7 @@ class TestCmd(Cmd):
 
         if not rc:
             raise HaConfigException("Cluster is no healthy. Check HA logs for further information.")
+        Log.info("test command is successful")
 
 class UpgradeCmd(Cmd):
     """
@@ -681,7 +720,8 @@ class CleanupCmd(Cmd):
         Init method.
         """
         super().__init__(args)
-        self._cluster_manager = CortxClusterManager()
+        # TODO: cluster_manager fails if cleanup run multiple time EOS-20947
+        self._cluster_manager = CortxClusterManager(default_log_enable=False)
 
     def process(self):
         """
@@ -693,8 +733,13 @@ class CleanupCmd(Cmd):
             node_count: int = 0 if nodes is None else len(nodes)
             node_name = self.get_node_name()
             # Standby
-            self.standby_node(node_name)
+            # TODO: handle multiple case for standby EOS-20855
+            standby_output: str = self._cluster_manager.node_controller.standby(node_name)
+            if json.loads(standby_output).get("status") == STATUSES.FAILED.value:
+                Log.warn(f"Standby for {node_name} failed with output: {standby_output}."
+                        "Cluster will be destroyed forcefully")
             if CleanupCmd.LOCAL_CHECK and node_count > 1:
+                # TODO: Update cluster kill for --local option also
                 # Remove SSH
                 self._remove_node(node_name)
             else:
@@ -741,9 +786,10 @@ class CleanupCmd(Cmd):
         Args:
             node_name (str): Node name
         """
-        Log.error(f"Destroying the cluster on {node_name}.")
+        Log.info(f"Destroying the cluster on {node_name}.")
+        output = self._execute.run_cmd(const.PCS_CLUSTER_KILL)
         output = self._execute.run_cmd(const.PCS_CLUSTER_DESTROY)
-        Log.error(f"Cluster destroyed. Output: {output}")
+        Log.info(f"Cluster destroyed. Output: {output}")
 
     def remove_config_files(self):
         """
