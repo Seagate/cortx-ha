@@ -77,7 +77,7 @@ class ElementHealthEvaluator(metaclass=abc.ABCMeta):
         # TODO: update code to get com_type, currently assuming comp = com_type
         children_ids: list = []
         children: list = HealthHierarchy.get_next_components(element)
-        if len(children) is 0:
+        if len(children) == 0:
             return {}
         key = ElementHealthEvaluator.prepare_key(element, comp_id=element_id, **kwargs)
         key = key.replace("/health", "").replace("/", "", 1)
@@ -117,7 +117,7 @@ class ElementHealthEvaluator(metaclass=abc.ABCMeta):
                         Log.debug(f"Status for {element}:{element_type}:{element_id} with {kwargs} is {event}")
                         status_map[element][element_type][element_id] = event.get("status")
                     else:
-                        raise HealthNotFoundException(f"Missing health for component: {component}, component_id: {component_id}, component_type: {component_type}")
+                        raise HealthNotFoundException(f"Missing health for component: {element}, component_id: {element_id}, component_type: {element_type}")
         Log.debug(f"status map is {status_map}")
         return status_map
 

@@ -57,7 +57,6 @@ class ClusterHealthEvaluator(ElementHealthEvaluator):
         Returns:
             str: cluster status.
         """
-        cluster_status = None
         children = self.get_children(CLUSTER_ELEMENTS.CLUSTER.value, cluster_id, comp_type=CLUSTER_ELEMENTS.CLUSTER.value)
         Log.debug(f"Children for cluster {cluster_id} are {children}")
         status_map = self.get_status_map(children, cluster_id=cluster_id)

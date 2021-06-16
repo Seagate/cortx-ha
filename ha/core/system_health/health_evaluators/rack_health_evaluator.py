@@ -58,7 +58,6 @@ class RackHealthEvaluator(ElementHealthEvaluator):
         Returns:
             str: Rack status.
         """
-        rack_status = None
         children = self.get_children(CLUSTER_ELEMENTS.RACK.value, rack_id,
                     cluster_id=kwargs["cluster_id"],
                     site_id=kwargs["site_id"],

@@ -57,7 +57,6 @@ class SiteHealthEvaluator(ElementHealthEvaluator):
         Returns:
             str: site status.
         """
-        site_status = None
         children = self.get_children(CLUSTER_ELEMENTS.SITE.value, site_id,
                     cluster_id=kwargs["cluster_id"],
                     comp_type=CLUSTER_ELEMENTS.SITE.value)
