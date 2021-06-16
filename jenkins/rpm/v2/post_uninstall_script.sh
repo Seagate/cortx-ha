@@ -16,6 +16,10 @@ rm -f ${BIN_DIR}/dynamic_fid_service_ra
 rm -f /usr/bin/dynamic_fid_service_ra
 rm -f $RES_AGENT/dynamic_fid_service_ra
 
+rm -f ${BIN_DIR}/service_instances_counter
+rm -f ${SRV_COUNTER_RA} /usr/bin/service_instances_counter
+rm -f ${SRV_COUNTER_RA} $RES_AGENT/service_instances_counter
+
 rm -f ${BIN_DIR}/event_analyzerd
 rm -f /usr/local/bin/event_analyzerd
 rm -f /usr/bin/event_analyzerd
