@@ -25,6 +25,7 @@ from ha.core.config.config_manager import ConfigManager
 from ha.const import ALERT_ATTRIBUTES
 from ha.core.event_analyzer.event_analyzer_exceptions import EventFilterException
 from ha.core.event_analyzer.event_analyzer_exceptions import InvalidFilterRules
+from ha.const import _DELIM
 
 
 
@@ -77,10 +78,10 @@ class AlertFilter(Filter):
         Init method
         """
         super(AlertFilter, self).__init__()
-        AlertFilter.validate_filter(const.AlertEventConstants.ALERT_FILTER_TYPE.value)
+        AlertFilter.validate_filter(f"const{_DELIM}AlertEventConstants{_DELIM}ALERT_FILTER_TYPE{_DELIM}value")
         # Get filter type and resource types list from the alert rule file
-        self.filter_type = Conf.get(const.ALERT_FILTER_INDEX, const.AlertEventConstants.ALERT_FILTER_TYPE.value)
-        self.resource_types_list = Conf.get(const.ALERT_FILTER_INDEX, const.AlertEventConstants.ALERT_RESOURCE_TYPE.value)
+        self.filter_type = Conf.get(const.ALERT_FILTER_INDEX, f"const{_DELIM}AlertEventConstants{_DELIM}ALERT_FILTER_TYPE{_DELIM}value")
+        self.resource_types_list = Conf.get(const.ALERT_FILTER_INDEX, f"const{_DELIM}AlertEventConstants{_DELIM}ALERT_RESOURCE_TYPE{_DELIM}value")
         Log.info("Alert Filter is initialized ...")
 
     def filter_event(self, msg: str) -> bool:
@@ -122,11 +123,11 @@ class IEMFilter(Filter):
         Init method
         """
         super(IEMFilter, self).__init__()
-        IEMFilter.validate_filter(const.AlertEventConstants.IEM_FILTER_TYPE.value)
+        IEMFilter.validate_filter(f"const{_DELIM}AlertEventConstants{_DELIM}IEM_FILTER_TYPE{_DELIM}value")
         # Get filter type and resource types list from the IEM rule file
-        self.filter_type = Conf.get(const.ALERT_FILTER_INDEX, const.AlertEventConstants.IEM_FILTER_TYPE.value)
-        self.components_list = Conf.get(const.ALERT_FILTER_INDEX, const.AlertEventConstants.IEM_COMPONENTS.value)
-        self.modules_dict = Conf.get(const.ALERT_FILTER_INDEX, const.AlertEventConstants.IEM_MODULES.value)
+        self.filter_type = Conf.get(const.ALERT_FILTER_INDEX, f"const{_DELIM}AlertEventConstants{_DELIM}IEM_FILTER_TYPE{_DELIM}value")
+        self.components_list = Conf.get(const.ALERT_FILTER_INDEX, f"const{_DELIM}AlertEventConstants{_DELIM}IEM_COMPONENTS{_DELIM}value")
+        self.modules_dict = Conf.get(const.ALERT_FILTER_INDEX, f"const{_DELIM}AlertEventConstants{_DELIM}IEM_MODULES{_DELIM}value")
         Log.info("IEM Filter is initialized ...")
 
     def filter_event(self, msg: str) -> bool:

@@ -31,6 +31,7 @@ from ha.core.config.config_manager import ConfigManager
 from ha.core.controllers.element_controller_factory import ElementControllerFactory
 from ha.core.system_health.const import CLUSTER_ELEMENTS
 from ha.core.controllers.system_health_controller import SystemHealthController
+from ha.const import _DELIM
 
 # Note: This class is used by version 1
 class PcsClusterManager:
@@ -281,8 +282,8 @@ class CortxClusterManager:
             ConfigManager.init("cluster_manager")
         else:
             ConfigManager.init(None)
-        self._cluster_type = Conf.get(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.cluster_type")
-        self._env = Conf.get(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.env")
+        self._cluster_type = Conf.get(const.HA_GLOBAL_INDEX, f"CLUSTER_MANAGER{_DELIM}cluster_type")
+        self._env = Conf.get(const.HA_GLOBAL_INDEX, f"CLUSTER_MANAGER{_DELIM}env")
         self._confstore = ConfigManager.get_confstore()
         ConfigManager.load_controller_schema()
         self._controllers = ElementControllerFactory.init_controller(self._env, self._cluster_type)
