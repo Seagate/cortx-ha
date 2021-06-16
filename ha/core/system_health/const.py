@@ -29,6 +29,7 @@ class HEALTH_STATUSES(Enum):
     STANDBY = "standby"
     UNHEALTHY = "unhealthy"
     OFFLINE = "offline"
+    FAILED = "failed"
     UNKNOWN = "unknown"
 
 # Health event types
@@ -37,6 +38,7 @@ class HEALTH_EVENTS(Enum):
     FAULT_RESOLVED = "fault_resolved"
     MISSING = "missing"
     INSERTION = "insertion"
+    FAILED = "failed"
     THRESHOLD_BREACHED_LOW = "threshold_breached:low"
     THRESHOLD_BREACHED_HIGH = "threshold_breached:high"
     UNKNOWN = "unknown"

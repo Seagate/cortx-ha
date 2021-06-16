@@ -137,7 +137,7 @@ class IEMParser(Parser):
             }
             # To be removed after HA starts populating IEM messages
             if event.get(EVENT_ATTRIBUTES.RESOURCE_TYPE) == CLUSTER_ELEMENTS.NODE.value and event.get(EVENT_ATTRIBUTES.SEVERITY) == EVENT_SEVERITIES.WARNING.value:
-                event[EVENT_ATTRIBUTES.EVENT_TYPE] = HEALTH_EVENTS.FAULT.value
+                event[EVENT_ATTRIBUTES.EVENT_TYPE] = HEALTH_EVENTS.FAILED.value
 
             health_event = HealthEvent.dict_to_object(event)
             Log.info(f"Event {event[EVENT_ATTRIBUTES.EVENT_ID]} is parsed and converted to object.")
