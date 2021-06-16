@@ -39,7 +39,7 @@ with open('README.md', 'r') as rf:
 
 def get_data_files() -> list:
     data_files = [(install_dir + '/meta-info', ['LICENSE', 'README.md', 'jenkins/requirements.txt'])]
-    ignore_dirs = ['v1', 'iostack-ha']
+    ignore_dirs = ['v1', 'iostack-ha', 'cluster_validator']
     replace_dirs_in_dest = ('v2', 'common', 'mini_provisioner')
     conf_dir = 'conf'
     for root, _, file_names in os.walk(conf_dir):

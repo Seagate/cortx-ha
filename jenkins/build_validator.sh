@@ -22,24 +22,22 @@ HA_INSTALL_PATH="/opt/seagate/cortx/ha"
 HA2="2"
 MINOR_VERSION="0"
 REVISION_VERSION="0"
-build_tests=0
+PACKAGE_NAME="cortx-validator"
 
 usage() {
     echo """
-usage: $PROG_NAME [-v <cortx-ha major version>] [-m <cortx-ha minor version>]
-                  [-r <cortx-ha revision version>] [-b <build no>] [-k <key>]
-                  [-t]
+usage: $PROG_NAME [-v <cortx-validator major version>] [-m <cortx-validator minor version>]
+                  [-r <cortx-validator revision version>] [-b <build no>] [-k <key>]
 Options:
     -v : Build rpm with major version
     -m : Build rpm with minor version
     -r : Build rpm with revision version
     -b : Build rpm with build number
-    -t : Build tests
         """ 1>&2;
     exit 1;
 }
 
-while getopts ":v:m:r:b:k:t" o; do
+while getopts ":v:m:r:b:k" o; do
     case "${o}" in
         v)
             MAJ_VER=${OPTARG}
@@ -53,9 +51,6 @@ while getopts ":v:m:r:b:k:t" o; do
         b)
             BUILD=${OPTARG}
             ;;
-        t)
-            build_tests=1
-            ;;
         *)
             usage
             ;;
@@ -63,6 +58,8 @@ while getopts ":v:m:r:b:k:t" o; do
 done
 
 cd $BASE_DIR
+
+# NOTE: dist/ is not removed before build intentionally
 
 [ -z $"$BUILD" ] && BUILD="$(git rev-parse --short HEAD)" \
         || BUILD="${BUILD}_$(git rev-parse --short HEAD)"
@@ -73,28 +70,14 @@ cd $BASE_DIR
 echo "Using MAJOR_VERSION=${MAJ_VER} MINOR_VERSION=${MIN_VER} REVISION=${PATCH_VER} BUILD=${BUILD}"
 version="${MAJ_VER}.${MIN_VER}.${PATCH_VER}"
 
-rm -rf ${BASE_DIR}/dist
-
 # Update version in conf file
 cp -rf ${BASE_DIR}/conf/etc/v2/ha.conf.template ${BASE_DIR}/conf/etc/v2/ha.conf
 sed -i -e "s|<VERSION>|${version}|g" ${BASE_DIR}/conf/etc/v2/ha.conf
 
-python3.6 setup.py bdist_rpm --version="${version}" --install-dir="${HA_INSTALL_PATH}" --release="$BUILD" \
---force-arch x86_64 --post-install jenkins/rpm/v2/post_install_script.sh \
---post-uninstall jenkins/rpm/v2/post_uninstall_script.sh
+python3.6 setup_cluster_validator.py bdist_rpm --version="${version}" --install-dir="${HA_INSTALL_PATH}" --release="$BUILD" --force-arch x86_64
 
 # Above --force-arch flag and below code is just for backward compatibility.
 # Can be removed once integration is done with RE.
-rpm_file=`ls -1 ${BASE_DIR}/dist/ | grep x86_64 | grep -v debug`
+rpm_file=`ls -1 ${BASE_DIR}/dist/ | grep x86_64 | grep -v debug | grep ${PACKAGE_NAME}`
 mkdir -p ${BASE_DIR}/dist/rpmbuild/RPMS/x86_64
 cp ${BASE_DIR}/dist/${rpm_file} ${BASE_DIR}/dist/rpmbuild/RPMS/x86_64/
-
-if [[ $build_tests -eq 1 ]]; then
-    bash ${BASE_DIR}/jenkins/build_validator.sh -v ${MAJ_VER} -m ${MIN_VER} -r ${PATCH_VER} -b ${BUILD}
-fi
-
-# Show RPM
-cd ${BASE_DIR}/dist/rpmbuild
-
-echo "********** RPM ****************"
-realpath $(find -name "*.rpm")
