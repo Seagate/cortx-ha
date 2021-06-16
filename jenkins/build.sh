@@ -27,7 +27,6 @@ usage() {
     echo """
 usage: $PROG_NAME [-v <cortx-ha major version>] [-m <cortx-ha minor version>]
                   [-r <cortx-ha revision version>] [-b <build no>] [-k <key>]
-
 Options:
     -v : Build rpm with major version
     -m : Build rpm with minor version
@@ -68,7 +67,10 @@ cd $BASE_DIR
 echo "Using MAJOR_VERSION=${MAJ_VER} MINOR_VERSION=${MIN_VER} REVISION=${PATCH_VER} BUILD=${BUILD}"
 version="${MAJ_VER}.${MIN_VER}.${PATCH_VER}"
 
+rm -rf ${BASE_DIR}/dist
+
 # Update version in conf file
+cp -rf ${BASE_DIR}/conf/etc/v2/ha.conf.template ${BASE_DIR}/conf/etc/v2/ha.conf
 sed -i -e "s|<VERSION>|${version}|g" ${BASE_DIR}/conf/etc/v2/ha.conf
 
 python3.6 setup.py bdist_rpm --version="${version}" --install-dir="${HA_INSTALL_PATH}" --release="$BUILD" \
@@ -81,3 +83,8 @@ rpm_file=`ls -1 ${BASE_DIR}/dist/ | grep x86_64 | grep -v debug`
 mkdir -p ${BASE_DIR}/dist/rpmbuild/RPMS/x86_64
 cp ${BASE_DIR}/dist/${rpm_file} ${BASE_DIR}/dist/rpmbuild/RPMS/x86_64/
 
+# Show RPM
+cd ${BASE_DIR}/dist/rpmbuild
+
+echo "********** RPM ****************"
+realpath $(find -name "*.rpm")
