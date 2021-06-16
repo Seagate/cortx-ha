@@ -310,6 +310,7 @@ class ConfigCmd(Cmd):
         Init method.
         """
         super().__init__(args)
+        self._cluster_manager = CortxClusterManager(default_log_enable=False)
 
     def process(self):
         """
@@ -340,7 +341,6 @@ class ConfigCmd(Cmd):
         self._update_cluster_manager_config()
 
         # Update cluster and resources
-        self._cluster_manager = CortxClusterManager(default_log_enable=False)
         Log.info("Checking if cluster exists already")
         cluster_exists = bool(json.loads(self._cluster_manager.cluster_controller.cluster_exists()).get("msg"))
         Log.info(f"Cluster exists? {cluster_exists}")
@@ -356,8 +356,9 @@ class ConfigCmd(Cmd):
                     self._confstore.set(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
                 except Exception as e:
                     Log.error(f"Cluster creation failed; destroying the cluster. Error: {e}")
-                    output = self._execute.run_cmd(const.PCS_CLUSTER_DESTROY)
-                    Log.error(f"Cluster destroyed. Output: {output}")
+                    # output = self._execute.run_cmd(const.PCS_CLUSTER_DESTROY)
+                    # Log.error(f"Cluster destroyed. Output: {output}")
+                    self._cluster_manager.cluster_controller.destroy_cluster()
                     # Delete the node from nodelist if it was added in the store
                     if self._confstore.key_exists(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}"):
                         self._confstore.delete(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")

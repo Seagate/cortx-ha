@@ -367,3 +367,23 @@ class PcsClusterController(ClusterController, PcsController):
                 raise ClusterManagerError("Cluster is not started.")
         except Exception as e:
             raise ClusterManagerError(f"Failed to create cluster. Error: {e}")
+
+    @controller_error_handler
+    def destroy_cluster(self, retry_index: int = 0):
+        if retry_index < const.CLUSTER_RETRY_COUNT and not self._is_pcs_cluster_running():
+            Log.warning('Cluster is not running, safe to destroy the cluster')
+            output = self._execute.run_cmd(const.PCS_CLUSTER_DESTROY)
+            Log.error(f"Cluster destroyed. Output: {output}")
+            return
+        elif retry_index == 0:
+            cluster_stop_response = self.stop()
+            if cluster_stop_response:
+                Log.warning('Successfully stopped the cluster, destroying the cluster')
+                if not self._is_pcs_cluster_running():
+                    output = self._execute.run_cmd(const.PCS_CLUSTER_DESTROY)
+                    Log.error(f"Cluster destroyed. Output: {output}")
+                    return
+        Log.info('cluster is still running, wait for cluster to stop')
+        time.sleep(const.BASE_WAIT_TIME)
+        retry_index += 1
+        destroy_cluster(retry_index)
