@@ -21,6 +21,9 @@ import json
 
 from cortx.utils.log import Log
 from ha import const
+from ha.core.system_health.health_evaluators.element_health_evaluator import ElementHealthEvaluator
+
+
 from ha.core.system_health.const import NODE_MAP_ATTRIBUTES
 from ha.core.event_analyzer.subscriber import Subscriber
 from ha.core.system_health.system_health_metadata import SystemHealthComponents, SystemHealthHierarchy
@@ -29,7 +32,7 @@ from ha.core.system_health.model.entity_health import EntityEvent, EntityAction,
 from ha.core.system_health.status_mapper import StatusMapper
 from ha.core.system_health.system_health_manager import SystemHealthManager
 from ha.core.error import HaSystemHealthException
-from ha.core.system_health.cluster_element_factory import ClusterElementFactory
+from ha.core.system_health.health_evaluator_factory import HealthEvaluatorFactory
 from ha.core.cluster.const import SYSTEM_HEALTH_OUTPUT_V2, GET_SYS_HEALTH_ARGS
 from ha.core.system_health.const import CLUSTER_ELEMENTS, HEALTH_STATUSES
 from ha.core.system_health.model.health_status import StatusOutput, ComponentStatus
@@ -40,7 +43,7 @@ class SystemHealth(Subscriber):
     System Health. This class implements an interface to the HA System Health module.
     """
 
-    def __init__(self, store, build_elements=True):
+    def __init__(self, store, init_evaluators=True):
         """
         Init method.
         """
@@ -48,10 +51,11 @@ class SystemHealth(Subscriber):
         self.node_id = None
         self.node_map = {}
         self.statusmapper = StatusMapper()
+        # TODO: Convert SystemHealthManager to singleton class
         self.healthmanager = SystemHealthManager(store)
-        # Build element needs config phase to be completed, build_elements is False during setup
-        if build_elements is True:
-            ClusterElementFactory.build_elements()
+        # Build element needs config phase to be completed, init_evaluators is False during setup
+        if init_evaluators is True:
+            HealthEvaluatorFactory.init_evaluators()
         Log.info("All cluster element are loaded, Ready to process alerts .................")
 
     def _prepare_key(self, component: str, **kwargs) -> str:
@@ -59,24 +63,7 @@ class SystemHealth(Subscriber):
         Prepare Key. This is an internal method for preparing component status key.
         This will be used when updating/querying a component status.
         """
-
-        # Get the key template.
-        key = SystemHealthComponents.get_key(component)
-        if "comp_id" in kwargs:
-            key = key.replace(f"${component}_id",kwargs["comp_id"])
-        # Check what all substitutions with actual values passed in kwargs to be done.
-        subs = re.findall("\$\w+", key)
-        # Check if the related argument present in kwargs, if yes substitute the same.
-        for sub in subs:
-            argument = re.split("\$", sub)
-            if argument[1] in kwargs:
-                key = re.sub("\$\w+", kwargs[argument[1]], key, 1)
-            else:
-                # Argument not present, break and return the key till this missing argument.
-                key = re.split("\$", key)
-                key = key[0]
-                break
-        return key
+        return ElementHealthEvaluator.prepare_key(component, **kwargs)
 
     def get_status_raw(self, component: str, component_id: str=None, **kwargs):
         """
@@ -302,8 +289,8 @@ class SystemHealth(Subscriber):
         else:
             Log.info(f"SystemHealth: Updated status for {component}:{comp_type}:{comp_id}")
             Log.info(f"Updating element {next_component} status")
-            element = ClusterElementFactory.get_element(next_component)
-            new_event = element.get_event_from_subelement(healthevent)
+            element = HealthEvaluatorFactory.get_element_evaluator(next_component)
+            new_event = element.evaluate_status(healthevent)
             self.process_event(new_event)
             return
 

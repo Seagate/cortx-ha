@@ -59,12 +59,10 @@ class NODE_MAP_ATTRIBUTES(Enum):
     RACK_ID = "rack_id"
     STORAGESET_ID = "storageset_id"
 
-class CLUSTER_ELEMENT_CLASSES:
-    CLASS_MODULE = "ha.core.system_health.cluster_elements"
-    CLASS_TO_ELEMENT_MAP: dict = {
-        CLUSTER_ELEMENTS.CLUSTER.value: f"{CLASS_MODULE}.cluster_element.ClusterElement",
-        CLUSTER_ELEMENTS.SITE.value: f"{CLASS_MODULE}.site_element.SiteElement",
-        CLUSTER_ELEMENTS.RACK.value: f"{CLASS_MODULE}.rack_element.RackElement",
-        CLUSTER_ELEMENTS.STORAGE_SET.value: f"{CLASS_MODULE}.storage_set_element.StorageSetElement",
-        CLUSTER_ELEMENTS.NODE.value: f"{CLASS_MODULE}.node_element.NodeElement"
+class HEALTH_EVALUATOR_CLASSES:
+    CLASS_MODULE = "ha.core.system_health.health_evaluators"
+    ELEMENT_MAP: dict = {
+        CLUSTER_ELEMENTS.CLUSTER.value: f"{CLASS_MODULE}.cluster_health_evaluator.ClusterHealthEvaluator",
+        CLUSTER_ELEMENTS.SITE.value: f"{CLASS_MODULE}.site_health_evaluator.SiteHealthEvaluator",
+        CLUSTER_ELEMENTS.RACK.value: f"{CLASS_MODULE}.rack_health_evaluator.RackHealthEvaluator"
     }

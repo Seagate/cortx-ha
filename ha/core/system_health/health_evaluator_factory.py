@@ -15,34 +15,32 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
 from importlib import import_module
-
 from cortx.utils.log import Log
+from ha.core.system_health.health_evaluators.element_health_evaluator import ElementHealthEvaluator
+from ha.core.system_health.const import HEALTH_EVALUATOR_CLASSES
 
-from ha.core.system_health.cluster_elements.element import Element
-from ha.core.system_health.const import CLUSTER_ELEMENT_CLASSES
-
-class ClusterElementFactory:
+class HealthEvaluatorFactory:
     """
     Cluster Element factory to keep track of elements.
     """
     _element_instances : dict = {}
 
     @staticmethod
-    def build_elements() -> None:
+    def init_evaluators() -> None:
         """
         Build all elements.
         """
-        Log.info("Build all the element inside the cluster")
-        elements = CLUSTER_ELEMENT_CLASSES.CLASS_TO_ELEMENT_MAP
+        Log.info("Initialize all the health evaluator elements")
+        elements = HEALTH_EVALUATOR_CLASSES.ELEMENT_MAP
         for element in elements.keys():
             class_path_list: list = elements[element].split('.')[:-1]
             module = import_module(f"{'.'.join(class_path_list)}")
             element_instance = getattr(module, elements[element].split('.')[-1])()
-            ClusterElementFactory._element_instances[element] = element_instance
-            Log.info(f"Element {elements[element]} is initalized...")
+            HealthEvaluatorFactory._element_instances[element] = element_instance
+            Log.info(f"HealthEvaluator {elements[element]} is initalized...")
 
     @staticmethod
-    def get_element(element: str) -> Element:
+    def get_element_evaluator(element: str) -> ElementHealthEvaluator:
         """
         Get instance of element
 
@@ -52,4 +50,4 @@ class ClusterElementFactory:
         Returns:
             Element: Generic element.
         """
-        return ClusterElementFactory._element_instances[element]
+        return HealthEvaluatorFactory._element_instances[element]
