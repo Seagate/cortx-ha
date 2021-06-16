@@ -21,6 +21,7 @@ import sys
 import pathlib
 import traceback
 from string import Template
+from ha.const import _DELIM
 
 # Test case for iem filter
 if __name__ == '__main__':
@@ -72,9 +73,9 @@ if __name__ == '__main__':
         }
 
         Expected_result = False
-        filter_type = Conf.get(const.ALERT_FILTER_INDEX, "iem.filter_type")
-        components_types_list = Conf.get(const.ALERT_FILTER_INDEX, "iem.components")
-        modules_dict = Conf.get(const.ALERT_FILTER_INDEX, "iem.modules")
+        filter_type = Conf.get(const.ALERT_FILTER_INDEX, f"iem{_DELIM}filter_type")
+        components_types_list = Conf.get(const.ALERT_FILTER_INDEX, f"iem{_DELIM}components")
+        modules_dict = Conf.get(const.ALERT_FILTER_INDEX, f"iem{_DELIM}modules")
 
         msg_type = TestMsg[const.SENSOR_RESPONSE_TYPE]
         _component_type = msg_type[const.SPECIFIC_INFO][const.COMPONENT]
