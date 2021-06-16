@@ -56,6 +56,8 @@ class SystemHealth(Subscriber):
         # Build element needs config phase to be completed, init_evaluators is False during setup
         if init_evaluators is True:
             HealthEvaluatorFactory.init_evaluators()
+        # TODO: Temporary code remove when all status method moved to evaluators
+        self.health_evaluator = HealthEvaluatorFactory.get_generic_evaluator()
         Log.info("All cluster element are loaded, Ready to process alerts .................")
 
     def _prepare_key(self, component: str, **kwargs) -> str:
@@ -69,27 +71,7 @@ class SystemHealth(Subscriber):
         """
         get status method. This is a generic method which can return status of any component(s).
         """
-        status = None
-        try:
-            # Prepare key and read the health value.
-            if component_id != None:
-                key = self._prepare_key(component, comp_id=component_id, **kwargs)
-                status = self.healthmanager.get_key(key)
-            else:
-                key = self._prepare_key(component, **kwargs)
-                status = self.healthmanager.get_key(key, just_value=False)
-                # Remove any keys which are not for the health status.
-                ignore_keys = []
-                for key in status:
-                    if "health" not in key:
-                        ignore_keys.append(key)
-                for key in ignore_keys:
-                    del status[key]
-            return status
-
-        except Exception as e:
-            Log.error(f"Failed reading status for component: {component} with Error: {e}")
-            raise HaSystemHealthException("Failed reading status")
+        return self.health_evaluator.get_status_raw(component, component_id, **kwargs)
 
     def get_status(self, component: CLUSTER_ELEMENTS = CLUSTER_ELEMENTS.CLUSTER.value, depth: int = 1, version: str = SYSTEM_HEALTH_OUTPUT_V2, **kwargs):
         """

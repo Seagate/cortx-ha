@@ -51,3 +51,7 @@ class HealthEvaluatorFactory:
             Element: Generic element.
         """
         return HealthEvaluatorFactory._element_instances[element]
+
+    @staticmethod
+    def get_generic_evaluator() -> ElementHealthEvaluator:
+        return list(HealthEvaluatorFactory._element_instances.values())[0]
