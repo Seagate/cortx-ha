@@ -24,6 +24,7 @@ import shutil
 import json
 import grp, pwd
 import time
+import uuid
 from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
 from cortx.utils.validator.v_pkg import PkgV
@@ -46,7 +47,8 @@ from ha.core.error import HaCleanupException
 from ha.core.error import SetupError
 from ha.setup.cluster_validator.cluster_test import TestExecutor
 from ha.core.system_health.system_health import SystemHealth
-from ha.core.system_health.model.entity_health import EntityEvent, EntityAction, EntityHealth
+from ha.core.system_health.const import CLUSTER_ELEMENTS, HEALTH_EVENTS, EVENT_SEVERITIES
+from ha.core.system_health.model.health_event import HealthEvent
 from ha.const import _DELIM
 
 class Cmd:
@@ -604,24 +606,30 @@ class ConfigCmd(Cmd):
             site_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.SITE_ID.value}")
             rack_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.RACK_ID.value}")
             storageset_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.STORAGESET_ID.value}")
+            host_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}network{_DELIM}management{_DELIM}public_fqdn")
 
-            initial_health = EntityHealth()
-            # Create an event and action
-            current_timestamp = str(int(time.time()))
-            entity_event = EntityEvent(current_timestamp, current_timestamp, "online", None)
-            entity_action = EntityAction(current_timestamp, const.ACTION_STATUS.PENDING.value)
-            # Add the event and action to the health value
-            initial_health.add_event(entity_event)
-            initial_health.set_action(entity_action)
-            # Convert the health value as appropriate for writing to the store.
-            initial_health = EntityHealth.write(initial_health)
+            timestamp = str(int(time.time()))
+            event_id = timestamp + str(uuid.uuid4().hex)
+            initial_event = {
+                const.EVENT_ATTRIBUTES.EVENT_ID : event_id,
+                const.EVENT_ATTRIBUTES.EVENT_TYPE : HEALTH_EVENTS.INSERTION.value,
+                const.EVENT_ATTRIBUTES.SEVERITY : EVENT_SEVERITIES.INFORMATIONAL.value,
+                const.EVENT_ATTRIBUTES.SITE_ID : site_id,
+                const.EVENT_ATTRIBUTES.RACK_ID : rack_id,
+                const.EVENT_ATTRIBUTES.CLUSTER_ID : cluster_id,
+                const.EVENT_ATTRIBUTES.STORAGESET_ID : storageset_id,
+                const.EVENT_ATTRIBUTES.NODE_ID : node_id,
+                const.EVENT_ATTRIBUTES.HOST_ID : host_id,
+                const.EVENT_ATTRIBUTES.RESOURCE_TYPE : CLUSTER_ELEMENTS.NODE.value,
+                const.EVENT_ATTRIBUTES.TIMESTAMP : timestamp,
+                const.EVENT_ATTRIBUTES.RESOURCE_ID : node_id,
+                const.EVENT_ATTRIBUTES.SPECIFIC_INFO : None
+            }
+
+            Log.debug(f"Adding initial health {initial_event} for node {node_id}")
+            health_event = HealthEvent.dict_to_object(initial_event)
             system_health = SystemHealth(self._confstore)
-            key = system_health._prepare_key(component="node", cluster_id=cluster_id, site_id=site_id, rack_id=rack_id, storageset_id=storageset_id, node_id=node_id)
-            # Check key already exists, if yes, delete and set.
-            junk_health = self._confstore.get(key)
-            if junk_health:
-                self._confstore.delete(key)
-            self._confstore.set(key, initial_health)
+            system_health.process_event(health_event)
         except Exception as e:
             Log.error(f"Failed adding node health. Error: {e}")
             raise HaConfigException("Failed adding node health.")
