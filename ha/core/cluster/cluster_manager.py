@@ -330,11 +330,11 @@ class CortxClusterManager:
             Log.error(f"Failed returning system health . Error: {e}")
             return json.dumps({"status": const.STATUSES.FAILED.value, "output": "", "error": "Internal error"})
 
-    def get_status(self, element, element_id: str = HEALTH_STATUSES.UNKNOWN.value, start_level: int = 1, level: int = 1, depth: int = 1, parent: object = None):
+    def get_status(self, element, element_id: str = const.NODE_STATUSES.UNKNOWN.value, start_level: int = 1, level: int = 1, depth: int = 1, parent: object = None):
         # At requested level in the hierarchy
         if level == depth:
             # If request was with depth = 1 and id was provided.
-            if element_id != HEALTH_STATUSES.UNKNOWN.value:
+            if element_id != const.NODE_STATUSES.UNKNOWN.value:
                 status_key = self.is_status_present(element, element_id = element_id)
                 element_status = self.prapare_element_status(element, element_id = element_id, key = status_key)
                 if level == start_level:
@@ -355,7 +355,7 @@ class CortxClusterManager:
                     del self._status_dict[status_key]
         else:
             # Prepare and return status for all available elements at this and further levels
-            if element_id != HEALTH_STATUSES.UNKNOWN.value:
+            if element_id != const.NODE_STATUSES.UNKNOWN.value:
                 status_key = self.is_status_present(element, element_id = element_id)
                 element_status = self.prapare_element_status(element, element_id = element_id, key = status_key)
                 if level == start_level:
@@ -384,9 +384,9 @@ class CortxClusterManager:
                     else:
                         break
 
-    def is_status_present(self, element, element_id: str = HEALTH_STATUSES.UNKNOWN.value) -> str:
+    def is_status_present(self, element, element_id: str = const.NODE_STATUSES.UNKNOWN.value) -> str:
         status_key = None
-        if element_id is not HEALTH_STATUSES.UNKNOWN.value:
+        if element_id is not const.NODE_STATUSES.UNKNOWN.value:
             for key in self._status_dict:
                 if re.search(f"{element}/{element_id}/health", key):
                     status_key = key
@@ -400,9 +400,9 @@ class CortxClusterManager:
                         break
         return status_key
 
-    def prapare_element_status(self, element: str, element_id: str = HEALTH_STATUSES.UNKNOWN.value, key: str = None) -> object:
-            status = HEALTH_STATUSES.UNKNOWN.value
-            created_timestamp = HEALTH_STATUSES.UNKNOWN.value
+    def prapare_element_status(self, element: str, element_id: str = const.NODE_STATUSES.UNKNOWN.value, key: str = None) -> object:
+            status = const.NODE_STATUSES.UNKNOWN.value
+            created_timestamp = const.NODE_STATUSES.UNKNOWN.value
             if key is not None:
                 entity_health = self._status_dict[key]
                 entity_health = json.loads(entity_health)
