@@ -582,7 +582,7 @@ class ConfigCmd(Cmd):
         cluster_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.CLUSTER_ID.value}")
         site_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.SITE_ID.value}")
         rack_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.RACK_ID.value}")
-        storageset_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.STORAGESET_ID.value}")
+        storageset_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.STORAGE_SET_ID.value}")
         node_map = {NODE_MAP_ATTRIBUTES.CLUSTER_ID.value: cluster_id, NODE_MAP_ATTRIBUTES.SITE_ID.value: site_id,
                     NODE_MAP_ATTRIBUTES.RACK_ID.value: rack_id, NODE_MAP_ATTRIBUTES.STORAGESET_ID.value: storageset_id}
         system_health = SystemHealth(self._confstore)
@@ -603,7 +603,7 @@ class ConfigCmd(Cmd):
             cluster_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.CLUSTER_ID.value}")
             site_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.SITE_ID.value}")
             rack_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.RACK_ID.value}")
-            storageset_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.STORAGESET_ID.value}")
+            storageset_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.STORAGE_SET_ID.value}")
 
             initial_health = EntityHealth()
             # Create an event and action
