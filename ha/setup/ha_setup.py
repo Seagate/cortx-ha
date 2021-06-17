@@ -376,7 +376,7 @@ class ConfigCmd(Cmd):
                 # Create cluster
                 try:
                     self._create_cluster(cluster_name, cluster_user, cluster_secret, node_name)
-                    self._create_resource(s3_instances=s3_instances, mgmt_info=mgmt_info)
+                    self._create_resource(s3_instances=s3_instances, mgmt_info=mgmt_info, node_count=len(nodelist))
                     self._alert_config.create_alert()
                     self._confstore.set(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
                 except Exception as e:
