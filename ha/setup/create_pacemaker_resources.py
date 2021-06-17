@@ -274,7 +274,7 @@ def instance_counter(cib_xml, push=False, **kwargs):
     """Create service instance counter resource."""
     process.run_cmd(f"pcs -f {cib_xml} resource create srv_counter ocf:seagate:service_instances_counter \
         op start timeout=60s interval=0s \
-        op monitor timeout=3s interval=3s \
+        op monitor timeout=5s interval=5s \
         op stop timeout=60s interval=0s")
     process.run_cmd(f"pcs -f {cib_xml} resource clone srv_counter")
     if push:
