@@ -539,10 +539,10 @@ class ConfigCmd(Cmd):
             Conf.set(const.HA_GLOBAL_INDEX, f"CLUSTER_MANAGER{_DELIM}env", node_type.upper())
         else:
             # TODO: check if any env available other than vm, hw
-            Conf.set(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.env", "HW")
-        Conf.set(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.cluster_type", cluster_type)
-        Conf.set(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.local_node", node_name)
-        Conf.set(const.HA_GLOBAL_INDEX, "SERVICE_INSTANCE_COUNTER[1].instances", s3_instances)
+            Conf.set(const.HA_GLOBAL_INDEX, f"CLUSTER_MANAGER{_DELIM}env", "HW")
+        Conf.set(const.HA_GLOBAL_INDEX, f"CLUSTER_MANAGER{_DELIM}cluster_type", cluster_type)
+        Conf.set(const.HA_GLOBAL_INDEX, f"CLUSTER_MANAGER{_DELIM}local_node", node_name)
+        Conf.set(const.HA_GLOBAL_INDEX, f"SERVICE_INSTANCE_COUNTER[1]{_DELIM}instances", s3_instances)
         Log.info("CONFIG: Update ha configuration files")
         Conf.save(const.HA_GLOBAL_INDEX)
 
