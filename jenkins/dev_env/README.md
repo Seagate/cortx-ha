@@ -20,6 +20,26 @@ cd cortx-ha
 bash -x /root/dev_env/build_rpm.sh /root/dev.conf
 ```
 
+# Set Python path (Optional)
+1. Update on any if want to run code from repos
+  - Update `~/.bashrc` on root user
+```
+# add at end of ~/.bashrc
+export PYTHONPATH="${PYTHONPATH}:/home/<USER>/src/cortx-ha/"
+```
+
+2. Run bashrc to take effect
+```bash
+source ~/.bashrc
+```
+
+3. Test
+```
+# Example
+/usr/bin/env python3 "/home/<USER>/src/cortx-ha/ha/cli/cortxha.py" -h
+# Similarly it can be executed for any cortx-ha file
+```
+
 # Cortx Deployment
 
 1. Update `/etc/hosts` On all 3 node.
@@ -34,7 +54,7 @@ bash -x /root/dev_env/build_rpm.sh /root/dev.conf
 3. Update password less ssh On all 3 node.
   - Run on all node
 ```bash
-ssh-keygen -t rsa -b 4096 -C root@srvnode-1 # Self node name
+ssh-keygen
 ssh-copy-id root@srvnode-1
 ssh-copy-id root@srvnode-2
 ssh-copy-id root@srvnode-3
@@ -58,7 +78,7 @@ ssh-add
 yum install -y cortx-ha --nogpgcheck
 ```
 
-5. Mini Provision
+5. Mini Provision (Run on all node)
 ```bash
 ha_setup post_install --config 'json:///root/example_configV1.json' --dev
 ha_setup prepare --config 'json:///root/example_configV1.json' --dev
@@ -66,4 +86,9 @@ ha_setup config --config 'json:///root/example_configV1.json' --dev
 ha_setup init --config 'json:///root/example_configV1.json' --dev
 cortx cluster start
 ha_setup test --config 'json:///root/example_configV1.json' --dev
+```
+
+6. Check status
+```
+pcs status --full
 ```
