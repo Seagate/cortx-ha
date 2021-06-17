@@ -23,7 +23,6 @@ from cortx.utils.log import Log
 
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.event_analyzer.event_analyzer_exceptions import EventParserException
-from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.system_health.const import CLUSTER_ELEMENTS, HEALTH_EVENTS, EVENT_SEVERITIES
 from ha.core.config.config_manager import ConfigManager
 from ha.const import PVTFQDN_TO_NODEID_KEY, ALERT_ATTRIBUTES, EVENT_ATTRIBUTES
