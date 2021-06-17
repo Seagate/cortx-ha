@@ -14,6 +14,8 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
+import time
+import uuid
 from cortx.utils.log import Log
 from ha.core.system_health.health_evaluators.element_health_evaluator import ElementHealthEvaluator
 from ha.core.system_health.const import HEALTH_STATUSES, HEALTH_EVENTS, CLUSTER_ELEMENTS
@@ -44,7 +46,7 @@ class ClusterHealthEvaluator(ElementHealthEvaluator):
         status = self.get_cluster_status(cluster_id)
         Log.info(f"Evaluated cluster {cluster_id} status as {status}")
         return self._get_new_event(
-            event_id=health_event.event_id + "cluster",
+            event_id=str(int(time.time())) + str(uuid.uuid4().hex),
             event_type=status,
             resource_type=CLUSTER_ELEMENTS.CLUSTER.value,
             resource_id=cluster_id,

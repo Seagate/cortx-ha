@@ -14,6 +14,8 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
+import time
+import uuid
 from cortx.utils.log import Log
 from ha.core.system_health.health_evaluators.element_health_evaluator import ElementHealthEvaluator
 from ha.core.system_health.const import HEALTH_STATUSES, HEALTH_EVENTS, CLUSTER_ELEMENTS
@@ -45,7 +47,7 @@ class RackHealthEvaluator(ElementHealthEvaluator):
                                         site_id=health_event.site_id)
         Log.info(f"Evaluated rack {rack_id} status as {status}")
         return self._get_new_event(
-            event_id=health_event.event_id + "rack",
+            event_id=str(int(time.time())) + str(uuid.uuid4().hex),
             event_type=status,
             resource_type=CLUSTER_ELEMENTS.RACK.value,
             resource_id=rack_id,
@@ -82,10 +84,9 @@ class RackHealthEvaluator(ElementHealthEvaluator):
         # Considering rack have only node as element and element_type
         node_ids = children[CLUSTER_ELEMENTS.NODE.value][CLUSTER_ELEMENTS.NODE.value]
         quorum_size = int(len(node_ids.keys())/2) + 1
-        # offline online unknown degraded pending
         if self.count_status(node_ids, HEALTH_STATUSES.ONLINE.value) == len(node_ids.keys()):
             rack_status = HEALTH_EVENTS.FAULT_RESOLVED.value
-        elif self.count_status(node_ids, HEALTH_STATUSES.ONLINE.value) == quorum_size:
+        elif self.count_status(node_ids, HEALTH_STATUSES.ONLINE.value) >= quorum_size:
             rack_status = HEALTH_EVENTS.THRESHOLD_BREACHED_LOW.value
         elif self.count_status(node_ids, HEALTH_STATUSES.PENDING.value) >= quorum_size:
             rack_status = HEALTH_EVENTS.UNKNOWN.value
