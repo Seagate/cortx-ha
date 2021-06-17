@@ -116,6 +116,8 @@ def motr(cib_xml, push=False, **kwargs):
             quorum_size += 1
             process.run_cmd(f"pcs -f {cib_xml} constraint location motr-ios-{i}-clone rule score=-INFINITY \
                     not_defined motr-confd-count or motr-confd-count lt integer {quorum_size}")
+            process.run_cmd(f"pcs -f {cib_xml} constraint order hax-clone then motr-ios-{i}-clone")
+            process.run_cmd(f"pcs -f {cib_xml} constraint colocation add motr-ios-{i}-clone with hax-clone")
         except Exception as e:
             raise CreateResourceConfigError(f"Invalid node_count. Error: {e}")
     if push:
