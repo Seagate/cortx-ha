@@ -25,9 +25,9 @@ server_node:
     s3_instances: '1'
     type: TMPL_TYPE
     bmc:
-      ip: TMPL_BMC_IP
-      user: TMPL_BMC_USER
-      secret: TMPL_BMC_SECRET
+      ip: TMPL_BMC_IP_1
+      user: TMPL_BMC_USER_1
+      secret: TMPL_BMC_SECRET_1
   TMPL_MACHINE_ID_2:
     node_id: TMPL_NODE_ID_2
     cluster_id: TMPL_CLUSTER_ID
@@ -43,9 +43,9 @@ server_node:
     s3_instances: '1'
     type: TMPL_TYPE
     bmc:
-      ip: TMPL_BMC_IP
-      user: TMPL_BMC_USER
-      secret: TMPL_BMC_SECRET
+      ip: TMPL_BMC_IP_2
+      user: TMPL_BMC_USER_2
+      secret: TMPL_BMC_SECRET_2
   TMPL_MACHINE_ID_3:
     node_id: TMPL_NODE_ID_3
     cluster_id: TMPL_CLUSTER_ID
@@ -61,7 +61,7 @@ server_node:
     s3_instances: '1'
     type: TMPL_TYPE
     bmc:
-      ip: TMPL_BMC_IP
-      user: TMPL_BMC_USER
-      secret: TMPL_BMC_SECRET
+      ip: TMPL_BMC_IP_3
+      user: TMPL_BMC_USER_3
+      secret: TMPL_BMC_SECRET_3
 
