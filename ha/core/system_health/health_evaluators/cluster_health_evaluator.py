@@ -82,10 +82,12 @@ class ClusterHealthEvaluator(ElementHealthEvaluator):
         quorum_size = int(len(site_ids.keys())/2) + 1
         if self.count_status(site_ids, HEALTH_STATUSES.ONLINE.value) == len(site_ids.keys()):
             cluster_status = HEALTH_EVENTS.FAULT_RESOLVED.value
-        elif self.count_status(site_ids, HEALTH_STATUSES.ONLINE.value) == quorum_size:
+        elif self.count_status(site_ids, HEALTH_STATUSES.ONLINE.value) >= quorum_size:
             cluster_status = HEALTH_EVENTS.THRESHOLD_BREACHED_LOW.value
-        elif self.count_status(site_ids, HEALTH_STATUSES.DEGRADED.value) == quorum_size:
+        elif self.count_status(site_ids, HEALTH_STATUSES.DEGRADED.value) >= quorum_size:
             cluster_status = HEALTH_EVENTS.THRESHOLD_BREACHED_LOW.value
+        elif self.count_status(site_ids, HEALTH_STATUSES.FAILED.value) >= quorum_size:
+            rack_status = HEALTH_EVENTS.FAILED.value
         elif self.count_status(site_ids, HEALTH_STATUSES.PENDING.value) >= quorum_size:
             cluster_status = HEALTH_EVENTS.UNKNOWN.value
         elif self.count_status(site_ids, HEALTH_STATUSES.UNKNOWN.value) >= quorum_size:

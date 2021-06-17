@@ -84,15 +84,16 @@ class SiteHealthEvaluator(ElementHealthEvaluator):
         quorum_size = int(len(rack_ids.keys())/2) + 1
         if self.count_status(rack_ids, HEALTH_STATUSES.ONLINE.value) == len(rack_ids.keys()):
             site_status = HEALTH_EVENTS.FAULT_RESOLVED.value
-        elif self.count_status(rack_ids, HEALTH_STATUSES.ONLINE.value) == quorum_size:
+        elif self.count_status(rack_ids, HEALTH_STATUSES.ONLINE.value) >= quorum_size:
             site_status = HEALTH_EVENTS.THRESHOLD_BREACHED_LOW.value
-        elif self.count_status(rack_ids, HEALTH_STATUSES.DEGRADED.value) == quorum_size:
+        elif self.count_status(rack_ids, HEALTH_STATUSES.DEGRADED.value) >= quorum_size:
             site_status = HEALTH_EVENTS.THRESHOLD_BREACHED_LOW.value
+        elif self.count_status(rack_ids, HEALTH_STATUSES.FAILED.value) >= quorum_size:
+            rack_status = HEALTH_EVENTS.FAILED.value
         elif self.count_status(rack_ids, HEALTH_STATUSES.PENDING.value) >= quorum_size:
             site_status = HEALTH_EVENTS.UNKNOWN.value
         elif self.count_status(rack_ids, HEALTH_STATUSES.UNKNOWN.value) >= quorum_size:
             site_status = HEALTH_EVENTS.UNKNOWN.value
-        #TODO: add failed status
         else:
             site_status = HEALTH_EVENTS.FAULT.value
         return site_status
