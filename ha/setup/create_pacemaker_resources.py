@@ -316,12 +316,12 @@ def uds(cib_xml, push=False, **kwargs):
             op start timeout=60s interval=0s \
             op monitor timeout=30s interval=30s \
             op stop timeout=60s interval=0s")
-    # Constraints
-    process.run_cmd(f"pcs -f {cib_xml} pcs -f {cib_xml} constraint colocation add uds with csm-agent score=INFINITY")
-    process.run_cmd(f"pcs -f {cib_xml} pcs -f {cib_xml} constraint order csm-agent then uds")
+        # Constraints
+        process.run_cmd(f"pcs -f {cib_xml} pcs -f {cib_xml} constraint colocation add uds with csm-agent score=INFINITY")
+        process.run_cmd(f"pcs -f {cib_xml} pcs -f {cib_xml} constraint order csm-agent then uds")
 
-    if push:
-        cib_push(cib_xml)
+        if push:
+            cib_push(cib_xml)
 
 
 def configure_stonith(cib_xml=None, push=False, **kwargs):
