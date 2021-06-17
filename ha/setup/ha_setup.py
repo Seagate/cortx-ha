@@ -47,6 +47,7 @@ from ha.core.error import SetupError
 from ha.setup.cluster_validator.cluster_test import TestExecutor
 from ha.core.system_health.system_health import SystemHealth
 from ha.core.system_health.model.entity_health import EntityEvent, EntityAction, EntityHealth
+from ha.const import _DELIM
 
 class Cmd:
     """
@@ -153,7 +154,7 @@ class Cmd:
 
     def get_node_name(self):
         machine_id = self.get_machine_id()
-        node_name = Conf.get(self._index, f"server_node.{machine_id}.network.data.private_fqdn")
+        node_name = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}network{_DELIM}data{_DELIM}private_fqdn")
         Log.info(f"Read node name: {node_name}")
         return node_name
 
@@ -179,7 +180,7 @@ class Cmd:
             nodes_schema = Conf.get(self._index, "server_node")
             machine_ids: list = list(nodes_schema.keys())
             for machine in machine_ids:
-                nodelist.append(Conf.get(self._index, f"server_node.{machine}.network.data.private_fqdn"))
+                nodelist.append(Conf.get(self._index, f"server_node{_DELIM}{machine}{_DELIM}network{_DELIM}data{_DELIM}private_fqdn"))
         else:
             raise SetupError(f"Failed to get nodelist, Invalid options {fetch_from}")
         Log.info(f"Found total Nodes: {len(nodelist)}, Nodes: {nodelist}, in {fetch_from}")
@@ -225,7 +226,7 @@ class Cmd:
             [int]: Return s3 count.
         """
         try:
-            s3_instances = Conf.get(Cmd._index, f"server_node.{machine_id}.s3_instances")
+            s3_instances = Conf.get(Cmd._index, f"server_node{_DELIM}{machine_id}{_DELIM}s3_instances")
             if int(s3_instances) < 1:
                 raise HaConfigException(f"Found {s3_instances} which is invalid s3 instance count.")
             return int(s3_instances)
@@ -335,25 +336,25 @@ class ConfigCmd(Cmd):
 
         # Read cluster name and cluster user
         machine_id = self.get_machine_id()
-        cluster_id = Conf.get(self._index, f"server_node.{machine_id}.cluster_id")
-        cluster_name = Conf.get(self._index, f"cluster.{cluster_id}.name")
-        cluster_user = Conf.get(self._index, f"cortx.software.{const.HA_CLUSTER_SOFTWARE}.user")
-        node_type = Conf.get(self._index, f"server_node.{machine_id}.type").strip()
+        cluster_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}cluster_id")
+        cluster_name = Conf.get(self._index, f"cluster{_DELIM}{cluster_id}{_DELIM}name")
+        cluster_user = Conf.get(self._index, f"cortx{_DELIM}software{_DELIM}{const.HA_CLUSTER_SOFTWARE}{_DELIM}user")
+        node_type = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}type").strip()
 
         # Read cluster user password and decrypt the same
-        cluster_secret = Conf.get(self._index, f"cortx.software.{const.HA_CLUSTER_SOFTWARE}.secret")
+        cluster_secret = Conf.get(self._index, f"cortx{_DELIM}software{_DELIM}{const.HA_CLUSTER_SOFTWARE}{_DELIM}secret")
         key = Cipher.generate_key(cluster_id, const.HACLUSTER_KEY)
         cluster_secret = Cipher.decrypt(key, cluster_secret.encode('ascii')).decode()
         mgmt_info: dict = self._get_mgmt_vip(machine_id, cluster_id)
         s3_instances = ConfigCmd.get_s3_instance(machine_id)
 
-        self._update_env(node_name, node_type, const.HA_CLUSTER_SOFTWARE)
+        self._update_env(node_name, node_type, const.HA_CLUSTER_SOFTWARE, s3_instances)
         self._fetch_fids()
         self._update_cluster_manager_config()
 
         # Push node name mapping to store
         if not self._confstore.key_exists(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_name}"):
-            node_id = Conf.get(self._index, f"server_node.{machine_id}.node_id")
+            node_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}node_id")
             self._confstore.set(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_name}", node_id)
 
         # Update node map
@@ -401,11 +402,11 @@ class ConfigCmd(Cmd):
         self._execute.run_cmd(const.PCS_CLEANUP)
         Log.info("config command is successful")
 
-    def _create_resource(self, s3_instances, mgmt_info):
+    def _create_resource(self, s3_instances, mgmt_info, node_count):
         Log.info("Creating pacemaker resources")
         try:
             # TODO: create resource if not already exists.
-            create_all_resources(s3_instances=s3_instances, mgmt_info=mgmt_info)
+            create_all_resources(s3_instances=s3_instances, mgmt_info=mgmt_info, node_count=node_count)
         except Exception as e:
             Log.info(f"Resource creation failed. Error {e}")
             raise HaConfigException("Resource creation failed.")
@@ -516,30 +517,31 @@ class ConfigCmd(Cmd):
             node_count: int = len(Conf.get(self._index, "server_node"))
             if ConfigCmd.DEV_CHECK == True or node_count < 2:
                 return mgmt_info
-            mgmt_info["mgmt_vip"] = Conf.get(self._index, f"cluster.{cluster_id}.network.management.virtual_host")
-            netmask = Conf.get(self._index, f"server_node.{machine_id}.network.management.netmask")
+            mgmt_info["mgmt_vip"] = Conf.get(self._index, f"cluster{_DELIM}{cluster_id}{_DELIM}network{_DELIM}management{_DELIM}virtual_host")
+            netmask = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}network{_DELIM}management{_DELIM}netmask")
             if netmask is None:
                 raise HaConfigException("Detected invalid netmask, It should not be empty.")
             mgmt_info["mgmt_netmask"] = sum(bin(int(x)).count('1') for x in netmask.split('.'))
-            mgmt_info["mgmt_iface"] = Conf.get(self._index, f"server_node.{machine_id}.network.management.interfaces")[0]
+            mgmt_info["mgmt_iface"] = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}network{_DELIM}management{_DELIM}interfaces")[0]
             Log.info(f"Mgmt vip configuration: {str(mgmt_info)}")
             return mgmt_info
         except Exception as e:
             Log.error(f"Failed to get mgmt ip address. Error: {e}")
             raise HaConfigException(f"Failed to get mgmt ip address. Error: {e}.")
 
-    def _update_env(self, node_name: str, node_type: str, cluster_type: str) -> None:
+    def _update_env(self, node_name: str, node_type: str, cluster_type: str, s3_instances: int) -> None:
         """
         Update env like VM, HW
         """
         Log.info(f"Detected {node_type} env and cluster_type {cluster_type}.")
         if "VM" == node_type.upper():
-            Conf.set(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.env", node_type.upper())
+            Conf.set(const.HA_GLOBAL_INDEX, f"CLUSTER_MANAGER{_DELIM}env", node_type.upper())
         else:
             # TODO: check if any env available other than vm, hw
             Conf.set(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.env", "HW")
         Conf.set(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.cluster_type", cluster_type)
         Conf.set(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.local_node", node_name)
+        Conf.set(const.HA_GLOBAL_INDEX, "SERVICE_INSTANCE_COUNTER[1].instances", s3_instances)
         Log.info("CONFIG: Update ha configuration files")
         Conf.save(const.HA_GLOBAL_INDEX)
 
@@ -578,11 +580,11 @@ class ConfigCmd(Cmd):
         """
         # TODO: update node map should failed if any key is missing
         machine_id = self.get_machine_id()
-        node_id = Conf.get(self._index, f"server_node.{machine_id}.node_id")
-        cluster_id = Conf.get(self._index, f"server_node.{machine_id}.{NODE_MAP_ATTRIBUTES.CLUSTER_ID.value}")
-        site_id = Conf.get(self._index, f"server_node.{machine_id}.{NODE_MAP_ATTRIBUTES.SITE_ID.value}")
-        rack_id = Conf.get(self._index, f"server_node.{machine_id}.{NODE_MAP_ATTRIBUTES.RACK_ID.value}")
-        storageset_id = Conf.get(self._index, f"server_node.{machine_id}.{NODE_MAP_ATTRIBUTES.STORAGESET_ID.value}")
+        node_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}node_id")
+        cluster_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.CLUSTER_ID.value}")
+        site_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.SITE_ID.value}")
+        rack_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.RACK_ID.value}")
+        storageset_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.STORAGESET_ID.value}")
         node_map = {NODE_MAP_ATTRIBUTES.CLUSTER_ID.value: cluster_id, NODE_MAP_ATTRIBUTES.SITE_ID.value: site_id,
                     NODE_MAP_ATTRIBUTES.RACK_ID.value: rack_id, NODE_MAP_ATTRIBUTES.STORAGESET_ID.value: storageset_id}
         system_health = SystemHealth(self._confstore, init_evaluators=False)
@@ -599,11 +601,11 @@ class ConfigCmd(Cmd):
         """
         try:
             machine_id = self.get_machine_id()
-            node_id = Conf.get(self._index, f"server_node.{machine_id}.node_id")
-            cluster_id = Conf.get(self._index, f"server_node.{machine_id}.{NODE_MAP_ATTRIBUTES.CLUSTER_ID.value}")
-            site_id = Conf.get(self._index, f"server_node.{machine_id}.{NODE_MAP_ATTRIBUTES.SITE_ID.value}")
-            rack_id = Conf.get(self._index, f"server_node.{machine_id}.{NODE_MAP_ATTRIBUTES.RACK_ID.value}")
-            storageset_id = Conf.get(self._index, f"server_node.{machine_id}.{NODE_MAP_ATTRIBUTES.STORAGESET_ID.value}")
+            node_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}node_id")
+            cluster_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.CLUSTER_ID.value}")
+            site_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.SITE_ID.value}")
+            rack_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.RACK_ID.value}")
+            storageset_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.STORAGESET_ID.value}")
 
             # TODO: Event should be created from system_health.process_event
             initial_health = EntityHealth()
@@ -841,10 +843,10 @@ class RestoreCmd(Cmd):
 def main(argv: list):
     try:
         if sys.argv[1] == "post_install":
-            Conf.init(delim='.')
+            Conf.init()
             Conf.load(const.HA_GLOBAL_INDEX, f"yaml://{const.SOURCE_CONFIG_FILE}")
-            log_path = Conf.get(const.HA_GLOBAL_INDEX, "LOG.path")
-            log_level = Conf.get(const.HA_GLOBAL_INDEX, "LOG.level")
+            log_path = Conf.get(const.HA_GLOBAL_INDEX, f"LOG{_DELIM}path")
+            log_level = Conf.get(const.HA_GLOBAL_INDEX, f"LOG{_DELIM}level")
             Log.init(service_name='ha_setup', log_path=log_path, level=log_level)
         else:
             ConfigManager.init("ha_setup")

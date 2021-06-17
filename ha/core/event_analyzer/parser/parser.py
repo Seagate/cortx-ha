@@ -23,7 +23,6 @@ from cortx.utils.log import Log
 
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.event_analyzer.event_analyzer_exceptions import EventParserException
-from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.system_health.const import CLUSTER_ELEMENTS, HEALTH_EVENTS, EVENT_SEVERITIES
 from ha.core.config.config_manager import ConfigManager
 from ha.const import PVTFQDN_TO_NODEID_KEY, ALERT_ATTRIBUTES, EVENT_ATTRIBUTES
@@ -137,7 +136,7 @@ class IEMParser(Parser):
             }
             # To be removed after HA starts populating IEM messages
             if event.get(EVENT_ATTRIBUTES.RESOURCE_TYPE) == CLUSTER_ELEMENTS.NODE.value and event.get(EVENT_ATTRIBUTES.SEVERITY) == EVENT_SEVERITIES.WARNING.value:
-                event[EVENT_ATTRIBUTES.EVENT_TYPE] = HEALTH_EVENTS.FAULT.value
+                event[EVENT_ATTRIBUTES.EVENT_TYPE] = HEALTH_EVENTS.FAILED.value
 
             Log.debug(f"Parsed {event} schema")
             health_event = HealthEvent.dict_to_object(event)

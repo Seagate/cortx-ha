@@ -25,6 +25,7 @@ from ha import const
 from ha.core.config.config_manager import ConfigManager
 from ha.core.system_health.system_health import SystemHealth
 from ha.core.system_health.model.health_event import HealthEvent
+from ha.const import _DELIM
 
 def main(argv: dict):
     # TODO: Add test cases.
@@ -32,10 +33,10 @@ def main(argv: dict):
 
 if __name__ == '__main__':
     # TODO: Import and use config_manager.py
-    Conf.init(delim='.')
+    Conf.init()
     Conf.load(const.HA_GLOBAL_INDEX, f"yaml://{const.SOURCE_CONFIG_FILE}")
-    log_path = Conf.get(const.HA_GLOBAL_INDEX, "LOG.path")
-    log_level = Conf.get(const.HA_GLOBAL_INDEX, "LOG.level")
+    log_path = Conf.get(const.HA_GLOBAL_INDEX, f"LOG{_DELIM}path")
+    log_level = Conf.get(const.HA_GLOBAL_INDEX, f"LOG{_DELIM}level")
     Log.init(service_name='ha_system_health', log_path=log_path, level=log_level)
 
     try:

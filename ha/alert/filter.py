@@ -22,7 +22,7 @@ from ha.alert.const import ALERTS
 from ha.const import ALERT_EVENT_INDEX
 from ha.core.config.config_manager import ConfigManager
 from ha.alert.alert_exceptions import AlertEventFilterError
-
+from ha.const import _DELIM
 
 class Filter(metaclass=abc.ABCMeta):
     """ Base class to filter alert """
@@ -58,9 +58,9 @@ class AlertEventFilter(Filter):
         super().__init__()
 
         # Get filter type and resource types list from the alert monitor rule file
-        self.alert_filter_components = Conf.get(ALERT_EVENT_INDEX, ALERTS.PK_ALERT_EVENT_COMPONENTS)
-        self.alert_filter_modules = Conf.get(ALERT_EVENT_INDEX, ALERTS.PK_ALERT_EVENT_COMPONENT_MODULES)
-        self.alert_filter_module_operations = Conf.get(ALERT_EVENT_INDEX, ALERTS.PK_ALERT_EVENT_OPERATIONS)
+        self.alert_filter_components = Conf.get(ALERT_EVENT_INDEX, f"ALERTS{_DELIM}PK_ALERT_EVENT_COMPONENTS")
+        self.alert_filter_modules = Conf.get(ALERT_EVENT_INDEX, f"ALERTS{_DELIM}PK_ALERT_EVENT_COMPONENT_MODULES")
+        self.alert_filter_module_operations = Conf.get(ALERT_EVENT_INDEX, f"ALERTS{_DELIM}PK_ALERT_EVENT_OPERATIONS")
         Log.info("AlertEventFilter initialized.")
 
     def filter_event(self):
