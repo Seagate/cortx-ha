@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+echo '''[
+  {
+    "name": "confd",
+    "fid": "0x7200000000000001:0x37"
+  },
+  {
+    "name": "ioservice",
+    "fid": "0x7200000000000001:0x3a"
+  },
+  {
+    "name": "s3server",
+    "fid": "0x7200000000000001:0x53"
+  }
+]'''
