@@ -89,7 +89,7 @@ class SiteHealthEvaluator(ElementHealthEvaluator):
         elif self.count_status(rack_ids, HEALTH_STATUSES.DEGRADED.value) >= quorum_size:
             site_status = HEALTH_EVENTS.THRESHOLD_BREACHED_LOW.value
         elif self.count_status(rack_ids, HEALTH_STATUSES.FAILED.value) >= quorum_size:
-            rack_status = HEALTH_EVENTS.FAILED.value
+            site_status = HEALTH_EVENTS.FAILED.value
         elif self.count_status(rack_ids, HEALTH_STATUSES.PENDING.value) >= quorum_size:
             site_status = HEALTH_EVENTS.UNKNOWN.value
         elif self.count_status(rack_ids, HEALTH_STATUSES.UNKNOWN.value) >= quorum_size:
