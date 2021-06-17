@@ -5,6 +5,11 @@ dist
 web-dist
 __pycache__
 .pytest_cache
+build
+cortx_ha.egg-info
+
+# backup file
+ha.conf
 
 # local env files
 .env.local

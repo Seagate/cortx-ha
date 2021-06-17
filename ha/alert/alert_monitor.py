@@ -101,4 +101,3 @@ class AlertMonitor:
         """
         # TODO to be implemented when recipient is required
         pass
-

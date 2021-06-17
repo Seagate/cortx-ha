@@ -58,6 +58,25 @@ class FidManager:
                 {instance_id}). Error: {e}")
             return None
 
+
+class AttribUpdater:
+    @staticmethod
+    def set_attr(resource: str):
+        try:
+            executor = SimpleCommand()
+            executor.run_cmd(f"attrd_updater -U 1 -n {resource}", check_error=False)
+        except Exception as e:
+            Log.error(f"Problem in updating attr - resource: {resource}. Error: {e}")
+
+    @staticmethod
+    def del_attr(resource: str):
+        try:
+            executor = SimpleCommand()
+            executor.run_cmd(f"attrd_updater -D -n {resource}", check_error=False)
+        except Exception as e:
+            Log.error(f"Problem in deleting attr - resource: {resource}, Error: {e}")
+
+
 class DynamicFidServiceRA(CortxServiceRA):
     """
     This class is used to provide wrapper around systemd resource agent.
@@ -77,6 +96,11 @@ class DynamicFidServiceRA(CortxServiceRA):
         super(DynamicFidServiceRA, self).__init__()
         self._execute = SimpleCommand()
         self._status_list: list = ["failed", "active", "unknown"]
+
+    def _get_update_attrib_info(self) -> None:
+        res_param = self.get_env()
+        self._resource = res_param["OCF_RESOURCE_INSTANCE"]
+        self._update_attrib = res_param["OCF_RESKEY_update_attrib"]
 
     def _get_systemd_service(self) -> str:
         """
@@ -136,15 +160,20 @@ class DynamicFidServiceRA(CortxServiceRA):
         </longdesc>
         <shortdesc lang="en">Systemd wrapper agent</shortdesc>
         <parameters>
-        <parameter name="service" required="0">
+        <parameter name="service" required="1">
         <longdesc lang="en"> Service name to manage systemd </longdesc>
         <shortdesc lang="en"> Systemd service </shortdesc>
         <content type="string"/>
         </parameter>
-        <parameter name="fid_service_name" required="0">
+        <parameter name="fid_service_name" required="1">
         <longdesc lang="en"> Fid service name used in mapping </longdesc>
         <shortdesc lang="en"> Systemd service </shortdesc>
         <content type="string"/>
+        </parameter>
+        <parameter name="update_attrib" required="0">
+        <longdesc lang="en"> If true, updates the node attribute for resource. </longdesc>
+        <shortdesc lang="en"> Update attribute. </shortdesc>
+        <content type="boolean" default="false"/>
         </parameter>
         </parameters>
         <actions>
@@ -188,6 +217,9 @@ class DynamicFidServiceRA(CortxServiceRA):
                 time.sleep(1)
                 continue
         Log.info(f"Start: Started {service} service")
+        self._get_update_attrib_info()
+        if self._update_attrib:
+            AttribUpdater.set_attr(self._resource)
         return const.OCF_SUCCESS
 
     def stop(self) -> int:
@@ -208,6 +240,9 @@ class DynamicFidServiceRA(CortxServiceRA):
             if status in ["failed", "unknown"]:
                 break
         Log.info(f"Stop: Stopped {service} service")
+        self._get_update_attrib_info()
+        if self._update_attrib:
+            AttribUpdater.del_attr(self._resource)
         return const.OCF_SUCCESS
 
     def monitor(self) -> int:
@@ -232,9 +267,15 @@ class DynamicFidServiceRA(CortxServiceRA):
                 break
             elif status == "failed":
                 Log.debug(f"Monitor: failed to monitor {service}")
+                self._get_update_attrib_info()
+                if self._update_attrib:
+                    AttribUpdater.del_attr(self._resource)
                 return const.OCF_ERR_GENERIC
             elif status == "unknown":
                 Log.debug(f"Monitor: Service {service} is not started yet...")
+                self._get_update_attrib_info()
+                if self._update_attrib:
+                    AttribUpdater.del_attr(self._resource)
                 return const.OCF_NOT_RUNNING
             else:
                 # wait if there is unstable status like activating, deactivating
