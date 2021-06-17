@@ -115,8 +115,6 @@ def motr(cib_xml, push=False, **kwargs):
             quorum_size = int(kwargs["node_count"])//2
             quorum_size += 1
             process.run_cmd(f"pcs -f {cib_xml} constraint location motr-ios-{i}-clone rule score=-INFINITY \
-                        not_defined motr-confd-1 or motr-confd-1 lt integer 1")
-            process.run_cmd(f"pcs -f {cib_xml} constraint location motr-ios-{i}-clone rule score=-INFINITY \
                     not_defined motr-confd-count or motr-confd-count lt integer {quorum_size}")
         except Exception as e:
             raise CreateResourceConfigError(f"Invalid node_count. Error: {e}")
@@ -279,7 +277,6 @@ def instance_counter(cib_xml, push=False, **kwargs):
         op monitor timeout=3s interval=3s \
         op stop timeout=60s interval=0s")
     process.run_cmd(f"pcs -f {cib_xml} resource clone srv_counter")
-    process.run_cmd(f"pcs -f {cib_xml} constraint order srv_counter-clone then hax-clone")
     if push:
         cib_push(cib_xml)
 
