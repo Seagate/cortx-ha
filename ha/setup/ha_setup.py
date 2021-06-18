@@ -40,6 +40,7 @@ from ha.core.error import HaPrerequisiteException
 from ha.core.error import HaConfigException
 from ha.core.error import HaInitException
 from ha.core.error import HaCleanupException
+from ha.core.error import HaResetException
 from ha.core.error import SetupError
 from ha.setup.cluster_validator.cluster_test import TestExecutor
 
@@ -633,13 +634,29 @@ class ResetCmd(Cmd):
         Process reset command.
         """
         Log.info("Processing reset command")
-        # list of log folders
-        logs = [const.RA_LOG_DIR, const.PACEMAKER_LOG, const.PCSD_LOG]
-        for file in os.listdir(const.COROSYNC_LOG):
-            logs.append(os.path.join(const.COROSYNC_LOG, file))
-        # Delete the logs
-        self.remove_logs(logs)
-        Log.info("reset command is successful")
+        try:
+            # create new version of log file
+            services = ["pcsd", "corosync", "cortx_ha_log.conf", "pacemaker"]
+            for service in services:
+                self._execute.run_cmd(f"logrotate --force /etc/logrotate.d/{service}")
+
+            older_logs = []
+            log_dirs = [const.COROSYNC_LOG, const.RA_LOG_DIR, "/var/log/pcsd"]
+            for log_dir in log_dirs:
+                log_list = self._execute.run_cmd(f"ls -I *.log -I *.xml {log_dir}")
+                logs = log_list[0].splitlines()
+                for log_file in logs:
+                    older_logs.append(os.path.join(log_dir, log_file))
+
+            pacemaker_log_list = self._execute.run_cmd(f"find /var/log -name pacemaker* -not -name *.log")
+            pacemaker_logs = pacemaker_log_list[0].splitlines()
+            for log_file in pacemaker_logs:
+                older_logs.append(log_file)
+
+            self.remove_logs(older_logs)
+        except Exception as e:
+            Log.error(f"Cluster reset command failed. Error: {e}")
+            raise HaResetException("Cluster reset failed")
 
     def remove_logs(self, logs: list):
         """
