@@ -16,13 +16,15 @@
 # cortx-questions@seagate.com.
 
 
+from ha.const import _DELIM
+
 # pacemaker alerts constants
 class ALERTS:
     REQUIRED_COMPONENT = "ha"
     REQUIRED_EVENTS = ["node" , "resource"]
-    ALERT_FILTER_TYPE = "alert.filter_type"
-    PK_ALERT_EVENT_COMPONENTS = "alert.components"
-    PK_ALERT_EVENT_COMPONENT_MODULES = "alert.modules"
-    PK_ALERT_EVENT_OPERATIONS = "alert.operations"
+    ALERT_FILTER_TYPE = f"alert{_DELIM}filter_type"
+    PK_ALERT_EVENT_COMPONENTS = f"alert{_DELIM}components"
+    PK_ALERT_EVENT_COMPONENT_MODULES = f"alert{_DELIM}modules"
+    PK_ALERT_EVENT_OPERATIONS = f"alert{_DELIM}operations"
     logger_utility_iec_cmd="logger -i -p local3.err"
 
