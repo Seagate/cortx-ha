@@ -115,9 +115,9 @@ def motr(cib_xml, push=False, **kwargs):
             quorum_size = int(kwargs["node_count"])//2
             quorum_size += 1
             process.run_cmd(f"pcs -f {cib_xml} constraint location motr-ios-{i}-clone rule score=-INFINITY \
-                        not_defined motr-confd-1 or motr-confd-1 lt integer 1")
-            process.run_cmd(f"pcs -f {cib_xml} constraint location motr-ios-{i}-clone rule score=-INFINITY \
                     not_defined motr-confd-count or motr-confd-count lt integer {quorum_size}")
+            process.run_cmd(f"pcs -f {cib_xml} constraint order hax-clone then motr-ios-{i}-clone")
+            process.run_cmd(f"pcs -f {cib_xml} constraint colocation add motr-ios-{i}-clone with hax-clone")
         except Exception as e:
             raise CreateResourceConfigError(f"Invalid node_count. Error: {e}")
     if push:
@@ -276,10 +276,9 @@ def instance_counter(cib_xml, push=False, **kwargs):
     """Create service instance counter resource."""
     process.run_cmd(f"pcs -f {cib_xml} resource create srv_counter ocf:seagate:service_instances_counter \
         op start timeout=60s interval=0s \
-        op monitor timeout=3s interval=3s \
+        op monitor timeout=5s interval=5s \
         op stop timeout=60s interval=0s")
     process.run_cmd(f"pcs -f {cib_xml} resource clone srv_counter")
-    process.run_cmd(f"pcs -f {cib_xml} constraint order srv_counter-clone then hax-clone")
     if push:
         cib_push(cib_xml)
 

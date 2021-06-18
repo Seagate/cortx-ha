@@ -30,6 +30,7 @@ from cortx.utils.log import Log
 from cortx.utils.validator.v_pkg import PkgV
 from cortx.utils.security.cipher import Cipher
 from ha.core.system_health.const import NODE_MAP_ATTRIBUTES
+from ha.core.system_health.const import CONFSTORE_KEY_ATTRIBUTES
 
 from ha.execute import SimpleCommand
 from ha import const
@@ -540,10 +541,10 @@ class ConfigCmd(Cmd):
             Conf.set(const.HA_GLOBAL_INDEX, f"CLUSTER_MANAGER{_DELIM}env", node_type.upper())
         else:
             # TODO: check if any env available other than vm, hw
-            Conf.set(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.env", "HW")
-        Conf.set(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.cluster_type", cluster_type)
-        Conf.set(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.local_node", node_name)
-        Conf.set(const.HA_GLOBAL_INDEX, "SERVICE_INSTANCE_COUNTER[1].instances", s3_instances)
+            Conf.set(const.HA_GLOBAL_INDEX, f"CLUSTER_MANAGER{_DELIM}env", "HW")
+        Conf.set(const.HA_GLOBAL_INDEX, f"CLUSTER_MANAGER{_DELIM}cluster_type", cluster_type)
+        Conf.set(const.HA_GLOBAL_INDEX, f"CLUSTER_MANAGER{_DELIM}local_node", node_name)
+        Conf.set(const.HA_GLOBAL_INDEX, f"SERVICE_INSTANCE_COUNTER[1]{_DELIM}instances", s3_instances)
         Log.info("CONFIG: Update ha configuration files")
         Conf.save(const.HA_GLOBAL_INDEX)
 
@@ -585,7 +586,7 @@ class ConfigCmd(Cmd):
         cluster_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.CLUSTER_ID.value}")
         site_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.SITE_ID.value}")
         rack_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.RACK_ID.value}")
-        storageset_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.STORAGESET_ID.value}")
+        storageset_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{CONFSTORE_KEY_ATTRIBUTES.STORAGE_SET_ID.value}")
         node_map = {NODE_MAP_ATTRIBUTES.CLUSTER_ID.value: cluster_id, NODE_MAP_ATTRIBUTES.SITE_ID.value: site_id,
                     NODE_MAP_ATTRIBUTES.RACK_ID.value: rack_id, NODE_MAP_ATTRIBUTES.STORAGESET_ID.value: storageset_id}
         system_health = SystemHealth(self._confstore)
@@ -606,7 +607,7 @@ class ConfigCmd(Cmd):
             cluster_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.CLUSTER_ID.value}")
             site_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.SITE_ID.value}")
             rack_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.RACK_ID.value}")
-            storageset_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.STORAGESET_ID.value}")
+            storageset_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{CONFSTORE_KEY_ATTRIBUTES.STORAGE_SET_ID.value}")
             host_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}network{_DELIM}management{_DELIM}public_fqdn")
 
             timestamp = str(int(time.time()))
