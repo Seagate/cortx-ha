@@ -649,7 +649,7 @@ class ResetCmd(Cmd):
                 for log_file in logs:
                     older_logs.append(os.path.join(log_dir, log_file))
 
-            pacemaker_log_list = self._execute.run_cmd(f"find /var/log -name pacemaker* -not -name *.log")
+            pacemaker_log_list = self._execute.run_cmd("find /var/log -name pacemaker* -not -name *.log")
             pacemaker_logs = pacemaker_log_list[0].splitlines()
             for log_file in pacemaker_logs:
                 older_logs.append(log_file)
