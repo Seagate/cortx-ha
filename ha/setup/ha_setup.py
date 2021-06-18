@@ -335,7 +335,7 @@ class ConfigCmd(Cmd):
         mgmt_info: dict = self._get_mgmt_vip(machine_id, cluster_id)
         s3_instances = ConfigCmd.get_s3_instance(machine_id)
 
-        self._update_env(node_name, node_type, const.HA_CLUSTER_SOFTWARE)
+        self._update_env(node_name, node_type, const.HA_CLUSTER_SOFTWARE, s3_instances)
         self._fetch_fids()
         self._update_cluster_manager_config()
 
@@ -352,7 +352,7 @@ class ConfigCmd(Cmd):
                 # Create cluster
                 try:
                     self._create_cluster(cluster_name, cluster_user, cluster_secret, node_name)
-                    self._create_resource(s3_instances=s3_instances, mgmt_info=mgmt_info)
+                    self._create_resource(s3_instances=s3_instances, mgmt_info=mgmt_info, node_count=len(nodelist))
                     self._confstore.set(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
                 except Exception as e:
                     Log.error(f"Cluster creation failed; destroying the cluster. Error: {e}")
@@ -378,11 +378,11 @@ class ConfigCmd(Cmd):
         self._execute.run_cmd(const.PCS_CLEANUP)
         Log.info("config command is successful")
 
-    def _create_resource(self, s3_instances, mgmt_info):
+    def _create_resource(self, s3_instances, mgmt_info, node_count):
         Log.info("Creating pacemaker resources")
         try:
             # TODO: create resource if not already exists.
-            create_all_resources(s3_instances=s3_instances, mgmt_info=mgmt_info)
+            create_all_resources(s3_instances=s3_instances, mgmt_info=mgmt_info, node_count=node_count)
         except Exception as e:
             Log.info(f"Resource creation failed. Error {e}")
             raise HaConfigException("Resource creation failed.")
@@ -505,7 +505,7 @@ class ConfigCmd(Cmd):
             Log.error(f"Failed to get mgmt ip address. Error: {e}")
             raise HaConfigException(f"Failed to get mgmt ip address. Error: {e}.")
 
-    def _update_env(self, node_name: str, node_type: str, cluster_type: str) -> None:
+    def _update_env(self, node_name: str, node_type: str, cluster_type: str, s3_instances: int) -> None:
         """
         Update env like VM, HW
         """
@@ -517,6 +517,7 @@ class ConfigCmd(Cmd):
             Conf.set(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.env", "HW")
         Conf.set(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.cluster_type", cluster_type)
         Conf.set(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.local_node", node_name)
+        Conf.set(const.HA_GLOBAL_INDEX, "SERVICE_INSTANCE_COUNTER[1].instances", s3_instances)
         Log.info("CONFIG: Update ha configuration files")
         Conf.save(const.HA_GLOBAL_INDEX)
 
