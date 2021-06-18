@@ -1,0 +1,21 @@
+LOG:
+    path: /var/log/seagate/cortx/ha
+    level: INFO
+VERSION:
+    version: <VERSION>
+CLUSTER_MANAGER:
+    cluster_type: corosync-pacemaker
+    env: VM
+    local_node: <LOCAL_NODE>
+SYSTEM_HEALTH:
+    num_entity_health_events: 2
+SERVICE_INSTANCE_COUNTER:
+- instances: 1
+  resource: motr-confd
+  scope: cluster
+- instances: <S3_INSTANCES>
+  resource: s3server
+  scope: node
+- instances: 2
+  resource: motr-ios
+  scope: node

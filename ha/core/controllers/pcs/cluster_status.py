@@ -138,7 +138,6 @@ class PcsClusterStatus:
         nodes = self._output.findall(node_path)
         self._nodes_by_health[PcsConstants.COUNT] = len(nodes)
 
-
         for a_node in nodes:
             node_name = a_node.attrib[PcsConstants.NAME]
             if a_node.attrib[PcsConstants.ONLINE] == PcsConstants.FALSE:
@@ -247,4 +246,3 @@ class PcsClusterStatus:
             return {"status": const.STATUSES.FAILED.value, "output": "", "error": "Health is not loaded."}
 
         return {"status": const.STATUSES.SUCCEEDED.value, "output": self._nodes[node_name], "error": ""}
-      
