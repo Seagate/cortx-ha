@@ -310,7 +310,6 @@ class ConfigCmd(Cmd):
         Init method.
         """
         super().__init__(args)
-        self._cluster_manager = CortxClusterManager(default_log_enable=False)
 
     def process(self):
         """
@@ -341,6 +340,7 @@ class ConfigCmd(Cmd):
         self._update_cluster_manager_config()
 
         # Update cluster and resources
+        self._cluster_manager = CortxClusterManager(default_log_enable=False)
         Log.info("Checking if cluster exists already")
         cluster_exists = bool(json.loads(self._cluster_manager.cluster_controller.cluster_exists()).get("msg"))
         Log.info(f"Cluster exists? {cluster_exists}")
@@ -671,7 +671,8 @@ class CleanupCmd(Cmd):
                 self._remove_node(node_name)
             else:
                 # Destroy
-                self._destroy_cluster(node_name)
+                self._cluster_manager.cluster_controller.destroy_cluster()
+                # self._destroy_cluster(node_name)
 
             if self._confstore.key_exists(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}"):
                 self._confstore.delete(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
