@@ -14,8 +14,6 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
-import time
-import uuid
 from cortx.utils.log import Log
 from ha.core.system_health.health_evaluators.element_health_evaluator import ElementHealthEvaluator
 from ha.core.system_health.const import HEALTH_STATUSES, HEALTH_EVENTS, CLUSTER_ELEMENTS
@@ -47,7 +45,6 @@ class RackHealthEvaluator(ElementHealthEvaluator):
                                         site_id=health_event.site_id)
         Log.info(f"Evaluated rack {rack_id} status as {status}")
         return self._get_new_event(
-            event_id=str(int(time.time())) + str(uuid.uuid4().hex),
             event_type=status,
             resource_type=CLUSTER_ELEMENTS.RACK.value,
             resource_id=rack_id,

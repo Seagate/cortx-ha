@@ -17,7 +17,8 @@
 import abc
 import json
 import re
-
+import time
+import uuid
 from cortx.utils.log import Log
 from ha.core.system_health.system_health_hierarchy import HealthHierarchy
 from ha.core.config.config_manager import ConfigManager
@@ -81,7 +82,7 @@ class ElementHealthEvaluator(metaclass=abc.ABCMeta):
             return {}
         key = ElementHealthEvaluator.prepare_key(element, comp_id=element_id, **kwargs)
         key = key.replace("/health", "").replace("/", "", 1)
-        data = self._confstore.get(key)
+        data = self.healthmanager.get_key(key)
         for element in data.keys():
             key_list = element.split("/")
             if children[0] in key_list:
@@ -121,13 +122,12 @@ class ElementHealthEvaluator(metaclass=abc.ABCMeta):
         Log.debug(f"status map is {status_map}")
         return status_map
 
-    def _get_new_event(self, event_id, event_type, resource_type, resource_id, subelement_event) -> HealthEvent:
+    def _get_new_event(self, event_type, resource_type, resource_id, subelement_event) -> HealthEvent:
         """
         Update health event
         """
         new_event =  HealthEvent(
-            #TODO: create different id for each event
-            event_id=event_id,
+            event_id=str(int(time.time())) + str(uuid.uuid4().hex),
             event_type=event_type,
             severity=subelement_event.severity,
             site_id=subelement_event.site_id,
