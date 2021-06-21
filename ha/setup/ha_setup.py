@@ -653,12 +653,12 @@ class ResetCmd(Cmd):
             for log_file in pacemaker_log_list:
                 older_logs.append(os.path.join(const.LOG_DIR, log_file))
 
-            self.remove_logs(older_logs)
+            self._remove_logs(older_logs)
         except Exception as e:
             Log.error(f"Cluster reset command failed. Error: {e}")
             raise HaResetException("Cluster reset failed")
 
-    def remove_logs(self, logs: list):
+    def _remove_logs(self, logs: list):
         """
         Remove logs.
         """
