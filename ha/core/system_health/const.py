@@ -33,7 +33,6 @@ class HEALTH_STATUSES(Enum):
     FAILED = "failed"
     UNKNOWN = "unknown"
     PENDING = "pending"
-    COMPLETE = "complete"
 
 # Health event types
 class HEALTH_EVENTS(Enum):

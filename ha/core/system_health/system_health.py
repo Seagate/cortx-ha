@@ -43,7 +43,7 @@ class SystemHealth(Subscriber):
     System Health. This class implements an interface to the HA System Health module.
     """
 
-    def __init__(self, store, init_evaluators=True):
+    def __init__(self, store):
         """
         Init method.
         """
@@ -53,9 +53,7 @@ class SystemHealth(Subscriber):
         self.statusmapper = StatusMapper()
         # TODO: Convert SystemHealthManager to singleton class
         self.healthmanager = SystemHealthManager(store)
-        # Build element needs config phase to be completed, init_evaluators is False during setup
-        if init_evaluators is True:
-            HealthEvaluatorFactory.init_evaluators()
+        HealthEvaluatorFactory.init_evaluators()
         # TODO: Temporary code remove when all status method moved to evaluators
         self.health_evaluator = HealthEvaluatorFactory.get_generic_evaluator()
         Log.info("All cluster element are loaded, Ready to process alerts .................")
