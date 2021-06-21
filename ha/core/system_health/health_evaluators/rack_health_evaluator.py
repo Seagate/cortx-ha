@@ -87,10 +87,6 @@ class RackHealthEvaluator(ElementHealthEvaluator):
             rack_status = HEALTH_EVENTS.THRESHOLD_BREACHED_LOW.value
         elif self.count_status(node_ids, HEALTH_STATUSES.FAILED.value) >= quorum_size:
             rack_status = HEALTH_EVENTS.FAILED.value
-        elif self.count_status(node_ids, HEALTH_STATUSES.PENDING.value) >= quorum_size:
-            rack_status = HEALTH_EVENTS.UNKNOWN.value
-        elif self.count_status(node_ids, HEALTH_STATUSES.UNKNOWN.value) >= quorum_size:
-            rack_status = HEALTH_EVENTS.UNKNOWN.value
         else:
-            rack_status = HEALTH_EVENTS.FAULT.value
+            rack_status = HEALTH_EVENTS.THRESHOLD_BREACHED_LOW.value
         return rack_status

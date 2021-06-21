@@ -85,11 +85,6 @@ class ClusterHealthEvaluator(ElementHealthEvaluator):
             cluster_status = HEALTH_EVENTS.THRESHOLD_BREACHED_LOW.value
         elif self.count_status(site_ids, HEALTH_STATUSES.FAILED.value) >= quorum_size:
             cluster_status = HEALTH_EVENTS.FAILED.value
-        elif self.count_status(site_ids, HEALTH_STATUSES.PENDING.value) >= quorum_size:
-            cluster_status = HEALTH_EVENTS.UNKNOWN.value
-        elif self.count_status(site_ids, HEALTH_STATUSES.UNKNOWN.value) >= quorum_size:
-            cluster_status = HEALTH_EVENTS.UNKNOWN.value
-        #TODO: add failed status
         else:
-            cluster_status = HEALTH_EVENTS.FAULT.value
+            cluster_status = HEALTH_EVENTS.THRESHOLD_BREACHED_LOW.value
         return cluster_status
