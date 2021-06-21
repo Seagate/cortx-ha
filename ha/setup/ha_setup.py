@@ -711,6 +711,7 @@ class CleanupCmd(Cmd):
         Remove file created by ha.
         """
         CleanupCmd.remove_file(const.CONFIG_DIR)
+        CleanupCmd.remove_file(const.PCSD_DIR)
 
 class BackupCmd(Cmd):
     """
