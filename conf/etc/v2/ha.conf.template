@@ -18,3 +18,13 @@ EVENT_ANALYZER:
             consumer_group: iem_analyzer
             event_filter: ha.core.event_analyzer.filter.filter.IEMFilter
             event_parser: ha.core.event_analyzer.parser.parser.IEMParser
+SERVICE_INSTANCE_COUNTER:
+- instances: 1
+  resource: motr-confd
+  scope: cluster
+- instances: <S3_INSTANCES>
+  resource: s3server
+  scope: node
+- instances: 2
+  resource: motr-ios
+  scope: node

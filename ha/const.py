@@ -60,6 +60,15 @@ IEM_SCHEMA="{}/iem_ha.json".format(CONFIG_DIR)
 # IEM DESCRIPTION string: To be removed
 IEM_DESCRIPTION="WS0080010001,Node, The cluster has lost $host server. System is running in degraded mode. For more information refer the Troubleshooting guide. Extra Info: host=$host; status=$status;"
 
+# IEM DESCRIPTION string: To be removed
+IEM_DESCRIPTION="WS0080010001,Node, The cluster has lost $host server. System is running in degraded mode. For more information refer the Troubleshooting guide. Extra Info: host=$host; status=$status;"
+
+# IEM DESCRIPTION string: To be removed
+IEM_DESCRIPTION="WS0080010001,Node, The cluster has lost $host server. System is running in degraded mode. For more information refer the Troubleshooting guide. Extra Info: host=$host; status=$status;"
+
+# IEM DESCRIPTION string: To be removed
+IEM_DESCRIPTION="WS0080010001,Node, The cluster has lost $host server. System is running in degraded mode. For more information refer the Troubleshooting guide. Extra Info: host=$host; status=$status;"
+
 # Mini-provisioning
 CLUSTER_CONFSTORE_NODES_KEY="nodes"
 
@@ -286,8 +295,8 @@ class EVENT_ATTRIBUTES:
 
 # Alert constants
 class AlertEventConstants(Enum):
-    ALERT_FILTER_TYPE = "alert.filter_type"
-    IEM_FILTER_TYPE = "iem.filter_type"
-    ALERT_RESOURCE_TYPE = "alert.resource_type"
-    IEM_COMPONENTS = "iem.components"
-    IEM_MODULES = "iem.modules"
+    ALERT_FILTER_TYPE = f"alert{_DELIM}filter_type"
+    IEM_FILTER_TYPE = f"iem{_DELIM}filter_type"
+    ALERT_RESOURCE_TYPE = f"alert{_DELIM}resource_type"
+    IEM_COMPONENTS = f"iem{_DELIM}components"
+    IEM_MODULES = f"iem{_DELIM}modules"
