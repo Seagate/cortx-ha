@@ -77,7 +77,7 @@ class Watcher(Thread):
         return MessageConsumer(consumer_id=str(self.consumer_id),
                                 consumer_group=self.consumer_group,
                                 message_types=[self.message_type],
-                                auto_ack=False, offset='latest')
+                                auto_ack=False, offset='earliest')
 
     def _get_message(self):
         """

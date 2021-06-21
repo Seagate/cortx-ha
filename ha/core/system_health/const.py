@@ -68,3 +68,7 @@ class HEALTH_EVALUATOR_CLASSES:
         CLUSTER_ELEMENTS.SITE.value: f"{CLASS_MODULE}.site_health_evaluator.SiteHealthEvaluator",
         CLUSTER_ELEMENTS.RACK.value: f"{CLASS_MODULE}.rack_health_evaluator.RackHealthEvaluator"
     }
+
+# Confstore key attributes
+class CONFSTORE_KEY_ATTRIBUTES(Enum):
+    STORAGE_SET_ID = "storage_set_id"

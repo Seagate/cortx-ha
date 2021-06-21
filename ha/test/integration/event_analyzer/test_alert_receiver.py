@@ -24,7 +24,7 @@ if __name__ == '__main__':
     consumer = MessageConsumer(consumer_id="1",
                                 consumer_group='iem_analyzer',
                                 message_types=["alerts"],
-                                auto_ack=False, offset='latest')
+                                auto_ack=False, offset='earliest')
 
     while True:
         try:
