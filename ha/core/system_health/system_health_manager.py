@@ -26,7 +26,7 @@ class SystemHealthManager:
         """
         self._store = store
 
-    def get_key(self, key: str, just_value: str=True):
+    def get_key(self, key: str, just_value=True):
         """
         Get key method.
         """

@@ -82,7 +82,7 @@ class ElementHealthEvaluator(metaclass=abc.ABCMeta):
             return {}
         key = ElementHealthEvaluator.prepare_key(element, comp_id=element_id, **kwargs)
         key = key.replace("/health", "").replace("/", "", 1)
-        data = self.healthmanager.get_key(key)
+        data = self.healthmanager.get_key(key, just_value=False)
         for element in data.keys():
             key_list = element.split("/")
             if children[0] in key_list:
