@@ -718,8 +718,12 @@ class CleanupCmd(Cmd):
         """
         Remove file created by ha.
         """
-        CleanupCmd.remove_file(const.CONFIG_DIR)
-        CleanupCmd.remove_file(const.PCSD_DIR)
+        files = [const.CONFIG_DIR]
+        for pcsd_file in os.listdir(const.AUTH_TOKEN_DIR):
+            files.append(os.path.join(const.AUTH_TOKEN_DIR, pcsd_file))
+
+        for file in files:
+            CleanupCmd.remove_file(file)
 
 class BackupCmd(Cmd):
     """
