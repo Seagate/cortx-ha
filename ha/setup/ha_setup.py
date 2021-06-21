@@ -642,17 +642,16 @@ class ResetCmd(Cmd):
                 self._execute.run_cmd(f"logrotate --force /etc/logrotate.d/{service}")
 
             older_logs = []
-            log_dirs = [const.COROSYNC_LOG, const.RA_LOG_DIR, "/var/log/pcsd"]
+            log_dirs = [const.COROSYNC_LOG, const.RA_LOG_DIR, const.PCSD_DIR]
             for log_dir in log_dirs:
-                log_list = self._execute.run_cmd(f"ls -I *.log -I *.xml {log_dir}")
-                logs = log_list[0].splitlines()
-                for log_file in logs:
+                log_list = [file for file in os.listdir(log_dir) if file.split(".")[-1] not in ["log", "xml"]]
+                for log_file in log_list:
                     older_logs.append(os.path.join(log_dir, log_file))
 
-            pacemaker_log_list = self._execute.run_cmd("find /var/log -name pacemaker* -not -name *.log")
-            pacemaker_logs = pacemaker_log_list[0].splitlines()
-            for log_file in pacemaker_logs:
-                older_logs.append(log_file)
+            pacemaker_log_list = [file for file in os.listdir(const.LOG_DIR) if file
+                                  .split(".")[-1] not in ["log"] and file.startswith("pacemaker")]
+            for log_file in pacemaker_log_list:
+                older_logs.append(os.path.join(const.LOG_DIR, log_file))
 
             self.remove_logs(older_logs)
         except Exception as e:
@@ -661,7 +660,7 @@ class ResetCmd(Cmd):
 
     def remove_logs(self, logs: list):
         """
-        Remove logs created by ha.
+        Remove logs.
         """
         for log in logs:
             ResetCmd.remove_file(log)
