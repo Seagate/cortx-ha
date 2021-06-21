@@ -719,8 +719,8 @@ class CleanupCmd(Cmd):
         Remove file created by ha.
         """
         files = [const.CONFIG_DIR]
-        for pcsd_file in os.listdir(const.AUTH_TOKEN_DIR):
-            files.append(os.path.join(const.AUTH_TOKEN_DIR, pcsd_file))
+        for pcsd_file in os.listdir(const.AUTH_DIR):
+            files.append(os.path.join(const.AUTH_DIR, pcsd_file))
 
         for file in files:
             CleanupCmd.remove_file(file)
