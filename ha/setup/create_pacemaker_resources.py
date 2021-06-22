@@ -331,7 +331,7 @@ def configure_stonith(cib_xml=None, push=False, **kwargs):
             cib_xml = cib_get(const.CIB_FILE)
 
         stonith_config = kwargs.get("stonith_config")
-        if stonith_config:
+        if stonith_config and stonith_config.get("node_type").lower() == const.INSTALLATION_TYPE.HW.value.lower():
             Log.info("Configuring stonith.")
             resource_id = stonith_config.get("resource_id")
             node_name = stonith_config.get("node_name")

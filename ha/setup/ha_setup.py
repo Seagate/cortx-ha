@@ -260,11 +260,13 @@ class Cmd:
             machine_ids: list = list(nodes_schema.keys())
             for machine in machine_ids:
                 node_name = nodes_schema.get(machine).get('network').get('data').get('private_fqdn')
+                node_type = nodes_schema.get(machine).get('type')
                 ipmi_ipaddr = nodes_schema.get(machine).get('bmc').get('ip')
                 ipmi_user = nodes_schema.get(machine).get('bmc').get('user')
                 ipmi_password_encrypted = nodes_schema.get(machine).get('bmc').get('secret')
                 key = Cipher.generate_key(machine, const.SERVER_NODE_KEY)
                 ipmi_password = Cipher.decrypt(key, ipmi_password_encrypted.encode('ascii')).decode()
+
                 stonith_config[node_name] = {
                     "resource_id": f"stonith-{node_name}",
                     "pcmk_host_list": node_name,
@@ -272,6 +274,7 @@ class Cmd:
                     "ipaddr": ipmi_ipaddr,
                     "login": ipmi_user,
                     "passwd": ipmi_password,
+                    "node_type": node_type,
                 }
             return stonith_config
         except Exception as e:
@@ -454,7 +457,6 @@ class ConfigCmd(Cmd):
                     self._add_node(node, cluster_user, cluster_secret)
                     # configure stonith
                     configure_stonith(push=True, stonith_config=all_nodes_stonith_config.get(node))
-        self._execute.run_cmd(const.PCS_STONITH_ENABLE)
         self._execute.run_cmd(const.PCS_CLEANUP)
         Log.info("config command is successful")
 
