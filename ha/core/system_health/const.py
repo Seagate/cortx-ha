@@ -21,6 +21,7 @@ class CLUSTER_ELEMENTS(Enum):
     SITE = "site"
     RACK = "rack"
     NODE = "node"
+    STORAGE_SET = "storageset"
 
 # Health statuses
 class HEALTH_STATUSES(Enum):
@@ -57,6 +58,14 @@ class NODE_MAP_ATTRIBUTES(Enum):
     SITE_ID = "site_id"
     RACK_ID = "rack_id"
     STORAGESET_ID = "storageset_id"
+
+class HEALTH_EVALUATOR_CLASSES:
+    CLASS_MODULE = "ha.core.system_health.health_evaluators"
+    ELEMENT_MAP: dict = {
+        CLUSTER_ELEMENTS.CLUSTER.value: f"{CLASS_MODULE}.cluster_health_evaluator.ClusterHealthEvaluator",
+        CLUSTER_ELEMENTS.SITE.value: f"{CLASS_MODULE}.site_health_evaluator.SiteHealthEvaluator",
+        CLUSTER_ELEMENTS.RACK.value: f"{CLASS_MODULE}.rack_health_evaluator.RackHealthEvaluator"
+    }
 
 # Confstore key attributes
 class CONFSTORE_KEY_ATTRIBUTES(Enum):

@@ -21,6 +21,9 @@ import json
 
 from cortx.utils.log import Log
 from ha import const
+from ha.core.system_health.health_evaluators.element_health_evaluator import ElementHealthEvaluator
+
+
 from ha.core.system_health.const import NODE_MAP_ATTRIBUTES
 from ha.core.event_analyzer.subscriber import Subscriber
 from ha.core.system_health.system_health_metadata import SystemHealthComponents, SystemHealthHierarchy
@@ -29,6 +32,7 @@ from ha.core.system_health.model.entity_health import EntityEvent, EntityAction,
 from ha.core.system_health.status_mapper import StatusMapper
 from ha.core.system_health.system_health_manager import SystemHealthManager
 from ha.core.error import HaSystemHealthException
+from ha.core.system_health.health_evaluator_factory import HealthEvaluatorFactory
 from ha.core.cluster.const import SYSTEM_HEALTH_OUTPUT_V2, GET_SYS_HEALTH_ARGS
 from ha.core.system_health.const import CLUSTER_ELEMENTS, HEALTH_STATUSES
 from ha.core.system_health.model.health_status import StatusOutput, ComponentStatus
@@ -47,55 +51,25 @@ class SystemHealth(Subscriber):
         self.node_id = None
         self.node_map = {}
         self.statusmapper = StatusMapper()
+        # TODO: Convert SystemHealthManager to singleton class
         self.healthmanager = SystemHealthManager(store)
+        HealthEvaluatorFactory.init_evaluators()
+        # TODO: Temporary code remove when all status method moved to evaluators
+        self.health_evaluator = HealthEvaluatorFactory.get_generic_evaluator()
+        Log.info("All cluster element are loaded, Ready to process alerts .................")
 
     def _prepare_key(self, component: str, **kwargs) -> str:
         """
         Prepare Key. This is an internal method for preparing component status key.
         This will be used when updating/querying a component status.
         """
-
-        # Get the key template.
-        key = SystemHealthComponents.get_key(component)
-        # Check what all substitutions with actual values passed in kwargs to be done.
-        subs = re.findall("\$\w+", key)
-        # Check if the related argument present in kwargs, if yes substitute the same.
-        for sub in subs:
-            argument = re.split("\$", sub)
-            if argument[1] in kwargs:
-                key = re.sub("\$\w+", kwargs[argument[1]], key, 1)
-            else:
-                # Argument not present, break and return the key till this missing argument.
-                key = re.split("\$", key)
-                key = key[0]
-                break
-        return key
+        return ElementHealthEvaluator.prepare_key(component, **kwargs)
 
     def get_status_raw(self, component: str, component_id: str=None, **kwargs):
         """
         get status method. This is a generic method which can return status of any component(s).
         """
-        status = None
-        try:
-            # Prepare key and read the health value.
-            if component_id != None:
-                key = self._prepare_key(component, comp_id=component_id, **kwargs)
-                status = self.healthmanager.get_key(key)
-            else:
-                key = self._prepare_key(component, **kwargs)
-                status = self.healthmanager.get_key(key, just_value=False)
-                # Remove any keys which are not for the health status.
-                ignore_keys = []
-                for key in status:
-                    if "health" not in key:
-                        ignore_keys.append(key)
-                for key in ignore_keys:
-                    del status[key]
-            return status
-
-        except Exception as e:
-            Log.error(f"Failed reading status for component: {component} with Error: {e}")
-            raise HaSystemHealthException("Failed reading status")
+        return self.health_evaluator.get_status_raw(component, component_id, **kwargs)
 
     def get_status(self, component: CLUSTER_ELEMENTS = CLUSTER_ELEMENTS.CLUSTER.value, depth: int = 1, version: str = SYSTEM_HEALTH_OUTPUT_V2, **kwargs):
         """
@@ -274,10 +248,14 @@ class SystemHealth(Subscriber):
         """
         get cluster status method. This method is for returning a status of a cluster.
         """
-    def _update(self, component: str, comp_type: str, comp_id: str, healthvalue: str, next_component: str=None):
+
+    def _update(self, healthevent: HealthEvent, healthvalue: str, next_component: str=None):
         """
         update method. This is an internal method for updating the system health.
         """
+        component = SystemHealthComponents.get_component(healthevent.resource_type)
+        comp_type = healthevent.resource_type.split(':')[-1]
+        comp_id = healthevent.resource_id
         key = self._prepare_key(component, cluster_id=self.node_map['cluster_id'], site_id=self.node_map['site_id'],
                                 rack_id=self.node_map['rack_id'], storageset_id=self.node_map['storageset_id'],
                                 node_id=self.node_id, server_id=self.node_id, storage_id=self.node_id,
@@ -286,9 +264,14 @@ class SystemHealth(Subscriber):
 
         # Check the next component to be updated, if none then return.
         if next_component is None:
+            Log.info(f"SystemHealth: Updated status for {component}:{comp_type}:{comp_id}")
             return
         else:
-            # TODO: Calculate and update the health of the next component in the hierarchy.
+            Log.info(f"SystemHealth: Updated status for {component}:{comp_type}:{comp_id}")
+            Log.info(f"Updating element {next_component} status")
+            element = HealthEvaluatorFactory.get_element_evaluator(next_component)
+            new_event = element.evaluate_status(healthevent)
+            self.process_event(new_event)
             return
 
     def process_event(self, healthevent: HealthEvent):
@@ -312,6 +295,8 @@ class SystemHealth(Subscriber):
             # Get the component type and id received in the event.
             component_type = healthevent.resource_type.split(':')[-1]
             component_id = healthevent.resource_id
+            Log.info(f"SystemHealth: Processing {component}:{component_type}:{component_id} with status {status}")
+
             # Read the currently stored health value
             current_health = self.get_status_raw(component, component_id, comp_type=component_type,
                                         cluster_id=healthevent.cluster_id, site_id=healthevent.site_id,
@@ -341,7 +326,7 @@ class SystemHealth(Subscriber):
                              'rack_id':healthevent.rack_id, 'storageset_id':healthevent.storageset_id}
 
             # Update in the store.
-            self._update(component, component_type, component_id, updated_health, next_component=next_component)
+            self._update(healthevent, updated_health, next_component=next_component)
             Log.info(f"Updated health for component: {component}, Type: {component_type}, Id: {component_id}")
 
         except Exception as e:

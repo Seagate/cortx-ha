@@ -22,7 +22,7 @@ from cortx.utils.message_bus import MessageConsumer
 
 if __name__ == '__main__':
     consumer = MessageConsumer(consumer_id="1",
-                                consumer_group='ha_event_analyzer',
+                                consumer_group='iem_analyzer',
                                 message_types=["alerts"],
                                 auto_ack=False, offset='earliest')
 

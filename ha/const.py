@@ -213,7 +213,7 @@ class COMPONENTS(Enum):
 RESOURCE_LIST = "resource_list"
 KEY = "key"
 
-# Health update HA action status
+# Health update HA action status # TODO: move in health const class
 class ACTION_STATUS(Enum):
     PENDING = "pending"
     COMPLETE = "complete"
