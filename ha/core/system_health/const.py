@@ -57,3 +57,7 @@ class NODE_MAP_ATTRIBUTES(Enum):
     SITE_ID = "site_id"
     RACK_ID = "rack_id"
     STORAGESET_ID = "storageset_id"
+
+# Confstore key attributes
+class CONFSTORE_KEY_ATTRIBUTES(Enum):
+    STORAGE_SET_ID = "storage_set_id"

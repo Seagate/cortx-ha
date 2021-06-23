@@ -329,3 +329,28 @@ class CortxClusterManager:
         except Exception as e:
             Log.error(f"Failed returning system health . Error: {e}")
             return json.dumps({"status": const.STATUSES.FAILED.value, "output": "", "error": "Internal error"})
+
+    def get_system_health(self, element: CLUSTER_ELEMENTS = CLUSTER_ELEMENTS.CLUSTER.value, depth: int = 1, **kwargs) -> json:
+        """
+        Return health status for the requested elements.
+        Args:
+            element ([CLUSTER_ELEMENTS]): The element whose health status is to be returned.
+            depth ([int]): A depth of elements starting from the input "element" that the health status
+                is to be returned.
+            **kwargs([dict]): Variable number of arguments that are used as filters,
+                e.g. "id" of the input "element".
+        Returns:
+            ([dict]): Returns dictionary. {"status": "Succeeded"/"Failed"/"Partial", "output": "", "error": ""}
+                status: Succeeded, Failed, Partial
+                output: Dictionary with element health status
+                error: Error information if the request "Failed"
+        """
+
+        try:
+            # Fetch the health status
+            system_health_controller = SystemHealthController(self._confstore)
+            return system_health_controller.get_status(component = element, depth = depth, version = self._version, **kwargs)
+        except Exception as e:
+            Log.error(f"Failed returning system health . Error: {e}")
+            return json.dumps({"status": const.STATUSES.FAILED.value, "output": "", "error": "Internal error"})
+        
