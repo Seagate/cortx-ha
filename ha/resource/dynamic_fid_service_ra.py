@@ -72,7 +72,7 @@ class AttribUpdater:
     def del_attr(resource: str):
         try:
             executor = SimpleCommand()
-            executor.run_cmd(f"attrd_updater -D -n {resource}", check_error=False)
+            executor.run_cmd(f"attrd_updater -U 0 -n {resource}", check_error=False)
         except Exception as e:
             Log.error(f"Problem in deleting attr - resource: {resource}, Error: {e}")
 
