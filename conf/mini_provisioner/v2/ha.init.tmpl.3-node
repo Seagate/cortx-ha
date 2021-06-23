@@ -19,10 +19,10 @@ server_node:
       management:
         interfaces: TMPL_INTERFACES
         netmask: TMPL_NETMASK
+        public_fqdn: TMPL_PUBLIC_FQDN_1
     site_id: TMPL_SITE_ID_1
     rack_id: TMPL_RACK_ID_1
     storage_set_id: TMPL_STORAGE_SET_ID_1
-    host_id: TMPL_HOST_ID_1
     s3_instances: '1'
     type: TMPL_TYPE
   TMPL_MACHINE_ID_2:
@@ -34,10 +34,10 @@ server_node:
       management:
         interfaces: TMPL_INTERFACES
         netmask: TMPL_NETMASK
+        public_fqdn: TMPL_PUBLIC_FQDN_2
     site_id: TMPL_SITE_ID_2
     rack_id: TMPL_RACK_ID_2
     storage_set_id: TMPL_STORAGE_SET_ID_2
-    host_id: TMPL_HOST_ID_2
     s3_instances: '1'
     type: TMPL_TYPE
   TMPL_MACHINE_ID_3:
@@ -49,9 +49,9 @@ server_node:
       management:
         interfaces: TMPL_INTERFACES
         netmask: TMPL_NETMASK
+        public_fqdn: TMPL_PUBLIC_FQDN_3
     site_id: TMPL_SITE_ID_3
     rack_id: TMPL_RACK_ID_3
     storage_set_id: TMPL_STORAGE_SET_ID_3
-    host_id: TMPL_HOST_ID_3
     s3_instances: '1'
     type: TMPL_TYPE
