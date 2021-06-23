@@ -191,6 +191,12 @@ class HaCleanupException(SetupError):
     """
     pass
 
+class HaResetException(SetupError):
+    """
+    Exception to indicate that reset command failed due to some error.
+    """
+    pass
+
 class HAInvalidPermission(HAError):
     def __init__(self, desc=None):
         """
