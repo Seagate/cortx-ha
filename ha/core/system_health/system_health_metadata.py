@@ -46,7 +46,7 @@ class SystemHealthComponents:
                    const.COMPONENTS.CLUSTER.value: {const.RESOURCE_LIST: ["cluster"],
                                                     const.KEY: "/cortx/ha/system/cluster/$cluster_id/health"},
                    const.COMPONENTS.AGG_SERVICE.value: {const.RESOURCE_LIST: [],
-                                                        const.KEY: "/cortx/ha/system/cluster/$cluster_id/service/$comp_type/$comp_id/health"},
+                                                        const.KEY: "/cortx/ha/system/cluster/$cluster_id/service/$comp_type/$comp_id/aggregate"},
                    const.COMPONENTS.NODE_MAP.value: {const.RESOURCE_LIST: [],
                                                      const.KEY: "/cortx/ha/system/cluster/node_map/$node_id"}}
 

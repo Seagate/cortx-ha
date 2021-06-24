@@ -16,6 +16,7 @@
 # cortx-questions@seagate.com.
 
 import time
+import json
 
 from cortx.utils.log import Log
 from cortx.utils.conf_store.conf_store import Conf
@@ -28,6 +29,9 @@ from ha.execute import SimpleCommand
 from ha import const
 from ha.core.config.config_manager import ConfigManager
 from ha.core.controllers.element_controller_factory import ElementControllerFactory
+from ha.core.system_health.const import CLUSTER_ELEMENTS
+from ha.core.controllers.system_health_controller import SystemHealthController
+from ha.const import _DELIM
 
 # Note: This class is used by version 1
 class PcsClusterManager:
@@ -267,17 +271,20 @@ class PcsClusterManager:
 
 # Note: This class is used by version 2
 class CortxClusterManager:
-    def __init__(self, default_log_enable=True):
+    def __init__(self, version = "2.0", default_log_enable=True):
         """
         Manage cluster operation
         """
+        self._version = version
+
         # TODO: Update Config manager if log utility changes.(reference EOS-17614)
         if default_log_enable is True:
             ConfigManager.init("cluster_manager")
         else:
             ConfigManager.init(None)
-        self._cluster_type = Conf.get(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.cluster_type")
-        self._env = Conf.get(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.env")
+        self._cluster_type = Conf.get(const.HA_GLOBAL_INDEX, f"CLUSTER_MANAGER{_DELIM}cluster_type")
+        self._env = Conf.get(const.HA_GLOBAL_INDEX, f"CLUSTER_MANAGER{_DELIM}env")
+        self._confstore = ConfigManager.get_confstore()
         ConfigManager.load_controller_schema()
         self._controllers = ElementControllerFactory.init_controller(self._env, self._cluster_type)
         for controller in self._controllers.keys():
@@ -296,3 +303,29 @@ class CortxClusterManager:
             [list]: list of controllers.
         """
         return list(self._controllers.keys())
+
+    def get_system_health(self, element: CLUSTER_ELEMENTS = CLUSTER_ELEMENTS.CLUSTER.value, depth: int = 1, **kwargs) -> json:
+        """
+        Return health status for the requested elements.
+
+        Args:
+            element ([CLUSTER_ELEMENTS]): The element whose health status is to be returned.
+            depth ([int]): A depth of elements starting from the input "element" that the health status
+                is to be returned.
+            **kwargs([dict]): Variable number of arguments that are used as filters,
+                e.g. "id" of the input "element".
+
+        Returns:
+            ([dict]): Returns dictionary. {"status": "Succeeded"/"Failed"/"Partial", "output": "", "error": ""}
+                status: Succeeded, Failed, Partial
+                output: Dictionary with element health status
+                error: Error information if the request "Failed"
+        """
+
+        try:
+            # Fetch the health status
+            system_health_controller = SystemHealthController(self._confstore)
+            return system_health_controller.get_status(component = element, depth = depth, version = self._version, **kwargs)
+        except Exception as e:
+            Log.error(f"Failed returning system health . Error: {e}")
+            return json.dumps({"status": const.STATUSES.FAILED.value, "output": "", "error": "Internal error"})
