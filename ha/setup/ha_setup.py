@@ -441,23 +441,20 @@ class ConfigCmd(Cmd):
                     if node != node_name:
                         Log.info(f"Adding node {node} to Cluster {cluster_name}")
                         self._add_node(node, cluster_user, cluster_secret)
-                        # configure stonith
-                        configure_stonith(push=True, stonith_config=all_nodes_stonith_config.get(node))
             else:
                 # Add node with SSH
                 self._add_node_remotely(node_name, cluster_user, cluster_secret)
-                # configure stonith
+                # configure stonith for each node from that node only
                 configure_stonith(push=True, stonith_config=all_nodes_stonith_config.get(node_name))
         else:
-            # configure stonith for first node if cluster is already exists
+            # configure stonith for each node from that node only
             configure_stonith(push=True, stonith_config=all_nodes_stonith_config.get(node_name))
             for node in nodelist:
                 if node != node_name:
                     Log.info(f"Adding node {node} to Cluster {cluster_name}")
                     self._add_node(node, cluster_user, cluster_secret)
-                    # configure stonith
-                    configure_stonith(push=True, stonith_config=all_nodes_stonith_config.get(node))
         self._execute.run_cmd(const.PCS_CLEANUP)
+        self._execute.run_cmd(const.PCS_STONITH_ENABLE)
         Log.info("config command is successful")
 
     def _create_resource(self, s3_instances, mgmt_info, node_count, stonith_config=None):
