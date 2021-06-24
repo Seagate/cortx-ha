@@ -24,7 +24,6 @@ import traceback
 from cortx.utils.log import Log
 from ha.core.config.config_manager import ConfigManager
 from ha.alert.alert_factory import AlertFactory
-from ha.alert.const import ALERTS
 from ha.alert.filter import AlertEventFilter
 
 
