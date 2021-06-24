@@ -1,0 +1,88 @@
+{
+    "server_node": {
+        "<MACHINE_ID1>": {
+            "network": {
+                "data": {
+                    "private_fqdn": "<NODE1>"
+                },
+                "management": {
+                    "interfaces": [
+                        "eth0"
+                    ],
+                    "gateway": "0.0.0.0",
+                    "netmask": "255.255.240.0",
+                    "public_fqdn": "srvnode-1.mgmt.public"
+                }
+            },
+            "cluster_id": "e766bd52-c19c-45b6-9c91-663fd8203c2e",
+            "node_id": "0",
+            "site_id": "1",
+            "rack_id": "1",
+            "storage_set_id": "storage-set-1",
+            "s3_instances": "1",
+            "type": "VM"
+        },
+        "<MACHINE_ID2>": {
+            "network": {
+                "data": {
+                    "private_fqdn": "<NODE2>"
+                },
+                "management": {
+                    "interfaces": [
+                        "eth0"
+                    ],
+                    "gateway": "0.0.0.0",
+                    "netmask": "255.255.240.0",
+                    "public_fqdn": "srvnode-1.mgmt.public"
+                }
+            },
+            "cluster_id": "e766bd52-c19c-45b6-9c91-663fd8203c2e",
+            "node_id": "1",
+            "site_id": "1",
+            "rack_id": "1",
+            "storage_set_id": "storage-set-1",
+            "s3_instances": "1",
+            "type": "VM"
+        },
+        "<MACHINE_ID3>": {
+            "network": {
+                "data": {
+                    "private_fqdn": "<NODE3>"
+                },
+                "management": {
+                    "interfaces": [
+                        "eth0"
+                    ],
+                    "gateway": "0.0.0.0",
+                    "netmask": "255.255.240.0",
+                    "public_fqdn": "srvnode-1.mgmt.public"
+                }
+            },
+            "cluster_id": "e766bd52-c19c-45b6-9c91-663fd8203c2e",
+            "node_id": "2",
+            "site_id": "1",
+            "rack_id": "1",
+            "storage_set_id": "storage-set-1",
+            "s3_instances": "1",
+            "type": "VM"
+        }
+    },
+    "cluster": {
+        "e766bd52-c19c-45b6-9c91-663fd8203c2e": {
+            "name": "cortx_cluster",
+            "network": {
+                "management": {
+                    "virtual_host": "None"
+                }
+            }
+        }
+    },
+    "cortx": {
+        "software": {
+            "corosync": {
+                "user": "hacluster",
+                "secret": "gAAAAABgb_TOAgT7_eHMHpmNW6KLTlC_hJ0Zq6N5sRFKXf7rhftdwP35tGsWXsW1mbt0YtWed5n_Yn3vDg0jIpC512d5iq60mg=="
+            }
+        }
+    }
+}
