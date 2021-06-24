@@ -381,7 +381,7 @@ class ConfigCmd(Cmd):
                     self._alert_config.create_alert()
                     self._confstore.set(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
                 except Exception as e:
-                    Log.error(f"Cluster creation failed; destroying the cluster. Error: {e}")     
+                    Log.error(f"Cluster creation failed; destroying the cluster. Error: {e}")
                     self._cluster_manager.cluster_controller.destroy_cluster()
 
                     # Delete the node from nodelist if it was added in the store
