@@ -20,7 +20,7 @@ import sys
 import pathlib
 import traceback
 import argparse
-from ha.setup.create_pacemaker_resources import ha_group
+from ha.setup.create_pacemaker_resources import configure_stonith
 from ha.setup.create_pacemaker_resources import cib_get
 from cortx.utils.log import Log
 
@@ -66,7 +66,7 @@ if __name__ == '__main__':
             "node_name": args.node_name,
             "auth": args.auth
         }
-        ha_group(cib_xml, stonith_config=stonith_config)
+        configure_stonith(cib_xml, push=True, stonith_config=stonith_config)
 
     except Exception as e:
         print(f"{traceback.format_exc()}, {e}")
