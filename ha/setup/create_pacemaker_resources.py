@@ -15,13 +15,16 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-from enum import Enum
 from ha.execute import SimpleCommand
 from cortx.utils.log import Log
 
 from ha.core.error import CreateResourceError
 from ha.core.error import CreateResourceConfigError
 from ha import const
+from ha.setup.const import TIMEOUT_ACTION
+from ha.setup.const import RESOURCE
+from ha.setup.const import TIMEOUT_OFFSET
+from ha.setup.const import TIMEOUT_MAP
 
 """
 # List of resource
@@ -46,76 +49,6 @@ ha
     event_analyzer
     srv_counter
 """
-
-class TIMEOUT_ACTION(Enum):
-    START = "start"
-    STOP = "stop"
-    MONITOR = "monitor"
-
-class RESOURCE(Enum):
-    HAX = "hax"
-    MOTR_CONFD = "motr-confd"
-    MOTR_IOS = "motr-ios"
-    MOTR_FREE_SPACE_MON = "motr-free-space-mon"
-    S3_SERVER = "s3server"
-    S3_BACK_CONS = "s3backcons"
-    S3_BACK_PROD = "s3backprod"
-    S3AUTH = "s3auth"
-    HAPROXY = "haproxy"
-    SSPL_LL = "sspl-ll"
-    MGMT_VIP = "mgmt-vip"
-    CSM_AGENT = "csm-agent"
-    CSM_WEB = "csm-web"
-    KIBANA = "kibana"
-    EVENT_ANALYSER = "event_analyzer"
-    SRV_COUNTER = "srv_counter"
-    M_BUS_REST = "mbus_rest"
-    UDS = "uds"
-
-TIMEOUT_OFFSET=5
-
-TIMEOUT_MAP = {
-    TIMEOUT_ACTION.START.value: {
-        RESOURCE.HAX.value: "90",
-        RESOURCE.MOTR_CONFD.value: "90",
-        RESOURCE.MOTR_IOS.value: "90",
-        RESOURCE.MOTR_FREE_SPACE_MON.value: "90",
-        RESOURCE.S3_SERVER.value: "90",
-        RESOURCE.S3_BACK_CONS.value: "300",
-        RESOURCE.S3_BACK_PROD.value: "300",
-        RESOURCE.S3AUTH.value: "300",
-        RESOURCE.HAPROXY.value: "90",
-        RESOURCE.SSPL_LL.value: "190",
-        RESOURCE.MGMT_VIP.value: "60",
-        RESOURCE.CSM_AGENT.value: "300",
-        RESOURCE.CSM_WEB.value: "300",
-        RESOURCE.KIBANA.value: "90",
-        RESOURCE.EVENT_ANALYSER.value: "90",
-        RESOURCE.SRV_COUNTER.value: "60"
-        RESOURCE.M_BUS_REST.value: "90",
-        RESOURCE.UDS.value: "90"
-    },
-    TIMEOUT_ACTION.STOP.value: {
-        RESOURCE.HAX.value: "90",
-        RESOURCE.MOTR_CONFD.value: "300",
-        RESOURCE.MOTR_IOS.value: "300",
-        RESOURCE.MOTR_FREE_SPACE_MON.value: "4",
-        RESOURCE.S3_SERVER.value: "7",
-        RESOURCE.S3_BACK_CONS.value: "300",
-        RESOURCE.S3_BACK_PROD.value: "300".
-        RESOURCE.S3AUTH.value: "300",
-        RESOURCE.HAPROXY.value: "90",
-        RESOURCE.SSPL_LL.value: "90",
-        RESOURCE.MGMT_VIP.value: "60",
-        RESOURCE.CSM_AGENT.value: "90",
-        RESOURCE.CSM_WEB.value: "90",
-        RESOURCE.KIBANA.value: "90",
-        RESOURCE.EVENT_ANALYSER.value: "30",
-        RESOURCE.SRV_COUNTER.value: "60"
-        RESOURCE.M_BUS_REST.value: "90",
-        RESOURCE.UDS.value: "90"
-    }
-}
 
 process = SimpleCommand()
 
@@ -156,7 +89,7 @@ def hax(cib_xml, push=False, **kwargs):
         op start timeout={hax_start}s interval=0s \
         op monitor timeout=30s interval=30s \
         op stop timeout={hax_stop}s interval=0s")
-    process.run_cmd(f"pcs -f {cib_xml} resource clone hax")
+    process.run_cmd(f"pcs -f {cib_xml} resource clone {RESOURCE.HAX.value}")
     if push:
         cib_push(cib_xml)
 
@@ -170,13 +103,13 @@ def motr_conf(cib_xml, push=False, **kwargs):
         op stop timeout={confd_stop}s interval=0s")
     try:
         quorum_size = int(kwargs["node_count"])
-        process.run_cmd(f"pcs -f {cib_xml} resource clone motr-confd-1 interleave=true clone-min={quorum_size}")
+        process.run_cmd(f"pcs -f {cib_xml} resource clone {RESOURCE.MOTR_CONFD.value}-1 interleave=true clone-min={quorum_size}")
     except Exception as e:
         raise CreateResourceConfigError(f"Invalid node_count. Error: {e}")
 
     # Constraint
-    process.run_cmd(f"pcs -f {cib_xml} constraint order hax-clone then motr-confd-1-clone")
-    process.run_cmd(f"pcs -f {cib_xml} constraint colocation add motr-confd-1-clone with hax-clone")
+    process.run_cmd(f"pcs -f {cib_xml} constraint order {RESOURCE.HAX.value}-clone then {RESOURCE.MOTR_CONFD.value}-1-clone")
+    process.run_cmd(f"pcs -f {cib_xml} constraint colocation add {RESOURCE.MOTR_CONFD.value}-1-clone with {RESOURCE.HAX.value}-clone")
 
     if push:
         cib_push(cib_xml)
@@ -207,11 +140,11 @@ def motr(cib_xml, push=False, **kwargs):
         try:
             quorum_size = int(kwargs["node_count"])//2
             quorum_size += 1
-            process.run_cmd(f"pcs -f {cib_xml} constraint location motr-ios-{i}-clone rule score=-INFINITY \
-                    not_defined motr-confd-count or motr-confd-count lt integer {quorum_size}")
-            process.run_cmd(f"pcs -f {cib_xml} constraint order hax-clone then motr-ios-{i}-clone")
-            process.run_cmd(f"pcs -f {cib_xml} constraint colocation add motr-ios-{i}-clone with hax-clone")
-            process.run_cmd(f"pcs -f {cib_xml} constraint order stop motr-ios-{i}-clone then stop motr-confd-1-clone")
+            process.run_cmd(f"pcs -f {cib_xml} constraint location {RESOURCE.MOTR_IOS.value}-{i}-clone rule score=-INFINITY \
+                    not_defined {RESOURCE.MOTR_CONFD.value}-count or {RESOURCE.MOTR_CONFD.value}-count lt integer {quorum_size}")
+            process.run_cmd(f"pcs -f {cib_xml} constraint order {RESOURCE.HAX.value}-clone then {RESOURCE.MOTR_IOS.value}-{i}-clone")
+            process.run_cmd(f"pcs -f {cib_xml} constraint colocation add {RESOURCE.MOTR_IOS.value}-{i}-clone with {RESOURCE.HAX.value}-clone")
+            process.run_cmd(f"pcs -f {cib_xml} constraint order stop {RESOURCE.MOTR_IOS.value}-{i}-clone then stop {RESOURCE.MOTR_CONFD.value}-1-clone")
         except Exception as e:
             raise CreateResourceConfigError(f"Invalid node_count. Error: {e}")
     if push:
@@ -220,7 +153,7 @@ def motr(cib_xml, push=False, **kwargs):
 def stop_constraint_on_motr_ios(resource_name, cib_xml, push=False, **kwargs):
     ios_instances = get_ios_instances(**kwargs)
     for i in range(1, int(ios_instances)+1):
-        process.run_cmd(f"pcs -f {cib_xml} constraint order stop {resource_name} then stop motr-ios-{i}-clone")
+        process.run_cmd(f"pcs -f {cib_xml} constraint order stop {resource_name} then stop {RESOURCE.MOTR_IOS.value}-{i}-clone")
     if push:
         cib_push(cib_xml)
 
@@ -234,9 +167,9 @@ def free_space_monitor(cib_xml, push=False, **kwargs):
         op stop timeout={free_space_stop}s interval=0s meta failure-timeout=300s")
 
     # Constraint
-    process.run_cmd(f"pcs -f {cib_xml} constraint location motr-free-space-mon rule score=-INFINITY \
-                    not_defined motr-ios-count or motr-ios-count lt integer 1")
-    stop_constraint_on_motr_ios("motr-free-space-mon", cib_xml, push, **kwargs)
+    process.run_cmd(f"pcs -f {cib_xml} constraint location {RESOURCE.MOTR_FREE_SPACE_MON.value} rule score=-INFINITY \
+                    not_defined {RESOURCE.MOTR_IOS.value}-count or {RESOURCE.MOTR_IOS.value}-count lt integer 1")
+    stop_constraint_on_motr_ios(RESOURCE.MOTR_FREE_SPACE_MON.value, cib_xml, push, **kwargs)
     if push:
         cib_push(cib_xml)
 
@@ -261,13 +194,13 @@ def s3servers(cib_xml, push=False, **kwargs):
             op start timeout={s3servers_start}s interval=0s \
             op monitor timeout=30s interval=30s \
             op stop timeout={s3servers_stop}s interval=0s")
-        process.run_cmd(f"pcs -f {cib_xml} resource clone s3server-{i} interleave=true")
+        process.run_cmd(f"pcs -f {cib_xml} resource clone {RESOURCE.S3_SERVER.value}-{i} interleave=true")
 
         # Constraint
-        process.run_cmd(f"pcs -f {cib_xml} constraint location s3server-{i}-clone rule score=-INFINITY \
-                        not_defined motr-ios-count or  motr-ios-count lt integer 1")
-        process.run_cmd(f"pcs -f {cib_xml} constraint colocation add s3server-{i}-clone with s3auth-clone")
-        stop_constraint_on_motr_ios(f"s3server-{i}-clone", cib_xml, push, **kwargs)
+        process.run_cmd(f"pcs -f {cib_xml} constraint location {RESOURCE.S3_SERVER.value}-{i}-clone rule score=-INFINITY \
+                        not_defined {RESOURCE.MOTR_IOS.value}-count or  {RESOURCE.MOTR_IOS.value}-count lt integer 1")
+        process.run_cmd(f"pcs -f {cib_xml} constraint colocation add {RESOURCE.S3_SERVER.value}-{i}-clone with s3auth-clone")
+        stop_constraint_on_motr_ios(f"{RESOURCE.S3_SERVER.value}-{i}-clone", cib_xml, push, **kwargs)
     if push:
         cib_push(cib_xml)
 
@@ -286,12 +219,12 @@ def s3bc(cib_xml, push=False, **kwargs):
         op start timeout={s3bc_start}s interval=0s \
         op monitor timeout=30s interval=30s \
         op stop timeout={s3bc_stop}s interval=0s")
-    process.run_cmd(f"pcs -f {cib_xml} resource clone s3backcons interleave=true")
+    process.run_cmd(f"pcs -f {cib_xml} resource clone {RESOURCE.S3_BACK_CONS.value} interleave=true")
 
     # Constraint
-    process.run_cmd(f"pcs -f {cib_xml} constraint location s3backcons-clone rule score=-INFINITY \
-                    not_defined s3server-count or s3server-count lt integer 1")
-    stop_constraint_on_s3servers("s3backcons-clone", cib_xml, push, **kwargs)
+    process.run_cmd(f"pcs -f {cib_xml} constraint location {RESOURCE.S3_BACK_CONS.value}-clone rule score=-INFINITY \
+                    not_defined {RESOURCE.S3_SERVER.value}-count or {RESOURCE.S3_SERVER.value}-count lt integer 1")
+    stop_constraint_on_s3servers(f"{RESOURCE.S3_BACK_CONS.value}-clone", cib_xml, push, **kwargs)
     if push:
         cib_push(cib_xml)
 
@@ -309,9 +242,9 @@ def s3bp(cib_xml, push=False, **kwargs):
         op stop timeout={s3bp_stop}s interval=0s")
 
     # Constraint
-    process.run_cmd(f"pcs -f {cib_xml} constraint location s3backprod rule score=-INFINITY \
-                    not_defined s3server-count or s3server-count lt integer 1")
-    stop_constraint_on_s3servers("s3backprod", cib_xml, push, **kwargs)
+    process.run_cmd(f"pcs -f {cib_xml} constraint location {RESOURCE.S3_BACK_PROD.value} rule score=-INFINITY \
+                    not_defined {RESOURCE.S3_SERVER.value}-count or {RESOURCE.S3_SERVER.value}-count lt integer 1")
+    stop_constraint_on_s3servers(RESOURCE.S3_BACK_PROD.value, cib_xml, push, **kwargs)
     if push:
         cib_push(cib_xml)
 
@@ -319,11 +252,11 @@ def s3auth(cib_xml, push=False, **kwargs):
     """Create haproxy S3 auth server resource in pacemaker."""
     s3auth_start = str(get_res_timeout(RESOURCE.S3AUTH.value, TIMEOUT_ACTION.START.value))
     s3auth_stop = str(get_res_timeout(RESOURCE.S3AUTH.value, TIMEOUT_ACTION.STOP.value))
-    process.run_cmd(f"pcs -f {cib_xml} resource create s3auth systemd:s3authserver \
+    process.run_cmd(f"pcs -f {cib_xml} resource create {RESOURCE.S3AUTH.value} systemd:s3authserver \
         op start timeout={s3auth_start}s interval=0s \
         op monitor timeout=30s interval=30s \
         op stop timeout={s3auth_stop}s interval=0s")
-    process.run_cmd(f"pcs -f {cib_xml} resource clone s3auth")
+    process.run_cmd(f"pcs -f {cib_xml} resource clone {RESOURCE.S3AUTH.value}")
     if push:
         cib_push(cib_xml)
 
@@ -335,12 +268,12 @@ def haproxy(cib_xml, push=False, **kwargs):
         op start timeout={haproxy_start}s interval=0s \
         op monitor timeout=30s interval=30s \
         op stop timeout={haproxy_stop}s interval=0s")
-    process.run_cmd(f"pcs -f {cib_xml} resource clone haproxy interleave=true")
+    process.run_cmd(f"pcs -f {cib_xml} resource clone {RESOURCE.HAPROXY.value} interleave=true")
 
     # Constraint
-    process.run_cmd(f"pcs -f {cib_xml} constraint location haproxy-clone rule score=-INFINITY \
-                    not_defined s3server-count or s3server-count lt integer 1")
-    stop_constraint_on_s3servers("haproxy-clone", cib_xml, push, **kwargs)
+    process.run_cmd(f"pcs -f {cib_xml} constraint location {RESOURCE.HAPROXY.value}-clone rule score=-INFINITY \
+                    not_defined {RESOURCE.S3_SERVER.value}-count or {RESOURCE.S3_SERVER.value}-count lt integer 1")
+    stop_constraint_on_s3servers(f"{RESOURCE.HAPROXY.value}-clone", cib_xml, push, **kwargs)
     if push:
         cib_push(cib_xml)
 
@@ -421,7 +354,7 @@ def instance_counter(cib_xml, push=False, **kwargs):
         op start timeout={counter_start}s interval=0s \
         op monitor timeout=5s interval=5s \
         op stop timeout={counter_stop}s interval=0s")
-    process.run_cmd(f"pcs -f {cib_xml} resource clone srv_counter")
+    process.run_cmd(f"pcs -f {cib_xml} resource clone {RESOURCE.SRV_COUNTER.value}")
     if push:
         cib_push(cib_xml)
 
@@ -433,7 +366,7 @@ def mbus_rest(cib_xml, push=False, **kwargs):
         op start timeout={mbus_rest_start}s interval=0s \
         op monitor timeout=3s interval=3s \
         op stop timeout={mbus_rest_stop}s interval=0s")
-    process.run_cmd(f"pcs -f {cib_xml} resource clone mbus_rest")
+    process.run_cmd(f"pcs -f {cib_xml} resource clone {RESOURCE.M_BUS_REST.value}")
     if push:
         cib_push(cib_xml)
 
@@ -449,8 +382,8 @@ def uds(cib_xml, push=False, **kwargs):
             op stop timeout={uds_stop}s interval=0s")
 
         # Constraints
-        process.run_cmd(f"pcs -f {cib_xml} pcs -f {cib_xml} constraint colocation add uds with csm-agent score=INFINITY")
-        process.run_cmd(f"pcs -f {cib_xml} pcs -f {cib_xml} constraint order csm-agent then uds")
+        process.run_cmd(f"pcs -f {cib_xml} pcs -f {cib_xml} constraint colocation add {RESOURCE.UDS.value} with {RESOURCE.CSM_AGENT.value} score=INFINITY")
+        process.run_cmd(f"pcs -f {cib_xml} pcs -f {cib_xml} constraint order {RESOURCE.CSM_AGENT.value} then {RESOURCE.UDS.value}")
 
         if push:
             cib_push(cib_xml)
