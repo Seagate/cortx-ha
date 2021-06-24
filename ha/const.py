@@ -23,6 +23,7 @@ HACLUSTER_KEY = "cortx"
 SERVER_NODE_KEY = "server_node"
 RA_LOG_DIR="/var/log/seagate/cortx/ha"
 PACEMAKER_LOG="/var/log/pacemaker.log"
+AUTH_DIR="/var/lib/pcsd"
 PCSD_LOG="/var/log/pcsd/pcsd.log"
 HA_CMDS_OUTPUT="{}/ha_cmds_output".format(RA_LOG_DIR)
 COROSYNC_LOG="/var/log/cluster"
