@@ -356,8 +356,9 @@ class ConfigCmd(Cmd):
                     self._confstore.set(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
                 except Exception as e:
                     Log.error(f"Cluster creation failed; destroying the cluster. Error: {e}")
-                    output = self._execute.run_cmd(const.PCS_CLUSTER_DESTROY)
-                    Log.error(f"Cluster destroyed. Output: {output}")
+                    # output = self._execute.run_cmd(const.PCS_CLUSTER_DESTROY)
+                    # Log.error(f"Cluster destroyed. Output: {output}")
+                    self._cluster_manager.cluster_controller.destroy_cluster()
                     # Delete the node from nodelist if it was added in the store
                     if self._confstore.key_exists(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}"):
                         self._confstore.delete(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
@@ -670,7 +671,8 @@ class CleanupCmd(Cmd):
                 self._remove_node(node_name)
             else:
                 # Destroy
-                self._destroy_cluster(node_name)
+                self._cluster_manager.cluster_controller.destroy_cluster()
+                # self._destroy_cluster(node_name)
 
             if self._confstore.key_exists(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}"):
                 self._confstore.delete(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
