@@ -17,7 +17,6 @@
 
 from enum import Enum
 
-
 class TIMEOUT_ACTION(Enum):
     START = "start"
     STOP = "stop"
