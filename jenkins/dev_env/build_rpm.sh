@@ -19,21 +19,18 @@ USER=${config[USER]}
 
 echo "PATH: ${REPO_PATH}, USER: ${USER}"
 
-[ $REPO_PATH == "--clean" ] && {
-    echo "Cleaning Yum"
-    rm -rf /etc/yum.repos.d/cortx-*
+mkdir -p /var/lib/ha_env
+
+ls /var/lib/ha_env/ | grep yum_init || {
+    # Configure cortx-py-utils
+    yum-config-manager --add-repo ${THIRD_PARTY}
+    yum-config-manager --add-repo ${CORTX_ISO}
     yum clean all
-    exit 0
+    rpm --import ${GPG_CHECK}
 }
 
-# Configure cortx-py-utils
-yum-config-manager --add-repo ${THIRD_PARTY}
-yum-config-manager --add-repo ${CORTX_ISO}
-yum clean all
-rpm --import ${GPG_CHECK}
-
 yum install -y gcc rpm-build python36 python36-pip python36-devel python36-setuptools openssl-devel libffi-devel  --nogpgcheck
-yum group install "Development Tools"
+yum group -y install "Development Tools" --nogpgcheck
 
 python3 -m pip install -r https://raw.githubusercontent.com/Seagate/cortx-utils/main/py-utils/python_requirements.txt
 python3 -m pip install -r https://raw.githubusercontent.com/Seagate/cortx-utils/main/py-utils/python_requirements.ext.txt
@@ -52,3 +49,5 @@ echo "${REPO_PATH}/dist/rpmbuild/RPMS/x86_64/cortx-ha-2.0.0-*.x86_64.rpm"
 
 yum remove -y cortx-ha
 yum install -y ${REPO_PATH}/dist/rpmbuild/RPMS/x86_64/cortx-ha-2.0.0-*.x86_64.rpm
+
+touch /var/lib/ha_env/yum_init
