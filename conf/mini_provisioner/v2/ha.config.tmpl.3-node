@@ -11,6 +11,7 @@ cortx:
       user: TMPL_USER
 server_node:
   TMPL_MACHINE_ID_1:
+    node_id: TMPL_NODE_ID_1
     cluster_id: TMPL_CLUSTER_ID
     network:
       data:
@@ -18,9 +19,13 @@ server_node:
       management:
         interfaces: TMPL_INTERFACES
         netmask: TMPL_NETMASK
+    site_id: TMPL_SITE_ID_1
+    rack_id: TMPL_RACK_ID_1
+    storage_set_id: TMPL_STORAGE_SET_ID_1
     s3_instances: '1'
     type: TMPL_TYPE
   TMPL_MACHINE_ID_2:
+    node_id: TMPL_NODE_ID_2
     cluster_id: TMPL_CLUSTER_ID
     network:
       data:
@@ -28,9 +33,13 @@ server_node:
       management:
         interfaces: TMPL_INTERFACES
         netmask: TMPL_NETMASK
+    site_id: TMPL_SITE_ID_2
+    rack_id: TMPL_RACK_ID_2
+    storage_set_id: TMPL_STORAGE_SET_ID_2
     s3_instances: '1'
     type: TMPL_TYPE
   TMPL_MACHINE_ID_3:
+    node_id: TMPL_NODE_ID_3
     cluster_id: TMPL_CLUSTER_ID
     network:
       data:
@@ -38,5 +47,8 @@ server_node:
       management:
         interfaces: TMPL_INTERFACES
         netmask: TMPL_NETMASK
+    site_id: TMPL_SITE_ID_3
+    rack_id: TMPL_RACK_ID_3
+    storage_set_id: TMPL_STORAGE_SET_ID_3
     s3_instances: '1'
     type: TMPL_TYPE

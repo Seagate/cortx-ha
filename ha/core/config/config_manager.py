@@ -27,6 +27,7 @@ from cortx.utils.conf_store.conf_store import Conf
 
 from ha import const
 from ha.util.consul_kv_store import ConsulKvStore
+from ha.const import _DELIM
 
 # TODO: redefine class as per config manager module design
 class ConfigManager:
@@ -46,7 +47,7 @@ class ConfigManager:
             log_name (str): service_name for log init.
         """
         if len(ConfigManager._conf) == 0:
-            Conf.init(delim='.')
+            Conf.init()
         ConfigManager._safe_load(const.HA_GLOBAL_INDEX, f"yaml://{const.HA_CONFIG_FILE}")
         if log_name is not None:
             ConfigManager._init_log(log_name)
@@ -56,12 +57,12 @@ class ConfigManager:
         """
         Log initalize
         """
-        log_path = Conf.get(const.HA_GLOBAL_INDEX, "LOG.path")
-        log_level = Conf.get(const.HA_GLOBAL_INDEX, "LOG.level")
+        log_path = Conf.get(const.HA_GLOBAL_INDEX, f"LOG{_DELIM}path")
+        log_level = Conf.get(const.HA_GLOBAL_INDEX, f"LOG{_DELIM}level")
         Log.init(service_name=log_name, log_path=log_path, level=log_level)
 
     @staticmethod
-    def _get_confstore():
+    def get_confstore():
         """
         Initalize and get confstore if not _cluster_confstore is None.
         Used by config manager methods to check and initalize confstore if needed.
@@ -85,6 +86,13 @@ class ConfigManager:
         ConfigManager._safe_load(const.ALERT_FILTER_INDEX, f"json://{const.ALERT_FILTER_RULES_FILE}")
 
     @staticmethod
+    def load_alert_events_rules():
+        """
+        Loads alert event rules.
+        """
+        ConfigManager._safe_load(const.ALERT_EVENT_INDEX, f"json://{const.ALERT_EVENT_RULES_FILE}")
+
+    @staticmethod
     def _safe_load(index: str, url: str):
         """
         Load config if not loaded
@@ -101,7 +109,7 @@ class ConfigManager:
         Returns:
             [int]: Return version
         """
-        version = Conf.get(const.HA_GLOBAL_INDEX, "VERSION.version")
+        version = Conf.get(const.HA_GLOBAL_INDEX, f"VERSION{_DELIM}version")
         major_version = version.split('.')
         return major_version[0]
 
@@ -110,11 +118,11 @@ class ConfigManager:
         """
         Get local node name.
         """
-        return Conf.get(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.local_node")
+        return Conf.get(const.HA_GLOBAL_INDEX, f"CLUSTER_MANAGER{_DELIM}local_node")
 
     @staticmethod
     def get_hw_env() -> str:
         """
         Get if system is running on VM or actual h/w.
         """
-        return Conf.get(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.env")
+        return Conf.get(const.HA_GLOBAL_INDEX, f"CLUSTER_MANAGER{_DELIM}env")

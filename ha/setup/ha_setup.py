@@ -23,15 +23,20 @@ import os
 import shutil
 import json
 import grp, pwd
+import time
+import uuid
 from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
 from cortx.utils.validator.v_pkg import PkgV
 from cortx.utils.security.cipher import Cipher
+from ha.core.system_health.const import NODE_MAP_ATTRIBUTES
+from ha.core.system_health.const import CONFSTORE_KEY_ATTRIBUTES
 
 from ha.execute import SimpleCommand
 from ha import const
 from ha.const import STATUSES
 from ha.setup.create_pacemaker_resources import create_all_resources
+from ha.setup.pcs_config.alert_config import AlertConfig
 from ha.setup.post_disruptive_upgrade import perform_post_upgrade
 from ha.core.cluster.cluster_manager import CortxClusterManager
 from ha.core.config.config_manager import ConfigManager
@@ -42,6 +47,10 @@ from ha.core.error import HaInitException
 from ha.core.error import HaCleanupException
 from ha.core.error import SetupError
 from ha.setup.cluster_validator.cluster_test import TestExecutor
+from ha.core.system_health.system_health import SystemHealth
+from ha.core.system_health.const import CLUSTER_ELEMENTS, HEALTH_EVENTS, EVENT_SEVERITIES
+from ha.core.system_health.model.health_event import HealthEvent
+from ha.const import _DELIM
 
 class Cmd:
     """
@@ -61,7 +70,7 @@ class Cmd:
         Conf.load(self._index, self._url)
         self._args = args.args
         self._execute = SimpleCommand()
-        self._confstore = ConfigManager._get_confstore()
+        self._confstore = ConfigManager.get_confstore()
         self._cluster_manager = None
 
     @property
@@ -148,7 +157,7 @@ class Cmd:
 
     def get_node_name(self):
         machine_id = self.get_machine_id()
-        node_name = Conf.get(self._index, f"server_node.{machine_id}.network.data.private_fqdn")
+        node_name = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}network{_DELIM}data{_DELIM}private_fqdn")
         Log.info(f"Read node name: {node_name}")
         return node_name
 
@@ -174,7 +183,7 @@ class Cmd:
             nodes_schema = Conf.get(self._index, "server_node")
             machine_ids: list = list(nodes_schema.keys())
             for machine in machine_ids:
-                nodelist.append(Conf.get(self._index, f"server_node.{machine}.network.data.private_fqdn"))
+                nodelist.append(Conf.get(self._index, f"server_node{_DELIM}{machine}{_DELIM}network{_DELIM}data{_DELIM}private_fqdn"))
         else:
             raise SetupError(f"Failed to get nodelist, Invalid options {fetch_from}")
         Log.info(f"Found total Nodes: {len(nodelist)}, Nodes: {nodelist}, in {fetch_from}")
@@ -220,7 +229,7 @@ class Cmd:
             [int]: Return s3 count.
         """
         try:
-            s3_instances = Conf.get(Cmd._index, f"server_node.{machine_id}.s3_instances")
+            s3_instances = Conf.get(Cmd._index, f"server_node{_DELIM}{machine_id}{_DELIM}s3_instances")
             if int(s3_instances) < 1:
                 raise HaConfigException(f"Found {s3_instances} which is invalid s3 instance count.")
             return int(s3_instances)
@@ -255,8 +264,11 @@ class PostInstallCmd(Cmd):
             PostInstallCmd.copy_file(f"{const.SOURCE_CONFIG_PATH}/{const.CM_CONTROLLER_INDEX}.json",
                             const.CM_CONTROLLER_SCHEMA)
             PostInstallCmd.copy_file(const.SOURCE_ALERT_FILTER_RULES_FILE, const.ALERT_FILTER_RULES_FILE)
+            PostInstallCmd.copy_file(const.SOURCE_ALERT_EVENT_RULES_FILE, const.ALERT_EVENT_RULES_FILE)
             PostInstallCmd.copy_file(const.SOURCE_CLI_SCHEMA_FILE, const.CLI_SCHEMA_FILE)
             PostInstallCmd.copy_file(const.SOURCE_SERVICE_FILE, const.SYSTEM_SERVICE_FILE)
+            PostInstallCmd.copy_file(const.SOURCE_HEALTH_HIERARCHY_FILE, const.HEALTH_HIERARCHY_FILE)
+            PostInstallCmd.copy_file(const.SOURCE_IEM_SCHEMA_PATH, const.IEM_SCHEMA)
             self._execute.run_cmd("systemctl daemon-reload")
             Log.info(f"{self.name}: Copied HA configs file.")
             # Pre-requisite checks are done here.
@@ -273,7 +285,10 @@ class PostInstallCmd(Cmd):
                 raise HaPrerequisiteException("post_install command failed")
             else:
                 Log.info("hacluster is a part of the haclient group")
-
+            self._execute.run_cmd(f"setfacl -R -m g:{const.USER_GROUP_HACLIENT}:rwx {const.RA_LOG_DIR}")
+            self._execute.run_cmd(f"setfacl -R -m g:{const.USER_GROUP_ROOT}:rwx {const.RA_LOG_DIR}")
+            self._execute.run_cmd(f"setfacl -R -m g:{const.USER_GROUP_HACLIENT}:r-x {const.CONFIG_DIR}")
+            self._execute.run_cmd(f"setfacl -R -m g:{const.USER_GROUP_ROOT}:rwx {const.CONFIG_DIR}")
         except Exception as e:
             Log.error(f"Failed prerequisite with Error: {e}")
             raise HaPrerequisiteException("post_install command failed")
@@ -310,6 +325,7 @@ class ConfigCmd(Cmd):
         Init method.
         """
         super().__init__(args)
+        self._alert_config = AlertConfig()
 
     def process(self):
         """
@@ -323,13 +339,13 @@ class ConfigCmd(Cmd):
 
         # Read cluster name and cluster user
         machine_id = self.get_machine_id()
-        cluster_id = Conf.get(self._index, f"server_node.{machine_id}.cluster_id")
-        cluster_name = Conf.get(self._index, f"cluster.{cluster_id}.name")
-        cluster_user = Conf.get(self._index, f"cortx.software.{const.HA_CLUSTER_SOFTWARE}.user")
-        node_type = Conf.get(self._index, f"server_node.{machine_id}.type").strip()
+        cluster_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}cluster_id")
+        cluster_name = Conf.get(self._index, f"cluster{_DELIM}{cluster_id}{_DELIM}name")
+        cluster_user = Conf.get(self._index, f"cortx{_DELIM}software{_DELIM}{const.HA_CLUSTER_SOFTWARE}{_DELIM}user")
+        node_type = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}type").strip()
 
         # Read cluster user password and decrypt the same
-        cluster_secret = Conf.get(self._index, f"cortx.software.{const.HA_CLUSTER_SOFTWARE}.secret")
+        cluster_secret = Conf.get(self._index, f"cortx{_DELIM}software{_DELIM}{const.HA_CLUSTER_SOFTWARE}{_DELIM}secret")
         key = Cipher.generate_key(cluster_id, const.HACLUSTER_KEY)
         cluster_secret = Cipher.decrypt(key, cluster_secret.encode('ascii')).decode()
         mgmt_info: dict = self._get_mgmt_vip(machine_id, cluster_id)
@@ -338,6 +354,15 @@ class ConfigCmd(Cmd):
         self._update_env(node_name, node_type, const.HA_CLUSTER_SOFTWARE, s3_instances)
         self._fetch_fids()
         self._update_cluster_manager_config()
+
+        # Push node name mapping to store
+        if not self._confstore.key_exists(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_name}"):
+            node_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}node_id")
+            self._confstore.set(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_name}", node_id)
+
+        # Update node map
+        self._update_node_map()
+        self._add_node_health()
 
         # Update cluster and resources
         self._cluster_manager = CortxClusterManager(default_log_enable=False)
@@ -353,12 +378,12 @@ class ConfigCmd(Cmd):
                 try:
                     self._create_cluster(cluster_name, cluster_user, cluster_secret, node_name)
                     self._create_resource(s3_instances=s3_instances, mgmt_info=mgmt_info, node_count=len(nodelist))
+                    self._alert_config.create_alert()
                     self._confstore.set(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
                 except Exception as e:
                     Log.error(f"Cluster creation failed; destroying the cluster. Error: {e}")
-                    # output = self._execute.run_cmd(const.PCS_CLUSTER_DESTROY)
-                    # Log.error(f"Cluster destroyed. Output: {output}")
                     self._cluster_manager.cluster_controller.destroy_cluster()
+
                     # Delete the node from nodelist if it was added in the store
                     if self._confstore.key_exists(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}"):
                         self._confstore.delete(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
@@ -494,12 +519,12 @@ class ConfigCmd(Cmd):
             node_count: int = len(Conf.get(self._index, "server_node"))
             if ConfigCmd.DEV_CHECK == True or node_count < 2:
                 return mgmt_info
-            mgmt_info["mgmt_vip"] = Conf.get(self._index, f"cluster.{cluster_id}.network.management.virtual_host")
-            netmask = Conf.get(self._index, f"server_node.{machine_id}.network.management.netmask")
+            mgmt_info["mgmt_vip"] = Conf.get(self._index, f"cluster{_DELIM}{cluster_id}{_DELIM}network{_DELIM}management{_DELIM}virtual_host")
+            netmask = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}network{_DELIM}management{_DELIM}netmask")
             if netmask is None:
                 raise HaConfigException("Detected invalid netmask, It should not be empty.")
             mgmt_info["mgmt_netmask"] = sum(bin(int(x)).count('1') for x in netmask.split('.'))
-            mgmt_info["mgmt_iface"] = Conf.get(self._index, f"server_node.{machine_id}.network.management.interfaces")[0]
+            mgmt_info["mgmt_iface"] = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}network{_DELIM}management{_DELIM}interfaces")[0]
             Log.info(f"Mgmt vip configuration: {str(mgmt_info)}")
             return mgmt_info
         except Exception as e:
@@ -512,13 +537,13 @@ class ConfigCmd(Cmd):
         """
         Log.info(f"Detected {node_type} env and cluster_type {cluster_type}.")
         if "VM" == node_type.upper():
-            Conf.set(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.env", node_type.upper())
+            Conf.set(const.HA_GLOBAL_INDEX, f"CLUSTER_MANAGER{_DELIM}env", node_type.upper())
         else:
             # TODO: check if any env available other than vm, hw
-            Conf.set(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.env", "HW")
-        Conf.set(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.cluster_type", cluster_type)
-        Conf.set(const.HA_GLOBAL_INDEX, "CLUSTER_MANAGER.local_node", node_name)
-        Conf.set(const.HA_GLOBAL_INDEX, "SERVICE_INSTANCE_COUNTER[1].instances", s3_instances)
+            Conf.set(const.HA_GLOBAL_INDEX, f"CLUSTER_MANAGER{_DELIM}env", "HW")
+        Conf.set(const.HA_GLOBAL_INDEX, f"CLUSTER_MANAGER{_DELIM}cluster_type", cluster_type)
+        Conf.set(const.HA_GLOBAL_INDEX, f"CLUSTER_MANAGER{_DELIM}local_node", node_name)
+        Conf.set(const.HA_GLOBAL_INDEX, f"SERVICE_INSTANCE_COUNTER[1]{_DELIM}instances", s3_instances)
         Log.info("CONFIG: Update ha configuration files")
         Conf.save(const.HA_GLOBAL_INDEX)
 
@@ -550,6 +575,65 @@ class ConfigCmd(Cmd):
                         del controller_schema[env]["<HA_CLUSTER_SOFTWARE>"]
             with open(const.CM_CONTROLLER_SCHEMA, 'w') as fi:
                 json.dump(controller_schema, fi, indent=4)
+
+    def _update_node_map(self) -> None:
+        """
+        Update node map
+        """
+        machine_id = self.get_machine_id()
+        node_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}node_id")
+        cluster_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.CLUSTER_ID.value}")
+        site_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.SITE_ID.value}")
+        rack_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.RACK_ID.value}")
+        storageset_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{CONFSTORE_KEY_ATTRIBUTES.STORAGE_SET_ID.value}")
+        node_map = {NODE_MAP_ATTRIBUTES.CLUSTER_ID.value: cluster_id, NODE_MAP_ATTRIBUTES.SITE_ID.value: site_id,
+                    NODE_MAP_ATTRIBUTES.RACK_ID.value: rack_id, NODE_MAP_ATTRIBUTES.STORAGESET_ID.value: storageset_id}
+        system_health = SystemHealth(self._confstore)
+        key = system_health._prepare_key(const.COMPONENTS.NODE_MAP.value, node_id=node_id)
+        # Check key is already exist if not, store the node map.
+        node_map_val = self._confstore.get(key)
+        if node_map_val is None:
+            self._confstore.set(key, str(node_map))
+
+    # TBD: Temporary code till EOS-17892 is implemented
+    def _add_node_health(self) -> None:
+        """
+        Add node health
+        """
+        try:
+            machine_id = self.get_machine_id()
+            node_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}node_id")
+            cluster_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.CLUSTER_ID.value}")
+            site_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.SITE_ID.value}")
+            rack_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.RACK_ID.value}")
+            storageset_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{CONFSTORE_KEY_ATTRIBUTES.STORAGE_SET_ID.value}")
+            host_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}network{_DELIM}management{_DELIM}public_fqdn")
+
+            timestamp = str(int(time.time()))
+            event_id = timestamp + str(uuid.uuid4().hex)
+            initial_event = {
+                const.EVENT_ATTRIBUTES.EVENT_ID : event_id,
+                const.EVENT_ATTRIBUTES.EVENT_TYPE : HEALTH_EVENTS.INSERTION.value,
+                const.EVENT_ATTRIBUTES.SEVERITY : EVENT_SEVERITIES.INFORMATIONAL.value,
+                const.EVENT_ATTRIBUTES.SITE_ID : site_id,
+                const.EVENT_ATTRIBUTES.RACK_ID : rack_id,
+                const.EVENT_ATTRIBUTES.CLUSTER_ID : cluster_id,
+                const.EVENT_ATTRIBUTES.STORAGESET_ID : storageset_id,
+                const.EVENT_ATTRIBUTES.NODE_ID : node_id,
+                const.EVENT_ATTRIBUTES.HOST_ID : host_id,
+                const.EVENT_ATTRIBUTES.RESOURCE_TYPE : CLUSTER_ELEMENTS.NODE.value,
+                const.EVENT_ATTRIBUTES.TIMESTAMP : timestamp,
+                const.EVENT_ATTRIBUTES.RESOURCE_ID : node_id,
+                const.EVENT_ATTRIBUTES.SPECIFIC_INFO : None
+            }
+
+            Log.debug(f"Adding initial health {initial_event} for node {node_id}")
+            health_event = HealthEvent.dict_to_object(initial_event)
+            system_health = SystemHealth(self._confstore)
+            system_health.process_event(health_event)
+        except Exception as e:
+            Log.error(f"Failed adding node health. Error: {e}")
+            raise HaConfigException("Failed adding node health.")
 
 class InitCmd(Cmd):
     """
@@ -586,6 +670,7 @@ class TestCmd(Cmd):
         """
         Process test command.
         """
+        Log.info("Processing test command")
         path_to_comp_config = const.SOURCE_CONFIG_PATH
 
         install_type = self.get_installation_type()
@@ -597,6 +682,7 @@ class TestCmd(Cmd):
 
         if not rc:
             raise HaConfigException("Cluster is no healthy. Check HA logs for further information.")
+        Log.info("test command is successful")
 
 class UpgradeCmd(Cmd):
     """
@@ -676,6 +762,9 @@ class CleanupCmd(Cmd):
 
             if self._confstore.key_exists(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}"):
                 self._confstore.delete(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
+            # Delete node name mapping from store
+            if self._confstore.key_exists(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_name}"):
+                self._confstore.delete(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_name}")
             # Delete the config file
             self.remove_config_files()
         except Exception as e:
@@ -761,10 +850,10 @@ class RestoreCmd(Cmd):
 def main(argv: list):
     try:
         if sys.argv[1] == "post_install":
-            Conf.init(delim='.')
+            Conf.init()
             Conf.load(const.HA_GLOBAL_INDEX, f"yaml://{const.SOURCE_CONFIG_FILE}")
-            log_path = Conf.get(const.HA_GLOBAL_INDEX, "LOG.path")
-            log_level = Conf.get(const.HA_GLOBAL_INDEX, "LOG.level")
+            log_path = Conf.get(const.HA_GLOBAL_INDEX, f"LOG{_DELIM}path")
+            log_level = Conf.get(const.HA_GLOBAL_INDEX, f"LOG{_DELIM}level")
             Log.init(service_name='ha_setup', log_path=log_path, level=log_level)
         else:
             ConfigManager.init("ha_setup")
