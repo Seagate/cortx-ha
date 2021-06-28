@@ -113,29 +113,6 @@ def get_res_timeout(resource: str, action: str, systemd: str = None) -> int:
     Log.info(f"Timeout for {resource}:{systemd} {action} is {str(timeout)} sec.")
     return timeout
 
-def get_fid(service: str) -> str:
-    """
-    Get Fid of service.
-
-    Args:
-        service (str): service name
-
-    Returns:
-        str: fid.
-    """
-    if not os.path.isfile(const.FIDS_CONFIG_FILE):
-        raise CreateResourceConfigError(f"Missing fid file {const.FIDS_CONFIG_FILE}.")
-    service_fid: str = None
-    with open(const.FIDS_CONFIG_FILE, "r") as fids_output:
-        fid = json.load(fids_output)
-        for element in fid:
-            if element.get("name") == service:
-                service_fid = element.get("fid")
-                break
-        if service_fid is None:
-            raise CreateResourceConfigError(f"Missing fid for service {service}")
-        return service_fid
-
 def cib_push(cib_xml):
     """Shortcut to avoid boilerplate pushing CIB file."""
     process.run_cmd(f"pcs cluster verify -V {cib_xml}")
@@ -166,7 +143,8 @@ def hax(cib_xml, push=False, **kwargs):
 
 def motr_conf(cib_xml, push=False, **kwargs):
     """Create resources that belong to motr confd and clone the group."""
-    confd_systemd = "m0d@" + get_fid("confd")
+    # Use @AnyFid to get timeout for service
+    confd_systemd = "m0d@AnyFid"
     confd_start = str(get_res_timeout(RESOURCE.MOTR_CONFD.value, TIMEOUT_ACTION.START.value, confd_systemd))
     confd_stop = str(get_res_timeout(RESOURCE.MOTR_CONFD.value, TIMEOUT_ACTION.STOP.value, confd_systemd))
     process.run_cmd(f"pcs -f {cib_xml} resource create {RESOURCE.MOTR_CONFD.value}-1 ocf:seagate:dynamic_fid_service_ra \
@@ -197,7 +175,8 @@ def get_ios_instances(**kwargs):
 
 def motr(cib_xml, push=False, **kwargs):
     """Configure motr resource."""
-    ios_systemd = "m0d@" + get_fid("ioservice")
+    # Use @AnyFid to get timeout for service
+    ios_systemd = "m0d@AnyFid"
     ios_start = str(get_res_timeout(RESOURCE.MOTR_IOS.value, TIMEOUT_ACTION.START.value, ios_systemd))
     ios_stop = str(get_res_timeout(RESOURCE.MOTR_IOS.value, TIMEOUT_ACTION.STOP.value, ios_systemd))
     ios_instances = get_ios_instances(**kwargs)
@@ -259,7 +238,8 @@ def s3servers(cib_xml, push=False, **kwargs):
     Create resources that belong to s3server group and clone the group.
     S3 background consumer is ordered after s3server and co-located with it.
     """
-    s3server_systemd = "s3server@" + get_fid("s3server")
+    # Use @AnyFid to get timeout for service
+    s3server_systemd = "s3server@AnyFid"
     s3servers_start = str(get_res_timeout(RESOURCE.S3_SERVER.value, TIMEOUT_ACTION.START.value, s3server_systemd))
     s3servers_stop = str(get_res_timeout(RESOURCE.S3_SERVER.value, TIMEOUT_ACTION.STOP.value, s3server_systemd))
     instance = get_s3servers_instances(**kwargs)
