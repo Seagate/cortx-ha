@@ -7,7 +7,9 @@ SITE_PACKAGES=`python3 -c 'import sysconfig; print(sysconfig.get_paths()["pureli
 HA_SETUP=${SITE_PACKAGES}/ha/setup/ha_setup.py
 CLI_EXEC=${SITE_PACKAGES}/ha/cli/cortxha.py
 DYNAMIC_RA=${SITE_PACKAGES}/ha/resource/dynamic_fid_service_ra.py
+SRV_COUNTER_RA=${SITE_PACKAGES}/ha/resource/service_instances_counter.py
 EVENT_ANALYZER=${SITE_PACKAGES}/ha/core/event_analyzer/event_analyzerd.py
+PCMK_ALERT=${SITE_PACKAGES}/ha/alert/pcmk_alert.py
 
 chmod +x ${HA_SETUP}
 ln -sf ${HA_SETUP} ${BIN_DIR}/ha_setup
@@ -24,11 +26,20 @@ ln -sf ${DYNAMIC_RA} ${BIN_DIR}/dynamic_fid_service_ra
 ln -sf ${DYNAMIC_RA} /usr/bin/dynamic_fid_service_ra
 ln -sf ${DYNAMIC_RA} $RES_AGENT/dynamic_fid_service_ra
 
+chmod +x ${SRV_COUNTER_RA}
+ln -sf ${SRV_COUNTER_RA} ${BIN_DIR}/service_instances_counter
+ln -sf ${SRV_COUNTER_RA} /usr/bin/service_instances_counter
+ln -sf ${SRV_COUNTER_RA} $RES_AGENT/service_instances_counter
+
 chmod +x ${EVENT_ANALYZER}
 ln -sf ${EVENT_ANALYZER} ${BIN_DIR}/event_analyzerd
 ln -sf ${EVENT_ANALYZER} /usr/local/bin/event_analyzerd
 ln -sf ${EVENT_ANALYZER} /usr/bin/event_analyzerd
 
-chown -R root:root /opt/seagate/cortx/ha
+chmod +x ${PCMK_ALERT}
+ln -sf ${PCMK_ALERT} ${BIN_DIR}/pcmk_alert
+ln -sf ${PCMK_ALERT} /usr/local/bin/pcmk_alert
+ln -sf ${PCMK_ALERT} /usr/bin/pcmk_alert
 
+chown -R root:root /opt/seagate/cortx/ha
 exit 0

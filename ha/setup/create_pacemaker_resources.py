@@ -26,26 +26,25 @@ from ha import const
 """
 # List of resource
 motr-free-space-mon
-io_group-clone
-    hax
+io_stack
     motr-confd-1
-    motr-ios-1
+    hax
+    motr-ios-<i>
     haproxy
     s3auth
-    s3server-1
-    s3server-2
-    s3server-3
-    s3server-4
+    s3server-<i>
     s3backcons
-s3backprod
-sspl-ll-clone
+    s3backprod
+monitor
     sspl-ll
 management
     mgmt-vip
     kibana
     csm-agent
     csm-web
-event_analyzer
+ha
+    event_analyzer
+    srv_counter
 """
 
 process = SimpleCommand()
@@ -60,31 +59,80 @@ def cib_get(cib_xml):
     process.run_cmd(f"pcs cluster cib {cib_xml}")
     return cib_xml
 
+def change_pcs_default(cib_xml, push=False, **kwargs):
+    """Modify pcs defaults here"""
+    process.run_cmd(f"pcs -f {cib_xml} resource defaults resource-stickiness=1")
+    if push:
+        cib_push(cib_xml)
+
 def hax(cib_xml, push=False, **kwargs):
     """Create resources that belong to hax and clone the group."""
     # hax
     process.run_cmd(f"pcs -f {cib_xml} resource create hax systemd:hare-hax \
         op start timeout=100s interval=0s \
         op monitor timeout=30s interval=30s \
-        op stop timeout=120s interval=0s --group io_group")
+        op stop timeout=120s interval=0s")
+    process.run_cmd(f"pcs -f {cib_xml} resource clone hax")
     if push:
         cib_push(cib_xml)
 
-def motr(cib_xml, push=False, **kwargs):
-    """Configure motr resource."""
+def motr_conf(cib_xml, push=False, **kwargs):
     process.run_cmd(f"pcs -f {cib_xml} resource create motr-confd-1 ocf:seagate:dynamic_fid_service_ra service=m0d fid_service_name=confd \
+        update_attrib=true \
         op start timeout=100s interval=0s \
         op monitor timeout=30s interval=30s \
-        op stop timeout=120s interval=0s --group io_group")
+        op stop timeout=120s interval=0s")
+    try:
+        quorum_size = int(kwargs["node_count"])
+        process.run_cmd(f"pcs -f {cib_xml} resource clone motr-confd-1 interleave=true clone-min={quorum_size}")
+    except Exception as e:
+        raise CreateResourceConfigError(f"Invalid node_count. Error: {e}")
+
+    # Constraint
+    process.run_cmd(f"pcs -f {cib_xml} constraint order hax-clone then motr-confd-1-clone")
+    process.run_cmd(f"pcs -f {cib_xml} constraint colocation add motr-confd-1-clone with hax-clone")
+
+    if push:
+        cib_push(cib_xml)
+
+def get_ios_instances(**kwargs):
     if "ios_instances" in kwargs:
         ios_instances = int(kwargs["ios_instances"])
     else:
         ios_instances = 1
+
+    return ios_instances
+
+def motr(cib_xml, push=False, **kwargs):
+    """Configure motr resource."""
+    ios_instances = get_ios_instances(**kwargs)
+
     for i in range(1, int(ios_instances)+1):
         process.run_cmd(f"pcs -f {cib_xml} resource create motr-ios-{i} ocf:seagate:dynamic_fid_service_ra service=m0d fid_service_name=ioservice \
+            update_attrib=true \
             op start timeout=100s interval=0s \
             op monitor timeout=30s interval=30s \
-            op stop timeout=120s interval=0s --group io_group")
+            op stop timeout=120s interval=0s")
+        process.run_cmd(f"pcs -f {cib_xml} resource clone motr-ios-{i} interleave=true")
+
+        # Constraint
+        try:
+            quorum_size = int(kwargs["node_count"])//2
+            quorum_size += 1
+            process.run_cmd(f"pcs -f {cib_xml} constraint location motr-ios-{i}-clone rule score=-INFINITY \
+                    not_defined motr-confd-count or motr-confd-count lt integer {quorum_size}")
+            process.run_cmd(f"pcs -f {cib_xml} constraint order hax-clone then motr-ios-{i}-clone")
+            process.run_cmd(f"pcs -f {cib_xml} constraint colocation add motr-ios-{i}-clone with hax-clone")
+            process.run_cmd(f"pcs -f {cib_xml} constraint order stop motr-ios-{i}-clone then stop motr-confd-1-clone")
+        except Exception as e:
+            raise CreateResourceConfigError(f"Invalid node_count. Error: {e}")
+    if push:
+        cib_push(cib_xml)
+
+def stop_constraint_on_motr_ios(resource_name, cib_xml, push=False, **kwargs):
+    ios_instances = get_ios_instances(**kwargs)
+    for i in range(1, int(ios_instances)+1):
+        process.run_cmd(f"pcs -f {cib_xml} constraint order stop {resource_name} then stop motr-ios-{i}-clone")
     if push:
         cib_push(cib_xml)
 
@@ -94,23 +142,47 @@ def free_space_monitor(cib_xml, push=False, **kwargs):
         op start timeout=100s interval=0s \
         op monitor timeout=30s interval=30s \
         op stop timeout=120s interval=0s meta failure-timeout=300s")
+
+    # Constraint
+    process.run_cmd(f"pcs -f {cib_xml} constraint location motr-free-space-mon rule score=-INFINITY \
+                    not_defined motr-ios-count or motr-ios-count lt integer 1")
+    stop_constraint_on_motr_ios("motr-free-space-mon", cib_xml, push, **kwargs)
     if push:
         cib_push(cib_xml)
 
-def s3servers(cib_xml, push=False, **kwargs):
-    """Create resources that belong to s3server group and clone the group.
-
-    S3 background consumer is ordered after s3server and co-located with it.
-    """
+def get_s3servers_instances(**kwargs):
     try:
         instance = int(kwargs["s3_instances"])
+        return instance
     except Exception as e:
         raise CreateResourceConfigError(f"Invalid s3 instance. Error: {e}")
+
+def s3servers(cib_xml, push=False, **kwargs):
+    """
+    Create resources that belong to s3server group and clone the group.
+    S3 background consumer is ordered after s3server and co-located with it.
+    """
+    instance = get_s3servers_instances(**kwargs)
     for i in range(1, int(instance)+1):
-        process.run_cmd(f"pcs -f {cib_xml} resource create s3server-{i} ocf:seagate:dynamic_fid_service_ra service=s3server fid_service_name=s3server \
+        process.run_cmd(f"pcs -f {cib_xml} resource create s3server-{i} ocf:seagate:dynamic_fid_service_ra \
+            service=s3server fid_service_name=s3server update_attrib=true \
             op start timeout=60s interval=0s \
             op monitor timeout=30s interval=30s \
-            op stop timeout=60s interval=0s --group io_group")
+            op stop timeout=60s interval=0s")
+        process.run_cmd(f"pcs -f {cib_xml} resource clone s3server-{i} interleave=true")
+
+        # Constraint
+        process.run_cmd(f"pcs -f {cib_xml} constraint location s3server-{i}-clone rule score=-INFINITY \
+                        not_defined motr-ios-count or  motr-ios-count lt integer 1")
+        process.run_cmd(f"pcs -f {cib_xml} constraint colocation add s3server-{i}-clone with s3auth-clone")
+        stop_constraint_on_motr_ios(f"s3server-{i}-clone", cib_xml, push, **kwargs)
+    if push:
+        cib_push(cib_xml)
+
+def stop_constraint_on_s3servers(resource_name, cib_xml, push=False, **kwargs):
+    s3_instances = get_s3servers_instances(**kwargs)
+    for i in range(1, int(s3_instances)+1):
+        process.run_cmd(f"pcs -f {cib_xml} constraint order stop {resource_name} then stop s3server-{i}-clone")
     if push:
         cib_push(cib_xml)
 
@@ -119,7 +191,13 @@ def s3bc(cib_xml, push=False, **kwargs):
     process.run_cmd(f"pcs -f {cib_xml} resource create s3backcons systemd:s3backgroundconsumer meta failure-timeout=300s \
         op start timeout=100s interval=0s \
         op monitor timeout=30s interval=30s \
-        op stop timeout=120s interval=0s --group io_group")
+        op stop timeout=120s interval=0s")
+    process.run_cmd(f"pcs -f {cib_xml} resource clone s3backcons interleave=true")
+
+    # Constraint
+    process.run_cmd(f"pcs -f {cib_xml} constraint location s3backcons-clone rule score=-INFINITY \
+                    not_defined s3server-count or s3server-count lt integer 1")
+    stop_constraint_on_s3servers("s3backcons-clone", cib_xml, push, **kwargs)
     if push:
         cib_push(cib_xml)
 
@@ -133,6 +211,11 @@ def s3bp(cib_xml, push=False, **kwargs):
         op start timeout=60s interval=0s \
         op monitor timeout=30s interval=30s \
         op stop timeout=60s interval=0s")
+
+    # Constraint
+    process.run_cmd(f"pcs -f {cib_xml} constraint location s3backprod rule score=-INFINITY \
+                    not_defined s3server-count or s3server-count lt integer 1")
+    stop_constraint_on_s3servers("s3backprod", cib_xml, push, **kwargs)
     if push:
         cib_push(cib_xml)
 
@@ -141,7 +224,8 @@ def s3auth(cib_xml, push=False, **kwargs):
     process.run_cmd(f"pcs -f {cib_xml} resource create s3auth systemd:s3authserver \
         op start timeout=60s interval=0s \
         op monitor timeout=30s interval=30s \
-        op stop timeout=60s interval=0s --group io_group")
+        op stop timeout=60s interval=0s")
+    process.run_cmd(f"pcs -f {cib_xml} resource clone s3auth")
     if push:
         cib_push(cib_xml)
 
@@ -150,7 +234,13 @@ def haproxy(cib_xml, push=False, **kwargs):
     process.run_cmd(f"pcs -f {cib_xml} resource create haproxy systemd:haproxy \
         op start timeout=60s interval=0s \
         op monitor timeout=30s interval=30s \
-        op stop timeout=60s interval=0s --group io_group")
+        op stop timeout=60s interval=0s")
+    process.run_cmd(f"pcs -f {cib_xml} resource clone haproxy interleave=true")
+
+    # Constraint
+    process.run_cmd(f"pcs -f {cib_xml} constraint location haproxy-clone rule score=-INFINITY \
+                    not_defined s3server-count or s3server-count lt integer 1")
+    stop_constraint_on_s3servers("haproxy-clone", cib_xml, push, **kwargs)
     if push:
         cib_push(cib_xml)
 
@@ -211,6 +301,25 @@ def event_analyzer(cib_xml, push=False, **kwargs):
     if push:
         cib_push(cib_xml)
 
+def instance_counter(cib_xml, push=False, **kwargs):
+    """Create service instance counter resource."""
+    process.run_cmd(f"pcs -f {cib_xml} resource create srv_counter ocf:seagate:service_instances_counter \
+        op start timeout=60s interval=0s \
+        op monitor timeout=5s interval=5s \
+        op stop timeout=60s interval=0s")
+    process.run_cmd(f"pcs -f {cib_xml} resource clone srv_counter")
+    if push:
+        cib_push(cib_xml)
+
+def mbus_rest(cib_xml, push=False, **kwargs):
+    """Create service instance counter resource."""
+    process.run_cmd(f"pcs -f {cib_xml} resource create mbus_rest systemd:cortx_message_bus \
+        op start timeout=60s interval=0s \
+        op monitor timeout=3s interval=3s \
+        op stop timeout=60s interval=0s")
+    process.run_cmd(f"pcs -f {cib_xml} resource clone mbus_rest")
+    if push:
+        cib_push(cib_xml)
 
 def uds(cib_xml, push=False, **kwargs):
     """Create uds resource."""
@@ -220,38 +329,21 @@ def uds(cib_xml, push=False, **kwargs):
             op start timeout=60s interval=0s \
             op monitor timeout=30s interval=30s \
             op stop timeout=60s interval=0s")
+
+        # Constraints
+        process.run_cmd(f"pcs -f {cib_xml} pcs -f {cib_xml} constraint colocation add uds with csm-agent score=INFINITY")
+        process.run_cmd(f"pcs -f {cib_xml} pcs -f {cib_xml} constraint order csm-agent then uds")
+
         if push:
             cib_push(cib_xml)
 
-def config_constraint(cib_xml, push=False, **kwargs):
-    """
-    Configure all constaints
-
-    Args:
-        cib_xml (str): cib cluster file.
-    """
-    constraints = [
-            f"pcs -f {cib_xml} constraint order io_group-clone then motr-free-space-mon",
-            f"pcs -f {cib_xml} constraint colocation add motr-free-space-mon with io_group-clone",
-            f"pcs -f {cib_xml} constraint colocation add s3backprod with io_group-clone"
-            # According to EOS-9258, there is a bug which requires UDS to be started after csm_agent
-            f"pcs -f {cib_xml} constraint colocation add uds with csm-agent score=INFINITY",
-            f"pcs -f {cib_xml} constraint order csm-agent then uds"
-        ]
-    with_uds = kwargs["uds"] if "uds" in kwargs else False
-    for c in constraints:
-        if with_uds == False and "uds" in c:
-            continue
-        process.run_cmd(c)
-    if push:
-        cib_push(cib_xml)
-
-core_io = [hax, motr, s3auth, s3servers, haproxy]
+core_io = [hax, motr_conf, motr, s3auth, s3servers, haproxy]
 io_helper_aa = [s3bc]
 io_helper_ap = [free_space_monitor, s3bp]
 monitor_config = [sspl]
 management_config = [mgmt_vip, kibana, csm, uds]
-ha_group_config = [event_analyzer]
+ha_group_config = [event_analyzer, instance_counter]
+base_services_config = [mbus_rest]
 
 def io_stack(cib_xml, push=False, **kwargs):
     """Create IO stack related resources."""
@@ -268,7 +360,6 @@ def io_stack(cib_xml, push=False, **kwargs):
     for create_resource in io_helper_ap:
         Log.info(f"HA Rules: Configure {str(create_resource)}")
         create_resource(cib_xml, push, **kwargs)
-    process.run_cmd(f"pcs -f {cib_xml} resource clone io_group")
     if push:
         cib_push(cib_xml)
 
@@ -300,6 +391,15 @@ def ha_group(cib_xml, push=False, **kwargs):
     if push:
         cib_push(cib_xml)
 
+def base_services(cib_xml, push=False, **kwargs):
+    """Configure base services (Foundation)"""
+    Log.info("HA Rules: ******* base services *********")
+    for create_resource in base_services_config:
+        Log.info(f"HA Rules: Configure {str(create_resource)}")
+        create_resource(cib_xml, push, **kwargs)
+    if push:
+        cib_push(cib_xml)
+
 
 def create_all_resources(cib_xml=const.CIB_FILE, push=True, **kwargs):
     """Populate the cluster with all Cortx resources.
@@ -325,9 +425,10 @@ def create_all_resources(cib_xml=const.CIB_FILE, push=True, **kwargs):
         management_group(cib_xml, False, **kwargs)
         # Configure HA management group
         ha_group(cib_xml, False, **kwargs)
-        # Configure constraint
-        Log.info("HA Rules: Start configuring HA Rules.")
-        config_constraint(cib_xml, False, **kwargs)
+        # Configure base services
+        base_services(cib_xml, False, **kwargs)
+        # Change the defaults
+        change_pcs_default(cib_xml, False, **kwargs)
         if push:
             cib_push(cib_xml)
         Log.info("HA Rules: Successfully configured all HA resources and its configuration.")

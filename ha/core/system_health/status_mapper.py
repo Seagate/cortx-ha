@@ -27,6 +27,7 @@ class StatusMapper:
         "fault_resolved": "online",
         "missing": "offline",
         "insertion": "online",
+        "failed": "failed",
         "unknown": "unknown",
         "threshold_breached:low": "degraded",
         "threshold_breached:high": "degraded"

@@ -1,0 +1,12 @@
+[Unit]
+Description=Motr-S3 Core instance Server
+
+[Service]
+Type=simple
+ExecStartPre=/usr/bin/sleep 5
+ExecStart=/root/service/<service> %i
+ExecStopPre=/usr/bin/sleep 10
+TimeoutStopSec=7sec
+
+[Install]
+WantedBy=multi-user.target

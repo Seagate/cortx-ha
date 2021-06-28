@@ -1,0 +1,8 @@
+{
+    "components": [
+        "cluster",
+        "site",
+        "rack",
+        "node"
+    ]
+}
