@@ -155,13 +155,12 @@ class SystemHealth(Subscriber):
             # Prepare and return status for all available components at this and further levels
             if component_id != None:
                 status_key = self._is_status_present(component, component_id = component_id)
-                if status_key:
-                    del self._status_dict[status_key]
-                else:
+                if status_key is None:
                     self._id_not_found = True
                     return
                 component_status = self._prapare_component_status(component, component_id = component_id, key = status_key)
                 parent.add_health(component_status)
+                del self._status_dict[status_key]
                 next_components = HealthHierarchy.get_next_components(component)
                 for _, value in enumerate(next_components):
                     self._prepare_status(value, start_level = start_level, current_level = current_level + 1, depth = depth, parent = component_status)
