@@ -108,6 +108,7 @@ class SystemHealth(Subscriber):
                     self._partial_status = True
             Log.debug(f"{component} level {component_level}, depth to return {depth}, total available depth {total_depth}")
 
+            self._id_not_found = False
             # Get raw status starting from cluster
             self._status_dict = self.get_status_raw(CLUSTER_ELEMENTS.CLUSTER.value)
             # Prepare and return the output
@@ -116,7 +117,10 @@ class SystemHealth(Subscriber):
             status = const.STATUSES.SUCCEEDED.value
             if self._partial_status:
                 status = const.STATUSES.PARTIAL.value
-            output_json = json.dumps({"status": status, "output": json.loads(output.to_json()), "error": ""})
+            if self._id_not_found:
+                output_json = json.dumps({"status": const.STATUSES.FAILED.value, "output": "", "error": "Invalid id"})
+            else:
+                output_json = json.dumps({"status": status, "output": json.loads(output.to_json()), "error": ""})
             Log.debug(f"Output json {output_json}")
             return output_json
         except Exception as e:
@@ -130,6 +134,9 @@ class SystemHealth(Subscriber):
             # If request was with depth = 1 and id was provided.
             if component_id != None:
                 status_key = self._is_status_present(component, component_id = component_id)
+                if status_key is None:
+                    self._id_not_found = True
+                    return
                 component_status = self._prapare_component_status(component, component_id = component_id, key = status_key)
                 parent.add_health(component_status)
             else:
@@ -148,13 +155,12 @@ class SystemHealth(Subscriber):
             # Prepare and return status for all available components at this and further levels
             if component_id != None:
                 status_key = self._is_status_present(component, component_id = component_id)
+                if status_key is None:
+                    self._id_not_found = True
+                    return
                 component_status = self._prapare_component_status(component, component_id = component_id, key = status_key)
                 parent.add_health(component_status)
-                if status_key:
-                    del self._status_dict[status_key]
-                else:
-                    self._partial_status = True
-                    return
+                del self._status_dict[status_key]
                 next_components = HealthHierarchy.get_next_components(component)
                 for _, value in enumerate(next_components):
                     self._prepare_status(value, start_level = start_level, current_level = current_level + 1, depth = depth, parent = component_status)
