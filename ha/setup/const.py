@@ -37,12 +37,12 @@ class RESOURCE(Enum):
     CSM_AGENT = "csm-agent"
     CSM_WEB = "csm-web"
     KIBANA = "kibana"
-    EVENT_ANALYSER = "event_analyzer"
+    EVENT_ANALYZER = "event_analyzer"
     SRV_COUNTER = "srv_counter"
     M_BUS_REST = "mbus_rest"
     UDS = "uds"
 
-TIMEOUT_OFFSET=5
+BUFFER_TIMEOUT=5
 
 TIMEOUT_MAP = {
     # Default systemd timeout is 90sec and non systemd resource timeout is 60sec.
@@ -61,7 +61,7 @@ TIMEOUT_MAP = {
         RESOURCE.CSM_AGENT.value: "90",
         RESOURCE.CSM_WEB.value: "90",
         RESOURCE.KIBANA.value: "90",
-        RESOURCE.EVENT_ANALYSER.value: "90",
+        RESOURCE.EVENT_ANALYZER.value: "90",
         RESOURCE.SRV_COUNTER.value: "60",
         RESOURCE.M_BUS_REST.value: "90",
         RESOURCE.UDS.value: "90"
@@ -81,7 +81,7 @@ TIMEOUT_MAP = {
         RESOURCE.CSM_AGENT.value: "90",
         RESOURCE.CSM_WEB.value: "90",
         RESOURCE.KIBANA.value: "90",
-        RESOURCE.EVENT_ANALYSER.value: "90",
+        RESOURCE.EVENT_ANALYZER.value: "90",
         RESOURCE.SRV_COUNTER.value: "60",
         RESOURCE.M_BUS_REST.value: "90",
         RESOURCE.UDS.value: "90"

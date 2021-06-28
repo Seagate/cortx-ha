@@ -24,7 +24,7 @@ from ha.core.error import CreateResourceConfigError
 from ha import const
 from ha.setup.const import TIMEOUT_ACTION
 from ha.setup.const import RESOURCE
-from ha.setup.const import TIMEOUT_OFFSET
+from ha.setup.const import BUFFER_TIMEOUT
 from ha.setup.const import TIMEOUT_MAP
 
 """
@@ -107,9 +107,9 @@ def get_res_timeout(resource: str, action: str, systemd: str = None) -> int:
     """
     timeout = 0
     if systemd is None:
-        timeout = int(TIMEOUT_MAP[action][resource]) + TIMEOUT_OFFSET
+        timeout = int(TIMEOUT_MAP[action][resource]) + BUFFER_TIMEOUT
     else:
-        timeout = get_systemd_timeout(systemd, action) + TIMEOUT_OFFSET
+        timeout = get_systemd_timeout(systemd, action) + BUFFER_TIMEOUT
     Log.info(f"Timeout for {resource}:{systemd} {action} is {str(timeout)} sec.")
     return timeout
 
@@ -392,9 +392,9 @@ def kibana(cib_xml, push=False, **kwargs):
 
 def event_analyzer(cib_xml, push=False, **kwargs):
     """Create event analyzer resource."""
-    event_analyzer_start = str(get_res_timeout(RESOURCE.EVENT_ANALYSER.value, TIMEOUT_ACTION.START.value, "event_analyzer"))
-    event_analyzer_stop = str(get_res_timeout(RESOURCE.EVENT_ANALYSER.value, TIMEOUT_ACTION.STOP.value, "event_analyzer"))
-    process.run_cmd(f"pcs -f {cib_xml} resource create {RESOURCE.EVENT_ANALYSER.value} systemd:event_analyzer \
+    event_analyzer_start = str(get_res_timeout(RESOURCE.EVENT_ANALYZER.value, TIMEOUT_ACTION.START.value, "event_analyzer"))
+    event_analyzer_stop = str(get_res_timeout(RESOURCE.EVENT_ANALYZER.value, TIMEOUT_ACTION.STOP.value, "event_analyzer"))
+    process.run_cmd(f"pcs -f {cib_xml} resource create {RESOURCE.EVENT_ANALYZER.value} systemd:event_analyzer \
         op start timeout={event_analyzer_start}s interval=0s \
         op monitor timeout=30s interval=30s \
         op stop timeout={event_analyzer_stop}s interval=0s --group ha_group")
