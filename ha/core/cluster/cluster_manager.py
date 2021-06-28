@@ -31,6 +31,7 @@ from ha.core.config.config_manager import ConfigManager
 from ha.core.controllers.element_controller_factory import ElementControllerFactory
 from ha.core.system_health.const import CLUSTER_ELEMENTS
 from ha.core.controllers.system_health_controller import SystemHealthController
+from ha.core.error import ClusterManagerError
 from ha.const import _DELIM
 
 # Note: This class is used by version 1
