@@ -31,6 +31,7 @@ from ha.core.config.config_manager import ConfigManager
 from ha.core.controllers.element_controller_factory import ElementControllerFactory
 from ha.core.system_health.const import CLUSTER_ELEMENTS
 from ha.core.controllers.system_health_controller import SystemHealthController
+from ha.core.error import ClusterManagerError
 from ha.const import _DELIM
 
 # Note: This class is used by version 1
@@ -352,5 +353,5 @@ class CortxClusterManager:
             return system_health_controller.get_status(component = element, depth = depth, version = self._version, **kwargs)
         except Exception as e:
             Log.error(f"Failed returning system health . Error: {e}")
-            return json.dumps({"status": const.STATUSES.FAILED.value, "output": "", "error": "Internal error"})
+            raise ClusterManagerError("Failed returning system health, internal error")
         
