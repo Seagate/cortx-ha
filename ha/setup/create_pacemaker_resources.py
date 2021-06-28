@@ -153,10 +153,10 @@ def s3servers(cib_xml, push=False, **kwargs):
         raise CreateResourceConfigError(f"Invalid s3 instance. Error: {e}")
     for i in range(1, int(instance) + 1):
         process.run_cmd(f"pcs -f {cib_xml} resource create s3server-{i} ocf:seagate:dynamic_fid_service_ra \
-                service=s3server fid_service_name=s3server update_attrib=true \
-                op start timeout=60s interval=0s \
-                op monitor timeout=30s interval=30s \
-                op stop timeout=60s interval=0s")
+            service=s3server fid_service_name=s3server update_attrib=true \
+            op start timeout=60s interval=0s \
+            op monitor timeout=30s interval=30s \
+            op stop timeout=60s interval=0s")
         process.run_cmd(f"pcs -f {cib_xml} resource clone s3server-{i} interleave=true")
 
         # Constraint
@@ -459,8 +459,6 @@ def create_all_resources(cib_xml=const.CIB_FILE, push=True, **kwargs):
         base_services(cib_xml, False, **kwargs)
         # Change the defaults
         change_pcs_default(cib_xml, False, **kwargs)
-        # configure stonith
-        configure_stonith(cib_xml, False, **kwargs)
 
         if push:
             cib_push(cib_xml)
