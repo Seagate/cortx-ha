@@ -21,6 +21,7 @@ from cortx.utils.log import Log
 
 from ha.core.error import CreateResourceError
 from ha.core.error import CreateResourceConfigError
+from ha.setup.setup_error import ConfigureStonithResourceError
 from ha import const
 
 """
@@ -49,10 +50,12 @@ ha
 
 process = SimpleCommand()
 
+
 def cib_push(cib_xml):
     """Shortcut to avoid boilerplate pushing CIB file."""
     process.run_cmd(f"pcs cluster verify -V {cib_xml}")
     process.run_cmd(f"pcs cluster cib-push {cib_xml} --config")
+
 
 def cib_get(cib_xml):
     """Generate CIB file using pcs."""
@@ -77,6 +80,7 @@ def hax(cib_xml, push=False, **kwargs):
         cib_push(cib_xml)
 
 def motr_conf(cib_xml, push=False, **kwargs):
+    """Configure motr resource."""
     process.run_cmd(f"pcs -f {cib_xml} resource create motr-confd-1 ocf:seagate:dynamic_fid_service_ra service=m0d fid_service_name=confd \
         update_attrib=true \
         op start timeout=100s interval=0s \
@@ -102,7 +106,7 @@ def motr(cib_xml, push=False, **kwargs):
         ios_instances = int(kwargs["ios_instances"])
     else:
         ios_instances = 1
-    for i in range(1, int(ios_instances)+1):
+    for i in range(1, int(ios_instances) + 1):
         process.run_cmd(f"pcs -f {cib_xml} resource create motr-ios-{i} ocf:seagate:dynamic_fid_service_ra service=m0d fid_service_name=ioservice \
             update_attrib=true \
             op start timeout=100s interval=0s \
@@ -123,6 +127,7 @@ def motr(cib_xml, push=False, **kwargs):
     if push:
         cib_push(cib_xml)
 
+
 def free_space_monitor(cib_xml, push=False, **kwargs):
     """Create free space monitor resource. 1 per cluster, no affinity."""
     process.run_cmd(f"pcs -f {cib_xml} resource create motr-free-space-mon systemd:motr-free-space-monitor \
@@ -136,6 +141,7 @@ def free_space_monitor(cib_xml, push=False, **kwargs):
     if push:
         cib_push(cib_xml)
 
+
 def s3servers(cib_xml, push=False, **kwargs):
     """Create resources that belong to s3server group and clone the group.
 
@@ -145,7 +151,7 @@ def s3servers(cib_xml, push=False, **kwargs):
         instance = int(kwargs["s3_instances"])
     except Exception as e:
         raise CreateResourceConfigError(f"Invalid s3 instance. Error: {e}")
-    for i in range(1, int(instance)+1):
+    for i in range(1, int(instance) + 1):
         process.run_cmd(f"pcs -f {cib_xml} resource create s3server-{i} ocf:seagate:dynamic_fid_service_ra \
             service=s3server fid_service_name=s3server update_attrib=true \
             op start timeout=60s interval=0s \
@@ -160,6 +166,7 @@ def s3servers(cib_xml, push=False, **kwargs):
     if push:
         cib_push(cib_xml)
 
+
 def s3bc(cib_xml, push=False, **kwargs):
     """Create S3 background consumer."""
     process.run_cmd(f"pcs -f {cib_xml} resource create s3backcons systemd:s3backgroundconsumer meta failure-timeout=300s \
@@ -173,6 +180,7 @@ def s3bc(cib_xml, push=False, **kwargs):
                     not_defined s3server-count or s3server-count lt integer 1")
     if push:
         cib_push(cib_xml)
+
 
 def s3bp(cib_xml, push=False, **kwargs):
     """Create S3 background producer.
@@ -191,6 +199,7 @@ def s3bp(cib_xml, push=False, **kwargs):
     if push:
         cib_push(cib_xml)
 
+
 def s3auth(cib_xml, push=False, **kwargs):
     """Create haproxy S3 auth server resource in pacemaker."""
     process.run_cmd(f"pcs -f {cib_xml} resource create s3auth systemd:s3authserver \
@@ -200,6 +209,7 @@ def s3auth(cib_xml, push=False, **kwargs):
     process.run_cmd(f"pcs -f {cib_xml} resource clone s3auth")
     if push:
         cib_push(cib_xml)
+
 
 def haproxy(cib_xml, push=False, **kwargs):
     """Create haproxy clone resource in pacemaker."""
@@ -215,6 +225,7 @@ def haproxy(cib_xml, push=False, **kwargs):
     if push:
         cib_push(cib_xml)
 
+
 def sspl(cib_xml, push=False, **kwargs):
     """Create sspl clone resource in pacemaker."""
     # Using sspl-ll service file according to the content of SSPL repo
@@ -224,6 +235,7 @@ def sspl(cib_xml, push=False, **kwargs):
         op stop timeout=60s interval=0s --group monitor_group")
     if push:
         cib_push(cib_xml)
+
 
 def mgmt_vip(cib_xml, push=False, **kwargs):
     """Create mgmt Virtual IP resource."""
@@ -241,6 +253,7 @@ def mgmt_vip(cib_xml, push=False, **kwargs):
     if push:
         cib_push(cib_xml)
 
+
 def csm(cib_xml, push=False, **kwargs):
     """Create mandatory resources for mgmt stack."""
     process.run_cmd(f"pcs -f {cib_xml} resource create csm-agent systemd:csm_agent \
@@ -254,6 +267,7 @@ def csm(cib_xml, push=False, **kwargs):
     if push:
         cib_push(cib_xml)
 
+
 def kibana(cib_xml, push=False, **kwargs):
     """Create mandatory resources for mgmt stack."""
     process.run_cmd(f"pcs -f {cib_xml} resource create kibana systemd:kibana \
@@ -262,6 +276,7 @@ def kibana(cib_xml, push=False, **kwargs):
         op stop timeout=60s interval=0s --group management_group")
     if push:
         cib_push(cib_xml)
+
 
 def event_analyzer(cib_xml, push=False, **kwargs):
     """Create event analyzer resource."""
@@ -292,6 +307,7 @@ def mbus_rest(cib_xml, push=False, **kwargs):
     if push:
         cib_push(cib_xml)
 
+
 def uds(cib_xml, push=False, **kwargs):
     """Create uds resource."""
     with_uds = kwargs["uds"] if "uds" in kwargs else False
@@ -300,13 +316,53 @@ def uds(cib_xml, push=False, **kwargs):
             op start timeout=60s interval=0s \
             op monitor timeout=30s interval=30s \
             op stop timeout=60s interval=0s")
-
         # Constraints
         process.run_cmd(f"pcs -f {cib_xml} pcs -f {cib_xml} constraint colocation add uds with csm-agent score=INFINITY")
         process.run_cmd(f"pcs -f {cib_xml} pcs -f {cib_xml} constraint order csm-agent then uds")
 
         if push:
             cib_push(cib_xml)
+
+
+def configure_stonith(cib_xml=None, push=False, **kwargs):
+    """Create ipmi stonith resource."""
+    try:
+        if cib_xml is None:
+            cib_xml = cib_get(const.CIB_FILE)
+
+        stonith_config = kwargs.get("stonith_config")
+        if stonith_config and stonith_config.get("node_type").lower() == const.INSTALLATION_TYPE.HW.value.lower():
+            Log.info("Configuring stonith.")
+            resource_id = stonith_config.get("resource_id")
+            node_name = stonith_config.get("node_name")
+
+            # check for stonith config present for that node
+            _output, _err, _rc = process.run_cmd(const.PCS_STONITH_SHOW.replace("<resource_id>", resource_id), check_error=False)
+            if _output and "Error" not in _output and resource_id in _output:
+                Log.info(f"Stonith configuration already exists for node {node_name}.")
+                return
+
+            ipaddr = stonith_config.get("ipaddr")
+            login = stonith_config.get("login")
+            passwd = stonith_config.get("passwd")
+            pcmk_host_list = stonith_config.get("pcmk_host_list")
+            auth = stonith_config.get("auth")
+
+            process.run_cmd(f"pcs -f {cib_xml} stonith create {resource_id} fence_ipmilan ipaddr={ipaddr} \
+                login={login} passwd={passwd} pcmk_host_list={pcmk_host_list} pcmk_host_check=static-list \
+                lanplus=true auth={auth} power_timeout=40 verbose=true \
+                op monitor interval=10s meta failure-timeout=15s --group ha_group")
+            process.run_cmd(f"pcs -f {cib_xml} constraint location {resource_id} avoids {pcmk_host_list}")
+            process.run_cmd(f"pcs -f {cib_xml} resource clone {resource_id}")
+
+            if push:
+                cib_push(cib_xml)
+        else:
+            Log.info("Stonith configuration not available to create stonith resource.")
+
+    except Exception as e:
+        raise ConfigureStonithResourceError(f"Failed to create stonith resource, Error: {e}")
+
 
 core_io = [hax, motr_conf, motr, s3auth, s3servers, haproxy]
 io_helper_aa = [s3bc]
@@ -334,6 +390,7 @@ def io_stack(cib_xml, push=False, **kwargs):
     if push:
         cib_push(cib_xml)
 
+
 def monitor_stack(cib_xml, push=False, **kwargs):
     """Configure monitor stack"""
     Log.info("HA Rules: ******* monitor_group *********")
@@ -344,6 +401,7 @@ def monitor_stack(cib_xml, push=False, **kwargs):
     if push:
         cib_push(cib_xml)
 
+
 def management_group(cib_xml, push=False, **kwargs):
     """Configure management group"""
     Log.info("HA Rules: ******* management_group *********")
@@ -352,6 +410,7 @@ def management_group(cib_xml, push=False, **kwargs):
         create_resource(cib_xml, push, **kwargs)
     if push:
         cib_push(cib_xml)
+
 
 def ha_group(cib_xml, push=False, **kwargs):
     """Configure management group"""
@@ -400,6 +459,7 @@ def create_all_resources(cib_xml=const.CIB_FILE, push=True, **kwargs):
         base_services(cib_xml, False, **kwargs)
         # Change the defaults
         change_pcs_default(cib_xml, False, **kwargs)
+
         if push:
             cib_push(cib_xml)
         Log.info("HA Rules: Successfully configured all HA resources and its configuration.")
