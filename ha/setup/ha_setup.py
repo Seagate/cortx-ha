@@ -847,7 +847,7 @@ class PostUpgradeCmd(Cmd):
             if os.environ['PRVSNR_MINI_LEVEL'] == 'cluster':
                 Log.info("Performing post disruptive upgrade routines on cluster \
                          level")
-                perform_post_upgrade(self.s3_instance)
+                perform_post_upgrade(self.s3_instance, do_unstandby=False)
         except Exception as err:
             raise SetupError("Post-upgrade routines failed") from err
 
