@@ -284,6 +284,39 @@ class Cmd:
             Log.error(f"Not found stonith config, Error: {e}")
             raise HaConfigException(f"Not found stonith config, Error: {e}")
 
+
+    def get_mgmt_vip(self, machine_id: str, cluster_id: str) -> dict:
+        """
+        Get Mgmt info.
+
+        Args:
+            machine_id (str): Get machine ID.
+            cluster_id (str): Get Cluster ID.
+
+        Raises:
+            HaConfigException: Raise exception.
+
+        Returns:
+            dict: Mgmt info.
+        """
+        mgmt_info: dict = {}
+        try:
+            node_count: int = len(Conf.get(self._index, "server_node"))
+            if ConfigCmd.DEV_CHECK == True or node_count < 2:
+                return mgmt_info
+            mgmt_info["mgmt_vip"] = Conf.get(self._index, f"cluster.{cluster_id}.network.management.virtual_host")
+            netmask = Conf.get(self._index, f"server_node.{machine_id}.network.management.netmask")
+            if netmask is None:
+                raise HaConfigException("Detected invalid netmask, It should not be empty.")
+            mgmt_info["mgmt_netmask"] = sum(bin(int(x)).count('1') for x in netmask.split('.'))
+            mgmt_info["mgmt_iface"] = Conf.get(self._index, f"server_node.{machine_id}.network.management.interfaces")[0]
+            Log.info(f"Mgmt vip configuration: {str(mgmt_info)}")
+            return mgmt_info
+        except Exception as e:
+            Log.error(f"Failed to get mgmt ip address. Error: {e}")
+            raise HaConfigException(f"Failed to get mgmt ip address. Error: {e}.")
+
+
 class PostInstallCmd(Cmd):
     """
     PostInstall Setup Cmd
@@ -395,7 +428,7 @@ class ConfigCmd(Cmd):
         cluster_secret = Conf.get(self._index, f"cortx{_DELIM}software{_DELIM}{const.HA_CLUSTER_SOFTWARE}{_DELIM}secret")
         key = Cipher.generate_key(cluster_id, const.HACLUSTER_KEY)
         cluster_secret = Cipher.decrypt(key, cluster_secret.encode('ascii')).decode()
-        mgmt_info: dict = self._get_mgmt_vip(machine_id, cluster_id)
+        mgmt_info: dict = self.get_mgmt_vip(machine_id, cluster_id)
         s3_instances = ConfigCmd.get_s3_instance(machine_id)
 
         # fetch all nodes stonith config
@@ -561,36 +594,6 @@ class ConfigCmd(Cmd):
         except Exception as e:
             raise HaConfigException(f"Failed to add node {node_name} remotely. Error: {e}")
 
-    def _get_mgmt_vip(self, machine_id: str, cluster_id: str) -> dict:
-        """
-        Get Mgmt info.
-
-        Args:
-            machine_id (str): Get machine ID.
-            cluster_id (str): Get Cluster ID.
-
-        Raises:
-            HaConfigException: Raise exception.
-
-        Returns:
-            dict: Mgmt info.
-        """
-        mgmt_info: dict = {}
-        try:
-            node_count: int = len(Conf.get(self._index, "server_node"))
-            if ConfigCmd.DEV_CHECK == True or node_count < 2:
-                return mgmt_info
-            mgmt_info["mgmt_vip"] = Conf.get(self._index, f"cluster{_DELIM}{cluster_id}{_DELIM}network{_DELIM}management{_DELIM}virtual_host")
-            netmask = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}network{_DELIM}management{_DELIM}netmask")
-            if netmask is None:
-                raise HaConfigException("Detected invalid netmask, It should not be empty.")
-            mgmt_info["mgmt_netmask"] = sum(bin(int(x)).count('1') for x in netmask.split('.'))
-            mgmt_info["mgmt_iface"] = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}network{_DELIM}management{_DELIM}interfaces")[0]
-            Log.info(f"Mgmt vip configuration: {str(mgmt_info)}")
-            return mgmt_info
-        except Exception as e:
-            Log.error(f"Failed to get mgmt ip address. Error: {e}")
-            raise HaConfigException(f"Failed to get mgmt ip address. Error: {e}.")
 
     def _update_env(self, node_name: str, node_type: str, cluster_type: str, s3_instances: int) -> None:
         """
@@ -995,8 +998,13 @@ class PostUpgradeCmd(Cmd):
         """
         try:
             if os.environ['PRVSNR_MINI_LEVEL'] == 'cluster':
-                Log.info("Performing post disruptive upgrade routines on cluster \
-                         level")
+                machine_id = self.get_machine_id()
+                cluster_id = Conf.get(self._index, f"server_node.{machine_id}.cluster_id")
+                mgmt_info: dict = self.get_mgmt_vip(machine_id, cluster_id)
+                node_count: int = len(self.get_nodelist(fetch_from=UpgradeCmd.HA_CONFSTORE))
+
+                Log.info(f"Performing post disruptive upgrade routines on cluster \
+                        level. cluster_id: {cluster_id}, mgmt_info: {mgmt_info}, node_count: {node_count}")
                 perform_post_upgrade(self.s3_instance, do_unstandby=False)
         except Exception as err:
             raise SetupError("Post-upgrade routines failed") from err
