@@ -25,3 +25,7 @@ server_node:
     storage_set_id: TMPL_STORAGE_SET_ID
     s3_instances: '1'
     type: TMPL_TYPE
+    bmc:
+      ip: TMPL_BMC_IP
+      user: TMPL_BMC_USER
+      secret: TMPL_BMC_SECRET
