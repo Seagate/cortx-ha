@@ -816,7 +816,6 @@ class PreUpgradeCmd(Cmd):
             if os.environ['PRVSNR_MINI_LEVEL'] == 'cluster':
                 Log.info("Performing pre disruptive upgrade routines on cluster \
                          level")
-                cluster_standby_mode()
                 delete_resources()
             else:
                 Log.info("Performing pre disruptive upgrade routines on node \
