@@ -21,7 +21,7 @@ from cortx.utils.log import Log
 
 from ha.core.error import CreateResourceError
 from ha.core.error import CreateResourceConfigError
-from ha.core.error import ConfigureStonithResourceError
+from ha.setup.setup_error import ConfigureStonithResourceError
 from ha import const
 
 """
