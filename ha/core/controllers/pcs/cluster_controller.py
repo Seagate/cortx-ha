@@ -58,8 +58,12 @@ class PcsClusterController(ClusterController, PcsController):
         """
         #print("In wait_for_node_online ..")
         if instru:
-            retry_count = 1
-            wait_time = 1
+            # Even with this retry count node is coming online.
+            # so instead simulating failure 
+            # retry_count = 1
+            #wait_time = 1
+            Log.info(f"Node {nodeid} failure simulated ")
+            return False
         else:
             retry_count =  const.CLUSTER_RETRY_COUNT
             wait_time = const.BASE_WAIT_TIME
