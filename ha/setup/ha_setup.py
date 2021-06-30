@@ -435,7 +435,7 @@ class ConfigCmd(Cmd):
             #print(f"Executing command  {add_node_cli} ")
             self._execute.run_cmd(add_node_cli, check_error=False, secret=cluster_secret)
             #print(f"Running wait_for_node_online ")
-            node_status =  self._cluster_manager.cluster_controller.wait_for_node_online(node_name)
+            node_status =  self._cluster_manager.cluster_controller.wait_for_node_online(node_name, True)
             # Node is expected to be Online when it is added
             # Nodes are added to the cluster during cluster creation only
             # scaleout to be implemented later
@@ -473,7 +473,7 @@ class ConfigCmd(Cmd):
                         .replace("<user>", cluster_user).replace("<secret>", "'" + cluster_secret + "'"),
                         secret=cluster_secret)
 
-                    node_status =  self._cluster_manager.cluster_controller.wait_for_node_online(node_name)
+                    node_status =  self._cluster_manager.cluster_controller.wait_for_node_online(node_name, True)
                     # Node is expected to be Online when it is added
                     # Nodes are added to the cluster during cluster creation only
                     # scaleout to be implemented later
