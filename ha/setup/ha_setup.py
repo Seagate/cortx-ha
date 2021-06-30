@@ -1005,7 +1005,8 @@ class PostUpgradeCmd(Cmd):
 
                 Log.info(f"Performing post disruptive upgrade routines on cluster \
                         level. cluster_id: {cluster_id}, mgmt_info: {mgmt_info}, node_count: {node_count}")
-                perform_post_upgrade(self.s3_instance, do_unstandby=False)
+                perform_post_upgrade(self.s3_instance, mgmt_info=mgmt_info,
+                                     node_count=node_count, do_unstandby=False)
         except Exception as err:
             raise SetupError("Post-upgrade routines failed") from err
 
