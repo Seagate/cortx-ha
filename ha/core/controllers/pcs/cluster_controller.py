@@ -52,17 +52,21 @@ class PcsClusterController(ClusterController, PcsController):
             return False
         return True
 
-    def _wait_for_node_online(self, nodeid: str) -> bool:
+    def wait_for_node_online(self, nodeid: str) -> bool:
         """
         Wait till the node becomes online
         """
+        #print("In wait_for_node_online ..")
         for retry_index in range(0, const.CLUSTER_RETRY_COUNT):
             node_status = self.nodes_status([nodeid]).get(nodeid)
+            #print("Node status: ", node_status)  
             if node_status == const.NODE_STATUSES.ONLINE.value:
                 Log.info(f"Node {nodeid} is online.")
+                print("Node is online")
                 return True
             # Sleep for some time and try again.
             Log.info(f"Node {nodeid} is not online, retry index #{retry_index}")
+            print("Node not online, retry index ", retry_index)  
             time.sleep(const.BASE_WAIT_TIME)
         return False
 
@@ -307,7 +311,7 @@ class PcsClusterController(ClusterController, PcsController):
         cluster_node_count = self._get_cluster_size()
         if cluster_node_count < 32:
             _output, _err, _rc = self._execute.run_cmd(const.PCS_CLUSTER_NODE_ADD.replace("<node>", nodeid))
-            if self._wait_for_node_online(nodeid):
+            if self.wait_for_node_online(nodeid):
                 return {"status": const.STATUSES.SUCCEEDED.value, "msg": f"Node {nodeid} added successfully in the cluster"}
             else:
                 return {"status": const.STATUSES.FAILED.value, "msg": f"Node {nodeid} add operation failed, node not online"}
@@ -356,7 +360,7 @@ class PcsClusterController(ClusterController, PcsController):
                 Log.info("Node started and enabled successfully.")
                 time.sleep(const.BASE_WAIT_TIME * 2)
             if self._is_pcs_cluster_running():
-                if self._wait_for_node_online(nodeid):
+                if self.wait_for_node_online(nodeid):
                     # TODO: Divide class into vm, hw when stonith is needed.
                     self._execute.run_cmd(const.PCS_STONITH_DISABLE)
                     return {"status": const.STATUSES.SUCCEEDED.value,
