@@ -34,7 +34,7 @@ from ha.const import STATUSES
 from ha.setup.create_pacemaker_resources import create_all_resources
 from ha.setup.post_disruptive_upgrade import perform_post_upgrade
 from ha.setup.pre_disruptive_upgrade import (backup_configuration,
-                                             cluster_standby_mode, delete_resources)
+                                             delete_resources)
 from ha.core.cluster.cluster_manager import CortxClusterManager
 from ha.core.config.config_manager import ConfigManager
 from ha.remote_execution.ssh_communicator import SSHRemoteExecutor
