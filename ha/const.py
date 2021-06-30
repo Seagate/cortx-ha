@@ -141,6 +141,7 @@ PCS_CLUSTER_DESTROY="pcs cluster destroy"
 PCS_CLUSTER_KILL="pcs cluster kill"
 PCS_NODE_STANDBY="pcs node standby <node>"
 PCS_CLUSTER_STANDBY="pcs node standby --all"
+PCS_RESOURCE_REFRESH="pcs resource refresh --force"
 PCS_STONITH_DISABLE="pcs property set stonith-enabled=False"
 LIST_PCS_RESOURCES = '/usr/sbin/crm_resource --list-raw'
 CHECK_PCS_STANDBY_MODE = '/usr/sbin/crm_standby --query | awk \'{print $3}\''
