@@ -458,7 +458,8 @@ class ConfigCmd(Cmd):
                     Log.info(f"Adding node {node} to Cluster {cluster_name}")
                     self._add_node(node, cluster_user, cluster_secret)
         self._execute.run_cmd(const.PCS_CLEANUP)
-        self._execute.run_cmd(const.PCS_STONITH_ENABLE)
+        if self.get_installation_type() == const.INSTALLATION_TYPE.HW:
+            self._execute.run_cmd(const.PCS_STONITH_ENABLE)
         Log.info("config command is successful")
 
     def _create_resource(self, s3_instances, mgmt_info, node_count, stonith_config=None):
