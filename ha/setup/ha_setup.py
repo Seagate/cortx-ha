@@ -447,7 +447,6 @@ class ConfigCmd(Cmd):
             raise HaConfigException(f"Adding {node_name} failed")
 
     def _add_node_remotely(self, node_name: str, cluster_user: str, cluster_secret: str):
-
         try:
             if self._confstore.key_exists(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}"):
                 Log.info(f"The node already {node_name} present in the cluster.")
@@ -462,7 +461,6 @@ class ConfigCmd(Cmd):
                     remote_executor.execute(const.CORTX_CLUSTER_NODE_ADD.replace("<node>", node_name)
                         .replace("<user>", cluster_user).replace("<secret>", "'" + cluster_secret + "'"),
                         secret=cluster_secret)
-
                     node_status =  self._cluster_manager.cluster_controller.wait_for_node_online(node_name)
                     # Nodes are added to the cluster during cluster creation
                     # Node is expected to be Online when it is added
