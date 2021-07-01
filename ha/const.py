@@ -20,6 +20,7 @@ CORTX_VERSION_1="1"
 CORTX_VERSION_2="2"
 HA_CLUSTER_SOFTWARE="corosync"
 HACLUSTER_KEY = "cortx"
+SERVER_NODE_KEY = "server_node"
 RA_LOG_DIR="/var/log/seagate/cortx/ha"
 PACEMAKER_LOG="/var/log/pacemaker.log"
 PCSD_LOG="/var/log/pcsd/pcsd.log"
@@ -132,6 +133,8 @@ PCS_CLUSTER_PCSD_STATUS="pcs status pcsd"
 PCS_STATUS_NODES="pcs status nodes"
 PCS_NODE_UNSTANDBY="pcs node unstandby <node>"
 PCS_CLEANUP="pcs resource cleanup"
+PCS_STONITH_ENABLE="pcs property set stonith-enabled=true"
+PCS_STONITH_SHOW="pcs stonith show <resource_id>"
 PCS_FAILCOUNT_STATUS="pcs resource failcount show"
 PCS_NODE_CLEANUP= PCS_CLEANUP + " --node <node>"
 PCS_STOP_NODE="pcs cluster stop <node> --request-timeout=<seconds>"
@@ -177,7 +180,7 @@ INFO = "info"
 COMPONENT = "component"
 MODULE = "module"
 RESOURCE_TYPE = "resource_type"
-
+STONITH_AUTH_TYPE = 'PASSWORD'
 logger_utility_iec_cmd="logger -i -p local3.err"
 
 class STATUSES(Enum):
@@ -215,7 +218,7 @@ class COMPONENTS(Enum):
 RESOURCE_LIST = "resource_list"
 KEY = "key"
 
-# Health update HA action status
+# Health update HA action status # TODO: move in health const class
 class ACTION_STATUS(Enum):
     PENDING = "pending"
     COMPLETE = "complete"

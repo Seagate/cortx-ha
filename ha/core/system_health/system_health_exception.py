@@ -14,34 +14,10 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
-class SystemHealthManager:
-    """
-    System Health Manager. This class provides low level get/put methods
-    for storing/reading health keys to/from the store.
-    """
+from ha.core.error import HaSystemHealthException
 
-    def __init__(self, store):
-        """
-        Init method.
-        """
-        self._store = store
+class HealthNotFoundException(HaSystemHealthException):
+    """Exception to indicate health missing for element."""
 
-    def get_key(self, key: str, just_value=True):
-        """
-        Get key method.
-        """
-        key_val = self._store.get(key)
-        if just_value:
-            if key_val is not None:
-                _, value = key_val.popitem()
-                return value
-        return key_val
-
-    def set_key(self, key: str, value: str):
-        """
-        Set key method.
-        """
-        if self._store.key_exists(key):
-            self._store.update(key=key, new_val=value)
-        else:
-            self._store.set(key=key, val=value)
+class InvalidElement(HaSystemHealthException):
+    """Exception to indicate health missing for element."""

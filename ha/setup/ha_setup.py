@@ -35,7 +35,7 @@ from ha.core.system_health.const import CONFSTORE_KEY_ATTRIBUTES
 from ha.execute import SimpleCommand
 from ha import const
 from ha.const import STATUSES
-from ha.setup.create_pacemaker_resources import create_all_resources
+from ha.setup.create_pacemaker_resources import create_all_resources, configure_stonith
 from ha.setup.pcs_config.alert_config import AlertConfig
 from ha.setup.post_disruptive_upgrade import perform_post_upgrade
 from ha.core.cluster.cluster_manager import CortxClusterManager
@@ -237,6 +237,50 @@ class Cmd:
             Log.error(f"Found {s3_instances} which is invalid s3 instance count. Error: {e}")
             raise HaConfigException(f"Found {s3_instances} which is invalid s3 instance count.")
 
+    @staticmethod
+    def get_stonith_config() -> dict:
+        """
+        Return stonith config
+
+        Raises:
+            HaConfigException: Raise exception for invalid stonith configuration
+
+        Returns:
+            [dict]: Return stonith configuraitons
+            resource_id = "Id to create the stonith resource"
+            ipaddr of IPMI device = "IP of IPMI device"
+            login = "username"
+            passwd = "passwd"
+            pcmk_host_list = ["pcmk_host_list"]
+            auth = "PASSWORD"
+        """
+        stonith_config = dict()
+        try:
+            nodes_schema = Conf.get(Cmd._index, "server_node")
+            machine_ids: list = list(nodes_schema.keys())
+            for machine in machine_ids:
+                node_name = nodes_schema.get(machine).get('network').get('data').get('private_fqdn')
+                node_type = nodes_schema.get(machine).get('type')
+                ipmi_ipaddr = nodes_schema.get(machine).get('bmc').get('ip')
+                ipmi_user = nodes_schema.get(machine).get('bmc').get('user')
+                ipmi_password_encrypted = nodes_schema.get(machine).get('bmc').get('secret')
+                key = Cipher.generate_key(machine, const.SERVER_NODE_KEY)
+                ipmi_password = Cipher.decrypt(key, ipmi_password_encrypted.encode('ascii')).decode()
+
+                stonith_config[node_name] = {
+                    "resource_id": f"stonith-{node_name}",
+                    "pcmk_host_list": node_name,
+                    "auth": const.STONITH_AUTH_TYPE,
+                    "ipaddr": ipmi_ipaddr,
+                    "login": ipmi_user,
+                    "passwd": ipmi_password,
+                    "node_type": node_type,
+                }
+            return stonith_config
+        except Exception as e:
+            Log.error(f"Not found stonith config, Error: {e}")
+            raise HaConfigException(f"Not found stonith config, Error: {e}")
+
 class PostInstallCmd(Cmd):
     """
     PostInstall Setup Cmd
@@ -351,6 +395,11 @@ class ConfigCmd(Cmd):
         mgmt_info: dict = self._get_mgmt_vip(machine_id, cluster_id)
         s3_instances = ConfigCmd.get_s3_instance(machine_id)
 
+        # fetch all nodes stonith config
+        all_nodes_stonith_config: dict = {}
+        if self.get_installation_type() == const.INSTALLATION_TYPE.HW:
+            all_nodes_stonith_config = ConfigCmd.get_stonith_config()
+
         self._update_env(node_name, node_type, const.HA_CLUSTER_SOFTWARE, s3_instances)
         self._fetch_fids()
         self._update_cluster_manager_config()
@@ -377,7 +426,10 @@ class ConfigCmd(Cmd):
                 # Create cluster
                 try:
                     self._create_cluster(cluster_name, cluster_user, cluster_secret, node_name)
-                    self._create_resource(s3_instances=s3_instances, mgmt_info=mgmt_info, node_count=len(nodelist))
+                    self._create_resource(s3_instances=s3_instances, mgmt_info=mgmt_info, node_count=len(nodelist),
+                                          stonith_config=all_nodes_stonith_config.get(node_name))
+                    # configure stonith for each node from that node only
+                    configure_stonith(push=True, stonith_config=all_nodes_stonith_config.get(node_name))
                     self._alert_config.create_alert()
                     self._confstore.set(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
                 except Exception as e:
@@ -396,19 +448,25 @@ class ConfigCmd(Cmd):
             else:
                 # Add node with SSH
                 self._add_node_remotely(node_name, cluster_user, cluster_secret)
+                # configure stonith for each node from that node only
+                configure_stonith(push=True, stonith_config=all_nodes_stonith_config.get(node_name))
         else:
+            # configure stonith for each node from that node only
+            configure_stonith(push=True, stonith_config=all_nodes_stonith_config.get(node_name))
             for node in nodelist:
                 if node != node_name:
                     Log.info(f"Adding node {node} to Cluster {cluster_name}")
                     self._add_node(node, cluster_user, cluster_secret)
         self._execute.run_cmd(const.PCS_CLEANUP)
+        if self.get_installation_type() == const.INSTALLATION_TYPE.HW:
+            self._execute.run_cmd(const.PCS_STONITH_ENABLE)
         Log.info("config command is successful")
 
-    def _create_resource(self, s3_instances, mgmt_info, node_count):
+    def _create_resource(self, s3_instances, mgmt_info, node_count, stonith_config=None):
         Log.info("Creating pacemaker resources")
         try:
             # TODO: create resource if not already exists.
-            create_all_resources(s3_instances=s3_instances, mgmt_info=mgmt_info, node_count=node_count)
+            create_all_resources(s3_instances=s3_instances, mgmt_info=mgmt_info, node_count=node_count, stonith_config=stonith_config)
         except Exception as e:
             Log.info(f"Resource creation failed. Error {e}")
             raise HaConfigException("Resource creation failed.")
@@ -580,6 +638,7 @@ class ConfigCmd(Cmd):
         """
         Update node map
         """
+        # TODO: update node map should failed if any key is missing
         machine_id = self.get_machine_id()
         node_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}node_id")
         cluster_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.CLUSTER_ID.value}")
@@ -593,7 +652,7 @@ class ConfigCmd(Cmd):
         # Check key is already exist if not, store the node map.
         node_map_val = self._confstore.get(key)
         if node_map_val is None:
-            self._confstore.set(key, str(node_map))
+            self._confstore.set(key, json.dumps(node_map))
 
     # TBD: Temporary code till EOS-17892 is implemented
     def _add_node_health(self) -> None:
