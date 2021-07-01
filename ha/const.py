@@ -60,15 +60,6 @@ IEM_SCHEMA="{}/iem_ha.json".format(CONFIG_DIR)
 # IEM DESCRIPTION string: To be removed
 IEM_DESCRIPTION="WS0080010001,Node, The cluster has lost $host server. System is running in degraded mode. For more information refer the Troubleshooting guide. Extra Info: host=$host; status=$status;"
 
-# IEM DESCRIPTION string: To be removed
-IEM_DESCRIPTION="WS0080010001,Node, The cluster has lost $host server. System is running in degraded mode. For more information refer the Troubleshooting guide. Extra Info: host=$host; status=$status;"
-
-# IEM DESCRIPTION string: To be removed
-IEM_DESCRIPTION="WS0080010001,Node, The cluster has lost $host server. System is running in degraded mode. For more information refer the Troubleshooting guide. Extra Info: host=$host; status=$status;"
-
-# IEM DESCRIPTION string: To be removed
-IEM_DESCRIPTION="WS0080010001,Node, The cluster has lost $host server. System is running in degraded mode. For more information refer the Troubleshooting guide. Extra Info: host=$host; status=$status;"
-
 # Mini-provisioning
 CLUSTER_CONFSTORE_NODES_KEY="nodes"
 
@@ -184,8 +175,7 @@ INFO = "info"
 COMPONENT = "component"
 MODULE = "module"
 RESOURCE_TYPE = "resource_type"
-IEM_DESCRIPTION="WS0080010001, Node, The cluster has lost $host server. System is running in degraded mode. " \
-                "For more information refer the Troubleshooting guide. Extra Info: host=$host; status=$status;"
+
 logger_utility_iec_cmd="logger -i -p local3.err"
 
 class STATUSES(Enum):

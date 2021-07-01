@@ -72,7 +72,7 @@ class AttribUpdater:
     def del_attr(resource: str):
         try:
             executor = SimpleCommand()
-            executor.run_cmd(f"attrd_updater -D -n {resource}", check_error=False)
+            executor.run_cmd(f"attrd_updater -U 0 -n {resource}", check_error=False)
         except Exception as e:
             Log.error(f"Problem in deleting attr - resource: {resource}, Error: {e}")
 
@@ -233,6 +233,9 @@ class DynamicFidServiceRA(CortxServiceRA):
         """
         service = self._get_systemd_service()
         Log.debug(f"Stop: Stopping {service} service")
+        self._get_update_attrib_info()
+        if self._update_attrib:
+            AttribUpdater.del_attr(self._resource)
         self._execute.run_cmd(f"systemctl stop {service}", check_error=False)
         while True:
             status: str = self._get_service_status(service).strip()
@@ -240,9 +243,6 @@ class DynamicFidServiceRA(CortxServiceRA):
             if status in ["failed", "unknown"]:
                 break
         Log.info(f"Stop: Stopped {service} service")
-        self._get_update_attrib_info()
-        if self._update_attrib:
-            AttribUpdater.del_attr(self._resource)
         return const.OCF_SUCCESS
 
     def monitor(self) -> int:
