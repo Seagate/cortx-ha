@@ -25,7 +25,6 @@ def main(argv):
     Entry point for cortx CLI
     """
     from ha.cli.commands import Command
-    #sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..'))
     try:
         command = Command()
         command.process(argv[1:])
