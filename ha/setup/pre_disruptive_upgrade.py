@@ -31,8 +31,8 @@ from time import gmtime, strftime
 from typing import Any
 
 from cortx.utils.log import Log
-from ha.const import (BACKUP_DEST_DIR_CONF, BACKUP_DEST_DIR_CONSUL, CONFIG_DIR, PCS_RESOURCE_REFRESH,
-                        RA_LOG_DIR, PCS_CLEANUP, PCS_CLUSTER_STATUS, PCS_FAILCOUNT_STATUS)
+from ha.const import (BACKUP_DEST_DIR_CONF, BACKUP_DEST_DIR_CONSUL, CONFIG_DIR, PCS_RESOURCE_REFRESH, LIST_PCS_RESOURCES,
+                    PCS_CLUSTER_STANDBY, RA_LOG_DIR, PCS_CLEANUP, PCS_CLUSTER_STATUS, PCS_FAILCOUNT_STATUS, PCS_DELETE_RESOURCE)
 from ha.core.error import UpgradeError
 from ha.execute import SimpleCommand
 
@@ -103,7 +103,7 @@ def cluster_standby_mode() -> None:
     """
     Log.info("Set cluster to standby mode")
     Log.info("Please wait, standby can take max 20 to 30 min.")
-    standby_cmd = "pcs node standby --all --wait=600"
+    standby_cmd = f"{PCS_CLUSTER_STANDBY} --wait=600"
     try:
         SimpleCommand().run_cmd(standby_cmd)
     except Exception as err:
@@ -114,7 +114,7 @@ def _get_resource_list() -> list:
     resources: list = []
     # clear history before getting list of resource
     SimpleCommand().run_cmd(PCS_RESOURCE_REFRESH)
-    output, _, _ = SimpleCommand().run_cmd("crm_resource --list-raw", check_error=False)
+    output, _, _ = SimpleCommand().run_cmd(LIST_PCS_RESOURCES, check_error=False)
     if "NO resources" in output:
         return resources
     for resource in output.split("\n"):
@@ -135,14 +135,14 @@ def delete_resources() -> None:
         Log.info(f"Going to delete following resources: {resources}")
         for r in resources:
             Log.info(f"Deleting resource {r}")
-            SimpleCommand().run_cmd(f"pcs resource delete {r} --force")
+            SimpleCommand().run_cmd(PCS_DELETE_RESOURCE.replace("<resource>", r))
         SimpleCommand().run_cmd(PCS_CLEANUP)
         Log.info("Wait 2 min till all resource deleted.")
         is_resource_deleted(120)
     except Exception as err:
         raise UpgradeError("Resource deletion failed")
 
-def check_cluster_health():
+def check_cluster_health() -> None:
     """ Check cluster status and make sure cluster is healthy """
     # Check if cluster running
     _, _, rc = SimpleCommand().run_cmd(PCS_CLUSTER_STATUS, check_error=False)
@@ -152,7 +152,7 @@ def check_cluster_health():
     if "INFINITY" in output:
         raise UpgradeError(f"Cluster is not stable, some resource are not healthy. {output}")
 
-def is_resource_deleted(timeout):
+def is_resource_deleted(timeout) -> None:
     """ Check if pre disruptive upgrade is successful """
     base_wait = 5
     while timeout > 0:
@@ -163,6 +163,7 @@ def is_resource_deleted(timeout):
             break
         time.sleep(base_wait)
         timeout -= base_wait
+    resources = _get_resource_list()
     if len(resources) != 0:
         raise UpgradeError(f"Failed to delete resource. Remaining resources {resources} ...")
 
