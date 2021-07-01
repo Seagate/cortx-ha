@@ -395,7 +395,9 @@ class ConfigCmd(Cmd):
         mgmt_info: dict = self._get_mgmt_vip(machine_id, cluster_id)
         s3_instances = ConfigCmd.get_s3_instance(machine_id)
         # fetch all nodes stonith config
-        all_nodes_stonith_config: dict = ConfigCmd.get_stonith_config()
+        all_nodes_stonith_config: dict = {}
+        if self.get_installation_type() == const.INSTALLATION_TYPE.HW:
+            all_nodes_stonith_config = ConfigCmd.get_stonith_config()
 
         self._update_env(node_name, node_type, const.HA_CLUSTER_SOFTWARE, s3_instances)
         self._fetch_fids()
