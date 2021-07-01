@@ -52,33 +52,19 @@ class PcsClusterController(ClusterController, PcsController):
             return False
         return True
 
-    def wait_for_node_online(self, nodeid: str, instru=False) -> bool:
+    def wait_for_node_online(self, nodeid: str) -> bool:
         """
         Wait till the node becomes online
         """
-        #print("In wait_for_node_online ..")
-        if instru:
-            # Even with this retry count node is coming online.
-            # so instead simulating failure 
-            # retry_count = 1
-            #wait_time = 1
-            Log.info(f"Node {nodeid} failure simulated ")
-            return False
-        else:
-            retry_count =  const.CLUSTER_RETRY_COUNT
-            wait_time = const.BASE_WAIT_TIME
 
-        for retry_index in range(0, retry_count):
+        for retry_index in range(0, const.CLUSTER_RETRY_COUNT):
             node_status = self.nodes_status([nodeid]).get(nodeid)
-            #print("Node status: ", node_status)  
             if node_status == const.NODE_STATUSES.ONLINE.value:
                 Log.info(f"Node {nodeid} is online.")
-                print("Node is online")
                 return True
             # Sleep for some time and try again.
             Log.info(f"Node {nodeid} is not online, retry index #{retry_index}")
-            print("Node not online, retry index ", retry_index)  
-            time.sleep(wait_time)
+            time.sleep(const.BASE_WAIT_TIME)
         return False
 
     def _pcs_cluster_start(self):
