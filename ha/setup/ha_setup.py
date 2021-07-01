@@ -394,6 +394,7 @@ class ConfigCmd(Cmd):
         cluster_secret = Cipher.decrypt(key, cluster_secret.encode('ascii')).decode()
         mgmt_info: dict = self._get_mgmt_vip(machine_id, cluster_id)
         s3_instances = ConfigCmd.get_s3_instance(machine_id)
+
         # fetch all nodes stonith config
         all_nodes_stonith_config: dict = {}
         if self.get_installation_type() == const.INSTALLATION_TYPE.HW:
