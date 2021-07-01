@@ -329,4 +329,3 @@ class CortxClusterManager:
         except Exception as e:
             Log.error(f"Failed returning system health . Error: {e}")
             raise ClusterManagerError("Failed returning system health, internal error")
-        
