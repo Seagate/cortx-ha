@@ -21,3 +21,15 @@ from ha.core.error import SetupError
 
 class AlertConfigError(SetupError):
     """Failed to configure alert"""
+
+class ConfigureStonithResourceError(SetupError):
+    '''
+    Exception to indicate any failure happened during stonith resource creation.
+    '''
+
+    def __init__(self, desc=None):
+        """
+        Handle Configure Stonith Resource Error.
+        """
+        _desc = "Stonith configuration failed." if desc is None else desc
+        super(ConfigureStonithResourceError, self).__init__(desc=_desc)
