@@ -155,11 +155,12 @@ def _unstandby_cluster() -> None:
     _switch_cluster_mode(PCS_CLUSTER_UNSTANDBY)
     Log.info('### cluster is up and running ###')
 
-def perform_post_upgrade(s3_instances=None):
+def perform_post_upgrade(s3_instances=None, do_unstandby=False):
     '''Starting routine for post-upgrade process'''
     Log.init(service_name="post_disruptive_upgrade", log_path=RA_LOG_DIR, level="INFO")
     _check_for_any_resource_presence()
     _is_cluster_standby_on()
     _load_config()
     _create_resources(s3_instances)
-    _unstandby_cluster()
+    if do_unstandby:
+        _unstandby_cluster()
