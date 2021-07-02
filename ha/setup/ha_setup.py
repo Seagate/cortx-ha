@@ -430,7 +430,6 @@ class ConfigCmd(Cmd):
                                           stonith_config=all_nodes_stonith_config.get(node_name))
                     # configure stonith for each node from that node only
                     configure_stonith(push=True, stonith_config=all_nodes_stonith_config.get(node_name))
-                    self._alert_config.create_alert()
                     self._confstore.set(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
                 except Exception as e:
                     Log.error(f"Cluster creation failed; destroying the cluster. Error: {e}")
@@ -460,6 +459,8 @@ class ConfigCmd(Cmd):
         self._execute.run_cmd(const.PCS_CLEANUP)
         if self.get_installation_type() == const.INSTALLATION_TYPE.HW:
             self._execute.run_cmd(const.PCS_STONITH_ENABLE)
+        # Create Alert if not exists
+        self._alert_config.create_alert()
         Log.info("config command is successful")
 
     def _create_resource(self, s3_instances, mgmt_info, node_count, stonith_config=None):
