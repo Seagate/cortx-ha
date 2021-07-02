@@ -939,11 +939,11 @@ def main(argv: list):
             if not os.path.exists('const.HA_CONFIG_FILE'):
                 a_str = f'Cleanup can not be proceed as \
                            HA config file: {const.HA_CONFIG_FILE} \
-                           is missing. Either cleanp is already done or there \
+                           is missing. Either cleanup is already done or there \
                            is some other problem'
-                Log.error(f'{a_str}')
+                Log.warn(f'{a_str}')
                 sys.stderr.write(a_str)
-                return
+                return 1
             ConfigManager.init("ha_setup")
         else:
             ConfigManager.init("ha_setup")
