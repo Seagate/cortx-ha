@@ -432,7 +432,7 @@ class ConfigCmd(Cmd):
             # Nodes are added to the cluster during cluster creation
             # Node is expected to be Online when it is added
             if node_status != True:
-                raise Exception
+                raise HaConfigException(f"Node {node_name} did not come online; Add node failed")
 
             self.standby_node(node_name)
             self._confstore.set(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
@@ -465,7 +465,7 @@ class ConfigCmd(Cmd):
                     # Nodes are added to the cluster during cluster creation
                     # Node is expected to be Online when it is added
                     if node_status != True:
-                        raise Exception
+                        raise HaConfigException(f"Node {node_name} did not come online; Add node failed")
 
                     self.standby_node(node_name)
                     self._confstore.set(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
