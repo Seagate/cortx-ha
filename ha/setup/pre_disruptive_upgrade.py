@@ -103,7 +103,7 @@ def cluster_standby_mode() -> None:
     """
     Log.info("Set cluster to standby mode")
     Log.info("Please wait, standby can take max 20 to 30 min.")
-    standby_cmd = f"{PCS_CLUSTER_STANDBY} --wait=600"
+    standby_cmd = f"{PCS_CLUSTER_STANDBY} --wait=1800"
     try:
         SimpleCommand().run_cmd(standby_cmd)
     except Exception as err:
