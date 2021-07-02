@@ -942,8 +942,8 @@ def main(argv: list):
                            is missing. Either cleanup is already done or there \
                            is some other problem'
                 Log.warn(f'{a_str}')
-                sys.stderr.write(a_str)
-                return 1
+                sys.stdout.write(a_str)
+                return 0
             ConfigManager.init("ha_setup")
         else:
             ConfigManager.init("ha_setup")
