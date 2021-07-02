@@ -38,6 +38,8 @@ from ha.const import STATUSES
 from ha.setup.create_pacemaker_resources import create_all_resources, configure_stonith
 from ha.setup.pcs_config.alert_config import AlertConfig
 from ha.setup.post_disruptive_upgrade import perform_post_upgrade
+from ha.setup.pre_disruptive_upgrade import (backup_configuration,
+                                             delete_resources)
 from ha.core.cluster.cluster_manager import CortxClusterManager
 from ha.core.config.config_manager import ConfigManager
 from ha.remote_execution.ssh_communicator import SSHRemoteExecutor
@@ -90,7 +92,7 @@ class Cmd:
         sys.stderr.write(
             f"usage: {prog} [-h] <cmd> <--config url> <args>...\n"
             f"where:\n"
-            f"cmd   post_install, prepare, config, init, test, upgrade, reset, cleanup, backup, restore\n"
+            f"cmd   post_install, prepare, config, init, test, upgrade, reset, cleanup, backup, restore, pre_upgrade, post_upgrade\n"
             f"--config   Config URL")
 
     @staticmethod
@@ -755,14 +757,11 @@ class UpgradeCmd(Cmd):
         Init method.
         """
         super().__init__(args)
-        machine_id = self.get_machine_id()
-        self.s3_instance = UpgradeCmd.get_s3_instance(machine_id)
 
     def process(self):
         """
         Process upgrade command.
         """
-        perform_post_upgrade(self.s3_instance)
 
 class ResetCmd(Cmd):
     """
@@ -940,6 +939,68 @@ class RestoreCmd(Cmd):
         Process restore command.
         """
         pass # TBD
+
+
+class PreUpgradeCmd(Cmd):
+    """
+    Pre-Upgrade Cmd
+    """
+    name = "pre_upgrade"
+
+    def __init__(self, args):
+        """
+        Init method.
+        """
+        super().__init__(args)
+
+    def process(self):
+        """
+        Process command.
+
+        NOTE: Consul is not expected to be upgraded, so no need to backup
+        consul config
+        Configuration backup is performed for every node while pacemaker setup
+        only on one node (cluster level).
+        """
+        try:
+            if os.environ['PRVSNR_MINI_LEVEL'] == 'cluster':
+                Log.info("Performing pre disruptive upgrade routines on cluster \
+                         level")
+                delete_resources()
+            else:
+                Log.info("Performing pre disruptive upgrade routines on node \
+                         level")
+                backup_configuration()
+        except Exception as err:
+            raise SetupError("Pre-upgrade routines failed") from err
+
+
+class PostUpgradeCmd(Cmd):
+    """
+    Post-Upgrade Cmd
+    """
+    name = "post_upgrade"
+
+    def __init__(self, args):
+        """
+        Init method.
+        """
+        super().__init__(args)
+        machine_id = self.get_machine_id()
+        self.s3_instance = UpgradeCmd.get_s3_instance(machine_id)
+
+    def process(self):
+        """
+        Process command.
+        """
+        try:
+            if os.environ['PRVSNR_MINI_LEVEL'] == 'cluster':
+                Log.info("Performing post disruptive upgrade routines on cluster \
+                         level")
+                perform_post_upgrade(self.s3_instance, do_unstandby=False)
+        except Exception as err:
+            raise SetupError("Post-upgrade routines failed") from err
+
 
 def main(argv: list):
     try:
