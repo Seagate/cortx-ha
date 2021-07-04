@@ -323,12 +323,12 @@ class Cmd:
             node_count: int = len(Conf.get(self._index, "server_node"))
             if ConfigCmd.DEV_CHECK == True or node_count < 2:
                 return mgmt_info
-            mgmt_info["mgmt_vip"] = Conf.get(self._index, f"cluster.{cluster_id}.network.management.virtual_host")
-            netmask = Conf.get(self._index, f"server_node.{machine_id}.network.management.netmask")
+            mgmt_info["mgmt_vip"] = Conf.get(self._index, f"cluster{_DELIM}{cluster_id}{_DELIM}network{_DELIM}management{_DELIM}virtual_host")
+            netmask = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}network{_DELIM}management{_DELIM}netmask")
             if netmask is None:
                 raise HaConfigException("Detected invalid netmask, It should not be empty.")
             mgmt_info["mgmt_netmask"] = sum(bin(int(x)).count('1') for x in netmask.split('.'))
-            mgmt_info["mgmt_iface"] = Conf.get(self._index, f"server_node.{machine_id}.network.management.interfaces")[0]
+            mgmt_info["mgmt_iface"] = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}network{_DELIM}management{_DELIM}interfaces")[0]
             Log.info(f"Mgmt vip configuration: {str(mgmt_info)}")
             return mgmt_info
         except Exception as e:
