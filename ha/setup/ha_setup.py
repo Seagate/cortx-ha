@@ -218,6 +218,25 @@ class Cmd:
             raise HaConfigException(f"Failed to put cluster in standby mode. Error: {standby_output}")
 
     @staticmethod
+    def get_ios_instance(machine_id: str) -> int:
+        """
+        Return ios instance
+        Raises:
+            HaConfigException: Raise exception for invalid ios count.
+        Returns:
+            [int]: Return ios count.
+        """
+        ios_instances = None
+        try:
+            ios_instances = Conf.get(Cmd._index, f"server_node{_DELIM}{machine_id}{_DELIM}storage{_DELIM}cvg_count")
+            if int(ios_instances) < 1:
+                raise HaConfigException(f"Found {ios_instances} which is invalid ios instance count.")
+            return int(ios_instances)
+        except Exception as e:
+            Log.error(f"Found {ios_instances} which is invalid ios instance count. Error: {e}")
+            raise HaConfigException(f"Found {ios_instances} which is invalid ios instance count.")
+
+    @staticmethod
     def get_s3_instance(machine_id: str) -> int:
         """
         Return s3 instance
@@ -394,13 +413,14 @@ class ConfigCmd(Cmd):
         cluster_secret = Cipher.decrypt(key, cluster_secret.encode('ascii')).decode()
         mgmt_info: dict = self._get_mgmt_vip(machine_id, cluster_id)
         s3_instances = ConfigCmd.get_s3_instance(machine_id)
+        ios_instances = ConfigCmd.get_ios_instance(machine_id)
 
         # fetch all nodes stonith config
         all_nodes_stonith_config: dict = {}
         if self.get_installation_type() == const.INSTALLATION_TYPE.HW:
             all_nodes_stonith_config = ConfigCmd.get_stonith_config()
 
-        self._update_env(node_name, node_type, const.HA_CLUSTER_SOFTWARE, s3_instances)
+        self._update_env(node_name, node_type, const.HA_CLUSTER_SOFTWARE, s3_instances, ios_instances)
         self._fetch_fids()
         self._update_cluster_manager_config()
 
@@ -427,7 +447,7 @@ class ConfigCmd(Cmd):
                 try:
                     self._create_cluster(cluster_name, cluster_user, cluster_secret, node_name)
                     self._create_resource(s3_instances=s3_instances, mgmt_info=mgmt_info, node_count=len(nodelist),
-                                          stonith_config=all_nodes_stonith_config.get(node_name))
+                                          ios_instances=ios_instances, stonith_config=all_nodes_stonith_config.get(node_name))
                     # configure stonith for each node from that node only
                     configure_stonith(push=True, stonith_config=all_nodes_stonith_config.get(node_name))
                     self._alert_config.create_alert()
@@ -462,11 +482,11 @@ class ConfigCmd(Cmd):
             self._execute.run_cmd(const.PCS_STONITH_ENABLE)
         Log.info("config command is successful")
 
-    def _create_resource(self, s3_instances, mgmt_info, node_count, stonith_config=None):
+    def _create_resource(self, s3_instances, mgmt_info, node_count, ios_instances, stonith_config=None):
         Log.info("Creating pacemaker resources")
         try:
             # TODO: create resource if not already exists.
-            create_all_resources(s3_instances=s3_instances, mgmt_info=mgmt_info, node_count=node_count, stonith_config=stonith_config)
+            create_all_resources(s3_instances=s3_instances, ios_instances=ios_instances, mgmt_info=mgmt_info, node_count=node_count, stonith_config=stonith_config)
         except Exception as e:
             Log.info(f"Resource creation failed. Error {e}")
             raise HaConfigException("Resource creation failed.")
@@ -589,7 +609,7 @@ class ConfigCmd(Cmd):
             Log.error(f"Failed to get mgmt ip address. Error: {e}")
             raise HaConfigException(f"Failed to get mgmt ip address. Error: {e}.")
 
-    def _update_env(self, node_name: str, node_type: str, cluster_type: str, s3_instances: int) -> None:
+    def _update_env(self, node_name: str, node_type: str, cluster_type: str, s3_instances: int, ios_instances: int) -> None:
         """
         Update env like VM, HW
         """
@@ -602,6 +622,7 @@ class ConfigCmd(Cmd):
         Conf.set(const.HA_GLOBAL_INDEX, f"CLUSTER_MANAGER{_DELIM}cluster_type", cluster_type)
         Conf.set(const.HA_GLOBAL_INDEX, f"CLUSTER_MANAGER{_DELIM}local_node", node_name)
         Conf.set(const.HA_GLOBAL_INDEX, f"SERVICE_INSTANCE_COUNTER[1]{_DELIM}instances", s3_instances)
+        Conf.set(const.HA_GLOBAL_INDEX, f"SERVICE_INSTANCE_COUNTER[2]{_DELIM}instances", ios_instances)
         Log.info("CONFIG: Update ha configuration files")
         Conf.save(const.HA_GLOBAL_INDEX)
 
