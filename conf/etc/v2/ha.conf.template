@@ -25,6 +25,6 @@ SERVICE_INSTANCE_COUNTER:
 - instances: <S3_INSTANCES>
   resource: s3server
   scope: node
-- instances: 2
+- instances: <IOS_INSTANCES>
   resource: motr-ios
   scope: node

@@ -20,6 +20,8 @@ server_node:
         interfaces: TMPL_INTERFACES
         netmask: TMPL_NETMASK
         public_fqdn: TMPL_PUBLIC_FQDN_1
+    storage:
+        cvg_count: '1'
     site_id: TMPL_SITE_ID_1
     rack_id: TMPL_RACK_ID_1
     storage_set_id: TMPL_STORAGE_SET_ID_1
@@ -39,6 +41,8 @@ server_node:
         interfaces: TMPL_INTERFACES
         netmask: TMPL_NETMASK
         public_fqdn: TMPL_PUBLIC_FQDN_2
+    storage:
+        cvg_count: '1'
     site_id: TMPL_SITE_ID_2
     rack_id: TMPL_RACK_ID_2
     storage_set_id: TMPL_STORAGE_SET_ID_2
@@ -58,6 +62,8 @@ server_node:
         interfaces: TMPL_INTERFACES
         netmask: TMPL_NETMASK
         public_fqdn: TMPL_PUBLIC_FQDN_3
+    storage:
+        cvg_count: '1'
     site_id: TMPL_SITE_ID_3
     rack_id: TMPL_RACK_ID_3
     storage_set_id: TMPL_STORAGE_SET_ID_3
