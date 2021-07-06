@@ -66,7 +66,7 @@ class PcsClusterStatus:
         self._is_health_loaded = False
 
         # Read list of nodes from HA Conf store
-        confstore = ConfigManager._get_confstore()
+        confstore = ConfigManager.get_confstore()
         nodelist = confstore.get(const.CLUSTER_CONFSTORE_NODES_KEY)
 
         if nodelist is not None:
