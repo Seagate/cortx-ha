@@ -841,7 +841,6 @@ class CleanupCmd(Cmd):
             node_count: int = 0 if nodes is None else len(nodes)
             node_name = self.get_node_name()
             # Standby
-            # TODO: handle multiple case for standby EOS-20855
             standby_output: str = self._cluster_manager.node_controller.standby(node_name)
             if json.loads(standby_output).get("status") == STATUSES.FAILED.value:
                 Log.warn(f"Standby for {node_name} failed with output: {standby_output}."
