@@ -417,7 +417,7 @@ class ConfigCmd(Cmd):
 
         # fetch all nodes stonith config
         all_nodes_stonith_config: dict = {}
-        if self.get_installation_type() == const.INSTALLATION_TYPE.HW:
+        if self.get_installation_type().lower() == const.INSTALLATION_TYPE.HW.value.lower():
             all_nodes_stonith_config = ConfigCmd.get_stonith_config()
 
         self._update_env(node_name, node_type, const.HA_CLUSTER_SOFTWARE, s3_instances, ios_instances)
@@ -478,7 +478,7 @@ class ConfigCmd(Cmd):
                     Log.info(f"Adding node {node} to Cluster {cluster_name}")
                     self._add_node(node, cluster_user, cluster_secret)
         self._execute.run_cmd(const.PCS_CLEANUP)
-        if self.get_installation_type() == const.INSTALLATION_TYPE.HW:
+        if self.get_installation_type().lower() == const.INSTALLATION_TYPE.HW.value.lower():
             self._execute.run_cmd(const.PCS_STONITH_ENABLE)
         Log.info("config command is successful")
 
