@@ -149,8 +149,11 @@ class Cmd:
             source (str): [description]
             dest (str): [description]
         """
-        Cmd.remove_file(dest)
-        shutil.copyfile(source, dest)
+        if os.path.isdir(dest):
+            shutil.copy(source, dest)
+        else:
+            Cmd.remove_file(dest)
+            shutil.copyfile(source, dest)
 
     def get_machine_id(self):
         command = "cat /etc/machine-id"
@@ -349,6 +352,7 @@ class PostInstallCmd(Cmd):
             PostInstallCmd.copy_file(const.SOURCE_SERVICE_FILE, const.SYSTEM_SERVICE_FILE)
             PostInstallCmd.copy_file(const.SOURCE_HEALTH_HIERARCHY_FILE, const.HEALTH_HIERARCHY_FILE)
             PostInstallCmd.copy_file(const.SOURCE_IEM_SCHEMA_PATH, const.IEM_SCHEMA)
+            PostInstallCmd.copy_file(const.SOURCE_LOGROTATE_CONF_FILE, const.LOGROTATE_CONF_DIR)
             self._execute.run_cmd("systemctl daemon-reload")
             Log.info(f"{self.name}: Copied HA configs file.")
             # Pre-requisite checks are done here.
@@ -858,6 +862,18 @@ class CleanupCmd(Cmd):
                 self._confstore.delete(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_name}")
             # Delete the config file
             self.remove_config_files()
+
+            os.makedirs(const.CONFIG_DIR, exist_ok=True)
+            # Create a directory and copy config file
+            PostInstallCmd.copy_file(const.SOURCE_CONFIG_FILE, const.HA_CONFIG_FILE)
+            PostInstallCmd.copy_file(f"{const.SOURCE_CONFIG_PATH}/{const.CM_CONTROLLER_INDEX}.json",
+                            const.CM_CONTROLLER_SCHEMA)
+            PostInstallCmd.copy_file(const.SOURCE_ALERT_FILTER_RULES_FILE, const.ALERT_FILTER_RULES_FILE)
+            PostInstallCmd.copy_file(const.SOURCE_ALERT_EVENT_RULES_FILE, const.ALERT_EVENT_RULES_FILE)
+            PostInstallCmd.copy_file(const.SOURCE_CLI_SCHEMA_FILE, const.CLI_SCHEMA_FILE)
+            PostInstallCmd.copy_file(const.SOURCE_SERVICE_FILE, const.SYSTEM_SERVICE_FILE)
+            PostInstallCmd.copy_file(const.SOURCE_HEALTH_HIERARCHY_FILE, const.HEALTH_HIERARCHY_FILE)
+            PostInstallCmd.copy_file(const.SOURCE_IEM_SCHEMA_PATH, const.IEM_SCHEMA)
         except Exception as e:
             Log.error(f"Cluster cleanup command failed. Error: {e}")
             raise HaCleanupException("Cluster cleanup failed")
