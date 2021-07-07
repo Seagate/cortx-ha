@@ -1030,7 +1030,7 @@ class PostUpgradeCmd(Cmd):
         try:
             if os.environ['PRVSNR_MINI_LEVEL'] == 'cluster':
                 machine_id = self.get_machine_id()
-                cluster_id = Conf.get(self._index, f"server_node.{machine_id}.cluster_id")
+                cluster_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}cluster_id")
                 mgmt_info: dict = self.get_mgmt_vip(machine_id, cluster_id)
                 node_count: int = len(self.get_nodelist(fetch_from=UpgradeCmd.HA_CONFSTORE))
 
