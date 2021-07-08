@@ -49,7 +49,8 @@ class AlertConfig:
         """
         Log.info("Creating pacemaker alert ...")
         if self.is_alert_exists():
-            self.delete_alert()
+            Log.info("Alert already exists, skipping create alert.")
+            return
         path: str = AlertConfig._get_script()
         try:
             self._process.run_cmd(f"pcs alert create id={AlertConfig.ALERT_ID} description=send_iem_alerts path={path}")
