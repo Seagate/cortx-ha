@@ -936,14 +936,13 @@ def main(argv: list):
             log_level = Conf.get(const.HA_GLOBAL_INDEX, f"LOG{_DELIM}level")
             Log.init(service_name='ha_setup', log_path=log_path, level=log_level)
         elif sys.argv[1] == "cleanup":
-            if not os.path.exists('const.HA_CONFIG_FILE'):
+            if not os.path.exists(const.HA_CONFIG_FILE):
                 a_str = f'Cleanup can not be proceed as \
                            HA config file: {const.HA_CONFIG_FILE} \
                            is missing. Either cleanup is already done or there \
                            is some other problem'
-                Log.warn(f'{a_str}')
                 sys.stdout.write(a_str)
-                return 0
+                return 1
             ConfigManager.init("ha_setup")
         else:
             ConfigManager.init("ha_setup")
