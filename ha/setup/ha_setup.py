@@ -24,7 +24,6 @@ import shutil
 import json
 import grp, pwd
 import time
-import uuid
 from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
 from cortx.utils.validator.v_pkg import PkgV
@@ -51,6 +50,7 @@ from ha.core.system_health.system_health import SystemHealth
 from ha.core.system_health.const import CLUSTER_ELEMENTS, HEALTH_EVENTS, EVENT_SEVERITIES
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.const import _DELIM
+from ha.core.system_health.health_bootstrap.system_health_bootstrap import  BootstrapHealth
 
 class Cmd:
     """
@@ -431,7 +431,11 @@ class ConfigCmd(Cmd):
 
         # Update node map
         self._update_node_map()
-        self._add_node_health()
+
+        # Bootstrap node health
+        health_bootstrap = BootstrapHealth()
+        health_bootstrap.bootstrap_node_health(node_name, self._index, self._confstore)
+        Log.info(f"Node health updated for {node_name} ")
 
         # Update cluster and resources
         self._cluster_manager = CortxClusterManager(default_log_enable=False)
@@ -675,45 +679,6 @@ class ConfigCmd(Cmd):
         if node_map_val is None:
             self._confstore.set(key, json.dumps(node_map))
 
-    # TBD: Temporary code till EOS-17892 is implemented
-    def _add_node_health(self) -> None:
-        """
-        Add node health
-        """
-        try:
-            machine_id = self.get_machine_id()
-            node_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}node_id")
-            cluster_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.CLUSTER_ID.value}")
-            site_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.SITE_ID.value}")
-            rack_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.RACK_ID.value}")
-            storageset_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{CONFSTORE_KEY_ATTRIBUTES.STORAGE_SET_ID.value}")
-            host_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}network{_DELIM}management{_DELIM}public_fqdn")
-
-            timestamp = str(int(time.time()))
-            event_id = timestamp + str(uuid.uuid4().hex)
-            initial_event = {
-                const.EVENT_ATTRIBUTES.EVENT_ID : event_id,
-                const.EVENT_ATTRIBUTES.EVENT_TYPE : HEALTH_EVENTS.INSERTION.value,
-                const.EVENT_ATTRIBUTES.SEVERITY : EVENT_SEVERITIES.INFORMATIONAL.value,
-                const.EVENT_ATTRIBUTES.SITE_ID : site_id,
-                const.EVENT_ATTRIBUTES.RACK_ID : rack_id,
-                const.EVENT_ATTRIBUTES.CLUSTER_ID : cluster_id,
-                const.EVENT_ATTRIBUTES.STORAGESET_ID : storageset_id,
-                const.EVENT_ATTRIBUTES.NODE_ID : node_id,
-                const.EVENT_ATTRIBUTES.HOST_ID : host_id,
-                const.EVENT_ATTRIBUTES.RESOURCE_TYPE : CLUSTER_ELEMENTS.NODE.value,
-                const.EVENT_ATTRIBUTES.TIMESTAMP : timestamp,
-                const.EVENT_ATTRIBUTES.RESOURCE_ID : node_id,
-                const.EVENT_ATTRIBUTES.SPECIFIC_INFO : None
-            }
-
-            Log.debug(f"Adding initial health {initial_event} for node {node_id}")
-            health_event = HealthEvent.dict_to_object(initial_event)
-            system_health = SystemHealth(self._confstore)
-            system_health.process_event(health_event)
-        except Exception as e:
-            Log.error(f"Failed adding node health. Error: {e}")
-            raise HaConfigException("Failed adding node health.")
 
 class InitCmd(Cmd):
     """
