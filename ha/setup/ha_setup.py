@@ -35,6 +35,7 @@ from ha.core.system_health.const import CONFSTORE_KEY_ATTRIBUTES
 from ha.execute import SimpleCommand
 from ha import const
 from ha.const import STATUSES
+from ha.const import MINI_PROVISION_CMD
 from ha.setup.create_pacemaker_resources import create_all_resources, configure_stonith
 from ha.setup.pcs_config.alert_config import AlertConfig
 from ha.setup.post_disruptive_upgrade import perform_post_upgrade
@@ -62,6 +63,7 @@ class Cmd:
     _index = "conf"
     DEV_CHECK = False
     LOCAL_CHECK = False
+    PRE_FACTORY_CHECK = False
     PROV_CONFSTORE = "provisioner"
     HA_CONFSTORE = "confstore"
 
@@ -110,6 +112,7 @@ class Cmd:
         args = parser.parse_args(argv)
         Cmd.DEV_CHECK = args.dev
         Cmd.LOCAL_CHECK = args.local
+        Cmd.PRE_FACTORY_CHECK = args.pre_factory
         return args.command(args)
 
     @staticmethod
@@ -121,6 +124,7 @@ class Cmd:
         setup_arg_parser.add_argument('--config', help='Config URL')
         setup_arg_parser.add_argument('--dev', action='store_true', help='Dev check')
         setup_arg_parser.add_argument('--local', action='store_true', help='Local check')
+        setup_arg_parser.add_argument('--pre-factory', action='store_true', help='Pre-factory check')
         setup_arg_parser.add_argument('args', nargs='*', default=[], help='args')
         setup_arg_parser.set_defaults(command=cls)
 
@@ -857,9 +861,9 @@ class CleanupCmd(Cmd):
                 self._confstore.delete(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_name}")
             # Delete the config file
             self.remove_config_files()
-
-            Log.info("Post_install being called from cleanup command")
-            PostInstallCmd.process(self)
+            if CleanupCmd.PRE_FACTORY_CHECK is True:
+                Log.info("Post_install being called from cleanup command which takes system back to pre-factory stage")
+                self._execute.run_cmd(f"ha_setup {MINI_PROVISION_CMD.POST_INSTALL.value} --config {self._url}")
 
         except Exception as e:
             Log.error(f"Cluster cleanup command failed. Error: {e}")

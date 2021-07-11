@@ -308,3 +308,6 @@ class CLUSTER_STATUS(Enum):
     DEGRADED = "degraded"
     UNHEALTHY = "unhealthy"
     ONLINE = "online"
+
+class MINI_PROVISION_CMD(Enum):
+    POST_INSTALL = "post_install"

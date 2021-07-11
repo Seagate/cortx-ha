@@ -112,11 +112,12 @@ class PcsNodeController(NodeController, PcsController):
         node_status = self.nodes_status([nodeid]).get(nodeid)
         Log.info(f"Current {nodeid} status is {node_status}")
         if node_status == NODE_STATUSES.STANDBY.value:
-            status = f"Node {nodeid} is already running in standby mode."
-        elif node_status != NODE_STATUSES.ONLINE.value:
-            return {"status": const.STATUSES.FAILED.value, "output": "",
-                    "error": f"Failed to put node in standby as node is in {node_status}"}
-        else:
+            return {"status": const.STATUSES.SUCCEEDED.value, "output":
+                f"Node {nodeid} is already running in standby mode.", "error": ""}
+        elif node_status == NODE_STATUSES.STANDBY_WITH_RESOURCES_RUNNING.value:
+            return {"status": const.STATUSES.IN_PROGRESS.value, "output":
+                f"Node {nodeid} is in standby with resource running mode.", "error": ""}
+        elif node_status == NODE_STATUSES.ONLINE.value:
             if self.heal_resource(nodeid):
                 time.sleep(const.BASE_WAIT_TIME)
             self._execute.run_cmd(const.PCS_NODE_STANDBY.replace("<node>", nodeid))
@@ -124,8 +125,11 @@ class PcsNodeController(NodeController, PcsController):
             time.sleep(const.BASE_WAIT_TIME * 2)
             node_status = self.nodes_status([nodeid]).get(nodeid)
             Log.info(f"After standby, current {nodeid} status is {node_status}")
-            status = f"Waiting for resource to stop, {nodeid} standby is in progress"
-        return {"status": const.STATUSES.IN_PROGRESS.value, "output": status, "error": ""}
+            return {"status": const.STATUSES.IN_PROGRESS.value, "output": f"Waiting for \
+                    resource to stop, {nodeid} standby is in progress", "error": ""}
+        else:
+            return {"status": const.STATUSES.FAILED.value, "output": "",
+                    "error": f"Failed to put node in standby as node is in {node_status}"}     
 
     @controller_error_handler
     def active(self, nodeid: str) -> dict:
