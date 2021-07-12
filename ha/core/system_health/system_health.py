@@ -276,6 +276,9 @@ class SystemHealth(Subscriber):
             Log.info(f"SystemHealth: Updated status for {component}:{comp_type}:{comp_id}")
             Log.info(f"Updating element {next_component} status")
             element = HealthEvaluatorFactory.get_element_evaluator(next_component)
+            # [TBD] Workaround to be removed once stories for aggregated health view are completed
+            if element is None:
+                return
             new_event = element.evaluate_status(healthevent)
             self.process_event(new_event)
             return
