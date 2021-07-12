@@ -77,7 +77,7 @@ class KVGenerator:
         fp.close()
         fp = open(file_nm, 'r')
 
-        for i in range(0, int(count/3)):
+        for _ in range(0, int(count/3)):
 
             key, uid = self._get_line_params(fp)
             key, last_modified = self._get_line_params(fp)

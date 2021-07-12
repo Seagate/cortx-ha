@@ -58,7 +58,7 @@ class BootstrapHealth:
             Log.error(f"Node health generation failed; Invalid request Id received for node {self._node_name} from Discovery module")
             raise InvalidHealthDataException(f"Node health generation failed; Invalid request Id received for node {self._node_name} from Discovery module")
 
-        for i in range(0, int(NODE_HEALTH_RETRY_COUNT)):
+        for _ in range(0, int(NODE_HEALTH_RETRY_COUNT)):
             status = Discovery.get_gen_node_health_status(request_id)
             # [TBD] this part to be tested /verified after integration with Dicovery module
             if status == "Success":
