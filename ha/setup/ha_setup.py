@@ -861,8 +861,8 @@ class CleanupCmd(Cmd):
                 self._confstore.delete(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_name}")
             # Delete the config file
             self.remove_config_files()
-            if CleanupCmd.PRE_FACTORY_CHECK is True:
-                Log.info("Post_install being called from cleanup command which takes system back to pre-factory stage")
+            if CleanupCmd.PRE_FACTORY_CHECK is not True:
+                Log.info("Post_install being called from cleanup command")
                 self._execute.run_cmd(f"ha_setup {MINI_PROVISION_CMD.POST_INSTALL.value} --config {self._url}")
 
         except Exception as e:
