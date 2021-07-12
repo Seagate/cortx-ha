@@ -129,7 +129,7 @@ class PcsNodeController(NodeController, PcsController):
                     resource to stop, {nodeid} standby is in progress", "error": ""}
         else:
             return {"status": const.STATUSES.FAILED.value, "output": "",
-                    "error": f"Failed to put node in standby as node is in {node_status}"}     
+                    "error": f"Failed to put node in standby as node is in {node_status}"}
 
     @controller_error_handler
     def active(self, nodeid: str) -> dict:
