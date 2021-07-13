@@ -20,7 +20,7 @@ import re
 
 from cortx.utils.log import Log
 from ha.core.system_health.system_health_exception import InvalidHealthDataException
-from ha.core.system_health.health_bootstrap.health_event_generator import HealthEventGenerator
+from ha.core.system_health.bootstrap.health_event_generator import HealthEventGenerator
 from ha.execute import SimpleCommand
 from ha.core.system_health.const import NODE_HEALTH_KV_FILE
 
@@ -36,7 +36,7 @@ class KVGenerator:
         self._path = []
         self._execute = SimpleCommand()
         self._kvfile = NODE_HEALTH_KV_FILE
-
+        self._healthEvent = HealthEventGenerator()
         # values that need to be collected
         self._filter_list = ["uid:", "last_updated:", "health.status:"]
 
@@ -87,8 +87,7 @@ class KVGenerator:
             key = key.replace('sites.racks.cortx_nodes.','').replace('.health.status','')
 
             # create health event
-            healthEvent = HealthEventGenerator()
-            healthEvent.create_health_event(key, uid, last_modified, status, conf_index, conf_store)
+            self._healthEvent.create_health_event(key, uid, last_modified, status, conf_index, conf_store)
 
         # remove the kv file
         self._remove_kvfile()

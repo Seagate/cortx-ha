@@ -50,7 +50,7 @@ from ha.core.system_health.system_health import SystemHealth
 from ha.core.system_health.const import CLUSTER_ELEMENTS, HEALTH_EVENTS, EVENT_SEVERITIES
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.const import _DELIM
-from ha.core.system_health.health_bootstrap.system_health_bootstrap import  BootstrapHealth
+from ha.core.system_health.bootstrap.system_health_bootstrap import  BootstrapHealth
 
 class Cmd:
     """

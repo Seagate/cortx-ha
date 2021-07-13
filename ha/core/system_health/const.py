@@ -14,6 +14,7 @@
 # cortx-questions@seagate.com.
 
 from enum import Enum
+from ha.const import RA_LOG_DIR
 
 # Cluster elements supported by system health
 class CLUSTER_ELEMENTS(Enum):
@@ -88,7 +89,8 @@ RESOURCE_TO_HEALTH_STATUS_MAPPING = {
 NODE_HEALTH_RETRY_COUNT = 10
 NODE_HEALTH_RETRY_INTERVAL = 2
 
-NODE_HEALTH_KV_FILE = "/tmp/kvfile"
+# [TBD] To be removed once EOS-22863 is complete
+NODE_HEALTH_KV_FILE = "{}/kvfile".format(RA_LOG_DIR)
 
 # Mapping to identify the SEVERITY based on EVENT_TYPE
 HEALTH_STATUS_TO_EVENT_SEVERITY_MAPPING = {

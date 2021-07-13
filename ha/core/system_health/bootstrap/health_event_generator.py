@@ -37,6 +37,7 @@ class HealthEventGenerator:
         Init method.
         """
         self._execute = SimpleCommand()
+        self._machine_id = self._get_machine_id()
 
     def _get_machine_id(self):
         command = "cat /etc/machine-id"
@@ -47,13 +48,12 @@ class HealthEventGenerator:
     def create_health_event(self, key, uid, last_modified, status, conf_index, conf_store) -> None:
 
         try:
-            machine_id = self._get_machine_id()
-            node_id = Conf.get(conf_index, f"server_node{_DELIM}{machine_id}{_DELIM}node_id")
-            cluster_id = Conf.get(conf_index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.CLUSTER_ID.value}")
-            site_id = Conf.get(conf_index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.SITE_ID.value}")
-            rack_id = Conf.get(conf_index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.RACK_ID.value}")
-            storageset_id = Conf.get(conf_index, f"server_node{_DELIM}{machine_id}{_DELIM}{CONFSTORE_KEY_ATTRIBUTES.STORAGE_SET_ID.value}")
-            host_id = Conf.get(conf_index, f"server_node{_DELIM}{machine_id}{_DELIM}network{_DELIM}management{_DELIM}public_fqdn")
+            node_id = Conf.get(conf_index, f"server_node{_DELIM}{self._machine_id}{_DELIM}node_id")
+            cluster_id = Conf.get(conf_index, f"server_node{_DELIM}{self._machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.CLUSTER_ID.value}")
+            site_id = Conf.get(conf_index, f"server_node{_DELIM}{self._machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.SITE_ID.value}")
+            rack_id = Conf.get(conf_index, f"server_node{_DELIM}{self._machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.RACK_ID.value}")
+            storageset_id = Conf.get(conf_index, f"server_node{_DELIM}{self._machine_id}{_DELIM}{CONFSTORE_KEY_ATTRIBUTES.STORAGE_SET_ID.value}")
+            host_id = Conf.get(conf_index, f"server_node{_DELIM}{self._machine_id}{_DELIM}network{_DELIM}management{_DELIM}public_fqdn")
 
             timestamp = last_modified
             event_id = timestamp + str(uuid.uuid4().hex)

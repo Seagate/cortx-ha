@@ -22,7 +22,7 @@ from ha.core.config.config_manager import ConfigManager
 from ha.core.system_health.system_health_exception import InvalidHealthDataException
 from ha.core.system_health.const import NODE_HEALTH_RETRY_COUNT
 from ha.core.system_health.const import NODE_HEALTH_RETRY_INTERVAL
-from ha.core.system_health.health_bootstrap.json_kv_convertor import KVGenerator
+from ha.core.system_health.bootstrap.json_kv_convertor import KVGenerator
 from cortx.utils.discovery import Discovery
 
 
@@ -34,10 +34,6 @@ class BootstrapHealth:
         self._node_name = None
         self._kvGen = KVGenerator()
 
-        # Log file.
-        # [TBD] confirm if different log file needed or not
-        ConfigManager.init("ha_health_bootstrap")
-
     def bootstrap_node_health(self, node_name, conf_index, conf_store):
 
         self._node_name = node_name
@@ -45,6 +41,7 @@ class BootstrapHealth:
 
         request_id = self._generate_node_health()
         kvfile = self._get_node_health(request_id)
+
         self._update_node_health(kvfile, conf_index, conf_store)
         self._cleanup_health_data()
 
@@ -86,6 +83,7 @@ class BootstrapHealth:
 
         # Get the necesary data in KV format
         kvfile = self._kvGen.parse_json(url)
+
         return kvfile
 
     def _update_node_health(self, kvfile, conf_index, conf_store):
