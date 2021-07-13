@@ -35,7 +35,6 @@ from ha.core.system_health.const import CONFSTORE_KEY_ATTRIBUTES
 from ha.execute import SimpleCommand
 from ha import const
 from ha.const import STATUSES
-from ha.const import MINI_PROVISION_CMD
 from ha.setup.create_pacemaker_resources import create_all_resources, configure_stonith
 from ha.setup.pcs_config.alert_config import AlertConfig
 from ha.setup.post_disruptive_upgrade import perform_post_upgrade
@@ -71,9 +70,10 @@ class Cmd:
         """
         Init method.
         """
-        self._url = args.config
-        Conf.load(self._index, self._url)
-        self._args = args.args
+        if args is not None:
+            self._url = args.config
+            Conf.load(self._index, self._url)
+            self._args = args.args
         self._execute = SimpleCommand()
         self._confstore = ConfigManager.get_confstore()
         self._cluster_manager = None
@@ -830,6 +830,7 @@ class CleanupCmd(Cmd):
         super().__init__(args)
         # TODO: cluster_manager fails if cleanup run multiple time EOS-20947
         self._cluster_manager = CortxClusterManager(default_log_enable=False)
+        self._post_install = PostInstallCmd(args=None)
 
     def process(self):
         """
@@ -863,7 +864,7 @@ class CleanupCmd(Cmd):
             self.remove_config_files()
             if CleanupCmd.PRE_FACTORY_CHECK is not True:
                 Log.info("Post_install being called from cleanup command")
-                self._execute.run_cmd(f"ha_setup {MINI_PROVISION_CMD.POST_INSTALL.value} --config {self._url}")
+                self._post_install.process()
 
         except Exception as e:
             Log.error(f"Cluster cleanup command failed. Error: {e}")
