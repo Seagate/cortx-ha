@@ -830,7 +830,7 @@ class CleanupCmd(Cmd):
         super().__init__(args)
         # TODO: cluster_manager fails if cleanup run multiple time EOS-20947
         self._cluster_manager = CortxClusterManager(default_log_enable=False)
-        self._post_install = PostInstallCmd(args=None)
+        self._post_install_cmd = PostInstallCmd(args=None)
 
     def process(self):
         """
@@ -864,7 +864,7 @@ class CleanupCmd(Cmd):
             self.remove_config_files()
             if CleanupCmd.PRE_FACTORY_CHECK is not True:
                 Log.info("Post_install being called from cleanup command")
-                self._post_install.process()
+                self._post_install_cmd.process()
 
         except Exception as e:
             Log.error(f"Cluster cleanup command failed. Error: {e}")

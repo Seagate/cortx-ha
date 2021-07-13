@@ -308,4 +308,3 @@ class CLUSTER_STATUS(Enum):
     DEGRADED = "degraded"
     UNHEALTHY = "unhealthy"
     ONLINE = "online"
-
