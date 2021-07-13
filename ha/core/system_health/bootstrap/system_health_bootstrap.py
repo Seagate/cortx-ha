@@ -17,8 +17,6 @@
 import time
 
 from cortx.utils.log import Log
-
-from ha.core.config.config_manager import ConfigManager
 from ha.core.system_health.system_health_exception import InvalidHealthDataException
 from ha.core.system_health.const import NODE_HEALTH_RETRY_COUNT
 from ha.core.system_health.const import NODE_HEALTH_RETRY_INTERVAL
