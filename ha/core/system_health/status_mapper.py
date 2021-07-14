@@ -21,12 +21,13 @@ class StatusMapper:
     """
     Setup Mapper. This class provides methods for mapping event to status.
     """
-
+    #TODO: use HEALTH_EVENTS
     EVENT_TO_STATUS_MAPPING = {
         "fault": "offline",
         "fault_resolved": "online",
         "missing": "offline",
         "insertion": "online",
+        "failed": "failed",
         "unknown": "unknown",
         "threshold_breached:low": "degraded",
         "threshold_breached:high": "degraded"

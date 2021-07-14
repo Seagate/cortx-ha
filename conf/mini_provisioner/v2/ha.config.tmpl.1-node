@@ -11,6 +11,7 @@ cortx:
       user: TMPL_USER
 server_node:
   TMPL_MACHINE_ID:
+    node_id: TMPL_NODE_ID
     cluster_id: TMPL_CLUSTER_ID
     network:
       data:
@@ -18,5 +19,15 @@ server_node:
       management:
         interfaces: TMPL_INTERFACES
         netmask: TMPL_NETMASK
+        public_fqdn: TMPL_PUBLIC_FQDN
+    storage:
+        cvg_count: '1'
+    site_id: TMPL_SITE_ID
+    rack_id: TMPL_RACK_ID
+    storage_set_id: TMPL_STORAGE_SET_ID
     s3_instances: '1'
     type: TMPL_TYPE
+    bmc:
+      ip: TMPL_BMC_IP
+      user: TMPL_BMC_USER
+      secret: TMPL_BMC_SECRET

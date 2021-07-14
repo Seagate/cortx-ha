@@ -46,7 +46,7 @@ class SystemHealthComponents:
                    const.COMPONENTS.CLUSTER.value: {const.RESOURCE_LIST: ["cluster"],
                                                     const.KEY: "/cortx/ha/system/cluster/$cluster_id/health"},
                    const.COMPONENTS.AGG_SERVICE.value: {const.RESOURCE_LIST: [],
-                                                        const.KEY: "/cortx/ha/system/cluster/$cluster_id/service/$comp_type/$comp_id/health"},
+                                                        const.KEY: "/cortx/ha/system/cluster/$cluster_id/service/$comp_type/$comp_id/aggregate"},
                    const.COMPONENTS.NODE_MAP.value: {const.RESOURCE_LIST: [],
                                                      const.KEY: "/cortx/ha/system/cluster/node_map/$node_id"}}
 
@@ -56,7 +56,6 @@ class SystemHealthComponents:
         This method returns a component associated with a resource type,
         received in the health event.
         """
-
         try:
             # Get system health component using the resource type
             for key in SystemHealthComponents._components:
@@ -95,9 +94,9 @@ class SystemHealthHierarchy:
     """
     System Health Hierarchy. This class provides system health component health update hierarchy.
     """
-
+    # TODO: add storageset in hierarchy
     _common_hierarchy = [const.COMPONENTS.NODE.value, const.COMPONENTS.RACK.value, const.COMPONENTS.SITE.value,
-                         const.COMPONENTS.STORAGESET.value, const.COMPONENTS.CLUSTER.value]
+                         const.COMPONENTS.CLUSTER.value]
     _server = [const.COMPONENTS.SERVER.value] + _common_hierarchy
     _server_service = [const.COMPONENTS.SERVER_SERVICE.value, const.COMPONENTS.AGG_SERVICE.value] + _server
     _server_hw = [const.COMPONENTS.SERVER_HARDWARE.value] + _server

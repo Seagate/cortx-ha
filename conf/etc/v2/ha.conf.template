@@ -9,6 +9,15 @@ CLUSTER_MANAGER:
     local_node: <LOCAL_NODE>
 SYSTEM_HEALTH:
     num_entity_health_events: 2
+EVENT_ANALYZER:
+    instance_count: 1
+    watcher:
+        iem:
+            consumer_id: 1
+            message_type: alerts
+            consumer_group: iem_analyzer
+            event_filter: ha.core.event_analyzer.filter.filter.IEMFilter
+            event_parser: ha.core.event_analyzer.parser.parser.IEMParser
 SERVICE_INSTANCE_COUNTER:
 - instances: 1
   resource: motr-confd
@@ -16,6 +25,6 @@ SERVICE_INSTANCE_COUNTER:
 - instances: <S3_INSTANCES>
   resource: s3server
   scope: node
-- instances: 2
+- instances: <IOS_INSTANCES>
   resource: motr-ios
   scope: node
