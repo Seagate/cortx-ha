@@ -430,7 +430,7 @@ def mbus_rest(cib_xml, push=False, **kwargs):
     mbus_rest_stop = str(get_res_timeout(RESOURCE.M_BUS_REST.value, TIMEOUT_ACTION.STOP.value, "cortx_message_bus"))
     process.run_cmd(f"pcs -f {cib_xml} resource create {RESOURCE.M_BUS_REST.value} systemd:cortx_message_bus \
         op start timeout={mbus_rest_start}s interval=0s \
-        op monitor timeout=3s interval=4s \
+        op monitor timeout=29s interval=30s \
         op stop timeout={mbus_rest_stop}s interval=0s")
     process.run_cmd(f"pcs -f {cib_xml} resource clone {RESOURCE.M_BUS_REST.value}")
     if push:
