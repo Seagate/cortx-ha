@@ -60,6 +60,8 @@ COMPONENTS_CONFIG_DIR = "{}/components".format(CONFIG_DIR)
 SOURCE_HEALTH_HIERARCHY_FILE = "{}/system_health_hierarchy.json".format(SOURCE_CONFIG_PATH)
 HEALTH_HIERARCHY_FILE = "{}/system_health_hierarchy.json".format(CONFIG_DIR)
 IEM_SCHEMA="{}/iem_ha.json".format(CONFIG_DIR)
+SOURCE_LOGROTATE_CONF_FILE = "{}/conf/logrotate/cortx_ha_log.conf".format(SOURCE_PATH)
+LOGROTATE_CONF_DIR="/etc/logrotate.d"
 
 # IEM DESCRIPTION string: To be removed
 IEM_DESCRIPTION="WS0080010001,Node, The cluster has lost $host server. System is running in degraded mode. For more information refer the Troubleshooting guide. Extra Info: host=$host; status=$status;"

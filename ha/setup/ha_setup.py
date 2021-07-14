@@ -62,6 +62,7 @@ class Cmd:
     _index = "conf"
     DEV_CHECK = False
     LOCAL_CHECK = False
+    PRE_FACTORY_CHECK = False
     PROV_CONFSTORE = "provisioner"
     HA_CONFSTORE = "confstore"
 
@@ -69,9 +70,10 @@ class Cmd:
         """
         Init method.
         """
-        self._url = args.config
-        Conf.load(self._index, self._url)
-        self._args = args.args
+        if args is not None:
+            self._url = args.config
+            Conf.load(self._index, self._url)
+            self._args = args.args
         self._execute = SimpleCommand()
         self._confstore = ConfigManager.get_confstore()
         self._cluster_manager = None
@@ -110,6 +112,7 @@ class Cmd:
         args = parser.parse_args(argv)
         Cmd.DEV_CHECK = args.dev
         Cmd.LOCAL_CHECK = args.local
+        Cmd.PRE_FACTORY_CHECK = args.pre_factory
         return args.command(args)
 
     @staticmethod
@@ -121,6 +124,7 @@ class Cmd:
         setup_arg_parser.add_argument('--config', help='Config URL')
         setup_arg_parser.add_argument('--dev', action='store_true', help='Dev check')
         setup_arg_parser.add_argument('--local', action='store_true', help='Local check')
+        setup_arg_parser.add_argument('--pre-factory', action='store_true', help='Pre-factory check')
         setup_arg_parser.add_argument('args', nargs='*', default=[], help='args')
         setup_arg_parser.set_defaults(command=cls)
 
@@ -149,8 +153,7 @@ class Cmd:
             source (str): [description]
             dest (str): [description]
         """
-        Cmd.remove_file(dest)
-        shutil.copyfile(source, dest)
+        shutil.copy(source, dest)
 
     def get_machine_id(self):
         command = "cat /etc/machine-id"
@@ -368,6 +371,7 @@ class PostInstallCmd(Cmd):
             PostInstallCmd.copy_file(const.SOURCE_SERVICE_FILE, const.SYSTEM_SERVICE_FILE)
             PostInstallCmd.copy_file(const.SOURCE_HEALTH_HIERARCHY_FILE, const.HEALTH_HIERARCHY_FILE)
             PostInstallCmd.copy_file(const.SOURCE_IEM_SCHEMA_PATH, const.IEM_SCHEMA)
+            PostInstallCmd.copy_file(const.SOURCE_LOGROTATE_CONF_FILE, const.LOGROTATE_CONF_DIR)
             self._execute.run_cmd("systemctl daemon-reload")
             Log.info(f"{self.name}: Copied HA configs file.")
             # Pre-requisite checks are done here.
@@ -870,6 +874,7 @@ class CleanupCmd(Cmd):
         super().__init__(args)
         # TODO: cluster_manager fails if cleanup run multiple time EOS-20947
         self._cluster_manager = CortxClusterManager(default_log_enable=False)
+        self._post_install_cmd = PostInstallCmd(args=None)
 
     def process(self):
         """
@@ -881,7 +886,6 @@ class CleanupCmd(Cmd):
             node_count: int = 0 if nodes is None else len(nodes)
             node_name = self.get_node_name()
             # Standby
-            # TODO: handle multiple case for standby EOS-20855
             standby_output: str = self._cluster_manager.node_controller.standby(node_name)
             if json.loads(standby_output).get("status") == STATUSES.FAILED.value:
                 Log.warn(f"Standby for {node_name} failed with output: {standby_output}."
@@ -901,6 +905,10 @@ class CleanupCmd(Cmd):
 
             # Delete the config file
             self.remove_config_files()
+            if CleanupCmd.PRE_FACTORY_CHECK is not True:
+                Log.info("Post_install being called from cleanup command")
+                self._post_install_cmd.process()
+
         except Exception as e:
             Log.error(f"Cluster cleanup command failed. Error: {e}")
             raise HaCleanupException("Cluster cleanup failed")
