@@ -417,7 +417,7 @@ class ConfigCmd(Cmd):
 
         # fetch all nodes stonith config
         all_nodes_stonith_config: dict = {}
-        if self.get_installation_type() == const.INSTALLATION_TYPE.HW:
+        if self.get_installation_type().lower() == const.INSTALLATION_TYPE.HW.value.lower():
             all_nodes_stonith_config = ConfigCmd.get_stonith_config()
 
         self._update_env(node_name, node_type, const.HA_CLUSTER_SOFTWARE, s3_instances, ios_instances)
@@ -450,7 +450,6 @@ class ConfigCmd(Cmd):
                                           ios_instances=ios_instances, stonith_config=all_nodes_stonith_config.get(node_name))
                     # configure stonith for each node from that node only
                     configure_stonith(push=True, stonith_config=all_nodes_stonith_config.get(node_name))
-                    self._alert_config.create_alert()
                     self._confstore.set(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
                 except Exception as e:
                     Log.error(f"Cluster creation failed; destroying the cluster. Error: {e}")
@@ -478,8 +477,10 @@ class ConfigCmd(Cmd):
                     Log.info(f"Adding node {node} to Cluster {cluster_name}")
                     self._add_node(node, cluster_user, cluster_secret)
         self._execute.run_cmd(const.PCS_CLEANUP)
-        if self.get_installation_type() == const.INSTALLATION_TYPE.HW:
+        if self.get_installation_type().lower() == const.INSTALLATION_TYPE.HW.value.lower():
             self._execute.run_cmd(const.PCS_STONITH_ENABLE)
+        # Create Alert if not exists
+        self._alert_config.create_alert()
         Log.info("config command is successful")
 
     def _create_resource(self, s3_instances, mgmt_info, node_count, ios_instances, stonith_config=None):
