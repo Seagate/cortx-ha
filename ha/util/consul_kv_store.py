@@ -93,6 +93,9 @@ class ConsulKvStore:
         key: list = [x for x in self._prefix.split("/") + key.split("/") if x != ""]
         return "/".join(key)
 
+    def get_prefix(self):
+        return self._prefix
+
     def key_exists(self, key: str):
         """
         Check if key exists.

@@ -120,6 +120,15 @@ class EntityHealth:
 
         return vars(self)
 
+    def get_latest_event(self) -> EntityEvent:
+        """
+        Get latest event object.
+
+        Returns:
+            [EntityEvent]: last event
+        """
+        return self.events[0]
+
     @staticmethod
     def write(entity_health) -> str:
         """
