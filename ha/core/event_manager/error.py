@@ -24,7 +24,7 @@ class EventManagerException(HAError):
         Handle event manager function error.
         """
         _desc = "Failed event manager action"
-        _message_id = HA_FAULT_TOLERANCE
+        _message_id = HA_EVENT_MANAGER_ERROR
         _rc = 1
         super(EventManagerException, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
 
