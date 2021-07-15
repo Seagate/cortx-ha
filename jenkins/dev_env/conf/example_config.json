@@ -1,6 +1,7 @@
 {
     "server_node": {
         "<MACHINE_ID1>": {
+            "motr_client_instances": "2",
             "network": {
                 "data": {
                     "private_fqdn": "<NODE1>"
@@ -14,6 +15,9 @@
                     "public_fqdn": "srvnode-1.mgmt.public"
                 }
             },
+            "storage": {
+                "cvg_count": "2"
+            },
             "cluster_id": "e766bd52-c19c-45b6-9c91-663fd8203c2e",
             "node_id": "0",
             "site_id": "1",
@@ -23,6 +27,7 @@
             "type": "VM"
         },
         "<MACHINE_ID2>": {
+            "motr_client_instances": "2",
             "network": {
                 "data": {
                     "private_fqdn": "<NODE2>"
@@ -36,6 +41,9 @@
                     "public_fqdn": "srvnode-1.mgmt.public"
                 }
             },
+            "storage": {
+                "cvg_count": "2"
+            },
             "cluster_id": "e766bd52-c19c-45b6-9c91-663fd8203c2e",
             "node_id": "1",
             "site_id": "1",
@@ -45,6 +53,7 @@
             "type": "VM"
         },
         "<MACHINE_ID3>": {
+            "motr_client_instances": "2",
             "network": {
                 "data": {
                     "private_fqdn": "<NODE3>"
@@ -57,6 +66,9 @@
                     "netmask": "255.255.240.0",
                     "public_fqdn": "srvnode-1.mgmt.public"
                 }
+            },
+            "storage": {
+                "cvg_count": "2"
             },
             "cluster_id": "e766bd52-c19c-45b6-9c91-663fd8203c2e",
             "node_id": "2",
