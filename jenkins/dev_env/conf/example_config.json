@@ -20,7 +20,12 @@
             "rack_id": "1",
             "storage_set_id": "storage-set-1",
             "s3_instances": "1",
-            "type": "VM"
+            "type": "HW",
+            "bmc": {
+				"ip": "BMC_IP",
+				"user": "BMC_USER",
+				"secret": "BMC_SECRET"
+			}
         },
         "<MACHINE_ID2>": {
             "network": {
@@ -42,7 +47,12 @@
             "rack_id": "1",
             "storage_set_id": "storage-set-1",
             "s3_instances": "1",
-            "type": "VM"
+            "type": "HW",
+            "bmc": {
+				"ip": "BMC_IP",
+				"user": "BMC_USER",
+				"secret": "BMC_SECRET"
+			}
         },
         "<MACHINE_ID3>": {
             "network": {
@@ -64,7 +74,12 @@
             "rack_id": "1",
             "storage_set_id": "storage-set-1",
             "s3_instances": "1",
-            "type": "VM"
+            "type": "HW",
+            "bmc": {
+				"ip": "BMC_IP",
+				"user": "BMC_USER",
+				"secret": "BMC_SECRET"
+			}
         }
     },
     "cluster": {
