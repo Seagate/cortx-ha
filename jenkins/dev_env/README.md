@@ -13,9 +13,10 @@ cd cortx-ha
 
 4. Copy `/root/dev_env/conf/dev.conf` to `/root/dev.conf` and fill it.
 
-# Build RPM
+# Build and Install RPM
 
-1. Build RPM
+1. Build and Install RPM
+  - Install all dependency package.
 ```bash
 bash -x /root/dev_env/build_rpm.sh /root/dev.conf
 ```
@@ -80,12 +81,12 @@ yum install -y cortx-ha --nogpgcheck
 
 5. Mini Provision (Run on all node)
 ```bash
-ha_setup post_install --config 'json:///root/example_configV1.json' --dev
-ha_setup prepare --config 'json:///root/example_configV1.json' --dev
-ha_setup config --config 'json:///root/example_configV1.json' --dev
-ha_setup init --config 'json:///root/example_configV1.json' --dev
+ha_setup post_install --config 'json:///root/example_config.json' --dev
+ha_setup prepare --config 'json:///root/example_config.json' --dev
+ha_setup config --config 'json:///root/example_config.json' --dev
+ha_setup init --config 'json:///root/example_config.json' --dev
 cortx cluster start
-ha_setup test --config 'json:///root/example_configV1.json' --dev
+ha_setup test --config 'json:///root/example_config.json' --dev
 ```
 
 6. Check status

@@ -1,5 +1,20 @@
 #!/usr/bin/env bash
 
+# Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
+#
+# This program is free software: you can redistribute it and/or modify it under the
+# terms of the GNU Affero General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+# PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License along
+# with this program. If not, see <https://www.gnu.org/licenses/>. For any questions
+# about this software or licensing, please email opensource@seagate.com or
+# cortx-questions@seagate.com.
+
 BASE_DIR=$(realpath "$(dirname $0)")
 
 source ${BASE_DIR}/conf/read_conf.sh $1
@@ -30,24 +45,22 @@ NODE3=${config[NODE3]}
 cd ${BASE_DIR}
 #############################################
 
-[ $LOCAL_NODE == "--clean" ] && {
-    echo "Cleaning Yum"
-    rm -rf /etc/yum.repos.d/cortx-*
-    yum clean all
-    exit 0
-}
-
 DIR=/root/service
 mkdir -p ${DIR}
 
+mkdir -p /var/lib/ha_env
+
+ls /var/lib/ha_env/ | grep yum_init || {
+    # Configure cortx-py-utils
+    yum-config-manager --add-repo ${THIRD_PARTY}
+    yum-config-manager --add-repo ${CORTX_ISO}
+    yum clean all
+    rpm --import ${GPG_CHECK}
+}
+
 ########### Configure cortx-py-utils #########
 
-yum-config-manager --add-repo ${THIRD_PARTY}
-yum-config-manager --add-repo ${CORTX_ISO}
-yum clean all
-rpm --import ${GPG_CHECK}
-
-yum install -y gcc rpm-build python36 python36-pip python36-devel python36-setuptools openssl-devel libffi-devel
+yum install -y gcc rpm-build python36 python36-pip python36-devel python36-setuptools openssl-devel libffi-devel --nogpgcheck
 python3 -m pip install -r https://raw.githubusercontent.com/Seagate/cortx-utils/main/py-utils/python_requirements.txt
 python3 -m pip install -r https://raw.githubusercontent.com/Seagate/cortx-utils/main/py-utils/python_requirements.ext.txt
 yum remove -y cortx-py-utils; yum install -y cortx-py-utils --nogpgcheck;
@@ -170,3 +183,5 @@ systemctl enable corosync
 systemctl enable pacemaker
 echo "Seagate" | passwd --stdin hacluster
 systemctl start pcsd
+
+touch /var/lib/ha_env/yum_init
