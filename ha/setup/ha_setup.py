@@ -533,6 +533,12 @@ class ConfigCmd(Cmd):
             add_node_cli = const.CORTX_CLUSTER_NODE_ADD.replace("<node>", node_name)\
                 .replace("<user>", cluster_user).replace("<secret>", cluster_secret)
             self._execute.run_cmd(add_node_cli, check_error=False, secret=cluster_secret)
+            node_status =  self._cluster_manager.cluster_controller.wait_for_node_online(node_name)
+            # Nodes are added to the cluster during cluster creation
+            # Node is expected to be Online when it is added
+            if node_status != True:
+                raise HaConfigException(f"Node {node_name} did not come online; Add node failed")
+
             self.standby_node(node_name)
             self._confstore.set(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
             Log.info(f"The node {node_name} added in the existing cluster.")
@@ -560,6 +566,12 @@ class ConfigCmd(Cmd):
                     remote_executor.execute(const.CORTX_CLUSTER_NODE_ADD.replace("<node>", node_name)
                         .replace("<user>", cluster_user).replace("<secret>", "'" + cluster_secret + "'"),
                         secret=cluster_secret)
+                    node_status =  self._cluster_manager.cluster_controller.wait_for_node_online(node_name)
+                    # Nodes are added to the cluster during cluster creation
+                    # Node is expected to be Online when it is added
+                    if node_status != True:
+                        raise HaConfigException(f"Node {node_name} did not come online; Add node failed")
+
                     self.standby_node(node_name)
                     self._confstore.set(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
                     Log.info(f"Added new node: {node_name} using {remote_node}")
