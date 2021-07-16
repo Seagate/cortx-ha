@@ -417,7 +417,7 @@ class ConfigCmd(Cmd):
 
         # fetch all nodes stonith config
         all_nodes_stonith_config: dict = {}
-        if self.get_installation_type() == const.INSTALLATION_TYPE.HW:
+        if self.get_installation_type().lower() == const.INSTALLATION_TYPE.HW.value.lower():
             all_nodes_stonith_config = ConfigCmd.get_stonith_config()
 
         self._update_env(node_name, node_type, const.HA_CLUSTER_SOFTWARE, s3_instances, ios_instances)
@@ -477,7 +477,7 @@ class ConfigCmd(Cmd):
                     Log.info(f"Adding node {node} to Cluster {cluster_name}")
                     self._add_node(node, cluster_user, cluster_secret)
         self._execute.run_cmd(const.PCS_CLEANUP)
-        if self.get_installation_type() == const.INSTALLATION_TYPE.HW:
+        if self.get_installation_type().lower() == const.INSTALLATION_TYPE.HW.value.lower():
             self._execute.run_cmd(const.PCS_STONITH_ENABLE)
         # Create Alert if not exists
         self._alert_config.create_alert()
@@ -533,6 +533,12 @@ class ConfigCmd(Cmd):
             add_node_cli = const.CORTX_CLUSTER_NODE_ADD.replace("<node>", node_name)\
                 .replace("<user>", cluster_user).replace("<secret>", cluster_secret)
             self._execute.run_cmd(add_node_cli, check_error=False, secret=cluster_secret)
+            node_status =  self._cluster_manager.cluster_controller.wait_for_node_online(node_name)
+            # Nodes are added to the cluster during cluster creation
+            # Node is expected to be Online when it is added
+            if node_status != True:
+                raise HaConfigException(f"Node {node_name} did not come online; Add node failed")
+
             self.standby_node(node_name)
             self._confstore.set(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
             Log.info(f"The node {node_name} added in the existing cluster.")
@@ -560,6 +566,12 @@ class ConfigCmd(Cmd):
                     remote_executor.execute(const.CORTX_CLUSTER_NODE_ADD.replace("<node>", node_name)
                         .replace("<user>", cluster_user).replace("<secret>", "'" + cluster_secret + "'"),
                         secret=cluster_secret)
+                    node_status =  self._cluster_manager.cluster_controller.wait_for_node_online(node_name)
+                    # Nodes are added to the cluster during cluster creation
+                    # Node is expected to be Online when it is added
+                    if node_status != True:
+                        raise HaConfigException(f"Node {node_name} did not come online; Add node failed")
+
                     self.standby_node(node_name)
                     self._confstore.set(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
                     Log.info(f"Added new node: {node_name} using {remote_node}")
@@ -936,6 +948,15 @@ def main(argv: list):
             log_path = Conf.get(const.HA_GLOBAL_INDEX, f"LOG{_DELIM}path")
             log_level = Conf.get(const.HA_GLOBAL_INDEX, f"LOG{_DELIM}level")
             Log.init(service_name='ha_setup', log_path=log_path, level=log_level)
+        elif sys.argv[1] == "cleanup":
+            if not os.path.exists(const.HA_CONFIG_FILE):
+                a_str = f'Cleanup can not be proceed as \
+                           HA config file: {const.HA_CONFIG_FILE} \
+                           is missing. Either cleanup is already done or there \
+                           is some other problem'
+                sys.stdout.write(a_str)
+                return 0
+            ConfigManager.init("ha_setup")
         else:
             ConfigManager.init("ha_setup")
 
