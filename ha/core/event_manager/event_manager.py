@@ -43,7 +43,7 @@ class EventManager:
         else:
             raise Exception("EventManager is singleton class, use EventManager.get_instance().")
 
-    def validate_component(component: str) -> None:
+    def _validate_component(component: str) -> None:
         """
         Validate component raise error invalid component.
 
@@ -52,7 +52,7 @@ class EventManager:
         """
         pass
 
-    def validate_events(events: list) -> None:
+    def _validate_events(events: list) -> None:
         """
         Raise error InvalidEvent if event is not valid.
 
