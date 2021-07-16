@@ -14,7 +14,6 @@
 # cortx-questions@seagate.com.
 
 from enum import Enum
-from ha.const import RA_LOG_DIR
 
 # Cluster elements supported by system health
 class CLUSTER_ELEMENTS(Enum):
