@@ -84,7 +84,9 @@ ls /var/lib/ha_env/ | grep yum_init || {
 
 ########### Configure cortx-py-utils #########
 
-yum install -y gcc rpm-build python36 python36-pip python36-devel python36-setuptools openssl-devel libffi-devel --nogpgcheck
+yum install -y gcc rpm-build python36 python36-pip python36-devel python36-setuptools openssl-devel libffi-devel  --nogpgcheck
+yum group -y install "Development Tools" --nogpgcheck
+
 python3 -m pip install -r https://raw.githubusercontent.com/Seagate/cortx-utils/main/py-utils/python_requirements.txt
 python3 -m pip install -r https://raw.githubusercontent.com/Seagate/cortx-utils/main/py-utils/python_requirements.ext.txt
 yum remove -y cortx-py-utils; yum install -y cortx-py-utils --nogpgcheck;

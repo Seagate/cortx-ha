@@ -1,6 +1,7 @@
 {
     "server_node": {
         "<MACHINE_ID1>": {
+            "motr_client_instances": "2",
             "network": {
                 "data": {
                     "private_fqdn": "<NODE1>"
@@ -13,6 +14,9 @@
                     "netmask": "255.255.240.0",
                     "public_fqdn": "srvnode-1.mgmt.public"
                 }
+            },
+            "storage": {
+                "cvg_count": "2"
             },
             "cluster_id": "e766bd52-c19c-45b6-9c91-663fd8203c2e",
             "node_id": "0",

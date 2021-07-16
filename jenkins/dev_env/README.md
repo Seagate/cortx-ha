@@ -42,31 +42,33 @@ source ~/.bashrc
 # Cortx Deployment Single Node
 
 1. Copy `/root/dev_env/conf/dev.conf` to `/root/dev.conf` and fill it.
+  - Fill only current node related value
+  - for other node keep them None
 
-2. Update `/etc/hosts` On all 3 node.
+2. Update `/etc/hosts` On node.
 ```
 # Update Host file with node name
 
 <ip-1>  srvnode-1
 ```
 
-3. Update Consul (Follow for Single node setup)
-- Link: https://github.com/Seagate/cortx-experiments/blob/main/consul/docs/consulUserGuide.md
-
-4. Configure kafka (Follow Single node setup)
-- Link: https://github.com/Seagate/cortx-utils/wiki/Kafka-Server-Setup
-
-3. Configure other component (Run on each node)
+3. Configure other component
 ```bash
 /usr/bin/env bash -x cortx_configure.sh /root/dev.conf singlenode
 ```
 
-4. Install HA RPM
+4. Update Consul (Follow for Single node setup)
+- Link: https://github.com/Seagate/cortx-experiments/blob/main/consul/docs/consulUserGuide.md
+
+5. Configure kafka (Follow Single node setup)
+- Link: https://github.com/Seagate/cortx-utils/wiki/Kafka-Server-Setup
+
+6. Install HA RPM
 ```
 yum install -y cortx-ha --nogpgcheck
 ```
 
-5. Mini Provision (Run on all node)
+7. Mini Provision (Run on all node)
 ```bash
 ha_setup post_install --config 'json:///root/example_config.json' --dev
 ha_setup prepare --config 'json:///root/example_config.json' --dev
@@ -76,7 +78,7 @@ cortx cluster start
 ha_setup test --config 'json:///root/example_config.json' --dev
 ```
 
-6. Check status
+8. Check status
 ```
 pcs status --full
 ```
@@ -105,16 +107,16 @@ eval `ssh-agent`
 ssh-add
 ```
 
-4. Update Consul (Follow for multiple node)
-- Link: https://github.com/Seagate/cortx-experiments/blob/main/consul/docs/consulUserGuide.md
-
-5. Configure kafka (Follow 3 Node setup)
-- Link: https://github.com/Seagate/cortx-utils/wiki/Kafka-Server-Setup
-
-6. Configure other component (Run on each node)
+4. Configure other component (Run on each node)
 ```bash
 /usr/bin/env bash -x cortx_configure.sh /root/dev.conf multinode
 ```
+
+5. Update Consul (Follow for multiple node)
+- Link: https://github.com/Seagate/cortx-experiments/blob/main/consul/docs/consulUserGuide.md
+
+6. Configure kafka (Follow 3 Node setup)
+- Link: https://github.com/Seagate/cortx-utils/wiki/Kafka-Server-Setup
 
 7. Install HA RPM
 ```
