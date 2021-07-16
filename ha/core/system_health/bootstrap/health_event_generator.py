@@ -26,6 +26,7 @@ from ha.const import _DELIM
 from ha.const import EVENT_ATTRIBUTES
 from ha.core.system_health.const import RESOURCE_TO_HEALTH_STATUS_MAPPING
 from ha.core.system_health.const import HEALTH_STATUS_TO_EVENT_SEVERITY_MAPPING
+from ha.core.system_health.const import CMD_GET_MACHINE_ID
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.system_health.system_health import SystemHealth
 from ha.core.error import HaConfigException
@@ -40,8 +41,7 @@ class HealthEventGenerator:
         self._machine_id = self._get_machine_id()
 
     def _get_machine_id(self):
-        command = "cat /etc/machine-id"
-        machine_id, err, rc = self._execute.run_cmd(command, check_error=True)
+        machine_id, err, rc = self._execute.run_cmd(CMD_GET_MACHINE_ID, check_error=True)
         Log.info(f"Read machine-id. Output: {machine_id}, Err: {err}, RC: {rc}")
         return machine_id.strip()
 

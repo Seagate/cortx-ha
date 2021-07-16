@@ -88,6 +88,7 @@ RESOURCE_TO_HEALTH_STATUS_MAPPING = {
 # Constants for getting health data from Discovery module
 NODE_HEALTH_RETRY_COUNT = 10
 NODE_HEALTH_RETRY_INTERVAL = 2
+CMD_GET_MACHINE_ID = "cat /etc/machine-id"
 
 # [TBD] To be removed once EOS-22863 is complete
 NODE_HEALTH_KV_FILE = "{}/kvfile".format(RA_LOG_DIR)
