@@ -22,7 +22,6 @@ from cortx.utils.log import Log
 from ha.core.system_health.system_health_exception import InvalidHealthDataException
 from ha.core.system_health.bootstrap.health_event_generator import HealthEventGenerator
 from ha.execute import SimpleCommand
-from ha.core.system_health.const import NODE_HEALTH_KV_FILE
 
 class KVGenerator:
 
@@ -35,62 +34,44 @@ class KVGenerator:
 
         self._path = []
         self._execute = SimpleCommand()
-        self._kvfile = NODE_HEALTH_KV_FILE
         self._healthEvent = HealthEventGenerator()
+        self._conf_index =  self._conf_store = None
         # values that need to be collected
         self._filter_list = ["uid:", "last_updated:", "health.status:"]
 
+        self._uid = self._last_modified = self._status = self._key = None
 
-    def _update_kv(self, file_nm, k , v):
+
+    # collct kvs and if all 3 values for a component are avilable, generate healthEvent
+    def _update_health(self, key, val):
+
+        if re.search(self._filter_list[0].replace(':',''), key):
+            self._uid = val
+        elif re.search(self._filter_list[1].replace(':',''), key):
+            self._last_modified = val
+        elif re.search(self._filter_list[2].replace(':',''), key):
+            self._status = val
+            # cleanup the key
+            self._key = key.replace('sites.racks.cortx_nodes.','').replace('.health.status','')
+
+            # create health event
+            self._healthEvent.create_health_event(self._key, self._uid, self._last_modified, self._status, self._conf_index, self._conf_store)
+            self._uid = self._last_modified = self._status = self._key = None
+
+
+    def _update_kv(self, k , v):
 
         kv = f"{k}:{v}\n"
 
         for pattern in self._filter_list:
             if re.search(pattern, kv):
                 if pattern == "uid:":
-                    if re.search("health.specifics", kv) or re.search("sites.uid:", kv) or re.search("sites.racks.uid", kv) or  re.search("sites.racks.cortx_nodes.uid", kv) :
+                    if re.search("health.specifics", kv) or re.search("sites.uid:", kv) or re.search("sites.racks.uid:", kv) or  re.search("sites.racks.cortx_nodes.uid:", kv) :
                         break
                 elif  re.search("sites.racks.cortx_nodes.last_updated:", kv):
                     break
 
-                f = open(file_nm, "a")
-                f.write(kv)
-                f.close()
-
-    def _remove_kvfile(self):
-        command = f"rm -f {self._kvfile}"
-        self._execute.run_cmd(command)
-
-    def _get_line_params(self, fp):
-        line = fp.readline()
-        kv = line.split(":")
-        key = kv[0]
-        val = kv[1].strip('\n')
-        return key, val
-
-    # Call HealthEvent for each of the status values in kv file
-    def generate_health_event(self, file_nm, conf_index, conf_store):
-        fp = open(file_nm, 'r')
-
-        lines = fp.readlines()
-        count = len(lines)
-        fp.close()
-        fp = open(file_nm, 'r')
-
-        for _ in range(0, int(count/3)):
-
-            key, uid = self._get_line_params(fp)
-            key, last_modified = self._get_line_params(fp)
-            key, status = self._get_line_params(fp)
-
-            # cleanup the key
-            key = key.replace('sites.racks.cortx_nodes.','').replace('.health.status','')
-
-            # create health event
-            self._healthEvent.create_health_event(key, uid, last_modified, status, conf_index, conf_store)
-
-        # remove the kv file
-        self._remove_kvfile()
+                self._update_health(k,v)
 
 
     def _walk(self, d):
@@ -106,7 +87,7 @@ class KVGenerator:
                 if not v:
                     key = (".".join(self._path))
                     val = v
-                    self._update_kv(self._kvfile, key, val)
+                    self._update_kv(key, val)
                     self._path.pop()
 
                 else:
@@ -117,7 +98,7 @@ class KVGenerator:
                     else:
                         key = (".".join(self._path))
                         val = v
-                        self._update_kv(self._kvfile, key, val)
+                        self._update_kv(key, val)
                     self._path.pop()
 
             else:
@@ -125,18 +106,21 @@ class KVGenerator:
                 self._path.append(k)
                 key = (".".join(self._path))
                 val = v
-                self._update_kv(self._kvfile, key, val)
+                self._update_kv(key, val)
                 self._path.pop()
 
+    # parse json and generate health events
+    def generate_health(self, json_file_nm, conf_index, conf_store):
 
-    def parse_json(self, json_file_nm):
+        self._conf_index = conf_index
+        self._conf_store = conf_store
+
         try:
             with open(json_file_nm, "r") as fi:
                 schema = json.load(fi)
 
             self._walk(schema)
-            Log.info(f"Parsing successful for {json_file_nm}  ")
-            return self._kvfile
+            Log.info(f"Health updates successful for {json_file_nm}  ")
 
         except Exception as e:
             Log.error(f"Failed parsing file {json_file_nm}, Exception received {e} ")

@@ -90,9 +90,6 @@ NODE_HEALTH_RETRY_COUNT = 10
 NODE_HEALTH_RETRY_INTERVAL = 2
 CMD_GET_MACHINE_ID = "cat /etc/machine-id"
 
-# [TBD] To be removed once EOS-22863 is complete
-NODE_HEALTH_KV_FILE = "{}/kvfile".format(RA_LOG_DIR)
-
 # Mapping to identify the SEVERITY based on EVENT_TYPE
 HEALTH_STATUS_TO_EVENT_SEVERITY_MAPPING = {
     "OK" : EVENT_SEVERITIES.INFORMATIONAL.value,
