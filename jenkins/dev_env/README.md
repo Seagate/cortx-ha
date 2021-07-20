@@ -11,8 +11,6 @@ cd cortx-ha
 
 3. Copy `cortx-ha/jenkins/dev_env` dir to `/root` on all node
 
-4. Copy `/root/dev_env/conf/dev.conf` to `/root/dev.conf` and fill it.
-
 # Build and Install RPM
 
 1. Build and Install RPM
@@ -41,9 +39,55 @@ source ~/.bashrc
 # Similarly it can be executed for any cortx-ha file
 ```
 
-# Cortx Deployment
+# Cortx Deployment Single Node
 
-1. Update `/etc/hosts` On all 3 node.
+1. Copy `/root/dev_env/conf/dev.conf` to `/root/dev.conf` and fill it.
+  - Fill only current node related value
+  - for other node keep them None
+
+2. Update `/etc/hosts` On node.
+```
+# Update Host file with node name
+
+<ip-1>  srvnode-1
+```
+
+3. Configure other component
+```bash
+/usr/bin/env bash -x cortx_configure.sh /root/dev.conf singlenode
+```
+
+4. Update Consul (Follow for Single node setup)
+- Link: https://github.com/Seagate/cortx-experiments/blob/main/consul/docs/consulUserGuide.md
+
+5. Configure kafka (Follow Single node setup)
+- Link: https://github.com/Seagate/cortx-utils/wiki/Kafka-Server-Setup
+
+6. Install HA RPM
+```
+yum install -y cortx-ha --nogpgcheck
+```
+
+7. Mini Provision (Run on all node)
+```bash
+ha_setup post_install --config 'json:///root/example_config.json' --dev
+ha_setup prepare --config 'json:///root/example_config.json' --dev
+ha_setup config --config 'json:///root/example_config.json' --dev
+ha_setup init --config 'json:///root/example_config.json' --dev
+cortx cluster start
+ha_setup test --config 'json:///root/example_config.json' --dev
+```
+
+8. Check status
+```
+pcs status --full
+```
+
+# Cortx Deployment Multi Node
+
+1. Copy `/root/dev_env/conf/dev.conf` to `/root/dev.conf` and fill it.
+
+2. Update `/etc/hosts` On all 3 node.
 ```
 # Update Host file with node name
 
@@ -63,23 +107,23 @@ eval `ssh-agent`
 ssh-add
 ```
 
-4. Update Consul (Follow for multiple node)
-- Link: https://github.com/Seagate/cortx-experiments/blob/main/consul/docs/consulUserGuide.md
-
-5. Configure kafka (Follow 3 Node setup)
-- Link: https://github.com/Seagate/cortx-utils/wiki/Kafka-Server-Setup
-
-3. Configure other component (Run on each node)
+4. Configure other component (Run on each node)
 ```bash
-/usr/bin/env bash -x cortx_configure.sh /root/dev.conf
+/usr/bin/env bash -x cortx_configure.sh /root/dev.conf multinode
 ```
 
-4. Install HA RPM
+5. Update Consul (Follow for multiple node)
+- Link: https://github.com/Seagate/cortx-experiments/blob/main/consul/docs/consulUserGuide.md
+
+6. Configure kafka (Follow 3 Node setup)
+- Link: https://github.com/Seagate/cortx-utils/wiki/Kafka-Server-Setup
+
+7. Install HA RPM
 ```
 yum install -y cortx-ha --nogpgcheck
 ```
 
-5. Mini Provision (Run on all node)
+8. Mini Provision (Run on all node)
 ```bash
 ha_setup post_install --config 'json:///root/example_config.json' --dev
 ha_setup prepare --config 'json:///root/example_config.json' --dev
@@ -89,7 +133,7 @@ cortx cluster start
 ha_setup test --config 'json:///root/example_config.json' --dev
 ```
 
-6. Check status
+9. Check status
 ```
 pcs status --full
 ```
