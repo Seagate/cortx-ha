@@ -137,7 +137,7 @@ def hax(cib_xml, push=False, **kwargs):
     hax_stop = str(get_res_timeout(RESOURCE.HAX.value, TIMEOUT_ACTION.STOP.value, "hare-hax"))
     process.run_cmd(f"pcs -f {cib_xml} resource create {RESOURCE.HAX.value} systemd:hare-hax \
         op start timeout={hax_start}s interval=0s \
-        op monitor timeout=30s interval=30s \
+        op monitor timeout=29s interval=30s \
         op stop timeout={hax_stop}s interval=0s")
     process.run_cmd(f"pcs -f {cib_xml} resource clone {RESOURCE.HAX.value}")
     if push:
@@ -152,7 +152,7 @@ def motr_conf(cib_xml, push=False, **kwargs):
     process.run_cmd(f"pcs -f {cib_xml} resource create {RESOURCE.MOTR_CONFD.value}-1 ocf:seagate:dynamic_fid_service_ra \
         service=m0d fid_service_name=confd update_attrib=true \
         op start timeout={confd_start}s interval=0s \
-        op monitor timeout=30s interval=30s \
+        op monitor timeout=29s interval=30s \
         op stop timeout={confd_stop}s interval=0s")
     try:
         quorum_size = int(kwargs["node_count"])
@@ -187,7 +187,7 @@ def motr(cib_xml, push=False, **kwargs):
         process.run_cmd(f"pcs -f {cib_xml} resource create {RESOURCE.MOTR_IOS.value}-{i} ocf:seagate:dynamic_fid_service_ra \
             service=m0d fid_service_name=ioservice update_attrib=true \
             op start timeout={ios_start}s interval=0s \
-            op monitor timeout=30s interval=30s \
+            op monitor timeout=29s interval=30s \
             op stop timeout={ios_stop}s interval=0s")
         process.run_cmd(f"pcs -f {cib_xml} resource clone {RESOURCE.MOTR_IOS.value}-{i} interleave=true")
 
@@ -199,7 +199,7 @@ def motr(cib_xml, push=False, **kwargs):
                     not_defined {RESOURCE.MOTR_CONFD.value}-count or {RESOURCE.MOTR_CONFD.value}-count lt integer {quorum_size}")
             process.run_cmd(f"pcs -f {cib_xml} constraint order {RESOURCE.HAX.value}-clone then {RESOURCE.MOTR_IOS.value}-{i}-clone")
             process.run_cmd(f"pcs -f {cib_xml} constraint colocation add {RESOURCE.MOTR_IOS.value}-{i}-clone with {RESOURCE.HAX.value}-clone")
-            process.run_cmd(f"pcs -f {cib_xml} constraint order stop {RESOURCE.MOTR_IOS.value}-{i}-clone then stop {RESOURCE.MOTR_CONFD.value}-1-clone")
+            process.run_cmd(f"pcs -f {cib_xml} constraint order stop {RESOURCE.MOTR_IOS.value}-{i}-clone then stop {RESOURCE.MOTR_CONFD.value}-1-clone kind=Optional")
         except Exception as e:
             raise CreateResourceConfigError(f"Invalid node_count. Error: {e}")
     if push:
@@ -208,7 +208,7 @@ def motr(cib_xml, push=False, **kwargs):
 def stop_constraint_on_motr_ios(resource_name, cib_xml, push=False, **kwargs):
     ios_instances = get_ios_instances(**kwargs)
     for i in range(1, int(ios_instances)+1):
-        process.run_cmd(f"pcs -f {cib_xml} constraint order stop {resource_name} then stop {RESOURCE.MOTR_IOS.value}-{i}-clone")
+        process.run_cmd(f"pcs -f {cib_xml} constraint order stop {resource_name} then stop {RESOURCE.MOTR_IOS.value}-{i}-clone kind=Optional")
     if push:
         cib_push(cib_xml)
 
@@ -218,7 +218,7 @@ def free_space_monitor(cib_xml, push=False, **kwargs):
     free_space_stop = str(get_res_timeout(RESOURCE.MOTR_FREE_SPACE_MON.value, TIMEOUT_ACTION.STOP.value, "motr-free-space-monitor"))
     process.run_cmd(f"pcs -f {cib_xml} resource create {RESOURCE.MOTR_FREE_SPACE_MON.value} systemd:motr-free-space-monitor \
         op start timeout={free_space_start}s interval=0s \
-        op monitor timeout=30s interval=30s \
+        op monitor timeout=29s interval=30s \
         op stop timeout={free_space_stop}s interval=0s meta failure-timeout=300s")
 
     # Constraint
@@ -249,7 +249,7 @@ def s3servers(cib_xml, push=False, **kwargs):
         process.run_cmd(f"pcs -f {cib_xml} resource create {RESOURCE.S3_SERVER.value}-{i} ocf:seagate:dynamic_fid_service_ra \
             service=s3server fid_service_name=s3server update_attrib=true \
             op start timeout={s3servers_start}s interval=0s \
-            op monitor timeout=30s interval=30s \
+            op monitor timeout=29s interval=30s \
             op stop timeout={s3servers_stop}s interval=0s")
         process.run_cmd(f"pcs -f {cib_xml} resource clone {RESOURCE.S3_SERVER.value}-{i} interleave=true")
 
@@ -264,7 +264,7 @@ def s3servers(cib_xml, push=False, **kwargs):
 def stop_constraint_on_s3servers(resource_name, cib_xml, push=False, **kwargs):
     s3_instances = get_s3servers_instances(**kwargs)
     for i in range(1, int(s3_instances)+1):
-        process.run_cmd(f"pcs -f {cib_xml} constraint order stop {resource_name} then stop s3server-{i}-clone")
+        process.run_cmd(f"pcs -f {cib_xml} constraint order stop {resource_name} then stop s3server-{i}-clone kind=Optional")
     if push:
         cib_push(cib_xml)
 
@@ -275,7 +275,7 @@ def s3bc(cib_xml, push=False, **kwargs):
     s3bc_stop = str(get_res_timeout(RESOURCE.S3_BACK_CONS.value, TIMEOUT_ACTION.STOP.value, "s3backgroundconsumer"))
     process.run_cmd(f"pcs -f {cib_xml} resource create {RESOURCE.S3_BACK_CONS.value} systemd:s3backgroundconsumer meta failure-timeout=300s \
         op start timeout={s3bc_start}s interval=0s \
-        op monitor timeout=30s interval=30s \
+        op monitor timeout=29s interval=30s \
         op stop timeout={s3bc_stop}s interval=0s")
     process.run_cmd(f"pcs -f {cib_xml} resource clone {RESOURCE.S3_BACK_CONS.value} interleave=true")
 
@@ -297,7 +297,7 @@ def s3bp(cib_xml, push=False, **kwargs):
     s3bp_stop = str(get_res_timeout(RESOURCE.S3_BACK_PROD.value, TIMEOUT_ACTION.STOP.value, "s3backgroundproducer"))
     process.run_cmd(f"pcs -f {cib_xml} resource create {RESOURCE.S3_BACK_PROD.value} systemd:s3backgroundproducer \
         op start timeout={s3bp_start}s interval=0s \
-        op monitor timeout=30s interval=30s \
+        op monitor timeout=29s interval=30s \
         op stop timeout={s3bp_stop}s interval=0s")
 
     # Constraint
@@ -314,7 +314,7 @@ def s3auth(cib_xml, push=False, **kwargs):
     s3auth_stop = str(get_res_timeout(RESOURCE.S3AUTH.value, TIMEOUT_ACTION.STOP.value, "s3authserver"))
     process.run_cmd(f"pcs -f {cib_xml} resource create {RESOURCE.S3AUTH.value} systemd:s3authserver \
         op start timeout={s3auth_start}s interval=0s \
-        op monitor timeout=30s interval=30s \
+        op monitor timeout=29s interval=30s \
         op stop timeout={s3auth_stop}s interval=0s")
     process.run_cmd(f"pcs -f {cib_xml} resource clone {RESOURCE.S3AUTH.value}")
     if push:
@@ -327,7 +327,7 @@ def haproxy(cib_xml, push=False, **kwargs):
     haproxy_stop = str(get_res_timeout(RESOURCE.HAPROXY.value, TIMEOUT_ACTION.STOP.value, "haproxy"))
     process.run_cmd(f"pcs -f {cib_xml} resource create {RESOURCE.HAPROXY.value} systemd:haproxy \
         op start timeout={haproxy_start}s interval=0s \
-        op monitor timeout=30s interval=30s \
+        op monitor timeout=29s interval=30s \
         op stop timeout={haproxy_stop}s interval=0s")
     process.run_cmd(f"pcs -f {cib_xml} resource clone {RESOURCE.HAPROXY.value} interleave=true")
 
@@ -346,7 +346,7 @@ def sspl(cib_xml, push=False, **kwargs):
     sspl_stop = str(get_res_timeout(RESOURCE.SSPL_LL.value, TIMEOUT_ACTION.STOP.value, "sspl-ll"))
     process.run_cmd(f"pcs -f {cib_xml} resource create {RESOURCE.SSPL_LL.value} systemd:sspl-ll \
         op start timeout={sspl_start}s interval=0s \
-        op monitor timeout=30s interval=30s \
+        op monitor timeout=29s interval=30s \
         op stop timeout={sspl_stop}s interval=0s --group monitor_group")
     if push:
         cib_push(cib_xml)
@@ -363,7 +363,7 @@ def mgmt_vip(cib_xml, push=False, **kwargs):
         output, err, rc = process.run_cmd(f"pcs -f {cib_xml} resource create {RESOURCE.MGMT_VIP.value} ocf:heartbeat:IPaddr2 \
             ip={mgmt_info['mgmt_vip']} cidr_netmask={mgmt_info['mgmt_netmask']} nic={mgmt_info['mgmt_iface']} iflabel=mgmt_vip \
             op start timeout={mgmt_vip_start}s interval=0s \
-            op monitor timeout=30s interval=30s \
+            op monitor timeout=29s interval=30s \
             op stop timeout={mgmt_vip_stop}s interval=0s --group management_group", check_error=False)
         if rc != 0:
             raise CreateResourceError(f"Mgmt vip creation failed, mgmt info: {mgmt_info}, Err: {err}")
@@ -377,13 +377,13 @@ def csm(cib_xml, push=False, **kwargs):
     csm_agent_stop = str(get_res_timeout(RESOURCE.CSM_AGENT.value, TIMEOUT_ACTION.STOP.value, "csm_agent"))
     process.run_cmd(f"pcs -f {cib_xml} resource create {RESOURCE.CSM_AGENT.value} systemd:csm_agent \
         op start timeout={csm_agent_start}s interval=0s \
-        op monitor timeout=30s interval=30s \
+        op monitor timeout=29s interval=30s \
         op stop timeout={csm_agent_stop}s interval=0s --group management_group")
     csm_web_start = str(get_res_timeout(RESOURCE.CSM_WEB.value, TIMEOUT_ACTION.START.value, "csm_web"))
     csm_web_stop = str(get_res_timeout(RESOURCE.CSM_WEB.value, TIMEOUT_ACTION.STOP.value, "csm_web"))
     process.run_cmd(f"pcs -f {cib_xml} resource create {RESOURCE.CSM_WEB.value} systemd:csm_web \
         op start timeout={csm_web_start}s interval=0s \
-        op monitor timeout=30s interval=30s \
+        op monitor timeout=29s interval=30s \
         op stop timeout={csm_web_stop}s interval=0s --group management_group")
     if push:
         cib_push(cib_xml)
@@ -395,7 +395,7 @@ def kibana(cib_xml, push=False, **kwargs):
     kibana_stop = str(get_res_timeout(RESOURCE.KIBANA.value, TIMEOUT_ACTION.STOP.value, "kibana"))
     process.run_cmd(f"pcs -f {cib_xml} resource create {RESOURCE.KIBANA.value} systemd:kibana \
         op start timeout={kibana_start}s interval=0s \
-        op monitor timeout=30s interval=30s \
+        op monitor timeout=29s interval=30s \
         op stop timeout={kibana_stop}s interval=0s --group management_group")
     if push:
         cib_push(cib_xml)
@@ -407,7 +407,7 @@ def event_analyzer(cib_xml, push=False, **kwargs):
     event_analyzer_stop = str(get_res_timeout(RESOURCE.EVENT_ANALYZER.value, TIMEOUT_ACTION.STOP.value, "event_analyzer"))
     process.run_cmd(f"pcs -f {cib_xml} resource create {RESOURCE.EVENT_ANALYZER.value} systemd:event_analyzer \
         op start timeout={event_analyzer_start}s interval=0s \
-        op monitor timeout=30s interval=30s \
+        op monitor timeout=29s interval=30s \
         op stop timeout={event_analyzer_stop}s interval=0s --group ha_group")
     if push:
         cib_push(cib_xml)
@@ -418,7 +418,7 @@ def instance_counter(cib_xml, push=False, **kwargs):
     counter_stop = str(get_res_timeout(RESOURCE.SRV_COUNTER.value, TIMEOUT_ACTION.STOP.value))
     process.run_cmd(f"pcs -f {cib_xml} resource create {RESOURCE.SRV_COUNTER.value} ocf:seagate:service_instances_counter \
         op start timeout={counter_start}s interval=0s \
-        op monitor timeout=5s interval=5s \
+        op monitor timeout=5s interval=6s \
         op stop timeout={counter_stop}s interval=0s")
     process.run_cmd(f"pcs -f {cib_xml} resource clone {RESOURCE.SRV_COUNTER.value}")
     if push:
@@ -430,7 +430,7 @@ def mbus_rest(cib_xml, push=False, **kwargs):
     mbus_rest_stop = str(get_res_timeout(RESOURCE.M_BUS_REST.value, TIMEOUT_ACTION.STOP.value, "cortx_message_bus"))
     process.run_cmd(f"pcs -f {cib_xml} resource create {RESOURCE.M_BUS_REST.value} systemd:cortx_message_bus \
         op start timeout={mbus_rest_start}s interval=0s \
-        op monitor timeout=3s interval=3s \
+        op monitor timeout=29s interval=30s \
         op stop timeout={mbus_rest_stop}s interval=0s")
     process.run_cmd(f"pcs -f {cib_xml} resource clone {RESOURCE.M_BUS_REST.value}")
     if push:
@@ -445,7 +445,7 @@ def uds(cib_xml, push=False, **kwargs):
     if with_uds:
         process.run_cmd(f"pcs -f {cib_xml} resource create {RESOURCE.UDS.value} systemd:uds \
             op start timeout={uds_start}s interval=0s \
-            op monitor timeout=30s interval=30s \
+            op monitor timeout=29s interval=30s \
             op stop timeout={uds_stop}s interval=0s")
 
         # Constraints
