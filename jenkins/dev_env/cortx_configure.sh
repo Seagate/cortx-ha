@@ -1,53 +1,92 @@
 #!/usr/bin/env bash
 
+# Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
+#
+# This program is free software: you can redistribute it and/or modify it under the
+# terms of the GNU Affero General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+# PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License along
+# with this program. If not, see <https://www.gnu.org/licenses/>. For any questions
+# about this software or licensing, please email opensource@seagate.com or
+# cortx-questions@seagate.com.
+
+[ -z $1 ] && {
+    echo "Config file is missing"
+    exit 1
+}
+
+[ -z $2 ] && {
+    echo """
+/usr/bin/env bash -x cortx_configure.sh /root/dev.conf singlenode
+or
+/usr/bin/env bash -x cortx_configure.sh /root/dev.conf multinode
+"""
+exit 0
+}
+
 BASE_DIR=$(realpath "$(dirname $0)")
 
 source ${BASE_DIR}/conf/read_conf.sh $1
+
+[ -z $2 ] && STATE="multinode" || STATE=$2
 
 # Config if needed
 [ -z ${config[THIRD_PARTY]} ] && { echo "error: THIRD_PARTY is empty"; exit 1; }
 [ -z ${config[CORTX_ISO]} ] && { echo "error: CORTX_ISO is empty"; exit 1; }
 [ -z ${config[GPG_CHECK]} ] && { echo "error: GPG_CHECK is empty"; exit 1; }
 [ -z ${config[LOCAL_NODE]} ] && { echo "error: LOCAL_NODE is empty"; exit 1; }
-[ -z ${config[MACHINE_ID1]} ] && { echo "error: MACHINE_ID1 is empty"; exit 1; }
-[ -z ${config[MACHINE_ID2]} ] && { echo "error: MACHINE_ID2 is empty"; exit 1; }
-[ -z ${config[MACHINE_ID3]} ] && { echo "error: MACHINE_ID3 is empty"; exit 1; }
-[ -z ${config[NODE1]} ] && { echo "error: NODE1 is empty"; exit 1; }
-[ -z ${config[NODE2]} ] && { echo "error: NODE2 is empty"; exit 1; }
-[ -z ${config[NODE3]} ] && { echo "error: NODE3 is empty"; exit 1; }
 
 THIRD_PARTY=${config[THIRD_PARTY]}
 CORTX_ISO=${config[CORTX_ISO]}
 GPG_CHECK=${config[GPG_CHECK]}
 LOCAL_NODE=${config[LOCAL_NODE]}
-MACHINE_ID1=${config[MACHINE_ID1]}
-MACHINE_ID2=${config[MACHINE_ID2]}
-MACHINE_ID3=${config[MACHINE_ID3]}
-NODE1=${config[NODE1]}
-NODE2=${config[NODE2]}
-NODE3=${config[NODE3]}
+
+[ $STATE == "singlenode" ] && {
+    [ -z ${config[MACHINE_ID1]} ] && { echo "error: MACHINE_ID1 is empty"; exit 1; }
+    [ -z ${config[NODE1]} ] && { echo "error: NODE1 is empty"; exit 1; }
+    MACHINE_ID1=${config[MACHINE_ID1]}
+    NODE1=${config[NODE1]}
+} || {
+    [ -z ${config[MACHINE_ID1]} ] && { echo "error: MACHINE_ID1 is empty"; exit 1; }
+    [ -z ${config[MACHINE_ID2]} ] && { echo "error: MACHINE_ID2 is empty"; exit 1; }
+    [ -z ${config[MACHINE_ID3]} ] && { echo "error: MACHINE_ID3 is empty"; exit 1; }
+    [ -z ${config[NODE1]} ] && { echo "error: NODE1 is empty"; exit 1; }
+    [ -z ${config[NODE2]} ] && { echo "error: NODE2 is empty"; exit 1; }
+    [ -z ${config[NODE3]} ] && { echo "error: NODE3 is empty"; exit 1; }
+    MACHINE_ID1=${config[MACHINE_ID1]}
+    MACHINE_ID2=${config[MACHINE_ID2]}
+    MACHINE_ID3=${config[MACHINE_ID3]}
+    NODE1=${config[NODE1]}
+    NODE2=${config[NODE2]}
+    NODE3=${config[NODE3]}
+}
 
 cd ${BASE_DIR}
 #############################################
 
-[ $LOCAL_NODE == "--clean" ] && {
-    echo "Cleaning Yum"
-    rm -rf /etc/yum.repos.d/cortx-*
-    yum clean all
-    exit 0
-}
-
 DIR=/root/service
 mkdir -p ${DIR}
 
+mkdir -p /var/lib/ha_env
+
+ls /var/lib/ha_env/ | grep yum_init || {
+    # Configure cortx-py-utils
+    yum-config-manager --add-repo ${THIRD_PARTY}
+    yum-config-manager --add-repo ${CORTX_ISO}
+    yum clean all
+    rpm --import ${GPG_CHECK}
+}
+
 ########### Configure cortx-py-utils #########
 
-yum-config-manager --add-repo ${THIRD_PARTY}
-yum-config-manager --add-repo ${CORTX_ISO}
-yum clean all
-rpm --import ${GPG_CHECK}
+yum install -y gcc rpm-build python36 python36-pip python36-devel python36-setuptools openssl-devel libffi-devel  --nogpgcheck
+yum group -y install "Development Tools" --nogpgcheck
 
-yum install -y gcc rpm-build python36 python36-pip python36-devel python36-setuptools openssl-devel libffi-devel
 python3 -m pip install -r https://raw.githubusercontent.com/Seagate/cortx-utils/main/py-utils/python_requirements.txt
 python3 -m pip install -r https://raw.githubusercontent.com/Seagate/cortx-utils/main/py-utils/python_requirements.ext.txt
 yum remove -y cortx-py-utils; yum install -y cortx-py-utils --nogpgcheck;
@@ -151,13 +190,19 @@ sed -i -e "s|<service>|${SERVICE}|g" /usr/lib/systemd/system/${SERVICE}@.service
 systemctl daemon-reload
 
 # Update provision conf
-cp -rf ${BASE_DIR}/conf/example_config.json /root/
-sed -i -e "s|<MACHINE_ID1>|${MACHINE_ID1}|g" /root/example_config.json
-sed -i -e "s|<MACHINE_ID2>|${MACHINE_ID2}|g" /root/example_config.json
-sed -i -e "s|<MACHINE_ID3>|${MACHINE_ID3}|g" /root/example_config.json
-sed -i -e "s|<NODE1>|${NODE1}|g" /root/example_config.json
-sed -i -e "s|<NODE2>|${NODE2}|g" /root/example_config.json
-sed -i -e "s|<NODE3>|${NODE3}|g" /root/example_config.json
+[ $STATE == "singlenode" ] && {
+    cp -rf ${BASE_DIR}/conf/example_config_singlenode.json /root/example_config.json
+    sed -i -e "s|<MACHINE_ID1>|${MACHINE_ID1}|g" /root/example_config.json
+    sed -i -e "s|<NODE1>|${NODE1}|g" /root/example_config.json
+} || {
+    cp -rf ${BASE_DIR}/conf/example_config_multinode.json /root/example_config.json
+    sed -i -e "s|<MACHINE_ID1>|${MACHINE_ID1}|g" /root/example_config.json
+    sed -i -e "s|<MACHINE_ID2>|${MACHINE_ID2}|g" /root/example_config.json
+    sed -i -e "s|<MACHINE_ID3>|${MACHINE_ID3}|g" /root/example_config.json
+    sed -i -e "s|<NODE1>|${NODE1}|g" /root/example_config.json
+    sed -i -e "s|<NODE2>|${NODE2}|g" /root/example_config.json
+    sed -i -e "s|<NODE3>|${NODE3}|g" /root/example_config.json
+}
 
 # Update hctl interface
 cp -rf ${BASE_DIR}/cortx_component/hctl_cli /usr/bin/hctl
@@ -170,3 +215,5 @@ systemctl enable corosync
 systemctl enable pacemaker
 echo "Seagate" | passwd --stdin hacluster
 systemctl start pcsd
+
+touch /var/lib/ha_env/yum_init
