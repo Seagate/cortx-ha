@@ -40,7 +40,7 @@ class ActionEvent:
         self.storageset_id = healthevent.storageset_id
         self.node_id = healthevent.node_id
         self.resource_id = healthevent.resource_id
-        self.timestamp = healthevent.timestamp 
+        self.timestamp = healthevent.timestamp
         self.event_specific_info = healthevent.specific_info
 
     def to_json(self):
