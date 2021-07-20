@@ -21,3 +21,6 @@ class HealthNotFoundException(HaSystemHealthException):
 
 class InvalidElement(HaSystemHealthException):
     """Exception to indicate health missing for element."""
+
+class InvalidHealthDataException(HaSystemHealthException):
+    """Exception to indicate invalid data received from Discovery module."""

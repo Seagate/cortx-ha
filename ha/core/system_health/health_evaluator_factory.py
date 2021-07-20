@@ -50,6 +50,9 @@ class HealthEvaluatorFactory:
         Returns:
             Element: Generic element.
         """
+        # [TBD] Workaround to be removed once stories for aggregated health view are completed
+        if element not in HealthEvaluatorFactory._element_instances.keys():
+            return None
         return HealthEvaluatorFactory._element_instances[element]
 
     @staticmethod
