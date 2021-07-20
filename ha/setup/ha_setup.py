@@ -415,14 +415,14 @@ class ConfigCmd(Cmd):
         s3_instances = ConfigCmd.get_s3_instance(machine_id)
         ios_instances = ConfigCmd.get_ios_instance(machine_id)
 
+        self._update_env(node_name, node_type, const.HA_CLUSTER_SOFTWARE, s3_instances, ios_instances)
+        self._fetch_fids()
+        self._update_cluster_manager_config()
+
         # fetch all nodes stonith config
         all_nodes_stonith_config: dict = {}
         if self.get_installation_type().lower() == const.INSTALLATION_TYPE.HW.value.lower():
             all_nodes_stonith_config = ConfigCmd.get_stonith_config()
-
-        self._update_env(node_name, node_type, const.HA_CLUSTER_SOFTWARE, s3_instances, ios_instances)
-        self._fetch_fids()
-        self._update_cluster_manager_config()
 
         # Push node name mapping to store
         if not self._confstore.key_exists(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_name}"):
