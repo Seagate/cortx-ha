@@ -26,3 +26,7 @@ class SUBSCRIPTION_LIST(enum.Enum, metaclass=EnumListMeta):
     HARE = "hare"
     HA = "ha"
     TEST = "test"
+
+COMPONENT_KEY = 'events/subscribe'
+EVENT_KEY = 'events'
+
