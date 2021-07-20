@@ -199,7 +199,7 @@ def motr(cib_xml, push=False, **kwargs):
                     not_defined {RESOURCE.MOTR_CONFD.value}-count or {RESOURCE.MOTR_CONFD.value}-count lt integer {quorum_size}")
             process.run_cmd(f"pcs -f {cib_xml} constraint order {RESOURCE.HAX.value}-clone then {RESOURCE.MOTR_IOS.value}-{i}-clone")
             process.run_cmd(f"pcs -f {cib_xml} constraint colocation add {RESOURCE.MOTR_IOS.value}-{i}-clone with {RESOURCE.HAX.value}-clone")
-            process.run_cmd(f"pcs -f {cib_xml} constraint order stop {RESOURCE.MOTR_IOS.value}-{i}-clone then stop {RESOURCE.MOTR_CONFD.value}-1-clone")
+            process.run_cmd(f"pcs -f {cib_xml} constraint order stop {RESOURCE.MOTR_IOS.value}-{i}-clone then stop {RESOURCE.MOTR_CONFD.value}-1-clone kind=Optional")
         except Exception as e:
             raise CreateResourceConfigError(f"Invalid node_count. Error: {e}")
     if push:
@@ -208,7 +208,7 @@ def motr(cib_xml, push=False, **kwargs):
 def stop_constraint_on_motr_ios(resource_name, cib_xml, push=False, **kwargs):
     ios_instances = get_ios_instances(**kwargs)
     for i in range(1, int(ios_instances)+1):
-        process.run_cmd(f"pcs -f {cib_xml} constraint order stop {resource_name} then stop {RESOURCE.MOTR_IOS.value}-{i}-clone")
+        process.run_cmd(f"pcs -f {cib_xml} constraint order stop {resource_name} then stop {RESOURCE.MOTR_IOS.value}-{i}-clone kind=Optional")
     if push:
         cib_push(cib_xml)
 
@@ -264,7 +264,7 @@ def s3servers(cib_xml, push=False, **kwargs):
 def stop_constraint_on_s3servers(resource_name, cib_xml, push=False, **kwargs):
     s3_instances = get_s3servers_instances(**kwargs)
     for i in range(1, int(s3_instances)+1):
-        process.run_cmd(f"pcs -f {cib_xml} constraint order stop {resource_name} then stop s3server-{i}-clone")
+        process.run_cmd(f"pcs -f {cib_xml} constraint order stop {resource_name} then stop s3server-{i}-clone kind=Optional")
     if push:
         cib_push(cib_xml)
 
