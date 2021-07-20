@@ -523,11 +523,11 @@ class ConfigCmd(Cmd):
         self._alert_config.create_alert()
         Log.info("config command is successful")
 
-    def _create_resource(self, s3_instances, mgmt_info, node_count, ios_instances, stonith_config=None):
+    def _create_resource(self, ios_instances, s3_instances, mgmt_info, node_count, stonith_config=None):
         Log.info("Creating pacemaker resources")
         try:
             # TODO: create resource if not already exists.
-            create_all_resources(s3_instances=s3_instances, ios_instances=ios_instances, mgmt_info=mgmt_info, node_count=node_count, stonith_config=stonith_config)
+            create_all_resources(ios_instances=ios_instances, s3_instances=s3_instances, mgmt_info=mgmt_info, node_count=node_count, stonith_config=stonith_config)
         except Exception as e:
             Log.info(f"Resource creation failed. Error {e}")
             raise HaConfigException("Resource creation failed.")
@@ -1043,12 +1043,13 @@ class PostUpgradeCmd(Cmd):
                 machine_id = self.get_machine_id()
                 cluster_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}cluster_id")
                 mgmt_info: dict = self.get_mgmt_vip(machine_id, cluster_id)
+                ios_instances = self.get_ios_instance(machine_id)
                 node_count: int = len(self.get_nodelist(fetch_from=UpgradeCmd.HA_CONFSTORE))
 
                 Log.info(f"Performing post disruptive upgrade routines on cluster \
                         level. cluster_id: {cluster_id}, mgmt_info: {mgmt_info}, node_count: {node_count}")
                 perform_post_upgrade(self.s3_instance, mgmt_info=mgmt_info,
-                                     node_count=node_count, do_unstandby=False)
+                                     ios_instances=ios_instances, node_count=node_count, do_unstandby=False)
         except Exception as err:
             raise SetupError("Post-upgrade routines failed") from err
 
