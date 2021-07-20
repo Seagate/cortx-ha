@@ -15,8 +15,8 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-from ha.error import HA_EVENT_MANAGER_ERROR
-from ha.error import HAError
+from ha.core.error import HA_EVENT_MANAGER_ERROR
+from ha.core.error import HAError
 
 class EventManagerException(HAError):
     def __init__(self, desc=None):

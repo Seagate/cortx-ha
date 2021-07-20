@@ -15,6 +15,5 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-#TODO: Move class to appropriate location during implementation
-class HaActionEvent:
+class RecoveryActionEvent:
     pass

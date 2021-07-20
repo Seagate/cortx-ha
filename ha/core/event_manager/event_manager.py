@@ -15,8 +15,10 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-#TODO: Update import during HaActionEvent implementation
-from ha.core.event_manager.action_event import HaActionEvent
+from cortx.utils.log import Log
+from ha.core.system_health.const import EVENTS
+from ha.core.event_manager.error import InvalidEvent
+from ha.core.event_manager.models.action_event import RecoveryActionEvent
 
 class EventManager:
 
@@ -43,7 +45,7 @@ class EventManager:
         else:
             raise Exception("EventManager is singleton class, use EventManager.get_instance().")
 
-    def _validate_component(component: str) -> None:
+    def _validate_component(self, component: str) -> None:
         """
         Validate component raise error invalid component.
 
@@ -52,16 +54,21 @@ class EventManager:
         """
         pass
 
-    def _validate_events(events: list) -> None:
+    def _validate_events(self, events: list) -> None:
         """
         Raise error InvalidEvent if event is not valid.
 
         Args:
             events (list): Event list.
         """
-        pass
+        if not isinstance(events, list):
+            raise InvalidEvent(f"Invalid type {events}, event type should be list")
+        for event in events:
+            if event not in EVENTS:
+                raise InvalidEvent(f"Invalid event: {event}, not part of HA event list.")
+        Log.debug(f"event: {event} is valid for subscription request")
 
-    def subscribe(component: str, events: list):
+    def subscribe(self, component: str, events: list):
         """
         Register events for the notification. It maintains list of events registered by the components.
 
@@ -71,7 +78,7 @@ class EventManager:
         """
         pass
 
-    def unsubscribe(component: str, events: list = None):
+    def unsubscribe(self, component: str, events: list = None):
         """
         Unregistered events for the notification. Remove event name from the list
 
@@ -81,7 +88,7 @@ class EventManager:
         """
         pass
 
-    def get_events(component : str) -> list:
+    def get_events(self, component : str) -> list:
         """
         It returns list of registered events by the requested component.
 
@@ -93,17 +100,17 @@ class EventManager:
         """
         pass
 
-    def publish(component:str, event: HaActionEvent):
+    def publish(self, component:str, event: RecoveryActionEvent):
         """
         Publish event.
 
         Args:
             component (str): Component name.
-            event (HaActionEvent): Action event.
+            event (RecoveryActionEvent): Action event.
         """
         pass
 
-    def message_type(component: str):
+    def message_type(self, component: str):
         """
         It returns message type name (queue name) mapped with component.
 
