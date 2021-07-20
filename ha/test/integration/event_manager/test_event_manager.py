@@ -39,8 +39,7 @@ class TestEventManager(unittest.TestCase):
 
     def test_validate_event(self):
         self.event_manager._validate_events(EVENTS)
-        self.assertRaises(InvalidEvent, )
-        with self.assertRaises(InvalidEvent) as invalid_event:
+        with self.assertRaises(InvalidEvent):
             self.event_manager._validate_events(["a", "b"])
 
 if __name__ == "__main__":
