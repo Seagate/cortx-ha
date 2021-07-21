@@ -421,8 +421,15 @@ class ConfigCmd(Cmd):
 
         # fetch all nodes stonith config
         all_nodes_stonith_config: dict = {}
-        if self.get_installation_type().lower() == const.INSTALLATION_TYPE.HW.value.lower():
+        enable_stonith = False
+        env_type = self.get_installation_type().lower()
+        if env_type == const.INSTALLATION_TYPE.HW.value.lower():
             all_nodes_stonith_config = ConfigCmd.get_stonith_config()
+            enable_stonith = True
+        elif env_type == const.INSTALLATION_TYPE.VM.value.lower():
+            Log.warn("Stonith configuration not available, detected VM env")
+        else:
+            raise HaConfigException(f"Invalid env detected, {env_type}")
 
         # Push node name mapping to store
         if not self._confstore.key_exists(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_name}"):
@@ -477,7 +484,7 @@ class ConfigCmd(Cmd):
                     Log.info(f"Adding node {node} to Cluster {cluster_name}")
                     self._add_node(node, cluster_user, cluster_secret)
         self._execute.run_cmd(const.PCS_CLEANUP)
-        if self.get_installation_type().lower() == const.INSTALLATION_TYPE.HW.value.lower():
+        if enable_stonith:
             self._execute.run_cmd(const.PCS_STONITH_ENABLE)
         # Create Alert if not exists
         self._alert_config.create_alert()
