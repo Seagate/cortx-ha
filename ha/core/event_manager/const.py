@@ -26,5 +26,3 @@ class SUBSCRIPTION_LIST(enum.Enum, metaclass=EnumListMeta):
     HARE = "hare"
     HA = "ha"
     TEST = "test"
-
-print(SUBSCRIPTION_LIST.CSM.value in SUBSCRIPTION_LIST)
