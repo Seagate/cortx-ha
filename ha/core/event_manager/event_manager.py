@@ -17,8 +17,9 @@
 
 from cortx.utils.log import Log
 from ha.core.system_health.const import EVENTS
-from ha.core.event_manager.error import InvalidEvent
-from ha.core.event_manager.models.action_event import RecoveryActionEvent
+from ha.core.event_manager.error import *
+from ha.core.event_manager.model.action_event import RecoveryActionEvent
+from ha.core.event_manager.const import SUBSCRIPTION_LIST
 
 class EventManager:
 
@@ -52,7 +53,8 @@ class EventManager:
         Args:
             component (str): Component name
         """
-        pass
+        if component not in SUBSCRIPTION_LIST:
+            raise InvalidComponent(f"Invalid component {component}, not part of subscription list.")
 
     def _validate_events(self, events: list) -> None:
         """
