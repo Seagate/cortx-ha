@@ -37,3 +37,8 @@ class InvalidEvent(EventManagerException):
     """
     Raise exception for invalid event.
     """
+
+class UnSubscribeException(EventManagerException):
+    """
+    Raise Exception
+    """

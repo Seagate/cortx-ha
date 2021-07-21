@@ -54,7 +54,7 @@ class EventManager:
         Args:
             component (str): Component name
         """
-        if component not in SUBSCRIPTION_LIST:
+        if component.lower() not in SUBSCRIPTION_LIST:
             raise InvalidComponent(f"Invalid component {component}, not part of subscription list.")
 
     def _validate_events(self, events: list) -> None:
@@ -88,6 +88,9 @@ class EventManager:
         Args:
             component (str): [description]
             events (list, optional): [description]. Defaults to None.
+
+        Raise:
+            UnSubscribeException: Raise error if failed.
         """
         pass
 
