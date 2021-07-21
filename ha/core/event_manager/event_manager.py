@@ -70,7 +70,7 @@ class EventManager:
                 raise InvalidEvent(f"Invalid event: {event}, not part of HA event list.")
         Log.debug(f"event: {event} is valid for subscription request")
 
-    def subscribe(self, component: str, events: list):
+    def subscribe(self, component: str, events: list) -> str:
         """
         Register events for the notification. It maintains list of events registered by the components.
 
@@ -80,7 +80,7 @@ class EventManager:
         """
         pass
 
-    def unsubscribe(self, component: str, events: list = None):
+    def unsubscribe(self, component: str, events: list = None) -> None:
         """
         Unregistered events for the notification. Remove event name from the list
 
@@ -102,7 +102,7 @@ class EventManager:
         """
         pass
 
-    def publish(self, component:str, event: RecoveryActionEvent):
+    def publish(self, component:str, event: RecoveryActionEvent) -> None:
         """
         Publish event.
 
@@ -112,7 +112,7 @@ class EventManager:
         """
         pass
 
-    def message_type(self, component: str):
+    def message_type(self, component: str) -> str:
         """
         It returns message type name (queue name) mapped with component.
 
