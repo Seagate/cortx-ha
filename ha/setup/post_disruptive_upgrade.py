@@ -130,9 +130,9 @@ def _load_config(ha_source_conf: str = SOURCE_CONFIG_FILE, \
                        upgrading the RPM. Please retry Upgrade process again') \
                        from err
 
-def _create_resources(s3_instances=None, mgmt_info=None, node_count=None) -> None:
+def _create_resources(ios_instances=None, s3_instances=None, mgmt_info=None, node_count=None) -> None:
     '''create required resources'''
-    create_all_resources(s3_instances=s3_instances, mgmt_info=mgmt_info, node_count=node_count)
+    create_all_resources(ios_instances=ios_instances, s3_instances=s3_instances, mgmt_info=mgmt_info, node_count=node_count)
 
 def _switch_cluster_mode(cluster_mode, retry_count=0) -> None:
     '''
@@ -155,12 +155,12 @@ def _unstandby_cluster() -> None:
     _switch_cluster_mode(PCS_CLUSTER_UNSTANDBY)
     Log.info('### cluster is up and running ###')
 
-def perform_post_upgrade(s3_instances=None, do_unstandby=False, mgmt_info=None, node_count=None):
+def perform_post_upgrade(ios_instances=None, s3_instances=None, do_unstandby=False, mgmt_info=None, node_count=None):
     '''Starting routine for post-upgrade process'''
     Log.init(service_name="post_disruptive_upgrade", log_path=RA_LOG_DIR, level="INFO")
     _check_for_any_resource_presence()
     _is_cluster_standby_on()
     _load_config()
-    _create_resources(s3_instances, mgmt_info, node_count)
+    _create_resources(ios_instances, s3_instances, mgmt_info, node_count)
     if do_unstandby:
         _unstandby_cluster()
