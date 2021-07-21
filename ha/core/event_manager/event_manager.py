@@ -22,6 +22,7 @@ from collections import OrderedDict
 import json
 
 from cortx.utils.log import Log
+from cortx.utils.message_bus import MessageBusAdmin, MessageProducer
 from ha.core.config.config_manager import ConfigManager
 from ha.core.event_manager import const
 from ha.core.system_health.const import EVENTS
@@ -60,6 +61,19 @@ class EventManager:
             raise Exception("EventManager is singleton class, use EventManager.get_instance().")
         self._confstore = ConfigManager.get_confstore()
 
+    def _create_message_type(self, component):
+        '''Create and register message type for this component'''
+        message_bus_admin = MessageBusAdmin(const.HA_MESSAGE_BUS_ADMIN)
+        message_type = const.EVENT_MGR_MESSAGE_TYPE.replace("<component_id>", component)
+        message_type_list = message_bus_admin.list_message_types()
+        if message_type not in message_type_list:
+            message_bus_admin.register_message_type(message_types = [message_type], partitions = 1)
+            # Add message type key/value to confstore
+            message_type_key = const.EVENT_MGR_MESSAGE_TYPE_KEY.replace("<component_id>", component)
+            if not self._confstore.key_exists(message_type_key):
+                self._confstore.set(message_type_key, message_type)
+            Log.debug(f"Created message type {message_type} for component {component}")
+
     def _validate_component(self, component: str) -> None:
         """
         Validate component raise error invalid component.
@@ -84,6 +98,7 @@ class EventManager:
         Log.info(f'Received a subscribe request from {component} for event: {events}')
         # self._validate_component(component)
         self._validate_events(events)
+        if component: _create_message_type(component)
         resource_type = events.resource_type
         states = events.states
         self._store_component_key(f'{const.COMPONENT_KEY}/{component}', resource_type, states)
