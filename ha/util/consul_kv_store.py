@@ -163,7 +163,7 @@ class ConsulKvStore:
             key_val[key['Key']] = key['Value'].decode("utf-8") if isinstance(key['Value'], bytes) else key['Value']
         return key_val
 
-    def delete(self, key: str = ""):
+    def delete(self, key: str = "", recurse=True):
         """
         Delete values. Default it will delete all keys.
 
@@ -174,5 +174,5 @@ class ConsulKvStore:
             str: Return dictionary of all key val pair.
         """
         data = self.get(key)
-        self._consul.kv.delete(self._prepare_key(key), recurse=True)
+        self._consul.kv.delete(self._prepare_key(key), recurse=recurse)
         return data

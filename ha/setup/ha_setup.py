@@ -848,16 +848,16 @@ class CleanupCmd(Cmd):
                 # TODO: Update cluster kill for --local option also
                 # Remove SSH
                 self._remove_node(node_name)
+                if self._confstore.key_exists(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}"):
+                    self._confstore.delete(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
+                # Delete node name mapping from store
+                if self._confstore.key_exists(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_name}"):
+                    self._confstore.delete(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_name}")
             else:
                 # Destroy
                 self._cluster_manager.cluster_controller.destroy_cluster()
-                # self._destroy_cluster(node_name)
+                self._confstore.delete()
 
-            if self._confstore.key_exists(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}"):
-                self._confstore.delete(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
-            # Delete node name mapping from store
-            if self._confstore.key_exists(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_name}"):
-                self._confstore.delete(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_name}")
             # Delete the config file
             self.remove_config_files()
         except Exception as e:
@@ -885,18 +885,6 @@ class CleanupCmd(Cmd):
                 break
             except Exception as e:
                 Log.error(f"Node remove failed with Error: {e}, Trying with other node.")
-
-    def _destroy_cluster(self, node_name: str):
-        """
-        Destroy Cluster on current node.
-
-        Args:
-            node_name (str): Node name
-        """
-        Log.info(f"Destroying the cluster on {node_name}.")
-        output = self._execute.run_cmd(const.PCS_CLUSTER_KILL)
-        output = self._execute.run_cmd(const.PCS_CLUSTER_DESTROY)
-        Log.info(f"Cluster destroyed. Output: {output}")
 
     def remove_config_files(self):
         """
