@@ -43,7 +43,7 @@ class UnSubscribeException(EventManagerException):
     Raise Exception
     """
 
-class SubscriptionException(EventManagerException):
+class SubscribeException(EventManagerException):
     """
     Raise exception for errors during subscription
     """

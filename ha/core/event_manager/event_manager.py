@@ -22,14 +22,16 @@ from collections import OrderedDict
 import json
 
 from cortx.utils.log import Log
-from cortx.utils.message_bus import MessageBusAdmin, MessageProducer
+from cortx.utils.message_bus import MessageBusAdmin
 from ha.core.config.config_manager import ConfigManager
 from ha.core.event_manager import const
-from ha.core.system_health.const import EVENTS
 from ha.core.event_manager.error import InvalidComponent
 from ha.core.event_manager.error import InvalidEvent
+from ha.core.event_manager.error import UnSubscribeException
 from ha.core.event_manager.model.action_event import RecoveryActionEvent
 from ha.core.event_manager.const import SUBSCRIPTION_LIST
+from ha.core.event_manager.subscribe_event import SubscribeEvent
+from ha.core.event_manager.unsubscribe_event import UnSubscribeEvent
 
 
 class EventManager:
@@ -54,7 +56,8 @@ class EventManager:
            Make initialization work for Event Manager
         '''
         if singleton_check is False:
-            raise Exception("Please use EventManager.get_instance() to fetch singleton instance of class")
+            raise Exception("Please use EventManager.get_instance() to fetch \
+                             singleton instance of class")
         if EventManager.__instance is None:
             EventManager.__instance = self
         else:
@@ -73,8 +76,10 @@ class EventManager:
             if not self._confstore.key_exists(message_type_key):
                 self._confstore.set(message_type_key, message_type)
             Log.debug(f"Created message type {message_type} for component {component}")
+        return message_type
 
-    def _validate_component(self, component: str) -> None:
+    @staticmethod
+    def _validate_component(component: str) -> None:
         """
         Validate component raise error invalid component.
 
@@ -96,32 +101,36 @@ class EventManager:
             events (list): Events.
         '''
         Log.info(f'Received a subscribe request from {component} for event: {events}')
-        # self._validate_component(component)
-        self._validate_events(events)
-        if component: _create_message_type(component)
+        EventManager._validate_component(component)
+        EventManager._validate_events(events)
+        if component:
+            message_type = self._create_message_type(component)
         resource_type = events.resource_type
         states = events.states
         self._store_component_key(f'{const.COMPONENT_KEY}/{component}', resource_type, states)
         self._store_event_key(f'{const.EVENT_KEY}', resource_type, states, comp=component)
         Log.info('Subscription request is successfully stored into consul')
+        return message_type
 
     def _store_component_key(self, key: str, resource_type: str, val: list) -> None:
         '''
            Perform actual consul store operation for component keys
            Ex:
            key: /cortx/ha/v2/events/subscribe/sspl
-           confstore value: ['enclosure:sensor:voltage', ...]
+           confstore value: ['enclosure:sensor:voltage/failed', ...]
         '''
         if self._confstore.key_exists(key):
             comp_json_list = self._confstore.get(key)
 
-            # Get the compnent listfrom consul first
+            # Get the compnent list from consul first
             comp_list = json.loads(comp_json_list['cortx/ha/v1/' + f'{key}'])
 
             for event in val:
                 new_val = resource_type + '/' + event
+                if new_val in comp_list:
+                    continue
                 # Merge the old and new component list
-                comp_list.extend(new_val)
+                comp_list.append(new_val)
 
             # Make sure that list is not duplicated
             set_comp_list = list(OrderedDict.fromkeys(comp_list))
@@ -142,15 +151,15 @@ class EventManager:
             event_list = json.dumps(new_event)
             self._confstore.set(f'{key}', event_list)
 
-    def _store_event_key(self, key: str, resource_type: str, states: list = [], comp: str = None) -> None:
+    def _store_event_key(self, key: str, resource_type: str, states: list = None, comp: str = None) -> None:
         '''
            Perform actual consul store operation for event keys
-           key: /cortx/ha/v2/events/subscribe/sspl
-           value: ['enclosure:sensor:voltage', ...]
+           key: /cortx/ha/v2/events/enclosure:hw:disk/online
+           value: ['sspl', ...]
         '''
         if states:
             for state in states:
-                new_key = key + f'{resource_type}/{state}'
+                new_key = key + f'/{resource_type}/{state}'
                 if self._confstore.key_exists(new_key):
                     comp_json_list = self._confstore.get(new_key)
 
@@ -170,40 +179,28 @@ class EventManager:
                     comp_list = json.dumps(new_comp_list)
                     self._confstore.set(f'{new_key}', comp_list)
 
-    def _validate_component(self, component: str) -> None:
-        '''
-        Validate component raise error invalid component.
-        Args:
-            component (str): Component name
-        '''
-        if component.lower() not in SUBSCRIPTION_LIST:
-            raise InvalidComponent(f"Invalid component {component}, not part of subscription list.")
-
-    def _validate_events(self, event: list) -> None:
-       """
-        Raise error InvalidEvent if event is not valid.
-        Args:
-            events (list): Event list.
+    @staticmethod
+    def _validate_events(events: list) -> None:
         """
-        if not isinstance(events, list):
+           Raise error InvalidEvent if event is not valid.
+           Args:
+           events (list): Event list.
+        """
+        if not isinstance(events, (SubscribeEvent, UnSubscribeEvent)):
             raise InvalidEvent(f"Invalid type {events}, event type should be list")
-        for event in events:
-            if event not in EVENTS:
-                raise InvalidEvent(f"Invalid event: {event}, not part of HA event list.")
-        Log.debug(f"event: {event} is valid for subscription request")
 
     def _delete_component_key(self, component: str, resource_type: str, states: list = None) -> None:
         '''
           Deletes the component from the event key
           Ex:
           Already existed consul key:
-             key: cortx/ha/v1/events/subscribe/motr:
-             value: ["node:os:memory_usage", "node:interface:nw"]
+             key: cortx/ha/v1/events/subscribe/hare:
+             value: ["node:os:memory_usage/failed", "node:interface:nw/online"]
           Request to delete:
             'hare', 'node:interface:nw'
           Stored key after deletion will be:
-            key: cortx/ha/v1/events/subscribe/motr:
-            value: ["node:os:memory_usage"]
+            key: cortx/ha/v1/events/subscribe/hare:
+            value: ["node:os:memory_usage/failed"]
         '''
         for state in states:
             delete_required_state = resource_type + '/' + state
@@ -224,15 +221,16 @@ class EventManager:
             else:
                 # If component key is not there, means event with that key will not be there,
                 # hence safely raise exception here so that _delete_event_key will not be called
-                raise UnsubscriptionException('Can not unsubscribe the component: {component} as it was not regostered earlier')
+                raise UnSubscribeException('Can not unsubscribe the component: \
+                                            {component} as it was not regostered earlier')
 
     def _delete_event_key(self, component: str, resource_type: str, states: list = None):
         '''
           Deletes the event from the component key
           Ex:
-          Already existed consul key: cortx/ha/v1/events/node:os:memory_usage:["motr", "hare"]
-          Request to delete: 'hare', 'node:os:memory_usage'
-          Stored key after deletion will be: cortx/ha/v1/events/node:os:memory_usage:["motr"]
+          Already existed consul key: cortx/ha/v1/events/node:os:memory_usage/failed:["motr", "hare"]
+          Request to delete: 'hare', 'node:os:memory_usage' 'failed'
+          Stored key after deletion will be: cortx/ha/v1/events/node:os:memory_usage/failed:["motr"]
         '''
         for state in states:
             if self._confstore.key_exists(f'{const.EVENT_KEY}/{resource_type}/{state}'):
@@ -248,6 +246,8 @@ class EventManager:
                     self._confstore.update(f'{const.EVENT_KEY}/{resource_type}/{state}', new_comp_list)
                 # Else delete the event from the consul
                 else: self._confstore.delete(f'{const.EVENT_KEY}/{resource_type}/{state}')
+            else:
+                print('Error')
 
     def unsubscribe(self, component : str, events : list = None):
         '''
@@ -275,7 +275,6 @@ class EventManager:
         Returns:
             list: List of events.
         """
-        pass
 
     def publish(self, component:str, event: RecoveryActionEvent) -> None:
         """
@@ -284,7 +283,6 @@ class EventManager:
             component (str): Component name.
             event (RecoveryActionEvent): Action event.
         """
-        pass
 
     def message_type(self, component: str) -> str:
         """
@@ -292,10 +290,12 @@ class EventManager:
         Args:
             component (str): component name.
         """
-        pass
 
-ev = EventManager()
-ev.subscribe('hare', ['node:os:memory_usage', 'node:interface:nw'])
-ev.subscribe('hare', 'node:os:memory_usage')
-ev.subscribe('motr', ['node:os:memory_usage', 'node:interface:nw', 'enclosure:interface:sas'])
-ev.unsubscribe('hare', ['node:os:memory_usage', 'node:interface:nw'])
+ev = EventManager.get_instance()
+ev.subscribe('hare', SubscribeEvent('node:os:memory_usage', ['failed']))
+ev.subscribe('hare', SubscribeEvent('node:interface:nw', ['online']))
+ev.subscribe('motr', SubscribeEvent('enclosure:interface:sas', ['failed', 'online']))
+ev.unsubscribe('motr', UnSubscribeEvent('enclosure:interface:sas', ['failed']))
+ev.unsubscribe('hare', UnSubscribeEvent('node:interface:nw', ['online']))
+ev.unsubscribe('hare', UnSubscribeEvent('node:interface:nw', ['failed']))
+# ev.unsubscribe('hare', ['node:os:memory_usage', 'node:interface:nw'])
