@@ -286,9 +286,6 @@ class EventManager:
                     Log.debug(f'Deleting the key for {resource_type}/{state} completely \
                                 as there are no more subscriptions')
                     self._confstore.delete(f'{const.EVENT_KEY}/{resource_type}/{state}')
-                    # As there is no subscription for this componenet,
-                    # delete the topic key
-                    self._delete_message_type(component)
             else:
                 Log.error(f'Key: {const.EVENT_KEY}/{resource_type}/{state} does not present')
 
