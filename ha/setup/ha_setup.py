@@ -415,14 +415,21 @@ class ConfigCmd(Cmd):
         s3_instances = ConfigCmd.get_s3_instance(machine_id)
         ios_instances = ConfigCmd.get_ios_instance(machine_id)
 
-        # fetch all nodes stonith config
-        all_nodes_stonith_config: dict = {}
-        if self.get_installation_type().lower() == const.INSTALLATION_TYPE.HW.value.lower():
-            all_nodes_stonith_config = ConfigCmd.get_stonith_config()
-
         self._update_env(node_name, node_type, const.HA_CLUSTER_SOFTWARE, s3_instances, ios_instances)
         self._fetch_fids()
         self._update_cluster_manager_config()
+
+        # fetch all nodes stonith config
+        all_nodes_stonith_config: dict = {}
+        enable_stonith = False
+        env_type = self.get_installation_type().lower()
+        if env_type == const.INSTALLATION_TYPE.HW.value.lower():
+            all_nodes_stonith_config = ConfigCmd.get_stonith_config()
+            enable_stonith = True
+        elif env_type == const.INSTALLATION_TYPE.VM.value.lower():
+            Log.warn("Stonith configuration not available, detected VM env")
+        else:
+            raise HaConfigException(f"Invalid env detected, {env_type}")
 
         # Push node name mapping to store
         if not self._confstore.key_exists(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_name}"):
@@ -449,7 +456,8 @@ class ConfigCmd(Cmd):
                     self._create_resource(s3_instances=s3_instances, mgmt_info=mgmt_info, node_count=len(nodelist),
                                           ios_instances=ios_instances, stonith_config=all_nodes_stonith_config.get(node_name))
                     # configure stonith for each node from that node only
-                    configure_stonith(push=True, stonith_config=all_nodes_stonith_config.get(node_name))
+                    if enable_stonith:
+                        configure_stonith(push=True, stonith_config=all_nodes_stonith_config.get(node_name))
                     self._confstore.set(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
                 except Exception as e:
                     Log.error(f"Cluster creation failed; destroying the cluster. Error: {e}")
@@ -468,16 +476,18 @@ class ConfigCmd(Cmd):
                 # Add node with SSH
                 self._add_node_remotely(node_name, cluster_user, cluster_secret)
                 # configure stonith for each node from that node only
-                configure_stonith(push=True, stonith_config=all_nodes_stonith_config.get(node_name))
+                if enable_stonith:
+                    configure_stonith(push=True, stonith_config=all_nodes_stonith_config.get(node_name))
         else:
             # configure stonith for each node from that node only
-            configure_stonith(push=True, stonith_config=all_nodes_stonith_config.get(node_name))
+            if enable_stonith:
+                configure_stonith(push=True, stonith_config=all_nodes_stonith_config.get(node_name))
             for node in nodelist:
                 if node != node_name:
                     Log.info(f"Adding node {node} to Cluster {cluster_name}")
                     self._add_node(node, cluster_user, cluster_secret)
         self._execute.run_cmd(const.PCS_CLEANUP)
-        if self.get_installation_type().lower() == const.INSTALLATION_TYPE.HW.value.lower():
+        if enable_stonith:
             self._execute.run_cmd(const.PCS_STONITH_ENABLE)
         # Create Alert if not exists
         self._alert_config.create_alert()
