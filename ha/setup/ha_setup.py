@@ -456,7 +456,8 @@ class ConfigCmd(Cmd):
                     self._create_resource(s3_instances=s3_instances, mgmt_info=mgmt_info, node_count=len(nodelist),
                                           ios_instances=ios_instances, stonith_config=all_nodes_stonith_config.get(node_name))
                     # configure stonith for each node from that node only
-                    configure_stonith(push=True, stonith_config=all_nodes_stonith_config.get(node_name))
+                    if enable_stonith:
+                        configure_stonith(push=True, stonith_config=all_nodes_stonith_config.get(node_name))
                     self._confstore.set(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
                 except Exception as e:
                     Log.error(f"Cluster creation failed; destroying the cluster. Error: {e}")
@@ -475,10 +476,12 @@ class ConfigCmd(Cmd):
                 # Add node with SSH
                 self._add_node_remotely(node_name, cluster_user, cluster_secret)
                 # configure stonith for each node from that node only
-                configure_stonith(push=True, stonith_config=all_nodes_stonith_config.get(node_name))
+                if enable_stonith:
+                    configure_stonith(push=True, stonith_config=all_nodes_stonith_config.get(node_name))
         else:
             # configure stonith for each node from that node only
-            configure_stonith(push=True, stonith_config=all_nodes_stonith_config.get(node_name))
+            if enable_stonith:
+                configure_stonith(push=True, stonith_config=all_nodes_stonith_config.get(node_name))
             for node in nodelist:
                 if node != node_name:
                     Log.info(f"Adding node {node} to Cluster {cluster_name}")
