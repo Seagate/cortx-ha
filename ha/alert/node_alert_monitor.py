@@ -15,6 +15,7 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
+import os
 import xml.etree.ElementTree as ET
 from cortx.utils.log import Log
 from ha.alert.alert_monitor import AlertMonitor
@@ -36,6 +37,8 @@ class NodeAlertMonitor(AlertMonitor):
         Get list of online nodes ids.
         """
         online_nodes_xml, err, rc = self.process.run_cmd("crm_mon --as-xml")
+        if online_nodes_xml is None:
+            Log.error(f"Unable get output of command 'crm_mon --as-xml', Error : {err}")
         # saving the xml file
         with open('nodes.xml', 'w+') as f:
             f.write(online_nodes_xml)
@@ -61,7 +64,11 @@ class NodeAlertMonitor(AlertMonitor):
         Get Local node name and id.
         """
         local_node_id, err, rc = self.process.run_cmd("crm_node -i")
+        if local_node_id is None:
+            Log.error(f"Unable get output of command 'crm_node -i', Error : {err}")
         local_node_name, err, rc = self.process.run_cmd("crm_node -n")
+        if local_node_name is None:
+            Log.error(f"Unable get output of command 'crm_node -n', Error : {err}")
         Log.info(f"Local node name: {local_node_name} \n Local node id: {local_node_id}")
         return local_node_id, local_node_name
 
