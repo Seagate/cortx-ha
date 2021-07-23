@@ -22,7 +22,6 @@ from ha.core.health_monitor.const import HEALTH_MON_KEYS
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.config.config_manager import ConfigManager
 from ha.core.system_health.const import HEALTH_STATUSES
-from ha.core.system_health.const import EVENTS
 
 class MonitorRulesManager:
 
@@ -75,7 +74,7 @@ class MonitorRulesManager:
 
         if self._confstore.key_exists(key):
             kv = self._confstore.get(key)
-            k, val = kv.popitem()
+            _, val = kv.popitem()
             val = json.loads(val)
             if action not in val:
                 Log.warn(f"KV not found for key: {key}, value: {action}")
