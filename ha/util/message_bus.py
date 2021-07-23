@@ -20,6 +20,7 @@ import json
 from cortx.utils.message_bus import MessageBusAdmin
 from cortx.utils.message_bus.error import MessageBusError
 from cortx.utils.message_bus import MessageProducer
+from cortx.utils.message_bus import MessageConsumer
 
 class MessageBusProducer:
     ADMIN_ID = "admin"
@@ -46,7 +47,7 @@ class MessageBusProducer:
 
         self.producer = MessageProducer(producer_id=producer_id, message_type=message_type, method=MessageBusProducer.PRODUCER_METHOD)
 
-    def produce(self, message: any):
+    def publish(self, message: any):
         """
         Produce message to message bus.
 
@@ -61,4 +62,55 @@ class MessageBusProducer:
             raise Exception(f"Invalid type of message {message}")
 
 class MessageBusConsumer:
-    pass
+
+    JSON_TYPE = "json"
+    STRING_TYPE = "string"
+
+    def __init__(self, consumer_id: int, consumer_group: str, message_types: list,
+                auto_ack: bool = False, offset: str = "earliest"):
+        """
+        Initalize consumer.
+
+        Args:
+            consumer_id (int): Consumer ID.
+            consumer_group (str): Consumer Group.
+            message_type (list): Message Type.
+            auto_ack (bool, optional): Check auto ack. Defaults to False.
+            offset (str, optional): Offset for messages. Defaults to "earliest".
+        """
+        self.consumer = MessageConsumer(consumer_id=str(consumer_id),
+                                consumer_group=consumer_group,
+                                message_types=message_types,
+                                auto_ack=auto_ack, offset=offset)
+
+    def receive(self, timeout: int = 0, message_type: str = "") -> str:
+        """
+        Get Message. If timeout is 0 then it will block call until next message is
+        received and ack. If timeout given then call will break if message not received.
+
+        Args:
+            timeout (int, optional): Message timeout. Defaults to 0.
+
+        Returns:
+            str: json message.
+        """
+        message_type = MessageBusConsumer.JSON_TYPE if message_type == "" else message_type
+        try:
+            message = self.consumer.receive(timeout=timeout)
+            if message_type == MessageBusConsumer.STRING_TYPE:
+                return message
+        except Exception as e:
+            raise MessageBusError(f"Failed to receive message, error: {e}. Retrying to receive.")
+            return None
+        try:
+            return json.loads(message.decode('utf-8'))
+        except Exception as e:
+            self.consumer.ack()
+            raise MessageBusError(f"Invalid format of message failed due to {e}. Message : {str(message)}")
+            return None
+
+    def ack(self):
+        """
+        Ack Message.
+        """
+        self.consumer.ack()

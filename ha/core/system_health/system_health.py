@@ -262,12 +262,12 @@ class SystemHealth(Subscriber):
         get cluster status method. This method is for returning a status of a cluster.
         """
 
-    def produce_event(self, healthevent: HealthEvent, healthvalue: str= ""):
+    def publish_event(self, healthevent: HealthEvent, healthvalue: str= ""):
         """
         Produce event
         """
         healthevent.event_type = json.loads(healthvalue).get("events")[0]["status"]
-        self.producer.produce(str(healthevent))
+        self.producer.publish(str(healthevent))
 
     def _update(self, healthevent: HealthEvent, healthvalue: str, next_component: str=None):
         """
@@ -281,7 +281,7 @@ class SystemHealth(Subscriber):
                                 node_id=self.node_id, server_id=self.node_id, storage_id=self.node_id,
                                 comp_type=comp_type, comp_id=comp_id)
         self.healthmanager.set_key(key, healthvalue)
-        self.produce_event(healthevent, healthvalue)
+        self.publish_event(healthevent, healthvalue)
 
         # Check the next component to be updated, if none then return.
         if next_component is None:
