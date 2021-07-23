@@ -36,12 +36,10 @@ class NodeAlertMonitor(AlertMonitor):
         """
         Get list of online nodes ids.
         """
-        online_nodes_xml, err, rc = self.process.run_cmd("crm_mon --as-xml")
-        if online_nodes_xml is None:
-            Log.error(f"Unable get output of command 'crm_mon --as-xml', Error : {err}")
+        online_nodes_xml = self.process.run_cmd("crm_mon --as-xml")
         # saving the xml file
         with open('nodes.xml', 'w+') as f:
-            f.write(online_nodes_xml)
+            f.write(online_nodes_xml[0])
         # create element tree object
         tree = ET.parse('nodes.xml')
         # get root element
@@ -63,14 +61,10 @@ class NodeAlertMonitor(AlertMonitor):
         """
         Get Local node name and id.
         """
-        local_node_id, err, rc = self.process.run_cmd("crm_node -i")
-        if local_node_id is None:
-            Log.error(f"Unable get output of command 'crm_node -i', Error : {err}")
-        local_node_name, err, rc = self.process.run_cmd("crm_node -n")
-        if local_node_name is None:
-            Log.error(f"Unable get output of command 'crm_node -n', Error : {err}")
-        Log.info(f"Local node name: {local_node_name} \n Local node id: {local_node_id}")
-        return local_node_id, local_node_name
+        local_node_id = self.process.run_cmd("crm_node -i")
+        local_node_name = self.process.run_cmd("crm_node -n")
+        Log.info(f"Local node name: {local_node_name[0]} \n Local node id: {local_node_id[0]}")
+        return local_node_id[0], local_node_name[0]
 
     def process_alert(self):
         Log.debug("Processing event for NodeAlertMonitor")
