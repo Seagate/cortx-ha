@@ -21,6 +21,7 @@ from cortx.utils.log import Log
 from ha.alert.alert_monitor import AlertMonitor
 from ha.alert.iem import IemGenerator
 from ha.execute import SimpleCommand
+from ha.alert import const
 
 
 class NodeAlertMonitor(AlertMonitor):
@@ -36,7 +37,7 @@ class NodeAlertMonitor(AlertMonitor):
         """
         Get list of online nodes ids.
         """
-        online_nodes_xml = self.process.run_cmd("crm_mon --as-xml")
+        online_nodes_xml = self.process.run_cmd(const.GET_ONLINE_NODES_CMD)
         # saving the xml file
         with open('nodes.xml', 'w+') as f:
             f.write(online_nodes_xml[0])
@@ -61,8 +62,8 @@ class NodeAlertMonitor(AlertMonitor):
         """
         Get Local node name and id.
         """
-        local_node_id = self.process.run_cmd("crm_node -i")
-        local_node_name = self.process.run_cmd("crm_node -n")
+        local_node_id = self.process.run_cmd(const.GET_LOCAL_NODE_ID_CMD)
+        local_node_name = self.process.run_cmd(const.GET_LOCAL_NODE_NAME_CMD)
         Log.info(f"Local node name: {local_node_name[0]} \n Local node id: {local_node_id[0]}")
         return local_node_id[0], local_node_name[0]
 
