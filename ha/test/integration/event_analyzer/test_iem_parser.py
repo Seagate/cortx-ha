@@ -115,4 +115,4 @@ if __name__ == '__main__':
 
     # Delete hostname to node id mapping from confstore
     print(f"Deleting hostname to node id mapping from confstore for {host}")
-    confstore.delete(f"{PVTFQDN_TO_NODEID_KEY}/{host}")
+    confstore.delete(f"{PVTFQDN_TO_NODEID_KEY}/{host}", recurse=True)

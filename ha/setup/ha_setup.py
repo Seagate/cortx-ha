@@ -865,7 +865,7 @@ class CleanupCmd(Cmd):
             else:
                 # Destroy
                 self._cluster_manager.cluster_controller.destroy_cluster()
-                self._confstore.delete()
+                self._confstore.delete(recurse=True)
 
             # Delete the config file
             self.remove_config_files()
