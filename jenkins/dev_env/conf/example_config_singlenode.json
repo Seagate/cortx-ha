@@ -26,9 +26,9 @@
           "s3_instances":"1",
           "type":"<ENV_TYPE>",
           "bmc":{
-             "ip":"<BMC_IP>",
-             "user":"<BMC_USER>",
-             "secret":"<BMC_SECRET>"
+             "ip":"<BMC_IP_1>",
+             "user":"<BMC_USER_1>",
+             "secret":"<BMC_SECRET_1>"
           }
        }
     },
