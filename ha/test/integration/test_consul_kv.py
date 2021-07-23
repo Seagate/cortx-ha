@@ -32,68 +32,70 @@ class TestConsulKvStore(unittest.TestCase):
         """
         Setup consul connection.
         """
-        test_ha_prefix = "cortx/ha/"
-        self._c1 = ConsulKvStore(test_ha_prefix, host="0.0.0.0", port=8500)
-        self._c2 = ConsulKvStore(test_ha_prefix)
+        self.test_ha_prefix = "cortx/ha/test1"
+        self._c1 = ConsulKvStore(self.test_ha_prefix, host="0.0.0.0", port=8500)
+        self._c2 = ConsulKvStore(self.test_ha_prefix)
+        self._c1.delete(recurse=True)
+        self._c2.delete(recurse=True)
 
     def test_c1(self):
         """
         Test connection c1
         """
-        self._c1.delete()
+        self._c1.delete(recurse=True)
         self._c1.set("res")
         self._c1.set("cluster_name", "cortx_cluster")
         self._c1.set("cluster_user", "hacluster")
-        _output: dict = {'cortx/ha/cluster_name': 'cortx_cluster'}
+        _output: dict = {f'{self.test_ha_prefix}/cluster_name': 'cortx_cluster'}
         self.assertEqual(self._c1.get("cluster_name"), _output)
-        _output: dict = {'cortx/ha/cluster_name': 'cortx_cluster',
-                    'cortx/ha/cluster_user': 'hacluster',
-                    'cortx/ha/res': None}
+        _output: dict = {f'{self.test_ha_prefix}/cluster_name': 'cortx_cluster',
+                    f'{self.test_ha_prefix}/cluster_user': 'hacluster',
+                    f'{self.test_ha_prefix}/res': None}
         self.assertEqual(self._c1.get(), _output)
         self._c1.update("cluster_name", "cortx_cluster1")
         self._c1.update("cluster_user", "hacluster1")
-        _output: dict = {'cortx/ha/cluster_name': 'cortx_cluster1',
-                    'cortx/ha/cluster_user': 'hacluster1',
-                    'cortx/ha/res': None}
+        _output: dict = {f'{self.test_ha_prefix}/cluster_name': 'cortx_cluster1',
+                    f'{self.test_ha_prefix}/cluster_user': 'hacluster1',
+                    f'{self.test_ha_prefix}/res': None}
         self.assertEqual(self._c1.get(), _output)
         self._c1.delete("cluster_name")
-        _output: dict = {'cortx/ha/cluster_user': 'hacluster1', 'cortx/ha/res': None}
+        _output: dict = {f'{self.test_ha_prefix}/cluster_user': 'hacluster1', f'{self.test_ha_prefix}/res': None}
         self.assertEqual(self._c1.get(), _output)
-        self._c1.delete()
+        self._c1.delete(recurse=True)
         self.assertEqual(self._c1.get(), None)
 
     def test_c2(self):
         """
         Test connection c2
         """
-        self._c2.delete()
+        self._c2.delete(recurse=True)
         self._c2.set("res")
         self._c2.set("cluster_name", "cortx_cluster")
         self._c2.set("cluster_user", "hacluster")
-        _output: dict = {'cortx/ha/cluster_name': 'cortx_cluster'}
+        _output: dict = {f'{self.test_ha_prefix}/cluster_name': 'cortx_cluster'}
         self.assertEqual(self._c2.get("cluster_name"), _output)
-        _output: dict = {'cortx/ha/cluster_name': 'cortx_cluster',
-                    'cortx/ha/cluster_user': 'hacluster',
-                    'cortx/ha/res': None}
+        _output: dict = {f'{self.test_ha_prefix}/cluster_name': 'cortx_cluster',
+                    f'{self.test_ha_prefix}/cluster_user': 'hacluster',
+                    f'{self.test_ha_prefix}/res': None}
         self.assertEqual(self._c2.get(), _output)
         self._c2.update("cluster_name", "cortx_cluster1")
         self._c2.update("cluster_user", "hacluster1")
-        _output: dict = {'cortx/ha/cluster_name': 'cortx_cluster1',
-                    'cortx/ha/cluster_user': 'hacluster1',
-                    'cortx/ha/res': None}
+        _output: dict = {f'{self.test_ha_prefix}/cluster_name': 'cortx_cluster1',
+                    f'{self.test_ha_prefix}/cluster_user': 'hacluster1',
+                    f'{self.test_ha_prefix}/res': None}
         self.assertEqual(self._c2.get(), _output)
         self._c2.delete("cluster_name")
-        _output: dict = {'cortx/ha/cluster_user': 'hacluster1', 'cortx/ha/res': None}
+        _output: dict = {f'{self.test_ha_prefix}/cluster_user': 'hacluster1', f'{self.test_ha_prefix}/res': None}
         self.assertEqual(self._c2.get(), _output)
-        self._c2.delete()
+        self._c2.delete(recurse=True)
         self.assertEqual(self._c2.get(), None)
 
     def tearDown(self):
         """
         Clear all consul key.
         """
-        self._c1.delete()
-        self._c2.delete()
+        self._c1.delete(recurse=True)
+        self._c2.delete(recurse=True)
 
 if __name__ == "__main__":
     unittest.main()
