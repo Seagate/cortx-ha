@@ -15,12 +15,11 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-
+import xml.etree.ElementTree as ET
 from cortx.utils.log import Log
 from ha.alert.alert_monitor import AlertMonitor
 from ha.alert.iem import IemGenerator
 from ha.execute import SimpleCommand
-import xml.etree.ElementTree as ET
 
 
 class NodeAlertMonitor(AlertMonitor):
@@ -36,7 +35,7 @@ class NodeAlertMonitor(AlertMonitor):
         """
         Get list of online nodes ids.
         """
-        online_nodes_xml, err, rc = self.process.run_cmd("su -c 'crm_mon --as-xml' -s /bin/sh hacluster")
+        online_nodes_xml, err, rc = self.process.run_cmd("crm_mon --as-xml")
         # saving the xml file
         with open('nodes.xml', 'w+') as f:
             f.write(online_nodes_xml)
@@ -49,7 +48,7 @@ class NodeAlertMonitor(AlertMonitor):
         for item in root.findall('nodes'):
             # iterate child elements of item
             for child in item:
-                if child.tab == 'node' and child.attrib['online'] == 'true':
+                if child.attrib['online'] == 'true':
                     nodes_ids.append(child.attrib['id'])
         Log.info(f"List of online nodes ids in cluster in sorted ascending order: {sorted(nodes_ids)}")
         # file cleanup
