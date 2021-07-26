@@ -29,10 +29,33 @@ class MonitorRulesManager:
 
         self._confstore = ConfigManager.get_confstore()
 
-    def evaluate(self, event: HealthEvent):
+    def _prepare_key(resource_type: str, event_type:str) -> str
+        """
+        Prepare a key for the health monitor rules lookup, using HEALTH_MON_KEYS
 
+        Args:
+            resource_type(str)
+            event_type(str)
+
+        Returns:
+            str: key string
+        """
+        return f"{HEALTH_MON_KEYS.ACT_RULE.value}/{resource_type}/{event_type}"
+
+
+    def evaluate(self, event: HealthEvent) -> list:
+        """
+        Check if rule exists for received HealthEvent
+        If yes, return the actions for that rule
+
+        Args:
+            HealthEvent
+
+        Returns:
+            list: actions configured for the rule
+        """
         val = []
-        key = f"{HEALTH_MON_KEYS.ACT_RULE.value}/{event.resource_type}/{event.event_type}"
+        key = self._prepare_key(event.resource_type, event.event_type)
 
         Log.debug(f"Evaluating rule for {key}")
         if self._confstore.key_exists(key):
@@ -43,7 +66,19 @@ class MonitorRulesManager:
 
     def add_rule(self, resource: str, event: HEALTH_STATUSES , action: HEALTH_MON_ACTIONS):
 
-        key = f"{HEALTH_MON_KEYS.ACT_RULE.value}/{resource}/{event}"
+        """
+        Add rule to confstore for resource/event.
+        If rule exists, append the "action" to same rule
+
+        Args:
+            resource(str): resource name
+            event(str): event type
+            action(str): action to be added
+
+        Returns: None
+
+        """
+        key = self._prepare_key(resource, event)
         val = []
 
         Log.info(f"Adding rule for key: {key} ,value: {action}")
@@ -67,8 +102,20 @@ class MonitorRulesManager:
 
 
     def remove_rule(self, resource: str, event: HEALTH_STATUSES , action: HEALTH_MON_ACTIONS):
+        """
+        For the rule resource/event  remove "action" from confstore.
+        If actions list becomes empty, delete the rule
 
-        key = f"{HEALTH_MON_KEYS.ACT_RULE.value}/{resource}/{event}"
+        Args:
+            resource(str): resource name
+            event(str): event type
+            action(str): action to be removed
+
+        Returns: None
+
+        """
+
+        key = self._prepare_key(resource, event)
         val = []
         Log.info(f"Removing rule for key: {key} ,value: {action}")
 
