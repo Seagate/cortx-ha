@@ -22,7 +22,7 @@ from collections import OrderedDict
 import json
 
 from cortx.utils.log import Log
-from cortx.utils.message_bus import MessageBusAdmin, MessageProducer
+from cortx.utils.message_bus import MessageBusAdmin
 from ha.core.config.config_manager import ConfigManager
 from ha.core.event_manager import const
 from ha.core.event_manager.error import InvalidComponent
@@ -329,12 +329,10 @@ class EventManager:
             component_list = []
             # Run through list of components subscribed for this event and send event to each of them
             component_list_key = f'{const.EVENT_KEY}/{event.resource_type}/{event.event_type}'
-            print(component_list_key)
             if self._confstore.key_exists(component_list_key):
                 component_list_key_val = self._confstore.get(component_list_key)
                 _, value = component_list_key_val.popitem()
                 component_list = json.loads(value)
-            print(component_list)
             for component in component_list:
                 producer_id = const.EVENT_MGR_PRODUCER_ID.replace("<component_id>", component)
                 message_type_key = const.EVENT_MGR_MESSAGE_TYPE_KEY.replace("<component_id>", component)

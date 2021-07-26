@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 # Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
 #
 # This program is free software: you can redistribute it and/or modify it under the
@@ -33,5 +34,4 @@ HA_MESSAGE_BUS_ADMIN = "ha_admin"
 EVENT_MGR_PRODUCER_ID = "ha_event_manager_<component_id>"
 EVENT_MGR_MESSAGE_TYPE = "ha_event_<component_id>"
 EVENT_MGR_MESSAGE_TYPE_KEY = "message_type/<component_id>"
-EVENT_MGR_PRODUCER_METHOD = "sync"
 EVENT_COMPONENT_LIST = "events/<event_name>"
