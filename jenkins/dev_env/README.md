@@ -61,7 +61,7 @@ source ~/.bashrc
 - Link: https://github.com/Seagate/cortx-experiments/blob/main/consul/docs/consulUserGuide.md
 
 5. Configure kafka (Follow Single node setup)
-- Link: https://github.com/Seagate/cortx-utils/wiki/Kafka-Server-Setup
+- Link: https://github.com/Seagate/cortx-ha/wiki/Kafka-Configuration
 
 6. Install HA RPM
 ```
