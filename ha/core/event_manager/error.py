@@ -38,14 +38,14 @@ class InvalidEvent(EventManagerException):
     Raise exception for invalid event.
     """
 
-class SubscriptionException(EventManagerException):
+class UnSubscribeException(EventManagerException):
     """
-    Raise exception for errors during subscription
+    Raise Exception
     """
 
-class UnsubscriptionException(EventManagerException):
+class SubscribeException(EventManagerException):
     """
-    Raise exception for errors during unsubscription
+    Raise exception for errors during subscription
     """
 
 class PublishException(EventManagerException):

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 # Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
 #
 # This program is free software: you can redistribute it and/or modify it under the
@@ -14,24 +15,32 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-import enum
-from ha.util.enum_list import EnumListMeta
+import os
+import sys
+import pathlib
+import unittest
+sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..', '..', '..'))
+from cortx.utils.log import Log
+from ha.core.system_health.const import EVENTS
+from ha.core.event_manager.error import InvalidEvent
+from ha.core.event_manager.event_manager import EventManager
 
-class SUBSCRIPTION_LIST(enum.Enum, metaclass=EnumListMeta):
-    SSPL = "sspl"
-    CSM = "csm"
-    S3 = "s3"
-    MOTR = "motr"
-    HARE = "hare"
-    HA = "ha"
-    TEST = "test"
+class TestEventManager(unittest.TestCase):
+    """
+    Unit test for event manager
+    """
 
-ACTION_EVENT_VERSION = "2.0"
-COMPONENT_KEY = 'events/subscribe'
-EVENT_KEY = 'events'
-HA_MESSAGE_BUS_ADMIN = "ha_admin"
-EVENT_MGR_PRODUCER_ID = "ha_event_manager_<component_id>"
-EVENT_MGR_MESSAGE_TYPE = "ha_event_<component_id>"
-EVENT_MGR_MESSAGE_TYPE_KEY = "message_type/<component_id>"
-EVENT_MGR_PRODUCER_METHOD = "sync"
-EVENT_COMPONENT_LIST = "events/<event_name>"
+    def setUp(self):
+        Log.init(service_name='event_manager', log_path="/tmp", level="DEBUG")
+        self.event_manager = EventManager.get_instance()
+
+    def tearDown(self):
+        pass
+
+    def test_validate_event(self):
+        self.event_manager._validate_events(EVENTS)
+        with self.assertRaises(InvalidEvent):
+            self.event_manager._validate_events(["a", "b"])
+
+if __name__ == "__main__":
+    unittest.main()

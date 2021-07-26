@@ -25,9 +25,10 @@ from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
 from ha import const
 from ha.core.event_manager.event_manager import EventManager
+from ha.core.event_manager.subscribe_event import SubscribeEvent
 from ha.core.system_health.model.health_event import HealthEvent
-from ha.core.event_manager.model.action_event import ActionEvent
-from cortx.utils.message_bus import MessageConsumer
+from ha.core.event_manager.model.action_event import RecoveryActionEvent
+from ha.util.message_bus import MessageBusConsumer
 
 if __name__ == '__main__':
     try:
@@ -38,25 +39,24 @@ if __name__ == '__main__':
         Log.init(service_name='test_publisher', log_path=log_path, level=log_level)
 
         print("********Event Publisher********")
-        event_manager = EventManager()
+        event_manager = EventManager.get_instance()
         component = "csm"
-        event = "node:fru:disk"
-        message_type = event_manager.subscribe(component, [event])
+        resource_type = "node:fru:disk"
+        state = "failed"
+        message_type = event_manager.subscribe('csm', [SubscribeEvent(resource_type, [state])])
         print(f"Subscribed {component}, message type is {message_type}")
-        health_event = HealthEvent("event_1", "Online", "informational", "site_1", "rack_1", "cluster_1", "storageset_1",
+        health_event = HealthEvent("event_1", "failed", "fault", "site_1", "rack_1", "cluster_1", "storageset_1",
                         "node_1", "abcd.com", "node:fru:disk", "16215009572", "disk_1", None)
-        action_event = ActionEvent(health_event)
+        action_event = RecoveryActionEvent(health_event)
         event_manager.publish(action_event)
         print("Consuming the action event")
-        message_consumer = MessageConsumer(consumer_id="1",
-                               consumer_group='test_publisher',
-                               message_types=[message_type],
-                               auto_ack=False, offset='earliest')
-        message = message_consumer.receive(timeout=0)
-        decoded_message = str(message.decode('utf-8'))
-        print(decoded_message)
+        message_consumer = MessageBusConsumer(consumer_id="1",
+                            consumer_group='test_publisher',
+                            message_types=[message_type])
+        message = message_consumer.receive()
+        print(message)
         message_consumer.ack()
-        unsubscribe = event_manager.unsubscribe(component, [event])
+        unsubscribe = event_manager.unsubscribe('csm', [SubscribeEvent(resource_type, [state])])
         print(f"Unsubscribed {component}")
         print("Event Publisher test completed successfully")
     except Exception as e:

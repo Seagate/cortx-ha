@@ -20,7 +20,7 @@ import json
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.event_manager.const import ACTION_EVENT_VERSION
 
-class ActionEvent:
+class RecoveryActionEvent:
     """
     Action Event. This class implements an action event object,
     that is delegated to components for taking the action.
@@ -43,8 +43,18 @@ class ActionEvent:
         self.timestamp = healthevent.timestamp
         self.event_specific_info = healthevent.specific_info
 
-    def to_json(self):
-        """
-        Convert to json method.
-        """
-        return json.dumps(self, default=lambda a: a.__dict__)
+    def __str__(self):
+        return json.dumps({
+            "version": self.version,
+            "event_type": self.event_type,
+            "event_id": self.event_id,
+            "resource_type": self.resource_type,
+            "cluster_id": self.cluster_id,
+            "site_id": self.site_id,
+            "rack_id": self.rack_id,
+            "storageset_id": self.storageset_id,
+            "node_id": self.node_id,
+            "resource_id": self.resource_id,
+            "timestamp": self.timestamp,
+            "event_specific_info": self.event_specific_info
+        })
