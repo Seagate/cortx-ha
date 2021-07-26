@@ -19,6 +19,7 @@ import json
 import traceback
 from threading import Thread
 from cortx.utils.log import Log
+from cortx.utils.message_bus.error import MessageBusError
 from ha.util.message_bus import MessageBus
 from ha.core.event_analyzer.filter.filter import Filter
 from ha.core.event_analyzer.parser.parser import Parser
@@ -94,6 +95,8 @@ class Watcher(Thread):
                 self.consumer.ack()
             except SubscriberException as e:
                 Log.error(f"Subscriber exception {e} {traceback.format_exc()} for {message}, retry without ack.")
+            except MessageBusError as e:
+                Log.error(f"MessageBusError: Error {e}.")
             except Exception as e:
                 Log.error(f"Unknown Exception caught {e} {traceback.format_exc()}")
                 Log.error(f"Forcefully ack failed msg: {message}")

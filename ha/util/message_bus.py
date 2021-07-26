@@ -93,13 +93,11 @@ class MessageBusConsumer:
                 return message
         except Exception as e:
             raise MessageBusError(f"Failed to receive message, error: {e}. Retrying to receive.")
-            return None
         try:
             return json.loads(message.decode('utf-8'))
         except Exception as e:
             self.consumer.ack()
             raise MessageBusError(f"Invalid format of message failed due to {e}. Message : {str(message)}")
-            return None
 
     def ack(self):
         """
