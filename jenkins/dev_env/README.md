@@ -116,7 +116,7 @@ ssh-add
 - Link: https://github.com/Seagate/cortx-experiments/blob/main/consul/docs/consulUserGuide.md
 
 6. Configure kafka (Follow 3 Node setup)
-- Link: https://github.com/Seagate/cortx-utils/wiki/Kafka-Server-Setup
+- Link: https://github.com/Seagate/cortx-ha/wiki/Kafka-Configuration
 
 7. Install HA RPM
 ```
