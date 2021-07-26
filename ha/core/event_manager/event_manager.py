@@ -332,9 +332,20 @@ class EventManager:
         Returns:
             list: List of events.
         """
-        pass
+        key = f'{const.COMPONENT_KEY}/{component}'
+        value = []
+        Log.debug(f"Fetching subscribed events for {key}")
 
-    def publish(self, event: RecoveryActionEvent) -> None:
+        if self._confstore.key_exists(key):
+            kv = self._confstore.get(key)
+            for k, v in kv.items():
+                if k.endswith(key):
+                    value = json.loads(v)
+                    break
+        return value
+
+
+    def publish(self, component:str, event: RecoveryActionEvent) -> None:
         """
         Publish event.
         Args:
@@ -367,4 +378,16 @@ class EventManager:
         Args:
             component (str): component name.
         """
-        pass
+        key = const.EVENT_MGR_MESSAGE_TYPE_KEY.replace("<component_id>", component)
+        value = None
+        Log.debug(f"Fetching message type for {key}")
+
+        if self._confstore.key_exists(key):
+            kv = self._confstore.get(key)
+            for k, v in kv.items():
+                if k.endswith(key):
+                    value = v
+                    break
+        return value
+
+# TODO: Add unit tests for this
