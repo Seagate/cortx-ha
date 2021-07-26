@@ -21,7 +21,7 @@ import json
 
 from cortx.utils.log import Log
 from ha import const
-from ha.util.message_bus import MessageBusProducer
+from ha.util.message_bus import MessageBus
 from cortx.utils.conf_store.conf_store import Conf
 from ha.const import _DELIM
 from ha.core.system_health.health_evaluators.element_health_evaluator import ElementHealthEvaluator
@@ -63,7 +63,7 @@ class SystemHealth(Subscriber):
     def _get_producer(self):
         message_type = Conf.get(const.HA_GLOBAL_INDEX, f"EVENT_MANAGER{_DELIM}message_type")
         producer_id = Conf.get(const.HA_GLOBAL_INDEX, f"EVENT_MANAGER{_DELIM}producer_id")
-        return MessageBusProducer(producer_id, message_type)
+        return MessageBus.get_producer(producer_id, message_type)
 
     def _prepare_key(self, component: str, **kwargs) -> str:
         """

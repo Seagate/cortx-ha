@@ -19,7 +19,7 @@ import json
 import traceback
 from threading import Thread
 from cortx.utils.log import Log
-from ha.util.message_bus import MessageBusConsumer
+from ha.util.message_bus import MessageBus
 from ha.core.event_analyzer.filter.filter import Filter
 from ha.core.event_analyzer.parser.parser import Parser
 from ha.core.event_analyzer.subscriber import Subscriber
@@ -53,7 +53,7 @@ class Watcher(Thread):
         self.parser = event_parser
         self.subscriber = subscriber
         self._validate()
-        self.consumer = MessageBusConsumer(consumer_id=str(self.consumer_id),
+        self.consumer = MessageBus.get_consumer(consumer_id=str(self.consumer_id),
                                 consumer_group=self.consumer_group,
                                 message_types=[self.message_type])
 
