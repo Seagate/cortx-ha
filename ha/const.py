@@ -69,6 +69,7 @@ _DELIM=">"
 
 # Node name mapping keys
 PVTFQDN_TO_NODEID_KEY="pvtfqdn_to_nodeid"
+NODE_BMC_INFO_KEY="node_bmc_info"
 
 # Cortx commands
 CORTX_CLUSTER_NODE_ADD="cortx cluster add node --nodeid=<node> --username=<user> --password=<secret>"
@@ -186,6 +187,7 @@ class STATUSES(Enum):
     SUCCEEDED = "Succeeded"
     PARTIAL = "Partial"
     FAILED = "Failed"
+    WARNING = "warning"
 
 class NODE_STATUSES(Enum):
     CLUSTER_OFFLINE = "Offline".lower() # Cluster not running on current node.
