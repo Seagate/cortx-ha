@@ -33,7 +33,7 @@ class TestConsulKvStore(unittest.TestCase):
         Setup consul connection.
         """
         self.test_ha_prefix = "cortx/ha/test1"
-        self._c1 = ConsulKvStore(self.test_ha_prefix, host="0.0.0.0", port=8500)
+        self._c1 = ConsulKvStore(self.test_ha_prefix, host="localhost", port=8500)
         self._c2 = ConsulKvStore(self.test_ha_prefix)
         self._c1.delete(recurse=True)
         self._c2.delete(recurse=True)
