@@ -15,11 +15,12 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-from enum import Enum
+import enum
+from ha.util.enum_list import EnumListMeta
 
-class HEALTH_MON_ACTIONS(Enum):
+class HEALTH_MON_ACTIONS(enum.Enum, metaclass=EnumListMeta):
     PUBLISH_ACT = "publish"
     HA_ACT = "ha"
 
-class HEALTH_MON_KEYS(Enum):
+class HEALTH_MON_KEYS(enum.Enum, metaclass=EnumListMeta):
     ACT_RULE = "action"
