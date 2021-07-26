@@ -29,7 +29,7 @@ class MonitorRulesManager:
 
         self._confstore = ConfigManager.get_confstore()
 
-    def _prepare_key(resource_type: str, event_type:str) -> str
+    def _prepare_key(self, resource_type: str, event_type: str) -> str:
         """
         Prepare a key for the health monitor rules lookup, using HEALTH_MON_KEYS
 
@@ -42,6 +42,20 @@ class MonitorRulesManager:
         """
         return f"{HEALTH_MON_KEYS.ACT_RULE.value}/{resource_type}/{event_type}"
 
+    def _get_val(self, key: str) -> str:
+        """
+        Check if the key exists. Return KV if yes else return None
+
+        Args
+            key(str)
+
+        Returns:
+            val(str): Returns KV
+        """
+        val = None
+        if self._confstore.key_exists(key):
+            val = self._confstore.get(key)
+        return val
 
     def evaluate(self, event: HealthEvent) -> list:
         """
@@ -58,8 +72,9 @@ class MonitorRulesManager:
         key = self._prepare_key(event.resource_type, event.event_type)
 
         Log.debug(f"Evaluating rule for {key}")
-        if self._confstore.key_exists(key):
-            kv  = self._confstore.get(key)
+        kv = self._get_val(key)
+        if kv:
+            print(kv)
             _, val = kv.popitem()
             val = json.loads(val)
         return val
@@ -83,8 +98,8 @@ class MonitorRulesManager:
 
         Log.info(f"Adding rule for key: {key} ,value: {action}")
 
-        if self._confstore.key_exists(key):
-            kv = self._confstore.get(key)
+        kv = self._get_val(key)
+        if kv:
             k, val = kv.popitem()
             val = json.loads(val)
             if action not in val:
@@ -119,8 +134,8 @@ class MonitorRulesManager:
         val = []
         Log.info(f"Removing rule for key: {key} ,value: {action}")
 
-        if self._confstore.key_exists(key):
-            kv = self._confstore.get(key)
+        kv = self._get_val(key)
+        if kv:
             _, val = kv.popitem()
             val = json.loads(val)
             if action not in val:
