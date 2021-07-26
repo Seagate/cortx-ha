@@ -16,5 +16,7 @@
 # cortx-questions@seagate.com.
 
 class SubscribeEvent:
-  def __init__(self, resource_type : str, states : list):
-    pass
+    def __init__(self, resource_type : str, states : list):
+        self.resource_type = resource_type
+        self.states = states
+

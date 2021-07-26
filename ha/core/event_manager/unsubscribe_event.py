@@ -15,36 +15,8 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-from ha.core.error import HA_EVENT_MANAGER_ERROR
-from ha.core.error import HAError
-
-class EventManagerException(HAError):
-    def __init__(self, desc=None):
-        """
-        Handle event manager function error.
-        """
-        _desc = "Failed event manager action"
-        _message_id = HA_EVENT_MANAGER_ERROR
-        _rc = 1
-        super(EventManagerException, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
-
-class InvalidComponent(EventManagerException):
-    """
-    Raise exception for invalid component
-    """
-
-class InvalidEvent(EventManagerException):
-    """
-    Raise exception for invalid event.
-    """
-
-class UnSubscribeException(EventManagerException):
-    """
-    Raise Exception
-    """
-
-class SubscribeException(EventManagerException):
-    """
-    Raise exception for errors during subscription
-    """
+class UnSubscribeEvent:
+    def __init__(self, resource_type : str, states : list):
+        self.resource_type = resource_type
+        self.states = states
 
