@@ -21,3 +21,12 @@ class HealthNotFoundException(HaSystemHealthException):
 
 class InvalidElement(HaSystemHealthException):
     """Exception to indicate health missing for element."""
+
+class InvalidAction(HaSystemHealthException):
+    """Exception to indicate action missing for process."""
+
+class InvalidEvent(HaSystemHealthException):
+    """Exception to indicate event missing for process."""
+
+class InvalidResourceType(HaSystemHealthException):
+    """Exception to indicate resource type missing for process."""

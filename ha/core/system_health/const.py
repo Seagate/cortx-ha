@@ -14,6 +14,7 @@
 # cortx-questions@seagate.com.
 
 from enum import Enum
+from ha.util.enum_list import EnumListMeta
 
 # Cluster elements supported by system health
 class CLUSTER_ELEMENTS(Enum):
@@ -70,6 +71,10 @@ class HEALTH_EVALUATOR_CLASSES:
 # Confstore key attributes
 class CONFSTORE_KEY_ATTRIBUTES(Enum):
     STORAGE_SET_ID = "storage_set_id"
+
+class EVENT_ACTIONS(Enum, metaclass=EnumListMeta):
+    PUBLISH = "publish"
+    HA = "ha"
 
 EVENTS = [
     "enclosure:hw:controller",
