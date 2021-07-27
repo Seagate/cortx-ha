@@ -42,6 +42,7 @@ class MessageBusProducer:
     def publish(self, message: any):
         """
         Produce message to message bus.
+
         Args:
             message (dict): Message.
         """
