@@ -34,4 +34,3 @@ EVENT_KEY = 'events'
 EVENT_MGR_PRODUCER_ID = "ha_event_manager_<component_id>"
 EVENT_MGR_MESSAGE_TYPE = "ha_event_<component_id>"
 EVENT_MGR_MESSAGE_TYPE_KEY = "message_type/<component_id>"
-EVENT_COMPONENT_LIST = "events/<event_name>"
