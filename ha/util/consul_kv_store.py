@@ -144,6 +144,8 @@ class ConsulKvStore:
         self._consul.kv.put(self._prepare_key(key), new_val)
         return new_val
 
+    # TODO : Currently all keys with the matching prefix "key" are returned
+    # add additional parameter so that only the exact matching key is returned when required
     def get(self, key: str = ""):
         """
         Get values. Default it will return all keys. It is block call,
