@@ -349,5 +349,3 @@ class EventManager:
             component (str): component name.
         """
         pass
-
-# TODO: Add unit tests for this
