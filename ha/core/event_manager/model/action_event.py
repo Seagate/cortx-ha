@@ -15,5 +15,46 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
+import json
+
+from ha.core.system_health.model.health_event import HealthEvent
+from ha.core.event_manager.const import ACTION_EVENT_VERSION
+
 class RecoveryActionEvent:
-    pass
+    """
+    Action Event. This class implements an action event object,
+    that is delegated to components for taking the action.
+    """
+
+    def __init__(self, healthevent: HealthEvent):
+        """
+        Init method.
+        """
+        self.version = ACTION_EVENT_VERSION
+        self.event_type = healthevent.event_type
+        self.event_id = healthevent.event_id
+        self.resource_type = healthevent.resource_type
+        self.cluster_id = healthevent.cluster_id
+        self.site_id = healthevent.site_id
+        self.rack_id = healthevent.rack_id
+        self.storageset_id = healthevent.storageset_id
+        self.node_id = healthevent.node_id
+        self.resource_id = healthevent.resource_id
+        self.timestamp = healthevent.timestamp
+        self.event_specific_info = healthevent.specific_info
+
+    def __str__(self):
+        return json.dumps({
+            "version": self.version,
+            "event_type": self.event_type,
+            "event_id": self.event_id,
+            "resource_type": self.resource_type,
+            "cluster_id": self.cluster_id,
+            "site_id": self.site_id,
+            "rack_id": self.rack_id,
+            "storageset_id": self.storageset_id,
+            "node_id": self.node_id,
+            "resource_id": self.resource_id,
+            "timestamp": self.timestamp,
+            "event_specific_info": self.event_specific_info
+        })
