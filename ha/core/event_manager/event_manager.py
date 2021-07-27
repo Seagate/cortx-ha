@@ -340,7 +340,7 @@ class EventManager:
         if kv:
             for k, v in kv.items():
                 if k.endswith(key):
-                    value = json.loads(v)
+                    value.extend(json.loads(v))
                     break
         return value
 
