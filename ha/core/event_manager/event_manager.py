@@ -344,8 +344,8 @@ class EventManager:
             component_list = []
             # Run through list of components subscribed for this event and send event to each of them
             component_list_key = f'{const.EVENT_KEY}/{event.resource_type}/{event.event_type}'
-            if self._confstore.key_exists(component_list_key):
-                component_list_key_val = self._confstore.get(component_list_key)
+            component_list_key_val = self._confstore.get(component_list_key)
+            if component_list_key_val:
                 _, value = component_list_key_val.popitem()
                 component_list = json.loads(value)
             for component in component_list:
