@@ -31,7 +31,6 @@ from ha.core.event_manager.error import UnSubscribeException
 from ha.core.event_manager.error import PublishException
 from ha.core.event_manager.model.action_event import RecoveryActionEvent
 from ha.core.event_manager.const import SUBSCRIPTION_LIST
-from ha.util.message_bus import MessageBus
 
 class EventManager:
     """
