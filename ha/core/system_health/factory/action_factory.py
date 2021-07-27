@@ -14,29 +14,30 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
-from ha.core.system_health.handlers.action_handler import NodeActionHandler
-from ha.core.system_health.system_health_exception import InvalidResourceType
+from ha.core.system_health.handlers.action_handler import ActionHandler, NodeFruPSUActionHandler, \
+    NodeFruFanActionHandler, NodeSWActionHandler
 from ha.core.system_health.model.health_event import HealthEvent
+from ha.core.system_health.system_health_exception import InvalidResourceType, HaSystemHealthException
 
 EVENT_ACTION_HANDLERS_MAPPING = {
-    "node:fru:psu": NodeActionHandler,
-    "node:fru:fan": NodeActionHandler,
-    "node:fru:disk": NodeActionHandler,
-    "node:sensor:temperature": NodeActionHandler,
-    "node:sensor:voltage": NodeActionHandler,
-    "node:os:cpu": NodeActionHandler,
-    "node:os:cpu:core": NodeActionHandler,
-    "node:os:disk_space": NodeActionHandler,
-    "node:os:memory_usage": NodeActionHandler,
-    "node:os:memory": NodeActionHandler,
-    "node:os:raid_data": NodeActionHandler,
-    "node:os:raid_integrity": NodeActionHandler,
-    "node:os:disk": NodeActionHandler,
-    "node:interface:nw": NodeActionHandler,
-    "node:interface:nw:cable": NodeActionHandler,
-    "node:interface:sas": NodeActionHandler,
-    "node:interface:sas:port": NodeActionHandler,
-    "node:sw:os:service": NodeActionHandler
+    "node:fru:psu": NodeFruPSUActionHandler,
+    "node:fru:fan": NodeFruFanActionHandler,
+    "node:fru:disk": None,
+    "node:sensor:temperature": None,
+    "node:sensor:voltage": None,
+    "node:os:cpu": None,
+    "node:os:cpu:core": None,
+    "node:os:disk_space": None,
+    "node:os:memory_usage": None,
+    "node:os:memory": None,
+    "node:os:raid_data": None,
+    "node:os:raid_integrity": None,
+    "node:os:disk": None,
+    "node:interface:nw": None,
+    "node:interface:nw:cable": None,
+    "node:interface:sas": None,
+    "node:interface:sas:port": None,
+    "node:sw:os:service": NodeSWActionHandler
 }
 
 
@@ -46,17 +47,23 @@ class ActionFactory:
         pass
 
     @staticmethod
-    def get_action_handler(event: HealthEvent, action: list):
+    def get_action_handler(event: HealthEvent, action: list) -> ActionHandler:
         """
         Check event.resource_type and return instance of the mapped action handler class.
 
         Args:
+            event (HealthEvent): HealthEvent object
             action (list): Actions list.
 
         Returns:
-            str: Message.
+            ActionHandler: return Specific object of ActionHandler like NodeFruPSUActionHandler for node:fru:psu.
         """
-        if event.resource_type in EVENT_ACTION_HANDLERS_MAPPING:
-            return EVENT_ACTION_HANDLERS_MAPPING[event.resource_type](event, action)
-        else:
-            raise InvalidResourceType()
+        try:
+            if event.resource_type in EVENT_ACTION_HANDLERS_MAPPING:
+                return EVENT_ACTION_HANDLERS_MAPPING[event.resource_type](event, action)
+            else:
+                raise InvalidResourceType()
+        except InvalidResourceType:
+            raise HaSystemHealthException(f"Invalid resource type {event.resource_type} to handle action {action}.")
+        except Exception as e:
+            raise HaSystemHealthException(f"Exception occurred in action factory to get action handler: {e}")

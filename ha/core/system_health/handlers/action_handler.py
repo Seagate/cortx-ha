@@ -17,8 +17,7 @@
 from ha.core.event_manager.model.action_event import RecoveryActionEvent
 from ha.core.event_manager.event_manager import EventManager
 from ha.core.system_health.model.health_event import HealthEvent
-from ha.core.system_health.const import EVENT_ACTIONS
-from ha.core.system_health.const import HEALTH_STATUSES
+from ha.core.system_health.const import EVENT_ACTIONS, HEALTH_STATUSES, EVENTS
 from ha.core.system_health.system_health_exception import InvalidEvent, InvalidAction
 from ha.core.error import HAUnimplemented
 
@@ -31,7 +30,16 @@ class ActionHandler:
     def __init__(self):
         self.event_manager = EventManager()
 
-    def act(self, event: HealthEvent, action: list):
+    def act(self, event: HealthEvent, action: list) -> None:
+        """
+        act on the event handled
+        Args:
+            event (HealthEvent): HealthEvent object
+            action (list): Actions list.
+
+        Returns:
+            None
+        """
         publish = False
         if EVENT_ACTIONS.PUBLISH.value in action:
             publish = True
@@ -48,21 +56,65 @@ class ActionHandler:
             # No HA action
             raise InvalidEvent()
 
-    def publish_event(self, event: HealthEvent):
+    def publish_event(self, event: HealthEvent) -> None:
+        """
+        publish event
+        Args:
+            event (HealthEvent): HealthEvent object
+
+        Returns:
+            None
+        """
         # Create RecoveryActionEvent and call publish
         recovery_action_event = RecoveryActionEvent(event)
         self.event_manager.publish(event.resource_type, recovery_action_event)
 
-    def on_failure(self, event: HealthEvent, publish: bool):
+    def on_failure(self, event: HealthEvent, publish: bool) -> None:
+        """
+        on failure event handle
+        Args:
+            event (HealthEvent): HealthEvent object
+            publish (bool): publish bool variable
+
+        Returns:
+            None
+        """
         raise HAUnimplemented()
 
-    def on_online(self, event: HealthEvent, publish: bool):
+    def on_online(self, event: HealthEvent, publish: bool) -> None:
+        """
+        on online event handle
+        Args:
+            event (HealthEvent): HealthEvent object
+            publish (bool): publish bool variable
+
+        Returns:
+            None
+        """
         raise HAUnimplemented()
 
-    def on_offline(self, event: HealthEvent, publish: bool):
+    def on_offline(self, event: HealthEvent, publish: bool) -> None:
+        """
+        on offline event handle
+        Args:
+            event (HealthEvent): HealthEvent object
+            publish (bool): publish bool variable
+
+        Returns:
+            None
+        """
         raise HAUnimplemented()
 
-    def on_degraded(self, event: HealthEvent, publish: bool):
+    def on_degraded(self, event: HealthEvent, publish: bool) -> None:
+        """
+        on degraded event handle
+        Args:
+            event (HealthEvent): HealthEvent object
+            publish (bool): publish bool variable
+
+        Returns:
+            None
+        """
         raise HAUnimplemented()
 
 
@@ -74,27 +126,128 @@ class DefaultActionHandler(ActionHandler):
     def __init__(self):
         super().__init__()
 
-    def act(self, event: HealthEvent, action: list):
+    def act(self, event: HealthEvent, action: list) -> None:
+        """
+        act on the event handled in default action handler
+        Args:
+            event (HealthEvent): HealthEvent object
+            action (list): Actions list.
+
+        Returns:
+            None
+        """
         if EVENT_ACTIONS.PUBLISH.value in action and len(action) == 1:
             self.publish_event(event)
         else:
             raise InvalidAction()
 
 
-class NodeActionHandler(ActionHandler):
+class NodeFruPSUActionHandler(ActionHandler):
     """
-    Node action handler
+    Node Fru PSU action handler
     """
 
     def __init__(self):
         super().__init__()
 
-    def on_online(self, event: HealthEvent, publish: bool):
+    def on_online(self, event: HealthEvent, publish: bool) -> None:
+        """
+        on online event handle
+        Args:
+            event (HealthEvent): HealthEvent object
+            publish (bool): publish bool variable
+
+        Returns:
+            None
+        """
         # E.g. start some service then publish
         if publish:
             self.publish_event(event)
 
-    def on_failure(self, event: HealthEvent, publish: bool):
+    def on_failure(self, event: HealthEvent, publish: bool) -> None:
+        """
+        on failure event handle
+        Args:
+            event (HealthEvent): HealthEvent object
+            publish (bool): publish bool variable
+
+        Returns:
+            None
+        """
+        if publish:
+            self.publish_event(event)
+        # E.g. stop some service after publish
+
+
+class NodeFruFanActionHandler(ActionHandler):
+    """
+    Node Fru Fan action handler
+    """
+
+    def __init__(self):
+        super().__init__()
+
+    def on_online(self, event: HealthEvent, publish: bool) -> None:
+        """
+        on online event handle
+        Args:
+            event (HealthEvent): HealthEvent object
+            publish (bool): publish bool variable
+
+        Returns:
+            None
+        """
+        # E.g. start some service then publish
+        if publish:
+            self.publish_event(event)
+
+    def on_failure(self, event: HealthEvent, publish: bool) -> None:
+        """
+        on failure event handle
+        Args:
+            event (HealthEvent): HealthEvent object
+            publish (bool): publish bool variable
+
+        Returns:
+            None
+        """
+        if publish:
+            self.publish_event(event)
+        # E.g. stop some service after publish
+
+
+class NodeSWActionHandler(ActionHandler):
+    """
+    Node SW action handler
+    """
+
+    def __init__(self):
+        super().__init__()
+
+    def on_online(self, event: HealthEvent, publish: bool) -> None:
+        """
+        on online event handle
+        Args:
+            event (HealthEvent): HealthEvent object
+            publish (bool): publish bool variable
+
+        Returns:
+            None
+        """
+        # E.g. start some service then publish
+        if publish:
+            self.publish_event(event)
+
+    def on_failure(self, event: HealthEvent, publish: bool) -> None:
+        """
+        on failure event handle
+        Args:
+            event (HealthEvent): HealthEvent object
+            publish (bool): publish bool variable
+
+        Returns:
+            None
+        """
         if publish:
             self.publish_event(event)
         # E.g. stop some service after publish
