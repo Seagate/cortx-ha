@@ -19,7 +19,7 @@ import xml.etree.ElementTree as ET
 
 from cortx.utils.log import Log
 
-from ha.alert import const
+from ha import const
 from ha.alert.alert_monitor import AlertMonitor
 from ha.alert.iem import IemGenerator
 from ha.execute import SimpleCommand

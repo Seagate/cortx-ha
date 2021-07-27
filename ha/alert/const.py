@@ -18,10 +18,6 @@
 
 from ha.const import _DELIM
 
-GET_ONLINE_NODES_CMD = "crm_mon --as-xml"
-GET_LOCAL_NODE_ID_CMD = "crm_node -i"
-GET_LOCAL_NODE_NAME_CMD = "crm_node -n"
-
 # pacemaker alerts constants
 class ALERTS:
     REQUIRED_COMPONENT = "ha"

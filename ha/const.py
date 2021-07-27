@@ -147,6 +147,9 @@ PCS_CLUSTER_STANDBY="pcs node standby --all"
 PCS_STONITH_DISABLE="pcs property set stonith-enabled=False"
 LIST_PCS_RESOURCES = '/usr/sbin/crm_resource --list-raw'
 CHECK_PCS_STANDBY_MODE = '/usr/sbin/crm_standby --query | awk \'{print $3}\''
+GET_ONLINE_NODES_CMD = "crm_mon --as-xml"
+GET_LOCAL_NODE_ID_CMD = "crm_node -i"
+GET_LOCAL_NODE_NAME_CMD = "crm_node -n"
 
 # Cluster manager
 CM_CONTROLLER_INDEX="cluster_controller_interfaces"
