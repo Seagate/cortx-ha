@@ -336,8 +336,8 @@ class EventManager:
         value = []
         Log.debug(f"Fetching subscribed events for {key}")
 
-        if self._confstore.key_exists(key):
-            kv = self._confstore.get(key)
+        kv = self._confstore.get(key)
+        if kv:
             for k, v in kv.items():
                 if k.endswith(key):
                     value = json.loads(v)
@@ -382,8 +382,8 @@ class EventManager:
         value = None
         Log.debug(f"Fetching message type for {key}")
 
-        if self._confstore.key_exists(key):
-            kv = self._confstore.get(key)
+        kv = self._confstore.get(key)
+        if kv:
             for k, v in kv.items():
                 if k.endswith(key):
                     value = v
