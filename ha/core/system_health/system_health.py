@@ -21,9 +21,10 @@ import json
 
 from cortx.utils.log import Log
 from ha import const
+from ha.util.message_bus import MessageBus
+from cortx.utils.conf_store.conf_store import Conf
+from ha.const import _DELIM
 from ha.core.system_health.health_evaluators.element_health_evaluator import ElementHealthEvaluator
-
-
 from ha.core.system_health.const import NODE_MAP_ATTRIBUTES
 from ha.core.event_analyzer.subscriber import Subscriber
 from ha.core.system_health.system_health_metadata import SystemHealthComponents, SystemHealthHierarchy
@@ -56,7 +57,13 @@ class SystemHealth(Subscriber):
         HealthEvaluatorFactory.init_evaluators()
         # TODO: Temporary code remove when all status method moved to evaluators
         self.health_evaluator = HealthEvaluatorFactory.get_generic_evaluator()
+        self.producer = self._get_producer()
         Log.info("All cluster element are loaded, Ready to process alerts .................")
+
+    def _get_producer(self):
+        message_type = Conf.get(const.HA_GLOBAL_INDEX, f"EVENT_MANAGER{_DELIM}message_type")
+        producer_id = Conf.get(const.HA_GLOBAL_INDEX, f"EVENT_MANAGER{_DELIM}producer_id")
+        return MessageBus.get_producer(producer_id, message_type)
 
     def _prepare_key(self, component: str, **kwargs) -> str:
         """
@@ -255,6 +262,13 @@ class SystemHealth(Subscriber):
         get cluster status method. This method is for returning a status of a cluster.
         """
 
+    def publish_event(self, healthevent: HealthEvent, healthvalue: str= ""):
+        """
+        Produce event
+        """
+        healthevent.event_type = json.loads(healthvalue).get("events")[0]["status"]
+        self.producer.publish(str(healthevent))
+
     def _update(self, healthevent: HealthEvent, healthvalue: str, next_component: str=None):
         """
         update method. This is an internal method for updating the system health.
@@ -267,6 +281,7 @@ class SystemHealth(Subscriber):
                                 node_id=self.node_id, server_id=self.node_id, storage_id=self.node_id,
                                 comp_type=comp_type, comp_id=comp_id)
         self.healthmanager.set_key(key, healthvalue)
+        self.publish_event(healthevent, healthvalue)
 
         # Check the next component to be updated, if none then return.
         if next_component is None:

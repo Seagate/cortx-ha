@@ -27,8 +27,8 @@ class SUBSCRIPTION_LIST(enum.Enum, metaclass=EnumListMeta):
     HA = "ha"
     TEST = "test"
 
+EVENT_MANAGER_LOG="event_manager"
 COMPONENT_KEY = 'events/subscribe'
 EVENT_KEY = 'events'
-HA_MESSAGE_BUS_ADMIN = "ha_admin"
 EVENT_MGR_MESSAGE_TYPE = "ha_event_<component_id>"
 EVENT_MGR_MESSAGE_TYPE_KEY = "message_type/<component_id>"

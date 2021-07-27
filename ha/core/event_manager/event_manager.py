@@ -18,24 +18,24 @@
 '''Module which provides interfaces to subscribe or unsubscribe for HA
    events to cortx components'''
 
-from collections import OrderedDict
 import json
-
+from collections import OrderedDict
 from cortx.utils.log import Log
-from cortx.utils.message_bus import MessageBusAdmin
+from ha.util.message_bus import MessageBus
 from ha.core.config.config_manager import ConfigManager
 from ha.core.event_manager import const
 from ha.core.event_manager.error import InvalidComponent
 from ha.core.event_manager.error import InvalidEvent
+from ha.core.event_manager.error import SubscribeException
 from ha.core.event_manager.error import UnSubscribeException
 from ha.core.event_manager.model.action_event import RecoveryActionEvent
 from ha.core.event_manager.const import SUBSCRIPTION_LIST
 
-
 class EventManager:
-    '''Module responsible for publishing the HA event to a cortx component
-       who has subscribed for the specific HA event through message bus'''
-
+    """
+    Module responsible for publishing the HA event to a cortx component
+    who has subscribed for the specific HA event through message bus
+    """
     __instance = None
 
     @staticmethod
@@ -49,10 +49,10 @@ class EventManager:
         return EventManager.__instance
 
     def __init__(self, singleton_check: bool = False):
-        '''
-           Private Constructor.
-           Make initialization work for Event Manager
-        '''
+        """
+        Private Constructor.
+        Make initialization work for Event Manager
+        """
         if singleton_check is False:
             raise Exception("Please use EventManager.get_instance() to fetch \
                              singleton instance of class")
@@ -60,40 +60,18 @@ class EventManager:
             EventManager.__instance = self
         else:
             raise Exception("EventManager is singleton class, use EventManager.get_instance().")
+        ConfigManager.init(const.EVENT_MANAGER_LOG)
         self._confstore = ConfigManager.get_confstore()
 
-    def _create_message_type(self, component):
-        '''Create and register message type for this component'''
-        # TODO: Seperate this logic in another class
-        message_bus_admin = MessageBusAdmin(const.HA_MESSAGE_BUS_ADMIN)
-        message_type = const.EVENT_MGR_MESSAGE_TYPE.replace("<component_id>", component)
-        message_type_list = message_bus_admin.list_message_types()
-        if message_type not in message_type_list:
-            message_bus_admin.register_message_type(message_types = [message_type], partitions = 1)
-            # Add message type key/value to confstore
-            message_type_key = const.EVENT_MGR_MESSAGE_TYPE_KEY.replace("<component_id>", component)
-            if not self._confstore.key_exists(message_type_key):
-                self._confstore.set(message_type_key, message_type)
-            Log.debug(f"Created message type {message_type} for component {component}")
-        return message_type
-
-    def _delete_message_type(self, component):
-        '''Deletes the message type created earlier'''
-        try:
-            message_bus_admin = MessageBusAdmin(const.HA_MESSAGE_BUS_ADMIN)
-            message_type = const.EVENT_MGR_MESSAGE_TYPE.replace("<component_id>", component)
-            message_type_list = message_bus_admin.list_message_types()
-            if message_type in message_type_list:
-                message_bus_admin.deregister_message_type(message_types = [message_type])
-            # Remove message type key from confstore
-            message_type_key = const.EVENT_MGR_MESSAGE_TYPE_KEY.replace("<component_id>", component)
-            if self._confstore.key_exists(message_type_key):
-                self._confstore.delete(message_type_key)
-            Log.debug(f"Removed message type {message_type} for component {component}")
-            Log.info(f"Unsubscribed component {component}")
-        except Exception as err:
-            Log.error(f"{component} unsubscription failed, Error: {err}")
-            raise UnSubscribeException(f"{component} unsubscription failed, Error: {err}")
+    @staticmethod
+    def _validate_events(events: list) -> None:
+        """
+        Raise error InvalidEvent if event is not valid.
+        Args:
+        events (list): Event list.
+        """
+        if events is None or not isinstance(events, list):
+            raise InvalidEvent(f"Invalid type {events}, event type should be list")
 
     @staticmethod
     def _validate_component(component: str = None) -> None:
@@ -106,28 +84,40 @@ class EventManager:
         if component is None or component.lower() not in SUBSCRIPTION_LIST:
             raise InvalidComponent(f"Invalid component {component}, not part of subscription list.")
 
-    def subscribe(self, component: str = None, events: list = None):
-        '''
-           Register all the events for the notification. It maintains
-           list of events registered by the components. It maps the event
-           name with component name and store it in the consul. \
-           Also, maps the component with event
+    def _create_message_type(self, component: str) -> str:
+        """
+        Create and register message type for this component
 
-           Args:
-            component (str): Component Name
-            events (list): Events.
-        '''
-        # TODO: Add health monitor rules
-        Log.info(f'Received a subscribe request from {component}')
-        EventManager._validate_component(component)
-        EventManager._validate_events(events)
-        if component:
-            message_type = self._create_message_type(component)
-        for event in events:
-            self._store_component_key(f'{const.COMPONENT_KEY}/{component}', event.resource_type, event.states)
-            self._store_event_key(f'{const.EVENT_KEY}', event.resource_type, event.states, comp=component)
-        Log.info('Subscription request is successfully stored into confstore')
+        Args:
+            component (str): Component name.
+
+        Returns:
+            str: Message type.
+        """
+        # TODO: Separate this logic in another class
+        message_type = const.EVENT_MGR_MESSAGE_TYPE.replace("<component_id>", component)
+        MessageBus.register(message_type)
+        # Add message type key/value to confstore
+        message_type_key = const.EVENT_MGR_MESSAGE_TYPE_KEY.replace("<component_id>", component)
+        if not self._confstore.key_exists(message_type_key):
+            self._confstore.set(message_type_key, message_type)
+        Log.debug(f"Created {message_type} with {message_type_key}")
         return message_type
+
+    def _delete_message_type(self, component: str) -> None:
+        """
+        Deletes the message type created earlier
+
+        Args:
+            component (str): Component name.
+        """
+        message_type = const.EVENT_MGR_MESSAGE_TYPE.replace("<component_id>", component)
+        MessageBus.deregister(message_type)
+        # Remove message type key from confstore
+        message_type_key = const.EVENT_MGR_MESSAGE_TYPE_KEY.replace("<component_id>", component)
+        if self._confstore.key_exists(message_type_key):
+            self._confstore.delete(message_type_key)
+        Log.info(f"Unsubscribed component {component} from message_type {message_type}")
 
     def _store_component_key(self, key: str, resource_type: str, val: list) -> None:
         '''
@@ -205,16 +195,6 @@ class EventManager:
                                 Key is: {key}')
                     self._confstore.set(f'{new_key}', comp_list)
 
-    @staticmethod
-    def _validate_events(events: list) -> None:
-        """
-           Raise error InvalidEvent if event is not valid.
-           Args:
-           events (list): Event list.
-        """
-        if events is None or not isinstance(events, list):
-            raise InvalidEvent(f"Invalid type {events}, event type should be list")
-
     def _delete_component_key(self, component: str, resource_type: str, states: list = None) -> None:
         '''
           Deletes the component from the event key
@@ -289,23 +269,57 @@ class EventManager:
             else:
                 Log.error(f'Key: {const.EVENT_KEY}/{resource_type}/{state} does not present')
 
+    def subscribe(self, component: str = None, events: list = None) -> None:
+        """
+        Register all the events for the notification. It maintains
+        list of events registered by the components. It maps the event
+        name with component name and store it in the consul.
+        Also, maps the component with event
+
+        Args:
+            component (str): Component Name
+            events (list): Events.
+
+        Raise:
+            SubscribeException: Raise error if failed.
+        """
+        # TODO: Add health monitor rules
+        Log.info(f'Received a subscribe request from {component}')
+        try:
+            EventManager._validate_component(component)
+            EventManager._validate_events(events)
+            message_type = self._create_message_type(component)
+            for event in events:
+                self._store_component_key(f'{const.COMPONENT_KEY}/{component}', event.resource_type, event.states)
+                self._store_event_key(f'{const.EVENT_KEY}', event.resource_type, event.states, comp=component)
+            Log.info(f"Successfully Subscribed component {component} with message_type {message_type}")
+            return message_type
+        except Exception as e:
+            raise SubscribeException(f"Failed to subscribe {component}. Error: {e}")
+
     def unsubscribe(self, component: str = None, events: list = None):
-        '''
-           Unregister the event for the specific component and the component \
-           for the event using consul deletion
-           Args:
-            component (str): [description]
-            events (list, optional): [description]. Defaults to None.
-           Raise:
+        """
+        Deregister the event for the specific component and the component \
+        for the event using consul deletion
+
+        Args:
+            component (str): Component Name.
+            events (list, optional): Event List. Defaults to None.
+
+        Raise:
             UnSubscribeException: Raise error if failed.
-        '''
-        Log.info(f'Received unsubscription for {component}')
-        self._validate_component(component)
-        self._validate_events(events)
-        for event in events:
-            self._delete_component_key(component, event.resource_type, event.states)
-            self._delete_event_key(component, event.resource_type, event.states)
-        Log.info('Unsubscription request is successfully stored into confstore')
+        """
+        #TODO: Provide way to unsubscribe all event
+        Log.info(f"Received unsubscribe for {component}")
+        try:
+            self._validate_component(component)
+            self._validate_events(events)
+            for event in events:
+                self._delete_component_key(component, event.resource_type, event.states)
+                self._delete_event_key(component, event.resource_type, event.states)
+            Log.info(f"Successfully UnSubscribed component {component}")
+        except Exception as e:
+            raise UnSubscribeException(f"Failed to unsubscribe {component}. Error: {e}")
 
     def get_events(self, component : str) -> list:
         """
@@ -317,6 +331,7 @@ class EventManager:
         Returns:
             list: List of events.
         """
+        pass
 
     def publish(self, component:str, event: RecoveryActionEvent) -> None:
         """
@@ -325,6 +340,7 @@ class EventManager:
             component (str): Component name.
             event (RecoveryActionEvent): Action event.
         """
+        pass
 
     def message_type(self, component: str) -> str:
         """
@@ -332,4 +348,4 @@ class EventManager:
         Args:
             component (str): component name.
         """
-# TODO: Add unit tests for this
+        pass
