@@ -18,10 +18,9 @@
 import json
 import traceback
 from threading import Thread
-
-from cortx.utils.message_bus import MessageConsumer
 from cortx.utils.log import Log
-
+from cortx.utils.message_bus.error import MessageBusError
+from ha.util.message_bus import MessageBus
 from ha.core.event_analyzer.filter.filter import Filter
 from ha.core.event_analyzer.parser.parser import Parser
 from ha.core.event_analyzer.subscriber import Subscriber
@@ -55,7 +54,9 @@ class Watcher(Thread):
         self.parser = event_parser
         self.subscriber = subscriber
         self._validate()
-        self.consumer = self._get_connection()
+        self.consumer = MessageBus.get_consumer(consumer_id=str(self.consumer_id),
+                                consumer_group=self.consumer_group,
+                                message_types=[self.message_type])
 
     def _validate(self) -> None:
         """
@@ -67,43 +68,12 @@ class Watcher(Thread):
         if not isinstance(self.subscriber, Subscriber):
             raise InvalidSubscriber(f"Invalid subscriber {self.subscriber}")
 
-    def _get_connection(self) -> MessageConsumer:
-        """
-        Get message consumer connection.
-
-        Returns:
-            MessageConsumer: Return instance of MessageConsumer.
-        """
-        return MessageConsumer(consumer_id=str(self.consumer_id),
-                                consumer_group=self.consumer_group,
-                                message_types=[self.message_type],
-                                auto_ack=False, offset='earliest')
-
-    def _get_message(self):
-        """
-        Receive message from message bus.
-
-        Returns:
-            str: JSON object of message
-        """
-        try:
-            message = self.consumer.receive(timeout=0)
-        except Exception as e:
-            Log.error(f"Failed to receive message, error: {e}. Retrying to receive.")
-            return None
-        try:
-            return json.loads(message.decode('utf-8'))
-        except Exception as e:
-            Log.error(f"Invalid format of message failed due to {e}. Message : {str(message)}")
-            self.consumer.ack()
-            return None
-
     def run(self):
         """
         Overloaded of Thread.
         """
         while True:
-            message = self._get_message()
+            message = self.consumer.receive()
             if message is None:
                 continue
             try:
@@ -125,6 +95,8 @@ class Watcher(Thread):
                 self.consumer.ack()
             except SubscriberException as e:
                 Log.error(f"Subscriber exception {e} {traceback.format_exc()} for {message}, retry without ack.")
+            except MessageBusError as e:
+                Log.error(f"MessageBusError: Error {e}.")
             except Exception as e:
                 Log.error(f"Unknown Exception caught {e} {traceback.format_exc()}")
                 Log.error(f"Forcefully ack failed msg: {message}")
