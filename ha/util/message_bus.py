@@ -23,26 +23,20 @@ from cortx.utils.message_bus import MessageProducer
 from cortx.utils.message_bus import MessageConsumer
 
 class MessageBusProducer:
-    ADMIN_ID = "admin"
     PRODUCER_METHOD = "sync"
 
-    def __init__(self, producer_id: str, message_type: str, partitions: int = 1):
+    def __init__(self, producer_id: str, message_type: str, partitions: int):
         """
         Register message types with message bus.
+
         Args:
             producer_id (str): producer id.
             message_types (str): Message type.
             partitions (int, optional): No. of partitions. Defaults to 1.
+
         Raises:
             MessageBusError: Message bus error.
         """
-        try:
-            admin = MessageBusAdmin(admin_id=MessageBusProducer.ADMIN_ID)
-            admin.register_message_type(message_types=[message_type], partitions=partitions)
-        except MessageBusError as e:
-            if "ALREADY_EXISTS" not in e.desc:
-                raise Exception(f"Failed to register {message_type} with message bus. Error: {e.desc}")
-
         self.producer = MessageProducer(producer_id=producer_id, message_type=message_type, method=MessageBusProducer.PRODUCER_METHOD)
 
     def publish(self, message: any):
@@ -64,9 +58,10 @@ class MessageBusConsumer:
     STRING_TYPE = "string"
 
     def __init__(self, consumer_id: int, consumer_group: str, message_types: list,
-                auto_ack: bool = False, offset: str = "earliest"):
+                auto_ack: bool, offset: str):
         """
         Initalize consumer.
+
         Args:
             consumer_id (int): Consumer ID.
             consumer_group (str): Consumer Group.
@@ -83,8 +78,10 @@ class MessageBusConsumer:
         """
         Get Message. If timeout is 0 then it will block call until next message is
         received and ack. If timeout given then call will break if message not received.
+
         Args:
             timeout (int, optional): Message timeout. Defaults to 0.
+
         Returns:
             str: json message.
         """
@@ -106,3 +103,62 @@ class MessageBusConsumer:
         Ack Message.
         """
         self.consumer.ack()
+
+class MessageBus:
+    ADMIN_ID = "admin"
+
+    @staticmethod
+    def get_consumer(consumer_id: int, consumer_group: str, message_types: list,
+                auto_ack: bool = False, offset: str = "earliest"):
+        """
+        Get consumer.
+
+        Args:
+            consumer_id (int): Consumer ID.
+            consumer_group (str): Consumer Group.
+            message_type (list): Message Type.
+            auto_ack (bool, optional): Check auto ack. Defaults to False.
+            offset (str, optional): Offset for messages. Defaults to "earliest".
+        """
+        return MessageBusConsumer(consumer_id, consumer_group, message_types, auto_ack, offset)
+
+    @staticmethod
+    def get_producer(producer_id: str, message_type: str, partitions: int = 1):
+        """
+        Register message types with message bus. and get Producer.
+
+        Args:
+            producer_id (str): producer id.
+            message_types (str): Message type.
+            partitions (int, optional): No. of partitions. Defaults to 1.
+
+        Raises:
+            MessageBusError: Message bus error.
+        """
+        MessageBus.register(message_type, partitions)
+        return MessageBusProducer(producer_id, message_type, partitions)
+
+    @staticmethod
+    def register(message_type: str, partitions: int = 1):
+        """
+        Register message type to message bus.
+
+        Args:
+            message_type (str): Message type.
+            partitions (int): Number of partition.
+        """
+        admin = MessageBusAdmin(admin_id=MessageBus.ADMIN_ID)
+        if message_type not in admin.list_message_types():
+            admin.register_message_type(message_types=[message_type], partitions=partitions)
+
+    @staticmethod
+    def deregister(message_type: str):
+        """
+        Deregister message type to message bus.
+
+        Args:
+            message_type (str): Message type.
+        """
+        admin = MessageBusAdmin(admin_id=MessageBus.ADMIN_ID)
+        if message_type not in admin.list_message_types():
+            admin.deregister_message_type(message_types=[message_type])

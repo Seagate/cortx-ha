@@ -28,15 +28,15 @@ from ha.core.event_manager.event_manager import EventManager
 from ha.core.event_manager.subscribe_event import SubscribeEvent
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.event_manager.model.action_event import RecoveryActionEvent
-from ha.util.message_bus import MessageBusConsumer
+from ha.util.message_bus import MessageBus
 
 if __name__ == '__main__':
     try:
-        Conf.init()
-        Conf.load(const.HA_GLOBAL_INDEX, f"yaml://{const.HA_CONFIG_FILE}")
-        log_path = Conf.get(const.HA_GLOBAL_INDEX, f"LOG{const._DELIM}path")
-        log_level = Conf.get(const.HA_GLOBAL_INDEX, f"LOG{const._DELIM}level")
-        Log.init(service_name='test_publisher', log_path=log_path, level=log_level)
+        #Conf.init()
+        #Conf.load(const.HA_GLOBAL_INDEX, f"yaml://{const.HA_CONFIG_FILE}")
+        #log_path = Conf.get(const.HA_GLOBAL_INDEX, f"LOG{const._DELIM}path")
+        #log_level = Conf.get(const.HA_GLOBAL_INDEX, f"LOG{const._DELIM}level")
+        #Log.init(service_name='test_publisher', log_path=log_path, level=log_level)
 
         print("********Event Publisher********")
         event_manager = EventManager.get_instance()
@@ -50,7 +50,7 @@ if __name__ == '__main__':
         action_event = RecoveryActionEvent(health_event)
         event_manager.publish(action_event)
         print("Consuming the action event")
-        message_consumer = MessageBusConsumer(consumer_id="1",
+        message_consumer = MessageBus.get_consumer(consumer_id="1",
                             consumer_group='test_publisher',
                             message_types=[message_type])
         message = message_consumer.receive()
