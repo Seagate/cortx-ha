@@ -21,9 +21,6 @@ import pathlib
 
 sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..', '..', '..'))
 
-from cortx.utils.conf_store import Conf
-from cortx.utils.log import Log
-from ha import const
 from ha.core.event_manager.event_manager import EventManager
 from ha.core.event_manager.subscribe_event import SubscribeEvent
 from ha.core.system_health.model.health_event import HealthEvent
