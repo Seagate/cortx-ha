@@ -28,6 +28,7 @@ from ha.core.event_manager.error import InvalidComponent
 from ha.core.event_manager.error import InvalidEvent
 from ha.core.event_manager.error import SubscribeException
 from ha.core.event_manager.error import UnSubscribeException
+from ha.core.event_manager.error import PublishException
 from ha.core.event_manager.model.action_event import RecoveryActionEvent
 from ha.core.event_manager.const import SUBSCRIPTION_LIST
 
@@ -333,14 +334,32 @@ class EventManager:
         """
         pass
 
-    def publish(self, component:str, event: RecoveryActionEvent) -> None:
+    def publish(self, event: RecoveryActionEvent) -> None:
         """
         Publish event.
         Args:
-            component (str): Component name.
             event (RecoveryActionEvent): Action event.
         """
-        pass
+        try:
+            component_list = []
+            # Run through list of components subscribed for this event and send event to each of them
+            component_list_key = f'{const.EVENT_KEY}/{event.resource_type}/{event.event_type}'
+            component_list_key_val = self._confstore.get(component_list_key)
+            if component_list_key_val:
+                _, value = component_list_key_val.popitem()
+                component_list = json.loads(value)
+            for component in component_list:
+                producer_id = const.EVENT_MGR_PRODUCER_ID.replace("<component_id>", component)
+                message_type_key = const.EVENT_MGR_MESSAGE_TYPE_KEY.replace("<component_id>", component)
+                message_type_key_val = self._confstore.get(message_type_key)
+                _, message_type = message_type_key_val.popitem()
+                message_producer = MessageBus.get_producer(producer_id, message_type)
+                event_to_send = str(event)
+                Log.debug(f"Sending action event {event_to_send} to component {component}")
+                message_producer.publish(event_to_send)
+        except Exception as e:
+            Log.error(f"Failed sending message for {event.resource_type}, Error: {e}")
+            raise PublishException(f"Failed sending message for {event.resource_type}, Error: {e}")
 
     def message_type(self, component: str) -> str:
         """

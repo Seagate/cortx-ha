@@ -48,3 +48,7 @@ class SubscribeException(EventManagerException):
     Raise exception for errors during subscription
     """
 
+class PublishException(EventManagerException):
+    """
+    Raise exception for errors when publishig the events
+    """
