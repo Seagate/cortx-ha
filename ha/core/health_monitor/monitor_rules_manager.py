@@ -57,6 +57,22 @@ class MonitorRulesManager:
             val = self._confstore.get(key)
         return val
 
+    def _get_k_v(self, kv: dict):
+        """
+        Extract key, value from the KV
+        Convert value from string to list
+
+        Args:
+            kv : KV returned from confstore
+
+        Returns:
+            key
+            value
+        """
+        key, val = kv.popitem()
+        val = json.loads(val)
+        return key, val
+
     def evaluate(self, event: HealthEvent) -> list:
         """
         Check if rule exists for received HealthEvent
@@ -74,9 +90,7 @@ class MonitorRulesManager:
         Log.debug(f"Evaluating rule for {key}")
         kv = self._get_val(key)
         if kv:
-            print(kv)
-            _, val = kv.popitem()
-            val = json.loads(val)
+            _, val = self._get_k_v(kv)
         return val
 
     def add_rule(self, resource: str, event: HEALTH_STATUSES , action: HEALTH_MON_ACTIONS):
@@ -100,14 +114,13 @@ class MonitorRulesManager:
 
         kv = self._get_val(key)
         if kv:
-            k, val = kv.popitem()
-            val = json.loads(val)
+            _, val = self._get_k_v(kv)
             if action not in val:
                 val.append(action)
                 val = json.dumps(val)
                 self._confstore.update(key, val)
             else:
-                Log.warn(f"key value already exists for {k} , {action}")
+                Log.warn(f"key value already exists for {key} , {action}")
                 return
 
         else:
@@ -136,8 +149,7 @@ class MonitorRulesManager:
 
         kv = self._get_val(key)
         if kv:
-            _, val = kv.popitem()
-            val = json.loads(val)
+            _, val = self._get_k_v(kv)
             if action not in val:
                 Log.warn(f"KV not found for key: {key}, value: {action}")
             else:
