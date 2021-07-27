@@ -29,12 +29,6 @@ from ha.util.message_bus import MessageBus
 
 if __name__ == '__main__':
     try:
-        #Conf.init()
-        #Conf.load(const.HA_GLOBAL_INDEX, f"yaml://{const.HA_CONFIG_FILE}")
-        #log_path = Conf.get(const.HA_GLOBAL_INDEX, f"LOG{const._DELIM}path")
-        #log_level = Conf.get(const.HA_GLOBAL_INDEX, f"LOG{const._DELIM}level")
-        #Log.init(service_name='test_publisher', log_path=log_path, level=log_level)
-
         print("********Event Publisher********")
         event_manager = EventManager.get_instance()
         component = "csm"
