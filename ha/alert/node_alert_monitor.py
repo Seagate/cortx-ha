@@ -38,13 +38,8 @@ class NodeAlertMonitor(AlertMonitor):
         Get list of online nodes ids.
         """
         online_nodes_xml = self.process.run_cmd(const.GET_ONLINE_NODES_CMD)
-        # saving the xml file
-        with open('nodes.xml', 'w+') as f:
-            f.write(online_nodes_xml[0])
         # create element tree object
-        tree = ET.parse('nodes.xml')
-        # get root element
-        root = tree.getroot()
+        root = ET.fromstring(online_nodes_xml[0])
         nodes_ids = []
         # iterate news items
         for item in root.findall('nodes'):
@@ -53,9 +48,6 @@ class NodeAlertMonitor(AlertMonitor):
                 if child.attrib['online'] == 'true':
                     nodes_ids.append(child.attrib['id'])
         Log.info(f"List of online nodes ids in cluster in sorted ascending order: {sorted(nodes_ids)}")
-        # file cleanup
-        if os.path.exists("nodes.xml"):
-            os.remove("nodes.xml")
         return sorted(nodes_ids)
 
     def _get_local_node(self):
