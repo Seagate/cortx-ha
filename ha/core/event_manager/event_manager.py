@@ -345,7 +345,7 @@ class EventManager:
         return value
 
 
-    def publish(self, component:str, event: RecoveryActionEvent) -> None:
+    def publish(self, event: RecoveryActionEvent) -> None:
         """
         Publish event.
         Args:
