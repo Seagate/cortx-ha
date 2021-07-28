@@ -14,7 +14,7 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
-from ha.core.event_manager.error import HAActionHandlerError
+from ha.core.action_handler.error import HAActionHandlerError
 from ha.core.action_handler.action_handler import ActionHandler, NodeFailureActionHandler, DefaultActionHandler
 from ha.core.system_health.model.health_event import HealthEvent
 
