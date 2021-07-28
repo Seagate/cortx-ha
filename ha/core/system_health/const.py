@@ -71,6 +71,7 @@ class HEALTH_EVALUATOR_CLASSES:
 class CONFSTORE_KEY_ATTRIBUTES(Enum):
     STORAGE_SET_ID = "storage_set_id"
 
+
 EVENTS = [
     "enclosure:hw:controller",
     "enclosure:hw:disk",
