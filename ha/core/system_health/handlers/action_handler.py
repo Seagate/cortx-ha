@@ -179,6 +179,32 @@ class NodeFruPSUActionHandler(ActionHandler):
             self.publish_event(event)
         # E.g. stop some service after publish
 
+    def on_offline(self, event: HealthEvent, publish: bool) -> None:
+        """
+        on offline event handle
+        Args:
+            event (HealthEvent): HealthEvent object
+            publish (bool): publish bool variable
+
+        Returns:
+            None
+        """
+        if publish:
+            self.publish_event(event)
+
+    def on_degraded(self, event: HealthEvent, publish: bool) -> None:
+        """
+        on degraded event handle
+        Args:
+            event (HealthEvent): HealthEvent object
+            publish (bool): publish bool variable
+
+        Returns:
+            None
+        """
+        if publish:
+            self.publish_event(event)
+
 
 class NodeFruFanActionHandler(ActionHandler):
     """
@@ -216,6 +242,95 @@ class NodeFruFanActionHandler(ActionHandler):
             self.publish_event(event)
         # E.g. stop some service after publish
 
+    def on_offline(self, event: HealthEvent, publish: bool) -> None:
+        """
+        on offline event handle
+        Args:
+            event (HealthEvent): HealthEvent object
+            publish (bool): publish bool variable
+
+        Returns:
+            None
+        """
+        if publish:
+            self.publish_event(event)
+
+    def on_degraded(self, event: HealthEvent, publish: bool) -> None:
+        """
+        on degraded event handle
+        Args:
+            event (HealthEvent): HealthEvent object
+            publish (bool): publish bool variable
+
+        Returns:
+            None
+        """
+        if publish:
+            self.publish_event(event)
+
+
+class NodeFruDiskActionHandler(ActionHandler):
+    """
+    Node Fru Disk action handler
+    """
+
+    def __init__(self):
+        super().__init__()
+
+    def on_online(self, event: HealthEvent, publish: bool) -> None:
+        """
+        on online event handle
+        Args:
+            event (HealthEvent): HealthEvent object
+            publish (bool): publish bool variable
+
+        Returns:
+            None
+        """
+        # E.g. start some service then publish
+        if publish:
+            self.publish_event(event)
+
+    def on_failure(self, event: HealthEvent, publish: bool) -> None:
+        """
+        on failure event handle
+        Args:
+            event (HealthEvent): HealthEvent object
+            publish (bool): publish bool variable
+
+        Returns:
+            None
+        """
+        if publish:
+            self.publish_event(event)
+        # E.g. stop some service after publish
+
+    def on_offline(self, event: HealthEvent, publish: bool) -> None:
+        """
+        on offline event handle
+        Args:
+            event (HealthEvent): HealthEvent object
+            publish (bool): publish bool variable
+
+        Returns:
+            None
+        """
+        if publish:
+            self.publish_event(event)
+
+    def on_degraded(self, event: HealthEvent, publish: bool) -> None:
+        """
+        on degraded event handle
+        Args:
+            event (HealthEvent): HealthEvent object
+            publish (bool): publish bool variable
+
+        Returns:
+            None
+        """
+        if publish:
+            self.publish_event(event)
+
 
 class NodeSWActionHandler(ActionHandler):
     """
@@ -252,3 +367,29 @@ class NodeSWActionHandler(ActionHandler):
         if publish:
             self.publish_event(event)
         # E.g. stop some service after publish
+
+    def on_offline(self, event: HealthEvent, publish: bool) -> None:
+        """
+        on offline event handle
+        Args:
+            event (HealthEvent): HealthEvent object
+            publish (bool): publish bool variable
+
+        Returns:
+            None
+        """
+        if publish:
+            self.publish_event(event)
+
+    def on_degraded(self, event: HealthEvent, publish: bool) -> None:
+        """
+        on degraded event handle
+        Args:
+            event (HealthEvent): HealthEvent object
+            publish (bool): publish bool variable
+
+        Returns:
+            None
+        """
+        if publish:
+            self.publish_event(event)

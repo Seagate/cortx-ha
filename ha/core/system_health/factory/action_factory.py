@@ -15,14 +15,14 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
 from ha.core.system_health.handlers.action_handler import ActionHandler, NodeFruPSUActionHandler, \
-    NodeFruFanActionHandler, NodeSWActionHandler
+    NodeFruFanActionHandler, NodeFruDiskActionHandler, NodeSWActionHandler
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.event_manager.error import InvalidResourceType, HAActionHandlerError
 
 EVENT_ACTION_HANDLERS_MAPPING = {
     "node:fru:psu": NodeFruPSUActionHandler,
     "node:fru:fan": NodeFruFanActionHandler,
-    "node:fru:disk": None,
+    "node:fru:disk": NodeFruDiskActionHandler,
     "node:sensor:temperature": None,
     "node:sensor:voltage": None,
     "node:os:cpu": None,
@@ -60,7 +60,7 @@ class ActionFactory:
         """
         try:
             if event.resource_type in EVENT_ACTION_HANDLERS_MAPPING:
-                return EVENT_ACTION_HANDLERS_MAPPING[event.resource_type](event, action)
+                return EVENT_ACTION_HANDLERS_MAPPING[event.resource_type]()
             else:
                 raise InvalidResourceType()
         except InvalidResourceType:

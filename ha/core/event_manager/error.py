@@ -66,6 +66,5 @@ class PublishException(EventManagerException):
 class InvalidAction(HAActionHandlerError):
     """Exception to indicate action missing for process."""
 
-
 class InvalidResourceType(HAActionHandlerError):
     """Exception to indicate resource type missing for process."""
