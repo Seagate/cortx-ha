@@ -19,7 +19,7 @@ import os
 import pathlib
 import sys
 
-sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..', '..', '..'))
+sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..', '..'))
 
 from ha.core.event_manager.event_manager import EventManager
 from ha.core.event_manager.subscribe_event import SubscribeEvent
