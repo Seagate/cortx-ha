@@ -15,40 +15,21 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-from ha.core.error import HA_EVENT_MANAGER_ERROR, HA_ACTION_HANDLER_ERROR
+from ha.core.error import HA_ACTION_HANDLER_ERROR
 from ha.core.error import HAError
 
-class EventManagerException(HAError):
+class HAActionHandlerError(HAError):
     def __init__(self, desc=None):
         """
-        Handle event manager function error.
+        Handle Action Handler error.
         """
-        _desc = "Failed event manager action"
-        _message_id = HA_EVENT_MANAGER_ERROR
+        _desc = "HA Action Handler failure" if desc is None else desc
+        _message_id = HA_ACTION_HANDLER_ERROR
         _rc = 1
-        super(EventManagerException, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
+        super(HAActionHandlerError, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
 
-class InvalidComponent(EventManagerException):
-    """
-    Raise exception for invalid component
-    """
+class InvalidAction(HAActionHandlerError):
+    """Exception to indicate action missing for process."""
 
-class InvalidEvent(EventManagerException):
-    """
-    Raise exception for invalid event.
-    """
-
-class UnSubscribeException(EventManagerException):
-    """
-    Raise Exception
-    """
-
-class SubscribeException(EventManagerException):
-    """
-    Raise exception for errors during subscription
-    """
-
-class PublishException(EventManagerException):
-    """
-    Raise exception for errors when publishig the events
-    """
+class InvalidEvent(HAActionHandlerError):
+    """Exception to indicate action missing for process."""

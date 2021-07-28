@@ -17,7 +17,7 @@
 from cortx.utils.log import Log
 
 from ha.core.error import HAUnimplemented
-from ha.core.event_manager.error import InvalidEvent, InvalidAction
+from ha.core.action_handler.error import InvalidEvent, InvalidAction
 from ha.core.event_manager.event_manager import EventManager
 from ha.core.event_manager.model.action_event import RecoveryActionEvent
 from ha.core.health_monitor.const import HEALTH_MON_ACTIONS

@@ -25,7 +25,7 @@ from ha.core.event_manager.event_manager import EventManager
 from ha.core.event_manager.subscribe_event import SubscribeEvent
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.util.message_bus import MessageBus
-from ha.core.system_health.factory.action_factory import ActionFactory
+from ha.core.action_handler.action_factory import ActionFactory
 
 if __name__ == '__main__':
     try:
