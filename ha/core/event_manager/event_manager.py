@@ -122,35 +122,34 @@ class EventManager:
 
     def _store_component_key(self, key: str, resource_type: str, val: list) -> None:
         '''
-           Perform actual consul store operation for component keys
+           Perform actual confstore store operation for component keys
            Ex:
            key: /cortx/ha/v1/events/subscribe/sspl
            confstore value: ['enclosure:sensor:voltage/failed', ...]
         '''
         if self._confstore.key_exists(key):
-            comp_json_list = self._confstore.get(key)
+            event_json_list = self._confstore.get(key)
 
-            # Get the compnent list from consul first
-            _, comp_list = comp_json_list.popitem()
+            # Get the event list from confstore first
+            _, event_list = event_json_list.popitem()
 
-            comp_list = json.loads(comp_list)
+            event_list = json.loads(event_list)
             for event in val:
                 new_val = resource_type + '/' + event
-                if new_val in comp_list:
+                if new_val in event_list:
                     continue
                 # Merge the old and new component list
-                comp_list.append(new_val)
+                event_list.append(new_val)
 
             # Make sure that list is not duplicated
-            set_comp_list = list(OrderedDict.fromkeys(comp_list))
+            set_event_list = list(OrderedDict.fromkeys(event_list))
 
-            Log.debug(f'Final newly added list of subscription is: {comp_list}, \
+            Log.debug(f'Final newly added list of subscription is: {event_list}, \
                        Key is: {key}')
             # Finally update it in the json string format
-            event_string = json.dumps(set_comp_list)
+            event_string = json.dumps(set_event_list)
             Log.debug(f'Subscription is already done with key \
-                       as \'cortx/ha/v1/\' + f\'{key}\'. Updating the \
-                       subscription using event list')
+                       {key}. Updating the subscription using event list')
             self._confstore.update(key, event_string)
         else:
             new_event = []
@@ -165,7 +164,7 @@ class EventManager:
 
     def _store_event_key(self, key: str, resource_type: str, states: list = None, comp: str = None) -> None:
         '''
-           Perform actual consul store operation for event keys
+           Perform actual confstore store operation for event keys
            key: /cortx/ha/v1/events/enclosure:hw:disk/online
            value: ['sspl', ...]
         '''
@@ -175,14 +174,14 @@ class EventManager:
                 if self._confstore.key_exists(new_key):
                     comp_json_list = self._confstore.get(new_key)
 
-                    # Get the list of components from consul
+                    # Get the list of components from confstore
                     _, comp_list = comp_json_list.popitem()
                     comp_list = json.loads(comp_list)
                     if comp not in comp_list:
                         # If not already added, append to the old list
                         comp_list.append(comp)
 
-                    # Store new updated list in json string format to consul
+                    # Store new updated list in json string format to confstore
                     new_comp_list = json.dumps(comp_list)
                     Log.debug(f'Final newly added list of subscription is: {new_comp_list}, \
                                 Key is: {key}')
@@ -190,7 +189,7 @@ class EventManager:
                 else:
                     new_comp_list = []
                     new_comp_list.append(comp)
-                    # Store in go consul in the json string format
+                    # Store in go confstore in the json string format
                     comp_list = json.dumps(new_comp_list)
                     Log.debug(f'Final newly added list of subscription is: {new_comp_list}, \
                                 Key is: {key}')
@@ -200,7 +199,7 @@ class EventManager:
         '''
           Deletes the component from the event key
           Ex:
-          Already existed consul key:
+          Already existed confstore key:
              key: cortx/ha/v1/events/subscribe/hare:
              value: ["node:os:memory_usage/failed", "node:interface:nw/online"]
           Request to delete:
@@ -213,15 +212,15 @@ class EventManager:
             delete_required_state = resource_type + '/' + state
             if self._confstore.key_exists(f'{const.COMPONENT_KEY}/{component}'):
                 comp_json_list = self._confstore.get(f'{const.COMPONENT_KEY}/{component}')
-                # Get the event list from consul
+                # Get the event list from confstore
                 _, event_list = comp_json_list.popitem()
                 event_list = json.loads(event_list)
-                # Remove the event from the list(coming from consul)
+                # Remove the event from the list(coming from confstore)
                 if delete_required_state in event_list:
                     Log.debug(f'Deleting the subscription for {component}. For: {delete_required_state}')
                     event_list.remove(delete_required_state)
                 if event_list:
-                    # After deletion, if list is not empty, update the consul key
+                    # After deletion, if list is not empty, update the confstore key
                     new_event_list = json.dumps(event_list)
                     Log.debug(f'Updating the subscription for {component}. new list: {new_event_list}')
                     self._confstore.update(f'{const.COMPONENT_KEY}/{component}', new_event_list)
@@ -230,20 +229,20 @@ class EventManager:
                                 no other subscriptions')
                     # else, delete the whole component
                     self._confstore.delete(f'{const.COMPONENT_KEY}/{component}')
-                    # As there is no subscription for this componenet,
+                    # As there is no subscription for this component,
                     # delete the topic key
                     self._delete_message_type(component)
             else:
                 # If component key is not there, means event with that key will not be there,
                 # hence safely raise exception here so that _delete_event_key will not be called
                 raise UnSubscribeException('Can not unsubscribe the component: \
-                                            {component} as it was not regostered earlier')
+                                            {component} as it was not registered earlier')
 
     def _delete_event_key(self, component: str, resource_type: str, states: list = None):
         '''
           Deletes the event from the component key
           Ex:
-          Already existed consul key: cortx/ha/v1/events/node:os:memory_usage/failed:["motr", "hare"]
+          Already existed confstore key: cortx/ha/v1/events/node:os:memory_usage/failed:["motr", "hare"]
           Request to delete: 'hare', 'node:os:memory_usage' 'failed'
           Stored key after deletion will be: cortx/ha/v1/events/node:os:memory_usage/failed:["motr"]
         '''
@@ -258,11 +257,11 @@ class EventManager:
                     Log.debug(f'Deleting the key for {resource_type}/{state}. For: {component}')
                     comp_list.remove(component)
                 if comp_list:
-                    # If still list is not empty, update the consul key
+                    # If still list is not empty, update the confstore key
                     new_comp_list = json.dumps(comp_list)
                     Log.debug(f'Updating the key for {resource_type}/{state}. new comp list:{new_comp_list}')
                     self._confstore.update(f'{const.EVENT_KEY}/{resource_type}/{state}', new_comp_list)
-                # Else delete the event from the consul
+                # Else delete the event from the confstore
                 else:
                     Log.debug(f'Deleting the key for {resource_type}/{state} completely \
                                 as there are no more subscriptions')
