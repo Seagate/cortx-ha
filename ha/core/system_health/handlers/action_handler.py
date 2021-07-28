@@ -17,7 +17,8 @@
 from ha.core.event_manager.model.action_event import RecoveryActionEvent
 from ha.core.event_manager.event_manager import EventManager
 from ha.core.system_health.model.health_event import HealthEvent
-from ha.core.system_health.const import EVENT_ACTIONS, HEALTH_STATUSES
+from ha.core.system_health.const import HEALTH_STATUSES
+from ha.core.health_monitor.const import HEALTH_MON_ACTIONS
 from ha.core.event_manager.error import InvalidEvent, InvalidAction
 from ha.core.error import HAUnimplemented
 
@@ -41,7 +42,7 @@ class ActionHandler:
             None
         """
         publish = False
-        if EVENT_ACTIONS.PUBLISH.value in action:
+        if HEALTH_MON_ACTIONS.PUBLISH_ACT.value in action:
             publish = True
         # Take any defined HA actions.
         if event.event_type == HEALTH_STATUSES.ONLINE:
@@ -136,7 +137,7 @@ class DefaultActionHandler(ActionHandler):
         Returns:
             None
         """
-        if EVENT_ACTIONS.PUBLISH.value in action and len(action) == 1:
+        if HEALTH_MON_ACTIONS.PUBLISH_ACT.value in action and len(action) == 1:
             self.publish_event(event)
         else:
             raise InvalidAction()
