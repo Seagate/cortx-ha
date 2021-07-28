@@ -22,7 +22,6 @@ import ast
 import uuid
 import getpass
 import xml.etree.ElementTree as ET
-from cortx.utils.conf_store.conf_store import Conf
 
 from cortx.utils.log import Log
 from ha.core.error import HAInvalidPermission, HAUnimplemented, ClusterManagerError
@@ -35,6 +34,7 @@ from ha.core.system_health.const import NODE_MAP_ATTRIBUTES, CLUSTER_ELEMENTS, H
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.system_health.system_health import SystemHealth, SystemHealthManager
 from ha.core.config.config_manager import ConfigManager
+from ha.util.ipmitool import Ipmitool
 
 class PcsNodeController(NodeController, PcsController):
     """ Controller to manage node. """
@@ -78,7 +78,6 @@ class PcsNodeController(NodeController, PcsController):
         """
         check_cluster = op_kwargs.get("check_cluster") if op_kwargs.get("check_cluster") is not None else True
         poweroff = op_kwargs.get("poweroff") if op_kwargs.get("poweroff") is not None else False
-
         try:
             # Raise exception if user does not have proper permissions
             self._validate_permissions()
@@ -89,7 +88,7 @@ class PcsNodeController(NodeController, PcsController):
                 if res.get("status") == const.STATUSES.WARNING.value:
                     return res
 
-            # Prepare key and read the node_map value.
+            # Prepare key and read the node_map values.
             key = self._system_health._prepare_key(const.COMPONENTS.NODE_MAP.value, node_id=node_id)
             node_map_val = self._health_manager.get_key(key)
             if node_map_val is None:
@@ -104,14 +103,14 @@ class PcsNodeController(NodeController, PcsController):
                 status = f"Node {node_id} is already in offline state."
             elif node_status == NODE_STATUSES.POWEROFF.value:
                 raise ClusterManagerError(f"Failed to stop {node_id}."
-                    f"node is in {node_status}.")
+                                          f"node is in {node_status}.")
             else:
                 if self.heal_resource(node_id):
                     time.sleep(const.BASE_WAIT_TIME)
                 Log.info(f"Please Wait, trying to stop node: {node_id}")
                 node_name = node_map_dict[NODE_MAP_ATTRIBUTES.NODE_NAME.value]
                 self._execute.run_cmd(const.PCS_STOP_NODE.replace("<node>", node_name)
-                        .replace("<seconds>", str(timeout)) + " --force")
+                                      .replace("<seconds>", str(timeout)) + " --force")
                 Log.info(f"Executed node stop for {node_id}, Waiting to stop resource")
                 time.sleep(const.BASE_WAIT_TIME)
                 status = f"Stop for {node_name} is in progress, waiting to stop resource"
@@ -135,15 +134,15 @@ class PcsNodeController(NodeController, PcsController):
                 const.EVENT_ATTRIBUTES.SPECIFIC_INFO : None
             }
             Log.debug(f"Node health : {initial_event} updated for node {node_id}")
-            Log.info("Node stopped successfully")
             health_event = HealthEvent.dict_to_object(initial_event)
             self._system_health.process_event(health_event)
 
             # Node power off
             if poweroff:
-                #IPMI tool power off interface
-                pass
+                ipmitool = Ipmitool()
+                ipmitool.power_off(nodeid=node_id)
 
+            Log.info("Node stopped successfully")
             return {"status": const.STATUSES.IN_PROGRESS.value, "msg": status}
         except Exception as e:
             raise ClusterManagerError(f"Failed to stop {node_id}, Error: {e}")
@@ -250,21 +249,18 @@ class PcsNodeController(NodeController, PcsController):
 
     def check_cluster_feasibility(self, nodeid: str) -> bool:
         offline_nodes, all_nodes = self._get_offline_nodes()
-        if (len(offline_nodes) + 1 ) >= ((len(all_nodes)/2) + 1):
+        if (len(offline_nodes) + 1) >= ((len(all_nodes)//2) + 1):
             return {"status": const.STATUSES.WARNING.value, "msg": "Stopping the node will cause a loss of the quorum"}
+        else:
+            return {"status": const.STATUSES.SUCCEEDED.value, "msg": "Pacemaker does not loose quorum"}
 
     def _get_offline_nodes(self):
         """
         Get list of offline nodes ids.
         """
         online_nodes_xml = self._execute.run_cmd("crm_mon --as-xml")
-        # saving the xml file
-        with open('nodes.xml', 'w+') as f:
-            f.write(online_nodes_xml[0])
         # create element tree object
-        tree = ET.parse('nodes.xml')
-        # get root element
-        root = tree.getroot()
+        root = ET.fromstring(online_nodes_xml[0])
         all_nodes = []
         nodes_ids = []
         # iterate news items
@@ -275,9 +271,6 @@ class PcsNodeController(NodeController, PcsController):
                     nodes_ids.append(child.attrib['id'])
                 all_nodes.append(child.attrib['name'])
         Log.info(f"List of offline node ids in cluster in sorted ascending order: {sorted(nodes_ids)}")
-        # file cleanup
-        if os.path.exists("nodes.xml"):
-            os.remove("nodes.xml")
         return sorted(nodes_ids), all_nodes
 
 class PcsVMNodeController(PcsNodeController):

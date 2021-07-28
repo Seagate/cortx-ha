@@ -34,7 +34,7 @@ from ha.core.system_health.const import CONFSTORE_KEY_ATTRIBUTES
 
 from ha.execute import SimpleCommand
 from ha import const
-from ha.const import STATUSES
+from ha.const import STATUSES, BMC_CREDENTIALS
 from ha.setup.create_pacemaker_resources import create_all_resources, configure_stonith
 from ha.setup.pcs_config.alert_config import AlertConfig
 from ha.setup.post_disruptive_upgrade import perform_post_upgrade
@@ -286,9 +286,10 @@ class Cmd:
                 key = Cipher.generate_key(machine, const.SERVER_NODE_KEY)
                 ipmi_password = Cipher.decrypt(key, ipmi_password_encrypted.encode('ascii')).decode()
 
-                # Push node BMC info mapping to store
+                # Push node BMC Credentials to store
                 confstore = ConfigManager.get_confstore()
-                bmc_info_keys = {"ipmi_ipaddr": ipmi_ipaddr, "ipmi_user": ipmi_user, "ipmi_password": ipmi_password}
+                bmc_info_keys = {BMC_CREDENTIALS.IPMI_IPADDR.value: ipmi_ipaddr, BMC_CREDENTIALS.IPMI_USER.value: ipmi_user,
+                                 BMC_CREDENTIALS.IPMI_PASSWORD.value: ipmi_password}
                 node_id = Conf.get(Cmd._index, f"server_node{_DELIM}{machine}{_DELIM}node_id")
                 if not confstore.key_exists(f"{const.NODE_BMC_INFO_KEY}/node/{node_id}"):
                     confstore.set(f"{const.NODE_BMC_INFO_KEY}/node/{node_id}", json.dumps(bmc_info_keys))

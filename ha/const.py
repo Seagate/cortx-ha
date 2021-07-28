@@ -295,3 +295,8 @@ class AlertEventConstants(Enum):
     ALERT_RESOURCE_TYPE = f"alert{_DELIM}resource_type"
     IEM_COMPONENTS = f"iem{_DELIM}components"
     IEM_MODULES = f"iem{_DELIM}modules"
+
+class BMC_CREDENTIALS(Enum):
+    IPMI_IPADDR = "ipmi_ipaddr"
+    IPMI_USER = "ipmi_user"
+    IPMI_PASSWORD = "ipmi_password"
