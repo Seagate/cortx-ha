@@ -17,8 +17,8 @@
 from ha.core.event_manager.model.action_event import RecoveryActionEvent
 from ha.core.event_manager.event_manager import EventManager
 from ha.core.system_health.model.health_event import HealthEvent
-from ha.core.system_health.const import EVENT_ACTIONS, HEALTH_STATUSES, EVENTS
-from ha.core.system_health.system_health_exception import InvalidEvent, InvalidAction
+from ha.core.system_health.const import EVENT_ACTIONS, HEALTH_STATUSES
+from ha.core.event_manager.error import InvalidEvent, InvalidAction
 from ha.core.error import HAUnimplemented
 
 

@@ -17,7 +17,7 @@
 from ha.core.system_health.handlers.action_handler import ActionHandler, NodeFruPSUActionHandler, \
     NodeFruFanActionHandler, NodeSWActionHandler
 from ha.core.system_health.model.health_event import HealthEvent
-from ha.core.system_health.system_health_exception import InvalidResourceType, HaSystemHealthException
+from ha.core.event_manager.error import InvalidResourceType, HAActionHandlerError
 
 EVENT_ACTION_HANDLERS_MAPPING = {
     "node:fru:psu": NodeFruPSUActionHandler,
@@ -64,6 +64,6 @@ class ActionFactory:
             else:
                 raise InvalidResourceType()
         except InvalidResourceType:
-            raise HaSystemHealthException(f"Invalid resource type {event.resource_type} to handle action {action}.")
+            raise HAActionHandlerError(f"Invalid resource type {event.resource_type} to handle action {action}.")
         except Exception as e:
-            raise HaSystemHealthException(f"Exception occurred in action factory to get action handler: {e}")
+            raise HAActionHandlerError(f"Exception occurred in action factory to get action handler: {e}")

@@ -15,7 +15,7 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-from ha.core.error import HA_EVENT_MANAGER_ERROR
+from ha.core.error import HA_EVENT_MANAGER_ERROR, HA_ACTION_HANDLER_ERROR
 from ha.core.error import HAError
 
 class EventManagerException(HAError):
@@ -27,6 +27,16 @@ class EventManagerException(HAError):
         _message_id = HA_EVENT_MANAGER_ERROR
         _rc = 1
         super(EventManagerException, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
+
+class HAActionHandlerError(HAError):
+    def __init__(self, desc=None):
+        """
+        Handle Action Handler error.
+        """
+        _desc = "HA Action Handler failure" if desc is None else desc
+        _message_id = HA_ACTION_HANDLER_ERROR
+        _rc = 1
+        super(HAActionHandlerError, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
 
 class InvalidComponent(EventManagerException):
     """
@@ -52,3 +62,10 @@ class PublishException(EventManagerException):
     """
     Raise exception for errors when publishig the events
     """
+
+class InvalidAction(HAActionHandlerError):
+    """Exception to indicate action missing for process."""
+
+
+class InvalidResourceType(HAActionHandlerError):
+    """Exception to indicate resource type missing for process."""
