@@ -14,13 +14,13 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
-from ha.core.event_manager.model.action_event import RecoveryActionEvent
-from ha.core.event_manager.event_manager import EventManager
-from ha.core.system_health.model.health_event import HealthEvent
-from ha.core.system_health.const import HEALTH_STATUSES
-from ha.core.health_monitor.const import HEALTH_MON_ACTIONS
-from ha.core.event_manager.error import InvalidEvent, InvalidAction
 from ha.core.error import HAUnimplemented
+from ha.core.event_manager.error import InvalidEvent, InvalidAction
+from ha.core.event_manager.event_manager import EventManager
+from ha.core.event_manager.model.action_event import RecoveryActionEvent
+from ha.core.health_monitor.const import HEALTH_MON_ACTIONS
+from ha.core.system_health.const import HEALTH_STATUSES
+from ha.core.system_health.model.health_event import HealthEvent
 
 
 class ActionHandler:
@@ -143,72 +143,9 @@ class DefaultActionHandler(ActionHandler):
             raise InvalidAction()
 
 
-class NodeFruPSUActionHandler(ActionHandler):
+class NodeFailureActionHandler(ActionHandler):
     """
-    Node Fru PSU action handler
-    """
-
-    def __init__(self):
-        super().__init__()
-
-    def on_online(self, event: HealthEvent, publish: bool) -> None:
-        """
-        on online event handle
-        Args:
-            event (HealthEvent): HealthEvent object
-            publish (bool): publish bool variable
-
-        Returns:
-            None
-        """
-        # E.g. start some service then publish
-        if publish:
-            self.publish_event(event)
-
-    def on_failure(self, event: HealthEvent, publish: bool) -> None:
-        """
-        on failure event handle
-        Args:
-            event (HealthEvent): HealthEvent object
-            publish (bool): publish bool variable
-
-        Returns:
-            None
-        """
-        if publish:
-            self.publish_event(event)
-        # E.g. stop some service after publish
-
-    def on_offline(self, event: HealthEvent, publish: bool) -> None:
-        """
-        on offline event handle
-        Args:
-            event (HealthEvent): HealthEvent object
-            publish (bool): publish bool variable
-
-        Returns:
-            None
-        """
-        if publish:
-            self.publish_event(event)
-
-    def on_degraded(self, event: HealthEvent, publish: bool) -> None:
-        """
-        on degraded event handle
-        Args:
-            event (HealthEvent): HealthEvent object
-            publish (bool): publish bool variable
-
-        Returns:
-            None
-        """
-        if publish:
-            self.publish_event(event)
-
-
-class NodeFruFanActionHandler(ActionHandler):
-    """
-    Node Fru Fan action handler
+    Node failure action handler
     """
 
     def __init__(self):
@@ -224,166 +161,12 @@ class NodeFruFanActionHandler(ActionHandler):
         Returns:
             None
         """
-        # E.g. start some service then publish
         if publish:
             self.publish_event(event)
-
-    def on_failure(self, event: HealthEvent, publish: bool) -> None:
-        """
-        on failure event handle
-        Args:
-            event (HealthEvent): HealthEvent object
-            publish (bool): publish bool variable
-
-        Returns:
-            None
-        """
-        if publish:
-            self.publish_event(event)
-        # E.g. stop some service after publish
 
     def on_offline(self, event: HealthEvent, publish: bool) -> None:
         """
         on offline event handle
-        Args:
-            event (HealthEvent): HealthEvent object
-            publish (bool): publish bool variable
-
-        Returns:
-            None
-        """
-        if publish:
-            self.publish_event(event)
-
-    def on_degraded(self, event: HealthEvent, publish: bool) -> None:
-        """
-        on degraded event handle
-        Args:
-            event (HealthEvent): HealthEvent object
-            publish (bool): publish bool variable
-
-        Returns:
-            None
-        """
-        if publish:
-            self.publish_event(event)
-
-
-class NodeFruDiskActionHandler(ActionHandler):
-    """
-    Node Fru Disk action handler
-    """
-
-    def __init__(self):
-        super().__init__()
-
-    def on_online(self, event: HealthEvent, publish: bool) -> None:
-        """
-        on online event handle
-        Args:
-            event (HealthEvent): HealthEvent object
-            publish (bool): publish bool variable
-
-        Returns:
-            None
-        """
-        # E.g. start some service then publish
-        if publish:
-            self.publish_event(event)
-
-    def on_failure(self, event: HealthEvent, publish: bool) -> None:
-        """
-        on failure event handle
-        Args:
-            event (HealthEvent): HealthEvent object
-            publish (bool): publish bool variable
-
-        Returns:
-            None
-        """
-        if publish:
-            self.publish_event(event)
-        # E.g. stop some service after publish
-
-    def on_offline(self, event: HealthEvent, publish: bool) -> None:
-        """
-        on offline event handle
-        Args:
-            event (HealthEvent): HealthEvent object
-            publish (bool): publish bool variable
-
-        Returns:
-            None
-        """
-        if publish:
-            self.publish_event(event)
-
-    def on_degraded(self, event: HealthEvent, publish: bool) -> None:
-        """
-        on degraded event handle
-        Args:
-            event (HealthEvent): HealthEvent object
-            publish (bool): publish bool variable
-
-        Returns:
-            None
-        """
-        if publish:
-            self.publish_event(event)
-
-
-class NodeSWActionHandler(ActionHandler):
-    """
-    Node SW action handler
-    """
-
-    def __init__(self):
-        super().__init__()
-
-    def on_online(self, event: HealthEvent, publish: bool) -> None:
-        """
-        on online event handle
-        Args:
-            event (HealthEvent): HealthEvent object
-            publish (bool): publish bool variable
-
-        Returns:
-            None
-        """
-        # E.g. start some service then publish
-        if publish:
-            self.publish_event(event)
-
-    def on_failure(self, event: HealthEvent, publish: bool) -> None:
-        """
-        on failure event handle
-        Args:
-            event (HealthEvent): HealthEvent object
-            publish (bool): publish bool variable
-
-        Returns:
-            None
-        """
-        if publish:
-            self.publish_event(event)
-        # E.g. stop some service after publish
-
-    def on_offline(self, event: HealthEvent, publish: bool) -> None:
-        """
-        on offline event handle
-        Args:
-            event (HealthEvent): HealthEvent object
-            publish (bool): publish bool variable
-
-        Returns:
-            None
-        """
-        if publish:
-            self.publish_event(event)
-
-    def on_degraded(self, event: HealthEvent, publish: bool) -> None:
-        """
-        on degraded event handle
         Args:
             event (HealthEvent): HealthEvent object
             publish (bool): publish bool variable

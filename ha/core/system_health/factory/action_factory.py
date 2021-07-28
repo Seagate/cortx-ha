@@ -14,30 +14,12 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
-from ha.core.system_health.handlers.action_handler import ActionHandler, NodeFruPSUActionHandler, \
-    NodeFruFanActionHandler, NodeFruDiskActionHandler, NodeSWActionHandler
+from ha.core.event_manager.error import HAActionHandlerError
+from ha.core.system_health.handlers.action_handler import ActionHandler, NodeFailureActionHandler, DefaultActionHandler
 from ha.core.system_health.model.health_event import HealthEvent
-from ha.core.event_manager.error import InvalidResourceType, HAActionHandlerError
 
 EVENT_ACTION_HANDLERS_MAPPING = {
-    "node:fru:psu": NodeFruPSUActionHandler,
-    "node:fru:fan": NodeFruFanActionHandler,
-    "node:fru:disk": NodeFruDiskActionHandler,
-    "node:sensor:temperature": None,
-    "node:sensor:voltage": None,
-    "node:os:cpu": None,
-    "node:os:cpu:core": None,
-    "node:os:disk_space": None,
-    "node:os:memory_usage": None,
-    "node:os:memory": None,
-    "node:os:raid_data": None,
-    "node:os:raid_integrity": None,
-    "node:os:disk": None,
-    "node:interface:nw": None,
-    "node:interface:nw:cable": None,
-    "node:interface:sas": None,
-    "node:interface:sas:port": None,
-    "node:sw:os:service": NodeSWActionHandler
+    "node": NodeFailureActionHandler
 }
 
 
@@ -62,8 +44,6 @@ class ActionFactory:
             if event.resource_type in EVENT_ACTION_HANDLERS_MAPPING:
                 return EVENT_ACTION_HANDLERS_MAPPING[event.resource_type]()
             else:
-                raise InvalidResourceType()
-        except InvalidResourceType:
-            raise HAActionHandlerError(f"Invalid resource type {event.resource_type} to handle action {action}.")
+                return DefaultActionHandler()
         except Exception as e:
             raise HAActionHandlerError(f"Exception occurred in action factory to get action handler: {e}")
