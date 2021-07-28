@@ -14,6 +14,8 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
+from cortx.utils.log import Log
+
 from ha.core.error import HAUnimplemented
 from ha.core.event_manager.error import InvalidEvent, InvalidAction
 from ha.core.event_manager.event_manager import EventManager
@@ -41,17 +43,17 @@ class ActionHandler:
         Returns:
             None
         """
+        Log.info(f"Action handler with Event: {event} and actions : {action}")
         publish = False
         if HEALTH_MON_ACTIONS.PUBLISH_ACT.value in action:
             publish = True
-        # Take any defined HA actions.
-        if event.event_type == HEALTH_STATUSES.ONLINE:
+        if event.event_type == HEALTH_STATUSES.ONLINE.value:
             self.on_online(event, publish)
-        elif event.event_type == HEALTH_STATUSES.DEGRADED:
+        elif event.event_type == HEALTH_STATUSES.DEGRADED.value:
             self.on_degraded(event, publish)
-        elif event.event_type == HEALTH_STATUSES.OFFLINE:
+        elif event.event_type == HEALTH_STATUSES.OFFLINE.value:
             self.on_offline(event, publish)
-        elif event.event_type == HEALTH_STATUSES.FAILED:
+        elif event.event_type == HEALTH_STATUSES.FAILED.value:
             self.on_failure(event, publish)
         else:
             # No HA action
@@ -137,6 +139,7 @@ class DefaultActionHandler(ActionHandler):
         Returns:
             None
         """
+        Log.info(f"Default action handler with Event: {event} and actions : {action}")
         if HEALTH_MON_ACTIONS.PUBLISH_ACT.value in action and len(action) == 1:
             self.publish_event(event)
         else:
@@ -161,6 +164,7 @@ class NodeFailureActionHandler(ActionHandler):
         Returns:
             None
         """
+        Log.info(f"Handling node online event.")
         if publish:
             self.publish_event(event)
 
@@ -174,5 +178,6 @@ class NodeFailureActionHandler(ActionHandler):
         Returns:
             None
         """
+        Log.info(f"Handling node offline event.")
         if publish:
             self.publish_event(event)
