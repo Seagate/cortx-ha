@@ -16,18 +16,24 @@
 # cortx-questions@seagate.com.
 
 import json
-import traceback
-from ha import const
-from cortx.utils.log import Log
+from enum import Enum
 
-def controller_error_handler(func):
-    def inner_function(*args, **kwargs) -> str:
-        try:
-            result: dict = func(*args, **kwargs)
-            return json.dumps(result)
-        except Exception as e:
-            Log.error(f"ClusterManagerException. {func.__name__} failed. {traceback.format_exc()}, {e}")
-            result: dict = {"status": const.STATUSES.FAILED.value, "output": "",
-                "error": f"ClusterManagerException. {func.__name__} failed. Error: {e}"}
-            return json.dumps(result)
-    return inner_function
+
+class ResultFields(Enum):
+    STATUS = "status"
+    OUTPUT = "output"
+    ERROR = "error"
+
+
+class OperationResult:
+    def __init__(self, result_str):
+        self._result = json.loads(result_str)
+
+    def get_status(self):
+        return self._result[ResultFields.STATUS.value]
+
+    def get_output(self):
+        return self._result[ResultFields.OUTPUT.value]
+
+    def get_error(self):
+        return self._result[ResultFields.ERROR.value]

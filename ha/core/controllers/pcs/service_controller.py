@@ -46,7 +46,7 @@ class PcsServiceController(ServiceController, PcsController):
                     Defaults to None.
 
         Returns:
-            ([dict]): Return dictionary. {"status": "", "msg":""}
+            ([dict]): Return dictionary. {"status": "", "output":"", "error"}
                 status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
@@ -62,7 +62,7 @@ class PcsServiceController(ServiceController, PcsController):
                     Defaults to None.
 
         Returns:
-            ([dict]): Return dictionary. {"status": "", "msg":""}
+            ([dict]): Return dictionary. {"status": "", "output":"", "error"}
                 status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
@@ -78,7 +78,7 @@ class PcsServiceController(ServiceController, PcsController):
                     Defaults to None.
 
         Returns:
-            ([dict]): Return dictionary. {"status": "", "msg":""}
+            ([dict]): Return dictionary. {"status": "", "output":"", "error"}
                 status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
