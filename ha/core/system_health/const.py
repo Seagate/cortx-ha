@@ -14,7 +14,6 @@
 # cortx-questions@seagate.com.
 
 from enum import Enum
-from ha.util.enum_list import EnumListMeta
 
 # Cluster elements supported by system health
 class CLUSTER_ELEMENTS(Enum):
