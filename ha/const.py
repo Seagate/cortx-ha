@@ -153,8 +153,11 @@ PCS_NODE_UNSTANDBY="pcs node unstandby <node>"
 PCS_RESOURCE_REFRESH="pcs resource refresh --force"
 PCS_DELETE_RESOURCE="pcs resource delete <resource> --force"
 PCS_STONITH_DISABLE="pcs property set stonith-enabled=False"
-LIST_PCS_RESOURCES = "crm_resource --list-raw"
-CHECK_PCS_STANDBY_MODE = 'crm_standby --query | awk \'{print $3}\''
+LIST_PCS_RESOURCES = '/usr/sbin/crm_resource --list-raw'
+CHECK_PCS_STANDBY_MODE = '/usr/sbin/crm_standby --query | awk \'{print $3}\''
+GET_ONLINE_NODES_CMD = "crm_mon --as-xml"
+GET_LOCAL_NODE_ID_CMD = "crm_node -i"
+GET_LOCAL_NODE_NAME_CMD = "crm_node -n"
 
 # Cluster manager
 CM_CONTROLLER_INDEX="cluster_controller_interfaces"

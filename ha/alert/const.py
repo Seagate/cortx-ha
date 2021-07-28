@@ -28,3 +28,4 @@ class ALERTS:
     PK_ALERT_EVENT_OPERATIONS = f"alert{_DELIM}operations"
     logger_utility_iec_cmd="logger -i -p local3.err"
 
+
