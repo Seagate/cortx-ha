@@ -31,7 +31,7 @@ class ActionHandler:
     """
 
     def __init__(self):
-        self.event_manager = EventManager()
+        self.event_manager = EventManager.get_instance()
 
     def act(self, event: HealthEvent, action: list) -> None:
         """
@@ -164,7 +164,7 @@ class NodeFailureActionHandler(ActionHandler):
         Returns:
             None
         """
-        Log.info(f"Handling node online event.")
+        Log.info("Handling node online event.")
         if publish:
             self.publish_event(event)
 
@@ -178,6 +178,6 @@ class NodeFailureActionHandler(ActionHandler):
         Returns:
             None
         """
-        Log.info(f"Handling node offline event.")
+        Log.info("Handling node offline event.")
         if publish:
             self.publish_event(event)
