@@ -41,17 +41,17 @@ class Ipmitool(StonithService):
         Power OFF node with nodeid
 
         Args:
-            nodeid (str): Node ID from cluster nodes.
+            nodeid (str): private fqdn define in conf store.
         """
         try:
             bmc_info = self._confstore.get(f"{const.NODE_BMC_INFO_KEY}/node/{nodeid}")
             if bmc_info is not None:
                 _, value = bmc_info.popitem()
                 bmc_info_dict = ast.literal_eval(value)
-                self._execute.run_cmd(f"ipmitool -I lanplus -H {bmc_info_dict[BMC_CREDENTIALS.IPMI_IPADDR.value]} -U {bmc_info_dict[BMC_CREDENTIALS.IPMI_USER.value]} -P {bmc_info_dict[BMC_CREDENTIALS.IPMI_PASSWORD.value]} chassis status")
+                self._execute.run_cmd(f"ipmitool -I lanplus -H {bmc_info_dict[BMC_CREDENTIALS.IPMI_IPADDR.value]} -U {bmc_info_dict[BMC_CREDENTIALS.IPMI_USER.value]} -P {bmc_info_dict[BMC_CREDENTIALS.IPMI_SECRET.value]} chassis status")
 
         except Exception as e:
-            raise Exception("Failed to run IPMItool Command. Error : {e}")
+            raise Exception(f"Failed to run IPMItool Command. Error : {e}")
 
     def power_on(self, nodeid: str):
         """

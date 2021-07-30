@@ -59,7 +59,6 @@ class NODE_MAP_ATTRIBUTES(Enum):
     RACK_ID = "rack_id"
     STORAGESET_ID = "storageset_id"
     HOST_ID = "host_id"
-    NODE_NAME = "node_name"
 
 class HEALTH_EVALUATOR_CLASSES:
     CLASS_MODULE = "ha.core.system_health.health_evaluators"

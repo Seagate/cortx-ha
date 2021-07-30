@@ -71,7 +71,7 @@ class PcsNodeController(NodeController, PcsController):
         """
         Stop Cluster on node with node_id.
         Args:
-            node_id (str): Node ID from cluster nodes.
+            node_id (str): Private fqdn define in conf store.
         Returns:
             ([dict]): Return dictionary. {"status": "", "msg":""}
                 status: Succeeded, Failed, InProgress
@@ -81,15 +81,11 @@ class PcsNodeController(NodeController, PcsController):
         try:
             # Raise exception if user does not have proper permissions
             self._validate_permissions()
-
-            if check_cluster:
-                # Checks whether cluster is going to be offline if node with node_id is stopped.
-                res = self.check_cluster_feasibility(nodeid=node_id)
-                if res.get("status") == const.STATUSES.WARNING.value:
-                    return res
+            self.validate_node(node_id=node_id)
 
             # Prepare key and read the node_map values.
-            key = self._system_health._prepare_key(const.COMPONENTS.NODE_MAP.value, node_id=node_id)
+            nodeid = self._health_manager.get_key(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_id}")
+            key = self._system_health._prepare_key(const.COMPONENTS.NODE_MAP.value, node_id=nodeid)
             node_map_val = self._health_manager.get_key(key)
             if node_map_val is None:
                 raise ClusterManagerError("Failed to fetch node_map value")
@@ -105,15 +101,19 @@ class PcsNodeController(NodeController, PcsController):
                 raise ClusterManagerError(f"Failed to stop {node_id}."
                                           f"node is in {node_status}.")
             else:
+                if check_cluster:
+                    # Checks whether cluster is going to be offline if node with node_id is stopped.
+                    res = self.check_cluster_feasibility(nodeid=node_id)
+                    if res.get("status") == const.STATUSES.WARNING.value:
+                        return res
                 if self.heal_resource(node_id):
                     time.sleep(const.BASE_WAIT_TIME)
                 Log.info(f"Please Wait, trying to stop node: {node_id}")
-                node_name = node_map_dict[NODE_MAP_ATTRIBUTES.NODE_NAME.value]
-                self._execute.run_cmd(const.PCS_STOP_NODE.replace("<node>", node_name)
+                self._execute.run_cmd(const.PCS_STOP_NODE.replace("<node>", node_id)
                                       .replace("<seconds>", str(timeout)) + " --force")
                 Log.info(f"Executed node stop for {node_id}, Waiting to stop resource")
                 time.sleep(const.BASE_WAIT_TIME)
-                status = f"Stop for {node_name} is in progress, waiting to stop resource"
+                status = f"Stop for {node_id} is in progress, waiting to stop resource"
 
             # Update node health
             timestamp = str(int(time.time()))
@@ -247,12 +247,34 @@ class PcsNodeController(NodeController, PcsController):
             Log.error("Group root / haclient is not defined")
             raise HAInvalidPermission("Group root / haclient is not defined ")
 
-    def check_cluster_feasibility(self, nodeid: str) -> bool:
-        offline_nodes, all_nodes = self._get_offline_nodes()
-        if (len(offline_nodes) + 1) >= ((len(all_nodes)//2) + 1):
+    def check_cluster_feasibility(self, nodeid: str) -> dict:
+        """
+            Check whether the cluster is going to be offline after node with nodeid is stopped.
+        Args:
+            nodeid (str): Private fqdn define in conf store.
+        Returns:
+            Dictionary : {"status": "", "msg":""}
+        """
+        self.validate_node(node_id=nodeid)
+        offline_nodes, node_list = self._get_offline_nodes()
+        if (len(offline_nodes) + 1) >= ((len(node_list)//2) + 1):
             return {"status": const.STATUSES.WARNING.value, "msg": "Stopping the node will cause a loss of the quorum"}
         else:
             return {"status": const.STATUSES.SUCCEEDED.value, "msg": "Pacemaker does not loose quorum"}
+
+    def validate_node(self, node_id: str) -> bool:
+        """
+        Check node is a part of cluster
+        Args: 
+            node_id ([str]): Private fqdn define in conf store.
+        Raises: ClusterManagerError
+        Returns: bool
+        """
+        _, node_list = self._get_offline_nodes()
+        print(node_id, " list : ",node_list)
+        if node_id in node_list:
+            return True
+        raise ClusterManagerError(f"nodeid = {node_id} is not a valid node id")
 
     def _get_offline_nodes(self):
         """
@@ -261,7 +283,7 @@ class PcsNodeController(NodeController, PcsController):
         online_nodes_xml = self._execute.run_cmd("crm_mon --as-xml")
         # create element tree object
         root = ET.fromstring(online_nodes_xml[0])
-        all_nodes = []
+        node_list = []
         nodes_ids = []
         # iterate news items
         for item in root.findall('nodes'):
@@ -269,9 +291,9 @@ class PcsNodeController(NodeController, PcsController):
             for child in item:
                 if child.attrib['online'] == 'false':
                     nodes_ids.append(child.attrib['id'])
-                all_nodes.append(child.attrib['name'])
+                node_list.append(child.attrib['name'])
         Log.info(f"List of offline node ids in cluster in sorted ascending order: {sorted(nodes_ids)}")
-        return sorted(nodes_ids), all_nodes
+        return sorted(nodes_ids), node_list
 
 class PcsVMNodeController(PcsNodeController):
     def initialize(self, controllers):

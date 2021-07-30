@@ -26,7 +26,7 @@ class StonithService:
         Initialize Stonith service class.
         """
         pass
-    
+
     def power_off(self, nodeid: str):
         """
         Power OFF node with nodeid

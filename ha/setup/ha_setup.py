@@ -289,10 +289,9 @@ class Cmd:
                 # Push node BMC Credentials to store
                 confstore = ConfigManager.get_confstore()
                 bmc_info_keys = {BMC_CREDENTIALS.IPMI_IPADDR.value: ipmi_ipaddr, BMC_CREDENTIALS.IPMI_USER.value: ipmi_user,
-                                 BMC_CREDENTIALS.IPMI_PASSWORD.value: ipmi_password}
-                node_id = Conf.get(Cmd._index, f"server_node{_DELIM}{machine}{_DELIM}node_id")
-                if not confstore.key_exists(f"{const.NODE_BMC_INFO_KEY}/node/{node_id}"):
-                    confstore.set(f"{const.NODE_BMC_INFO_KEY}/node/{node_id}", json.dumps(bmc_info_keys))
+                                 BMC_CREDENTIALS.IPMI_SECRET.value: ipmi_password}
+                if not confstore.key_exists(f"{const.NODE_BMC_INFO_KEY}/node/{node_name}"):
+                    confstore.set(f"{const.NODE_BMC_INFO_KEY}/node/{node_name}", json.dumps(bmc_info_keys))
 
                 stonith_config[node_name] = {
                     "resource_id": f"stonith-{node_name}",
@@ -682,7 +681,6 @@ class ConfigCmd(Cmd):
         """
         # TODO: update node map should failed if any key is missing
         machine_id = self.get_machine_id()
-        node_name = self.get_node_name()
         node_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}node_id")
         cluster_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.CLUSTER_ID.value}")
         site_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.SITE_ID.value}")
@@ -691,7 +689,7 @@ class ConfigCmd(Cmd):
         host_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}network{_DELIM}management{_DELIM}public_fqdn")
         node_map = {NODE_MAP_ATTRIBUTES.CLUSTER_ID.value: cluster_id, NODE_MAP_ATTRIBUTES.SITE_ID.value: site_id,
                     NODE_MAP_ATTRIBUTES.RACK_ID.value: rack_id, NODE_MAP_ATTRIBUTES.STORAGESET_ID.value: storageset_id,
-                    NODE_MAP_ATTRIBUTES.HOST_ID.value: host_id, NODE_MAP_ATTRIBUTES.NODE_NAME.value: node_name}
+                    NODE_MAP_ATTRIBUTES.HOST_ID.value: host_id}
         system_health = SystemHealth(self._confstore)
         key = system_health._prepare_key(const.COMPONENTS.NODE_MAP.value, node_id=node_id)
         # Check key is already exist if not, store the node map.

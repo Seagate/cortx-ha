@@ -299,4 +299,4 @@ class AlertEventConstants(Enum):
 class BMC_CREDENTIALS(Enum):
     IPMI_IPADDR = "ipmi_ipaddr"
     IPMI_USER = "ipmi_user"
-    IPMI_PASSWORD = "ipmi_password"
+    IPMI_SECRET = "ipmi_secret"
