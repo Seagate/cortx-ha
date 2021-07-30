@@ -17,7 +17,6 @@
 
 import json
 import traceback
-from threading import Thread
 from cortx.utils.log import Log
 from cortx.utils.message_bus.error import MessageBusError
 from ha.util.message_bus import MessageBus
@@ -29,7 +28,7 @@ from ha.core.event_analyzer.event_analyzer_exceptions import EventFilterExceptio
 from ha.core.event_analyzer.event_analyzer_exceptions import EventParserException
 from ha.core.event_analyzer.event_analyzer_exceptions import SubscriberException
 
-class Watcher(Thread):
+class Watcher:
     """ Watch message bus to check in coming event. """
 
     def __init__(self, consumer_id: int, message_type: str, consumer_group: str,
@@ -56,7 +55,8 @@ class Watcher(Thread):
         self._validate()
         self.consumer = MessageBus.get_consumer(consumer_id=str(self.consumer_id),
                                 consumer_group=self.consumer_group,
-                                message_types=[self.message_type])
+                                message_types=[self.message_type]
+                                callback=self.process_message)
 
     def _validate(self) -> None:
         """
@@ -68,36 +68,44 @@ class Watcher(Thread):
         if not isinstance(self.subscriber, Subscriber):
             raise InvalidSubscriber(f"Invalid subscriber {self.subscriber}")
 
-    def run(self):
+    def process_message(self, message: str) -> None:
         """
-        Overloaded of Thread.
+        Callback function to get message.
+
+        Args:
+            message (str): Message.
         """
-        while True:
-            message = self.consumer.receive()
-            if message is None:
-                continue
-            try:
-                Log.debug(f"Captured message: {message}")
-                if self.filter.filter_event(json.dumps(message)):
-                    Log.info(f"Filtered Event detected: {message}")
-                    event = self.parser.parse_event(json.dumps(message))
-                    try:
-                        Log.info(f"Processing event {event} to subscriber...")
-                        self.subscriber.process_event(event)
-                    except Exception as e:
-                        raise SubscriberException(f"Failed to process event {message}. Error: {e}")
-                self.consumer.ack()
-            except EventFilterException as e:
-                Log.error(f"Filter exception {e} {traceback.format_exc()} for {message}")
-                self.consumer.ack()
-            except EventParserException as e:
-                Log.error(f"Parser exception {e} {traceback.format_exc()} for {message}")
-                self.consumer.ack()
-            except SubscriberException as e:
-                Log.error(f"Subscriber exception {e} {traceback.format_exc()} for {message}, retry without ack.")
-            except MessageBusError as e:
-                Log.error(f"MessageBusError: Error {e}.")
-            except Exception as e:
-                Log.error(f"Unknown Exception caught {e} {traceback.format_exc()}")
-                Log.error(f"Forcefully ack failed msg: {message}")
-                self.consumer.ack()
+        try:
+            event = json.loads(message.decode('utf-8'))
+        except Exception as e:
+            Log.error(f"Invalid message {message}, sollow exception and ack it.")
+            return
+        if message is None:
+            continue
+        try:
+            Log.debug(f"Captured message: {message}")
+            if self.filter.filter_event(json.dumps(message)):
+                Log.info(f"Filtered Event detected: {message}")
+                event = self.parser.parse_event(json.dumps(message))
+                try:
+                    Log.info(f"Processing event {event} to subscriber...")
+                    self.subscriber.process_event(event)
+                except Exception as e:
+                    raise SubscriberException(f"Failed to process event {message}. Error: {e}")
+        except EventFilterException as e:
+            Log.error(f"Filter exception {e} {traceback.format_exc()} for {message}. Ack Message.")
+        except EventParserException as e:
+            Log.error(f"Parser exception {e} {traceback.format_exc()} for {message}.  Ack Message.")
+        except SubscriberException as e:
+            raise SubscriberException(f"Subscriber exception {e} {traceback.format_exc()} for {message}, retry without ack.")
+        except MessageBusError as e:
+            raise MessageBusError(f"MessageBusError: Error {e}. Retrying again.")
+        except Exception as e:
+            Log.error(f"Unknown Exception caught {e} {traceback.format_exc()}")
+            Log.error(f"Forcefully ack failed msg: {message}")
+
+    def start(self):
+        """
+        Start watcher to listen messages.
+        """
+        self.consumer.start()

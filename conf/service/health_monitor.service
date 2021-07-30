@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 # Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
 #
 # This program is free software: you can redistribute it and/or modify it under the
@@ -15,14 +13,15 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-import enum
-from ha.util.enum_list import EnumListMeta
+[Unit]
+Description=HA Health Monitor daemon process
 
-class HEALTH_MON_ACTIONS(enum.Enum, metaclass=EnumListMeta):
-    PUBLISH_ACT = "publish"
-    HA_ACT = "ha"
+[Service]
+Type=simple
+ExecStart=/usr/bin/health_monitord
+TimeoutStopSec=30sec
+# TODO: user to be changed to hauser
+User=root
 
-class HEALTH_MON_KEYS(enum.Enum, metaclass=EnumListMeta):
-    ACT_RULE = "action"
-
-HEALTH_MONITOR_LOG = "health_monitor"
+[Install]
+WantedBy=multi-user.target

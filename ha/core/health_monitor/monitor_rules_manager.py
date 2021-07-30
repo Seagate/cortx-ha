@@ -128,7 +128,6 @@ class MonitorRulesManager:
             val = json.dumps(val)
             self._confstore.set(key, val)
 
-
     def remove_rule(self, resource: str, event: HEALTH_STATUSES , action: HEALTH_MON_ACTIONS):
         """
         For the rule resource/event  remove "action" from confstore.
@@ -163,4 +162,3 @@ class MonitorRulesManager:
                     Log.debug(f"KV removed for {key} , {action}")
         else:
             Log.warn(f"key {key} not found")
-

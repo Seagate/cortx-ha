@@ -9,6 +9,7 @@ CLI_EXEC=${SITE_PACKAGES}/ha/cli/cortxha.py
 DYNAMIC_RA=${SITE_PACKAGES}/ha/resource/dynamic_fid_service_ra.py
 SRV_COUNTER_RA=${SITE_PACKAGES}/ha/resource/service_instances_counter.py
 EVENT_ANALYZER=${SITE_PACKAGES}/ha/core/event_analyzer/event_analyzerd.py
+HEALTH_MONITOR=${SITE_PACKAGES}/ha/core/health_monitor/health_monitord.py
 PCMK_ALERT=${SITE_PACKAGES}/ha/alert/pcmk_alert.py
 
 chmod +x ${HA_SETUP}
@@ -40,6 +41,11 @@ chmod +x ${PCMK_ALERT}
 ln -sf ${PCMK_ALERT} ${BIN_DIR}/pcmk_alert
 ln -sf ${PCMK_ALERT} /usr/local/bin/pcmk_alert
 ln -sf ${PCMK_ALERT} /usr/bin/pcmk_alert
+
+chmod +x ${HEALTH_MONITOR}
+ln -sf ${HEALTH_MONITOR} ${BIN_DIR}/health_monitord
+ln -sf ${HEALTH_MONITOR} /usr/local/bin/health_monitord
+ln -sf ${HEALTH_MONITOR} /usr/bin/health_monitord
 
 chown -R root:root /opt/seagate/cortx/ha
 exit 0

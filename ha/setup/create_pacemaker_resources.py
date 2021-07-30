@@ -50,6 +50,7 @@ management
 ha
     event_analyzer
     srv_counter
+    health_monitor
 """
 
 process = SimpleCommand()
@@ -118,7 +119,6 @@ def cib_push(cib_xml):
     """Shortcut to avoid boilerplate pushing CIB file."""
     process.run_cmd(f"pcs cluster verify -V {cib_xml}")
     process.run_cmd(f"pcs cluster cib-push {cib_xml} --config")
-
 
 def cib_get(cib_xml):
     """Generate CIB file using pcs."""
@@ -268,7 +268,6 @@ def stop_constraint_on_s3servers(resource_name, cib_xml, push=False, **kwargs):
     if push:
         cib_push(cib_xml)
 
-
 def s3bc(cib_xml, push=False, **kwargs):
     """Create S3 background consumer."""
     s3bc_start = str(get_res_timeout(RESOURCE.S3_BACK_CONS.value, TIMEOUT_ACTION.START.value, "s3backgroundconsumer"))
@@ -285,7 +284,6 @@ def s3bc(cib_xml, push=False, **kwargs):
     stop_constraint_on_s3servers(f"{RESOURCE.S3_BACK_CONS.value}-clone", cib_xml, push, **kwargs)
     if push:
         cib_push(cib_xml)
-
 
 def s3bp(cib_xml, push=False, **kwargs):
     """Create S3 background producer.
@@ -307,7 +305,6 @@ def s3bp(cib_xml, push=False, **kwargs):
     if push:
         cib_push(cib_xml)
 
-
 def s3auth(cib_xml, push=False, **kwargs):
     """Create haproxy S3 auth server resource in pacemaker."""
     s3auth_start = str(get_res_timeout(RESOURCE.S3AUTH.value, TIMEOUT_ACTION.START.value, "s3authserver"))
@@ -319,7 +316,6 @@ def s3auth(cib_xml, push=False, **kwargs):
     process.run_cmd(f"pcs -f {cib_xml} resource clone {RESOURCE.S3AUTH.value}")
     if push:
         cib_push(cib_xml)
-
 
 def haproxy(cib_xml, push=False, **kwargs):
     """Create haproxy clone resource in pacemaker."""
@@ -338,7 +334,6 @@ def haproxy(cib_xml, push=False, **kwargs):
     if push:
         cib_push(cib_xml)
 
-
 def sspl(cib_xml, push=False, **kwargs):
     """Create sspl clone resource in pacemaker."""
     # Using sspl-ll service file according to the content of SSPL repo
@@ -350,7 +345,6 @@ def sspl(cib_xml, push=False, **kwargs):
         op stop timeout={sspl_stop}s interval=0s --group monitor_group")
     if push:
         cib_push(cib_xml)
-
 
 def mgmt_vip(cib_xml, push=False, **kwargs):
     """Create mgmt Virtual IP resource."""
@@ -370,7 +364,6 @@ def mgmt_vip(cib_xml, push=False, **kwargs):
     if push:
         cib_push(cib_xml)
 
-
 def csm(cib_xml, push=False, **kwargs):
     """Create mandatory resources for mgmt stack."""
     csm_agent_start = str(get_res_timeout(RESOURCE.CSM_AGENT.value, TIMEOUT_ACTION.START.value, "csm_agent"))
@@ -388,7 +381,6 @@ def csm(cib_xml, push=False, **kwargs):
     if push:
         cib_push(cib_xml)
 
-
 def kibana(cib_xml, push=False, **kwargs):
     """Create mandatory resources for mgmt stack."""
     kibana_start = str(get_res_timeout(RESOURCE.KIBANA.value, TIMEOUT_ACTION.START.value, "kibana"))
@@ -400,7 +392,6 @@ def kibana(cib_xml, push=False, **kwargs):
     if push:
         cib_push(cib_xml)
 
-
 def event_analyzer(cib_xml, push=False, **kwargs):
     """Create event analyzer resource."""
     event_analyzer_start = str(get_res_timeout(RESOURCE.EVENT_ANALYZER.value, TIMEOUT_ACTION.START.value, "event_analyzer"))
@@ -409,6 +400,17 @@ def event_analyzer(cib_xml, push=False, **kwargs):
         op start timeout={event_analyzer_start}s interval=0s \
         op monitor timeout=30s interval=30s \
         op stop timeout={event_analyzer_stop}s interval=0s --group ha_group")
+    if push:
+        cib_push(cib_xml)
+
+def health_monitor(cib_xml, push=False, **kwargs):
+    """Create event analyzer resource."""
+    health_monitor_start = str(get_res_timeout(RESOURCE.HEALTH_MONITOR.value, TIMEOUT_ACTION.START.value, "health_monitor"))
+    health_monitor_stop = str(get_res_timeout(RESOURCE.HEALTH_MONITOR.value, TIMEOUT_ACTION.STOP.value, "health_monitor"))
+    process.run_cmd(f"pcs -f {cib_xml} resource create {RESOURCE.HEALTH_MONITOR.value} systemd:health_monitor \
+        op start timeout={health_monitor_start}s interval=0s \
+        op monitor timeout=30s interval=30s \
+        op stop timeout={health_monitor_stop}s interval=0s --group ha_group")
     if push:
         cib_push(cib_xml)
 
@@ -436,7 +438,6 @@ def mbus_rest(cib_xml, push=False, **kwargs):
     if push:
         cib_push(cib_xml)
 
-
 def uds(cib_xml, push=False, **kwargs):
     """Create uds resource."""
     uds_start = str(get_res_timeout(RESOURCE.UDS.value, TIMEOUT_ACTION.START.value, "uds"))
@@ -454,7 +455,6 @@ def uds(cib_xml, push=False, **kwargs):
 
         if push:
             cib_push(cib_xml)
-
 
 def configure_stonith(cib_xml=None, push=False, **kwargs):
     """Create ipmi stonith resource."""
@@ -495,13 +495,12 @@ def configure_stonith(cib_xml=None, push=False, **kwargs):
     except Exception as e:
         raise ConfigureStonithResourceError(f"Failed to create stonith resource, Error: {e}")
 
-
 core_io = [hax, motr_conf, motr, s3auth, s3servers, haproxy]
 io_helper_aa = [s3bc]
 io_helper_ap = [free_space_monitor, s3bp]
 monitor_config = [sspl]
 management_config = [mgmt_vip, kibana, csm, uds]
-ha_group_config = [event_analyzer, instance_counter]
+ha_group_config = [event_analyzer, instance_counter, health_monitor]
 base_services_config = [mbus_rest]
 
 def io_stack(cib_xml, push=False, **kwargs):
@@ -522,7 +521,6 @@ def io_stack(cib_xml, push=False, **kwargs):
     if push:
         cib_push(cib_xml)
 
-
 def monitor_stack(cib_xml, push=False, **kwargs):
     """Configure monitor stack"""
     Log.info("HA Rules: ******* monitor_group *********")
@@ -533,7 +531,6 @@ def monitor_stack(cib_xml, push=False, **kwargs):
     if push:
         cib_push(cib_xml)
 
-
 def management_group(cib_xml, push=False, **kwargs):
     """Configure management group"""
     Log.info("HA Rules: ******* management_group *********")
@@ -542,7 +539,6 @@ def management_group(cib_xml, push=False, **kwargs):
         create_resource(cib_xml, push, **kwargs)
     if push:
         cib_push(cib_xml)
-
 
 def ha_group(cib_xml, push=False, **kwargs):
     """Configure management group"""

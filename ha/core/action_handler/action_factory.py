@@ -25,9 +25,6 @@ EVENT_ACTION_HANDLERS_MAPPING = {
 
 class ActionFactory:
 
-    def __init__(self):
-        pass
-
     @staticmethod
     def get_action_handler(event: HealthEvent, action: list) -> ActionHandler:
         """

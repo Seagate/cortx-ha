@@ -16,7 +16,8 @@
 # cortx-questions@seagate.com.
 
 import json
-
+from typing import Callable
+from threading import Thread
 from cortx.utils.message_bus import MessageBusAdmin
 from cortx.utils.message_bus.error import MessageBusError
 from cortx.utils.message_bus import MessageProducer
@@ -53,13 +54,10 @@ class MessageBusProducer:
         else:
             raise Exception(f"Invalid type of message {message}")
 
-class MessageBusConsumer:
+class MessageBusConsumer(Thread):
 
-    JSON_TYPE = "json"
-    STRING_TYPE = "string"
-
-    def __init__(self, consumer_id: int, consumer_group: str, message_types: list,
-                auto_ack: bool, offset: str):
+    def __init__(self, consumer_id: int, consumer_group: str, message_type: str,
+                callback: Callable, auto_ack: bool, offset: str):
         """
         Initalize consumer.
 
@@ -67,50 +65,35 @@ class MessageBusConsumer:
             consumer_id (int): Consumer ID.
             consumer_group (str): Consumer Group.
             message_type (list): Message Type.
+            callback (Callable): function to get message.
             auto_ack (bool, optional): Check auto ack. Defaults to False.
             offset (str, optional): Offset for messages. Defaults to "earliest".
         """
+        super(MessageBusConsumer, self).__init__(name=f"{message_type}-{str(consumer_id)}", daemon=True)
+        self.callback = callback
         self.consumer = MessageConsumer(consumer_id=str(consumer_id),
-                                consumer_group=consumer_group,
-                                message_types=message_types,
-                                auto_ack=auto_ack, offset=offset)
+                        consumer_group=consumer_group,
+                        message_types=[message_type],
+                        auto_ack=auto_ack, offset=offset)
 
-    def receive(self, timeout: int = 0, message_type: str = "") -> str:
+    def run(self):
         """
-        Get Message. If timeout is 0 then it will block call until next message is
-        received and ack. If timeout given then call will break if message not received.
-
-        Args:
-            timeout (int, optional): Message timeout. Defaults to 0.
-
-        Returns:
-            str: json message.
+        Overloaded of Thread.
         """
-        message_type = MessageBusConsumer.JSON_TYPE if message_type == "" else message_type
-        try:
-            message = self.consumer.receive(timeout=timeout)
-            if message_type == MessageBusConsumer.STRING_TYPE:
-                return message
-        except Exception as e:
-            raise MessageBusError(f"Failed to receive message, error: {e}. Retrying to receive.")
-        try:
-            return json.loads(message.decode('utf-8'))
-        except Exception as e:
-            self.consumer.ack()
-            raise MessageBusError(f"Invalid format of message failed due to {e}. Message : {str(message)}")
-
-    def ack(self):
-        """
-        Ack Message.
-        """
-        self.consumer.ack()
+        while True:
+            try:
+                message = self.consumer.receive(timeout=0)
+                self.callback(message)
+                self.consumer.ack()
+            except Exception as e:
+                raise MessageBusError(f"Failed to receive message, error: {e}. Retrying to receive.")
 
 class MessageBus:
     ADMIN_ID = "admin"
 
     @staticmethod
     def get_consumer(consumer_id: int, consumer_group: str, message_types: list,
-                auto_ack: bool = False, offset: str = "earliest"):
+                callback: Callable, auto_ack: bool = False, offset: str = "earliest") -> MessageBusConsumer:
         """
         Get consumer.
 
@@ -118,13 +101,14 @@ class MessageBus:
             consumer_id (int): Consumer ID.
             consumer_group (str): Consumer Group.
             message_type (list): Message Type.
+            callback (Callable): function to get message.
             auto_ack (bool, optional): Check auto ack. Defaults to False.
             offset (str, optional): Offset for messages. Defaults to "earliest".
         """
-        return MessageBusConsumer(consumer_id, consumer_group, message_types, auto_ack, offset)
+        return MessageBusConsumer(consumer_id, consumer_group, message_types, callback, auto_ack, offset)
 
     @staticmethod
-    def get_producer(producer_id: str, message_type: str, partitions: int = 1):
+    def get_producer(producer_id: str, message_type: str, partitions: int = 1) -> MessageBusProducer:
         """
         Register message types with message bus. and get Producer.
 
