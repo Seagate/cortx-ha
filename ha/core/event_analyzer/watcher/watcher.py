@@ -44,7 +44,6 @@ class Watcher:
             parser (Parser): Parse event to HealthEvent
             subscriber (Subscriber): Pass event to Subscriber.
         """
-        super(Watcher, self).__init__(name=f"{message_type}-{str(consumer_id)}", daemon=True)
         Log.info(f"Initalizing watcher {message_type}-{str(consumer_id)}")
         self.consumer_id = consumer_id
         self.message_type = message_type
@@ -55,7 +54,7 @@ class Watcher:
         self._validate()
         self.consumer = MessageBus.get_consumer(consumer_id=str(self.consumer_id),
                                 consumer_group=self.consumer_group,
-                                message_types=[self.message_type]
+                                message_type=self.message_type,
                                 callback=self.process_message)
 
     def _validate(self) -> None:
@@ -76,12 +75,12 @@ class Watcher:
             message (str): Message.
         """
         try:
-            event = json.loads(message.decode('utf-8'))
+            message = json.loads(message.decode('utf-8'))
         except Exception as e:
             Log.error(f"Invalid message {message}, sollow exception and ack it.")
             return
         if message is None:
-            continue
+            return
         try:
             Log.debug(f"Captured message: {message}")
             if self.filter.filter_event(json.dumps(message)):

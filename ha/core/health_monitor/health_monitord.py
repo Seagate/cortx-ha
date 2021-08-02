@@ -72,12 +72,9 @@ class HealthMonitorService:
         self._rule_manager = MonitorRulesManager()
         self._event_consumer = self._get_consumer()
 
-    def _get_consumer(self) -> MessageBusConsumerThread:
+    def _get_consumer(self):
         """
         Return instace of message bus consumer.
-
-        Returns:
-            MessageBusConsumerThread: Consumer thread.
         """
         consumer_id = Conf.get(HA_GLOBAL_INDEX, f"EVENT_MANAGER{_DELIM}consumer_id")
         consumer_group = Conf.get(HA_GLOBAL_INDEX, f"EVENT_MANAGER{_DELIM}consumer_group")
@@ -95,12 +92,18 @@ class HealthMonitorService:
         try:
             event = json.loads(message.decode('utf-8'))
         except Exception as e:
-            raise # invalid format
-        health_event = HealthEvent.dict_to_object(event)
-        action_list = self._rule_manager.evaluate(health_event)
-        if action_list:
-            action_handler = ActionFactory.get_action_handler(health_event, action_list)
-            action_handler.act(health_event, action_list)
+            Log.error(f"Invalid format for event {message}, Error: {e}. Forcefully ack.")
+        Log.debug(f"Captured {message} for evaluating health monitor.")
+        try:
+            health_event = HealthEvent.dict_to_object(event)
+            action_list = self._rule_manager.evaluate(health_event)
+            if action_list:
+                Log.info(f"Evaluated {health_event} with action {action_list}")
+                action_handler = ActionFactory.get_action_handler(health_event, action_list)
+                action_handler.act(health_event, action_list)
+        except Exception as e:
+            Log.error(f"Failed to process {message} error: {e} {traceback.format_exc()}")
+            raise HAHealthMonitorError(f"Failed to process {message} error: {e} {traceback.format_exc()}")
 
     def run(self):
         """

@@ -40,16 +40,16 @@ class EventManager:
     __instance = None
 
     @staticmethod
-    def get_instance():
+    def get_instance(default_log_enable=True):
         """
         Static method to fetch the current instance.
         Performs initialization related to common database and message bus
         """
         if not EventManager.__instance:
-            EventManager(singleton_check=True)
+            EventManager(default_log_enable, singleton_check=True)
         return EventManager.__instance
 
-    def __init__(self, singleton_check: bool = False):
+    def __init__(self, default_log_enable, singleton_check: bool = False):
         """
         Private Constructor.
         Make initialization work for Event Manager
@@ -61,7 +61,8 @@ class EventManager:
             EventManager.__instance = self
         else:
             raise Exception("EventManager is singleton class, use EventManager.get_instance().")
-        ConfigManager.init(const.EVENT_MANAGER_LOG)
+        if default_log_enable:
+            ConfigManager.init(const.EVENT_MANAGER_LOG)
         self._confstore = ConfigManager.get_confstore()
 
     @staticmethod
@@ -269,6 +270,33 @@ class EventManager:
             else:
                 Log.error(f'Key: {const.EVENT_KEY}/{resource_type}/{state} does not present')
 
+    def _get_producer(self, component: str) -> object:
+        """
+        Get Producer object.
+
+        Args:
+            component (str): Component
+        """
+        producer_id = const.EVENT_MGR_PRODUCER_ID.replace("<component_id>", component)
+        message_type_key = const.EVENT_MGR_MESSAGE_TYPE_KEY.replace("<component_id>", component)
+        message_type_key_val = self._confstore.get(message_type_key)
+        _, message_type = message_type_key_val.popitem()
+        return MessageBus.get_producer(producer_id, message_type)
+
+    def check_event_key(self, resource_type: str, state: str = None) -> bool:
+        """
+        Check if event exists.
+
+        Args:
+            resource_type (str): Event key.
+            state (str, optional): Status. Defaults to None.
+
+        Returns:
+            bool: True if key exists.
+        """
+        event_key = f"{const.EVENT_KEY}/{resource_type}/{state}"
+        return self._confstore.key_exists(event_key)
+
     def subscribe(self, component: str = None, events: list = None) -> None:
         """
         Register all the events for the notification. It maintains
@@ -343,7 +371,6 @@ class EventManager:
                     break
         return value
 
-
     def publish(self, event: RecoveryActionEvent) -> None:
         """
         Publish event.
@@ -359,13 +386,9 @@ class EventManager:
                 _, value = component_list_key_val.popitem()
                 component_list = json.loads(value)
             for component in component_list:
-                producer_id = const.EVENT_MGR_PRODUCER_ID.replace("<component_id>", component)
-                message_type_key = const.EVENT_MGR_MESSAGE_TYPE_KEY.replace("<component_id>", component)
-                message_type_key_val = self._confstore.get(message_type_key)
-                _, message_type = message_type_key_val.popitem()
-                message_producer = MessageBus.get_producer(producer_id, message_type)
+                message_producer = self._get_producer(component)
                 event_to_send = str(event)
-                Log.debug(f"Sending action event {event_to_send} to component {component}")
+                Log.info(f"Sending action event {event_to_send} to component {component}")
                 message_producer.publish(event_to_send)
         except Exception as e:
             Log.error(f"Failed sending message for {event.resource_type}, Error: {e}")
@@ -388,5 +411,3 @@ class EventManager:
                     value = v
                     break
         return value
-
-# TODO: Add unit tests for this

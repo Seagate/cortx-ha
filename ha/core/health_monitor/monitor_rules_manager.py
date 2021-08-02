@@ -22,12 +22,14 @@ from ha.core.health_monitor.const import HEALTH_MON_KEYS
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.config.config_manager import ConfigManager
 from ha.core.system_health.const import HEALTH_STATUSES
+from ha.core.event_manager.event_manager import EventManager
 
 class MonitorRulesManager:
 
     def __init__(self):
 
         self._confstore = ConfigManager.get_confstore()
+        self._event_manager = EventManager.get_instance(default_log_enable=False)
 
     def _prepare_key(self, resource_type: str, event_type: str) -> str:
         """
@@ -86,11 +88,14 @@ class MonitorRulesManager:
         """
         val = []
         key = self._prepare_key(event.resource_type, event.event_type)
-
         Log.debug(f"Evaluating rule for {key}")
         kv = self._get_val(key)
         if kv:
             _, val = self._get_k_v(kv)
+        if len(val) == 0 and self._event_manager.check_event_key(
+            event.resource_type, event.event_type):
+            val.append(HEALTH_MON_ACTIONS.PUBLISH_ACT.value)
+        Log.debug(f"Evaluated action {val} for key {key}")
         return val
 
     def add_rule(self, resource: str, event: HEALTH_STATUSES , action: HEALTH_MON_ACTIONS):

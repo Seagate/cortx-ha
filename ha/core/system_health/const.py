@@ -73,6 +73,10 @@ class CONFSTORE_KEY_ATTRIBUTES(Enum):
 
 
 EVENTS = [
+    "node",
+    "site",
+    "rack",
+    "cluster",
     "enclosure:hw:controller",
     "enclosure:hw:disk",
     "enclosure:hw:fan",
@@ -84,13 +88,11 @@ EVENTS = [
     "enclosure:sensor:voltage",
     "enclosure:sensor:current",
     "enclosure:interface:sas",
-
     "node:fru:psu",
     "node:fru:fan",
     "node:fru:disk",
     "node:sensor:temperature",
     "node:sensor:voltage",
-
     "node:os:cpu",
     "node:os:cpu:core",
     "node:os:disk_space",

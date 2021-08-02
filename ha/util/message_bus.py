@@ -92,7 +92,7 @@ class MessageBus:
     ADMIN_ID = "admin"
 
     @staticmethod
-    def get_consumer(consumer_id: int, consumer_group: str, message_types: list,
+    def get_consumer(consumer_id: int, consumer_group: str, message_type: str,
                 callback: Callable, auto_ack: bool = False, offset: str = "earliest") -> MessageBusConsumer:
         """
         Get consumer.
@@ -100,12 +100,12 @@ class MessageBus:
         Args:
             consumer_id (int): Consumer ID.
             consumer_group (str): Consumer Group.
-            message_type (list): Message Type.
+            message_type (str): Message Type.
             callback (Callable): function to get message.
             auto_ack (bool, optional): Check auto ack. Defaults to False.
             offset (str, optional): Offset for messages. Defaults to "earliest".
         """
-        return MessageBusConsumer(consumer_id, consumer_group, message_types, callback, auto_ack, offset)
+        return MessageBusConsumer(consumer_id, consumer_group, message_type, callback, auto_ack, offset)
 
     @staticmethod
     def get_producer(producer_id: str, message_type: str, partitions: int = 1) -> MessageBusProducer:

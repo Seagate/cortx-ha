@@ -31,7 +31,7 @@ class ActionHandler:
     """
 
     def __init__(self):
-        self.event_manager = EventManager.get_instance()
+        self.event_manager = EventManager.get_instance(default_log_enable=False)
 
     def act(self, event: HealthEvent, action: list) -> None:
         """
@@ -140,11 +140,12 @@ class DefaultActionHandler(ActionHandler):
             None
         """
         Log.info(f"Default action handler with Event: {event} and actions : {action}")
-        if HEALTH_MON_ACTIONS.PUBLISH_ACT.value in action and len(action) == 1:
+        if len(action) == 0:
+            return
+        elif HEALTH_MON_ACTIONS.PUBLISH_ACT.value in action and len(action) == 1:
             self.publish_event(event)
         else:
             raise InvalidAction()
-
 
 class NodeFailureActionHandler(ActionHandler):
     """
