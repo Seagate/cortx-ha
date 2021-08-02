@@ -30,7 +30,7 @@ class Ipmitool(StonithService):
 
     def __init__(self):
         """
-        Initialize Stonith tool class.
+        Initialize IPMI tool class.
         """
         super(Ipmitool, self).__init__()
         self._confstore = ConfigManager.get_confstore()
@@ -48,8 +48,7 @@ class Ipmitool(StonithService):
             if bmc_info is not None:
                 _, value = bmc_info.popitem()
                 bmc_info_dict = ast.literal_eval(value)
-                self._execute.run_cmd(f"ipmitool -I lanplus -H {bmc_info_dict[BMC_CREDENTIALS.IPMI_IPADDR.value]} -U {bmc_info_dict[BMC_CREDENTIALS.IPMI_USER.value]} -P {bmc_info_dict[BMC_CREDENTIALS.IPMI_SECRET.value]} chassis status")
-
+                output, _, _, = self._execute.run_cmd(f"ipmitool -I lanplus -H {bmc_info_dict[BMC_CREDENTIALS.IPMI_IPADDR.value]} -U {bmc_info_dict[BMC_CREDENTIALS.IPMI_USER.value]} -P {bmc_info_dict[BMC_CREDENTIALS.IPMI_SECRET.value]} chassis power off")
         except Exception as e:
             raise Exception(f"Failed to run IPMItool Command. Error : {e}")
 

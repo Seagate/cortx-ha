@@ -35,10 +35,11 @@ from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.system_health.system_health import SystemHealth, SystemHealthManager
 from ha.core.config.config_manager import ConfigManager
 from ha.util.ipmitool import Ipmitool
+from ha.core.controllers.pcs.service_controller import PcsServiceController
 
 class PcsNodeController(NodeController, PcsController):
     """ Controller to manage node. """
-    _index = "conf"
+
     def __init__(self):
         """
         Initalize PcsNodeController
@@ -47,6 +48,7 @@ class PcsNodeController(NodeController, PcsController):
         self._confstore = ConfigManager.get_confstore()
         self._system_health = SystemHealth(self._confstore)
         self._health_manager = SystemHealthManager(self._confstore)
+        self._service_controller = PcsServiceController()
 
     def initialize(self, controllers):
         """
@@ -108,12 +110,27 @@ class PcsNodeController(NodeController, PcsController):
                         return res
                 if self.heal_resource(node_id):
                     time.sleep(const.BASE_WAIT_TIME)
-                Log.info(f"Please Wait, trying to stop node: {node_id}")
-                self._execute.run_cmd(const.PCS_STOP_NODE.replace("<node>", node_id)
-                                      .replace("<seconds>", str(timeout)) + " --force")
-                Log.info(f"Executed node stop for {node_id}, Waiting to stop resource")
+
+                # Stop all the resources except sspl-ll
+                resources: list = []
+                output, _, _ = self._execute.run_cmd(const.LIST_PCS_RESOURCES, check_error=False)
+                if not "NO resources" in output:
+                    for resource in output.split("\n"):
+                        res = resource.split(":")[0]
+                        if res != "" and res not in resources and res != "sspl-ll":
+                            resources.append(res)
+                    self._service_controller.ban_resources(resources=resources, node_id=node_id)
+                # Log.info(f"Please Wait, trying to stop node: {node_id}")
+                # self._execute.run_cmd(const.PCS_STOP_NODE.replace("<node>", node_id)
+                #                       .replace("<seconds>", str(timeout)) + " --force")
+                # Log.info(f"Executed node stop for {node_id}, Waiting to stop resource")
                 time.sleep(const.BASE_WAIT_TIME)
                 status = f"Stop for {node_id} is in progress, waiting to stop resource"
+
+            # TODO: The storage enclosure is stopped on the node.
+
+            # Stop sspl service
+            self._service_controller.ban_resources(resources=["sspl-ll"], node_id=node_id)
 
             # Update node health
             timestamp = str(int(time.time()))
@@ -265,13 +282,12 @@ class PcsNodeController(NodeController, PcsController):
     def validate_node(self, node_id: str) -> bool:
         """
         Check node is a part of cluster
-        Args: 
+        Args:
             node_id ([str]): Private fqdn define in conf store.
         Raises: ClusterManagerError
         Returns: bool
         """
         _, node_list = self._get_offline_nodes()
-        print(node_id, " list : ",node_list)
         if node_id in node_list:
             return True
         raise ClusterManagerError(f"nodeid = {node_id} is not a valid node id")

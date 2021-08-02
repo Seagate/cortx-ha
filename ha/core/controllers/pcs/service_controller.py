@@ -15,10 +15,12 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
+from ha import const
 from ha.core.error import HAUnimplemented
 from ha.core.controllers.pcs.pcs_controller import PcsController
 from ha.core.controllers.service_controller import ServiceController
 from ha.core.controllers.controller_annotation import controller_error_handler
+
 
 class PcsServiceController(ServiceController, PcsController):
     """ Controller to manage node. """
@@ -82,3 +84,8 @@ class PcsServiceController(ServiceController, PcsController):
                 status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
+
+    def ban_resources(self, resources: list, node_id: str):
+        print(resources)
+        for resource in resources:
+            self._execute.run_cmd(f"pcs resource ban {resource} {node_id}")
