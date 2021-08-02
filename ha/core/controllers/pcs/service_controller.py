@@ -15,8 +15,7 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-from ha import const
-from ha.core.error import HAUnimplemented
+from ha.core.error import ClusterManagerError, HAUnimplemented
 from ha.core.controllers.pcs.pcs_controller import PcsController
 from ha.core.controllers.service_controller import ServiceController
 from ha.core.controllers.controller_annotation import controller_error_handler
@@ -86,6 +85,8 @@ class PcsServiceController(ServiceController, PcsController):
         raise HAUnimplemented("This operation is not implemented.")
 
     def ban_resources(self, resources: list, node_id: str):
-        print(resources)
-        for resource in resources:
-            self._execute.run_cmd(f"pcs resource ban {resource} {node_id}")
+        try:
+            for resource in resources:
+                self._execute.run_cmd(f"pcs resource ban {resource} {node_id}")
+        except Exception as e:
+            raise ClusterManagerError(f"Failed to stop resources on {node_id}, Error: {e}")

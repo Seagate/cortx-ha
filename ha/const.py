@@ -148,6 +148,7 @@ PCS_CLUSTER_STANDBY="pcs node standby --all"
 PCS_STONITH_DISABLE="pcs property set stonith-enabled=False"
 LIST_PCS_RESOURCES = '/usr/sbin/crm_resource --list-raw'
 CHECK_PCS_STANDBY_MODE = '/usr/sbin/crm_standby --query | awk \'{print $3}\''
+GET_CLUSTER_STATUS = "crm_mon --as-xml"
 
 # Cluster manager
 CM_CONTROLLER_INDEX="cluster_controller_interfaces"
@@ -299,4 +300,4 @@ class AlertEventConstants(Enum):
 class BMC_CREDENTIALS(Enum):
     IPMI_IPADDR = "ipmi_ipaddr"
     IPMI_USER = "ipmi_user"
-    IPMI_SECRET = "ipmi_secret"
+    IPMI_AUTH_KEY = "ipmi_auth_key"

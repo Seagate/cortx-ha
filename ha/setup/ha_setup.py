@@ -289,7 +289,7 @@ class Cmd:
                 # Push node BMC Credentials to store
                 confstore = ConfigManager.get_confstore()
                 bmc_info_keys = {BMC_CREDENTIALS.IPMI_IPADDR.value: ipmi_ipaddr, BMC_CREDENTIALS.IPMI_USER.value: ipmi_user,
-                                 BMC_CREDENTIALS.IPMI_SECRET.value: ipmi_password}
+                                 BMC_CREDENTIALS.IPMI_AUTH_KEY.value: ipmi_password}
                 if not confstore.key_exists(f"{const.NODE_BMC_INFO_KEY}/node/{node_name}"):
                     confstore.set(f"{const.NODE_BMC_INFO_KEY}/node/{node_name}", json.dumps(bmc_info_keys))
 

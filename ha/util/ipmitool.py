@@ -18,12 +18,14 @@
 # Note: This class is used to bind different type of controller together.
 # Other controller like node, cluster, storageset, service inheriting
 # from this class.
+
 import ast
 from ha import const
 from ha.core.config.config_manager import ConfigManager
 from ha.execute import SimpleCommand
 from ha.const import BMC_CREDENTIALS
 from ha.util.stonith_service import StonithService
+
 
 class Ipmitool(StonithService):
     """ Tool to manage IPMI-enabled devices """
@@ -48,7 +50,7 @@ class Ipmitool(StonithService):
             if bmc_info is not None:
                 _, value = bmc_info.popitem()
                 bmc_info_dict = ast.literal_eval(value)
-                output, _, _, = self._execute.run_cmd(f"ipmitool -I lanplus -H {bmc_info_dict[BMC_CREDENTIALS.IPMI_IPADDR.value]} -U {bmc_info_dict[BMC_CREDENTIALS.IPMI_USER.value]} -P {bmc_info_dict[BMC_CREDENTIALS.IPMI_SECRET.value]} chassis power off")
+                self._execute.run_cmd(f"ipmitool -I lanplus -H {bmc_info_dict[BMC_CREDENTIALS.IPMI_IPADDR.value]} -U {bmc_info_dict[BMC_CREDENTIALS.IPMI_USER.value]} -P {bmc_info_dict[BMC_CREDENTIALS.IPMI_AUTH_KEY.value]} chassis power off")
         except Exception as e:
             raise Exception(f"Failed to run IPMItool Command. Error : {e}")
 

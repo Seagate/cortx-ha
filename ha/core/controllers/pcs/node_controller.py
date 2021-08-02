@@ -69,100 +69,16 @@ class PcsNodeController(NodeController, PcsController):
         raise HAUnimplemented("This operation is not implemented.")
 
     @controller_error_handler
-    def stop(self, node_id: str, timeout: int = -1, **op_kwargs) -> dict:
+    def stop(self, node_id: str, timeout: int, **op_kwargs) -> dict:
         """
-        Stop Cluster on node with node_id.
+        Stop Cluster on node with nodeid.
         Args:
-            node_id (str): Private fqdn define in conf store.
+            nodeid (str): Node ID from cluster nodes.
         Returns:
-            ([dict]): Return dictionary. {"status": "", "msg":""}
+            ([dict]): Return dictionary. {"status": "", "output": "", "error": ""}
                 status: Succeeded, Failed, InProgress
         """
-        check_cluster = op_kwargs.get("check_cluster") if op_kwargs.get("check_cluster") is not None else True
-        poweroff = op_kwargs.get("poweroff") if op_kwargs.get("poweroff") is not None else False
-        try:
-            # Raise exception if user does not have proper permissions
-            self._validate_permissions()
-            self.validate_node(node_id=node_id)
-
-            # Prepare key and read the node_map values.
-            nodeid = self._health_manager.get_key(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_id}")
-            key = self._system_health._prepare_key(const.COMPONENTS.NODE_MAP.value, node_id=nodeid)
-            node_map_val = self._health_manager.get_key(key)
-            if node_map_val is None:
-                raise ClusterManagerError("Failed to fetch node_map value")
-            node_map_dict = ast.literal_eval(node_map_val)
-
-            # stop all services running on node with node_id
-            timeout = const.NODE_STOP_TIMEOUT if timeout < 0 else timeout
-            node_status = self.nodes_status([node_id]).get(node_id)
-            if node_status == NODE_STATUSES.CLUSTER_OFFLINE.value:
-                Log.info(f"For stop {node_id}, Node already in offline state.")
-                status = f"Node {node_id} is already in offline state."
-            elif node_status == NODE_STATUSES.POWEROFF.value:
-                raise ClusterManagerError(f"Failed to stop {node_id}."
-                                          f"node is in {node_status}.")
-            else:
-                if check_cluster:
-                    # Checks whether cluster is going to be offline if node with node_id is stopped.
-                    res = self.check_cluster_feasibility(nodeid=node_id)
-                    if res.get("status") == const.STATUSES.WARNING.value:
-                        return res
-                if self.heal_resource(node_id):
-                    time.sleep(const.BASE_WAIT_TIME)
-
-                # Stop all the resources except sspl-ll
-                resources: list = []
-                output, _, _ = self._execute.run_cmd(const.LIST_PCS_RESOURCES, check_error=False)
-                if not "NO resources" in output:
-                    for resource in output.split("\n"):
-                        res = resource.split(":")[0]
-                        if res != "" and res not in resources and res != "sspl-ll":
-                            resources.append(res)
-                    self._service_controller.ban_resources(resources=resources, node_id=node_id)
-                # Log.info(f"Please Wait, trying to stop node: {node_id}")
-                # self._execute.run_cmd(const.PCS_STOP_NODE.replace("<node>", node_id)
-                #                       .replace("<seconds>", str(timeout)) + " --force")
-                # Log.info(f"Executed node stop for {node_id}, Waiting to stop resource")
-                time.sleep(const.BASE_WAIT_TIME)
-                status = f"Stop for {node_id} is in progress, waiting to stop resource"
-
-            # TODO: The storage enclosure is stopped on the node.
-
-            # Stop sspl service
-            self._service_controller.ban_resources(resources=["sspl-ll"], node_id=node_id)
-
-            # Update node health
-            timestamp = str(int(time.time()))
-            event_id = timestamp + str(uuid.uuid4().hex)
-            initial_event = {
-                const.EVENT_ATTRIBUTES.EVENT_ID : event_id,
-                const.EVENT_ATTRIBUTES.EVENT_TYPE : HEALTH_EVENTS.FAULT.value,
-                const.EVENT_ATTRIBUTES.SEVERITY : EVENT_SEVERITIES.WARNING.value,
-                const.EVENT_ATTRIBUTES.SITE_ID : node_map_dict[NODE_MAP_ATTRIBUTES.SITE_ID.value],
-                const.EVENT_ATTRIBUTES.RACK_ID : node_map_dict[NODE_MAP_ATTRIBUTES.RACK_ID.value],
-                const.EVENT_ATTRIBUTES.CLUSTER_ID : node_map_dict[NODE_MAP_ATTRIBUTES.CLUSTER_ID.value],
-                const.EVENT_ATTRIBUTES.STORAGESET_ID : node_map_dict[NODE_MAP_ATTRIBUTES.STORAGESET_ID.value],
-                const.EVENT_ATTRIBUTES.NODE_ID : node_id,
-                const.EVENT_ATTRIBUTES.HOST_ID : node_map_dict[NODE_MAP_ATTRIBUTES.HOST_ID.value],
-                const.EVENT_ATTRIBUTES.RESOURCE_TYPE : CLUSTER_ELEMENTS.NODE.value,
-                const.EVENT_ATTRIBUTES.TIMESTAMP : timestamp,
-                const.EVENT_ATTRIBUTES.RESOURCE_ID : node_id,
-                const.EVENT_ATTRIBUTES.SPECIFIC_INFO : None
-            }
-            Log.debug(f"Node health : {initial_event} updated for node {node_id}")
-            health_event = HealthEvent.dict_to_object(initial_event)
-            self._system_health.process_event(health_event)
-
-            # Node power off
-            if poweroff:
-                ipmitool = Ipmitool()
-                ipmitool.power_off(nodeid=node_id)
-
-            Log.info("Node stopped successfully")
-            return {"status": const.STATUSES.IN_PROGRESS.value, "msg": status}
-        except Exception as e:
-            raise ClusterManagerError(f"Failed to stop {node_id}, Error: {e}")
+        raise HAUnimplemented("This operation is not implemented.")
 
 
     @controller_error_handler
@@ -277,7 +193,7 @@ class PcsNodeController(NodeController, PcsController):
         if (len(offline_nodes) + 1) >= ((len(node_list)//2) + 1):
             return {"status": const.STATUSES.WARNING.value, "msg": "Stopping the node will cause a loss of the quorum"}
         else:
-            return {"status": const.STATUSES.SUCCEEDED.value, "msg": "Pacemaker does not loose quorum"}
+            return {"status": const.STATUSES.SUCCEEDED.value, "msg": "Stopping the node will not cause a loss of the quorum"}
 
     def validate_node(self, node_id: str) -> bool:
         """
@@ -296,9 +212,9 @@ class PcsNodeController(NodeController, PcsController):
         """
         Get list of offline nodes ids.
         """
-        online_nodes_xml = self._execute.run_cmd("crm_mon --as-xml")
+        cluster_status_xml = self._execute.run_cmd(const.GET_CLUSTER_STATUS)
         # create element tree object
-        root = ET.fromstring(online_nodes_xml[0])
+        root = ET.fromstring(cluster_status_xml[0])
         node_list = []
         nodes_ids = []
         # iterate news items
@@ -377,7 +293,7 @@ class PcsVMNodeController(PcsNodeController):
             Log.error(f"{nodeid} status is {_node_status}, node may not be started.")
             raise ClusterManagerError(f"Failed to start {nodeid} as found unhandled status {_node_status}")
 
-class PcsHWNodeController(PcsVMNodeController):
+class PcsHWNodeController(PcsNodeController):
     def initialize(self, controllers):
         """
         Initialize the storageset controller
@@ -395,3 +311,96 @@ class PcsHWNodeController(PcsVMNodeController):
                 status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
+
+    @controller_error_handler
+    def stop(self, node_id: str, timeout: int = -1, **op_kwargs) -> dict:
+        """
+        Stop Cluster on node with node_id.
+        Args:
+            node_id (str): Private fqdn define in conf store.
+        Returns:
+            ([dict]): Return dictionary. {"status": "", "msg":""}
+                status: Succeeded, Failed, InProgress
+        """
+        check_cluster = op_kwargs.get("check_cluster") if op_kwargs.get("check_cluster") is not None else True
+        poweroff = op_kwargs.get("poweroff") if op_kwargs.get("poweroff") is not None else False
+        try:
+            # Raise exception if user does not have proper permissions
+            self._validate_permissions()
+            # Raise exception if node_id is not valid
+            self.validate_node(node_id=node_id)
+
+            # Prepare key and read the node_map values.
+            nodeid = self._health_manager.get_key(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_id}")
+            key = self._system_health._prepare_key(const.COMPONENTS.NODE_MAP.value, node_id=nodeid)
+            node_map_val = self._health_manager.get_key(key)
+            if node_map_val is None:
+                raise ClusterManagerError("Failed to fetch node_map value")
+            node_map_dict = ast.literal_eval(node_map_val)
+
+            # stop all services running on node with node_id
+            timeout = const.NODE_STOP_TIMEOUT if timeout < 0 else timeout
+            node_status = self.nodes_status([node_id]).get(node_id)
+            if node_status == NODE_STATUSES.CLUSTER_OFFLINE.value:
+                Log.info(f"For stop {node_id}, Node already in offline state.")
+                status = f"Node {node_id} is already in offline state."
+            elif node_status == NODE_STATUSES.POWEROFF.value:
+                raise ClusterManagerError(f"Failed to stop {node_id}."
+                                          f"node is in {node_status}.")
+            else:
+                if check_cluster:
+                    # Checks whether cluster is going to be offline if node with node_id is stopped.
+                    res = self.check_cluster_feasibility(nodeid=node_id)
+                    if res.get("status") == const.STATUSES.WARNING.value:
+                        return res
+                if self.heal_resource(node_id):
+                    time.sleep(const.BASE_WAIT_TIME)
+
+                # Stop all the resources except sspl-ll
+                resources: list = []
+                output, _, _ = self._execute.run_cmd(const.LIST_PCS_RESOURCES, check_error=False)
+                if not "NO resources" in output:
+                    for resource in output.split("\n"):
+                        res = resource.split(":")[0]
+                        if res != "" and res not in resources and res != "sspl-ll":
+                            resources.append(res)
+                    self._service_controller.ban_resources(resources=resources, node_id=node_id)
+                Log.info(f"Waiting to stop resource on node {node_id}")
+                time.sleep(const.BASE_WAIT_TIME)
+
+            # TODO: The storage enclosure is stopped on the node.
+
+            # Stop sspl service
+            self._service_controller.ban_resources(resources=["sspl-ll"], node_id=node_id)
+
+            # Update node health
+            timestamp = str(int(time.time()))
+            event_id = timestamp + str(uuid.uuid4().hex)
+            initial_event = {
+                const.EVENT_ATTRIBUTES.EVENT_ID : event_id,
+                const.EVENT_ATTRIBUTES.EVENT_TYPE : HEALTH_EVENTS.FAULT.value,
+                const.EVENT_ATTRIBUTES.SEVERITY : EVENT_SEVERITIES.WARNING.value,
+                const.EVENT_ATTRIBUTES.SITE_ID : node_map_dict[NODE_MAP_ATTRIBUTES.SITE_ID.value],
+                const.EVENT_ATTRIBUTES.RACK_ID : node_map_dict[NODE_MAP_ATTRIBUTES.RACK_ID.value],
+                const.EVENT_ATTRIBUTES.CLUSTER_ID : node_map_dict[NODE_MAP_ATTRIBUTES.CLUSTER_ID.value],
+                const.EVENT_ATTRIBUTES.STORAGESET_ID : node_map_dict[NODE_MAP_ATTRIBUTES.STORAGESET_ID.value],
+                const.EVENT_ATTRIBUTES.NODE_ID : nodeid,
+                const.EVENT_ATTRIBUTES.HOST_ID : node_map_dict[NODE_MAP_ATTRIBUTES.HOST_ID.value],
+                const.EVENT_ATTRIBUTES.RESOURCE_TYPE : CLUSTER_ELEMENTS.NODE.value,
+                const.EVENT_ATTRIBUTES.TIMESTAMP : timestamp,
+                const.EVENT_ATTRIBUTES.RESOURCE_ID : nodeid,
+                const.EVENT_ATTRIBUTES.SPECIFIC_INFO : None
+            }
+            Log.debug(f"Node health : {initial_event} updated for node {nodeid}")
+            health_event = HealthEvent.dict_to_object(initial_event)
+            self._system_health.process_event(health_event)
+
+            # Node power off
+            if poweroff:
+                ipmitool = Ipmitool()
+                ipmitool.power_off(nodeid=node_id)
+            status = f"Power off for {node_id} is in progress"
+            Log.info("Node power off successfull")
+            return {"status": const.STATUSES.IN_PROGRESS.value, "msg": status}
+        except Exception as e:
+            raise ClusterManagerError(f"Failed to stop {node_id}, Error: {e}")

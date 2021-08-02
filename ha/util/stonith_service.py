@@ -19,6 +19,7 @@
 # Other controller like node, cluster, storageset, service inheriting
 # from this class.
 
+
 class StonithService:
     """ Generic Stonith service class """
     def __init__(self):
