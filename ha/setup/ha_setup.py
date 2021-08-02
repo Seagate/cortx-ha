@@ -521,6 +521,7 @@ class ConfigCmd(Cmd):
         else:
             # configure stonith for each node from that node only
             if enable_stonith:
+                self._execute.run_cmd(const.PCS_CLEANUP)
                 configure_stonith(push=True, stonith_config=all_nodes_stonith_config.get(node_name))
             for node in nodelist:
                 if node != node_name:
