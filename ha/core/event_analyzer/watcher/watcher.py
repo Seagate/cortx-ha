@@ -77,7 +77,7 @@ class Watcher:
         try:
             message = json.loads(message.decode('utf-8'))
         except Exception as e:
-            Log.error(f"Invalid message {message}, sollow exception and ack it.")
+            Log.error(f"Invalid message {message}, sollow exception and ack it. Error: {e}")
             return
         if message is None:
             return

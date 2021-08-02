@@ -36,6 +36,7 @@ from ha.core.system_health.model.health_event import HealthEvent
 from ha.util.message_bus import MessageBus
 from ha.core.config.config_manager import ConfigManager
 from ha.core.health_monitor.monitor_rules_manager import MonitorRulesManager
+from ha.core.health_monitor.error import HealthMonitorError
 
 class HealthMonitorService:
 
@@ -103,7 +104,7 @@ class HealthMonitorService:
                 action_handler.act(health_event, action_list)
         except Exception as e:
             Log.error(f"Failed to process {message} error: {e} {traceback.format_exc()}")
-            raise HAHealthMonitorError(f"Failed to process {message} error: {e} {traceback.format_exc()}")
+            raise HealthMonitorError(f"Failed to process {message} error: {e} {traceback.format_exc()}")
 
     def run(self):
         """

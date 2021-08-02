@@ -20,7 +20,6 @@ import sys
 import pathlib
 sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..', '..', '..'))
 import unittest
-from cortx.utils.log import Log
 from ha.core.event_manager.event_manager import EventManager
 from ha.core.event_manager.const import SUBSCRIPTION_LIST
 from ha.core.event_manager.subscribe_event import SubscribeEvent
@@ -32,7 +31,6 @@ class TestEventManager(unittest.TestCase):
     """
 
     def setUp(self):
-        #Log.init(service_name='event_manager', log_path="/tmp", level="DEBUG")
         self.event_manager = EventManager.get_instance()
         self.component = SUBSCRIPTION_LIST.TEST.value
         self.event = SubscribeEvent("node",

@@ -18,7 +18,7 @@
 from ha.core.error import HA_HEALTH_MONITOR_ERROR
 from ha.core.error import HAError
 
-class HAHealthMonitorError(HAError):
+class HealthMonitorError(HAError):
     def __init__(self, desc=None):
         """
         Handle Health Monitor error.
@@ -26,4 +26,4 @@ class HAHealthMonitorError(HAError):
         _desc = "HA Health Monitor failure" if desc is None else desc
         _message_id = HA_HEALTH_MONITOR_ERROR
         _rc = 1
-        super(HAHealthMonitorError, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
+        super(HealthMonitorError, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
