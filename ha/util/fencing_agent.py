@@ -20,11 +20,11 @@
 # from this class.
 
 
-class StonithService:
-    """ Generic Stonith service class """
+class FencingAgent:
+    """ Generic Fencing Agent class """
     def __init__(self):
         """
-        Initialize Stonith service class.
+        Initialize Fencing Agent class.
         """
         pass
 

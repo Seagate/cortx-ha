@@ -24,17 +24,17 @@ from ha import const
 from ha.core.config.config_manager import ConfigManager
 from ha.execute import SimpleCommand
 from ha.const import BMC_CREDENTIALS
-from ha.util.stonith_service import StonithService
+from ha.util.fencing_agent import FencingAgent
 
 
-class Ipmitool(StonithService):
+class IpmiFencingAgent(FencingAgent):
     """ Tool to manage IPMI-enabled devices """
 
     def __init__(self):
         """
-        Initialize IPMI tool class.
+        Initialize IPMI Fencing Agent class.
         """
-        super(Ipmitool, self).__init__()
+        super(IpmiFencingAgent, self).__init__()
         self._confstore = ConfigManager.get_confstore()
         self._execute = SimpleCommand()
 
@@ -50,7 +50,9 @@ class Ipmitool(StonithService):
             if bmc_info is not None:
                 _, value = bmc_info.popitem()
                 bmc_info_dict = ast.literal_eval(value)
-                self._execute.run_cmd(f"ipmitool -I lanplus -H {bmc_info_dict[BMC_CREDENTIALS.IPMI_IPADDR.value]} -U {bmc_info_dict[BMC_CREDENTIALS.IPMI_USER.value]} -P {bmc_info_dict[BMC_CREDENTIALS.IPMI_AUTH_KEY.value]} chassis power off")
+                self._execute.run_cmd(f"ipmitool -I lanplus -H {bmc_info_dict[BMC_CREDENTIALS.IPMI_IPADDR.value]} "
+                                      "-U {bmc_info_dict[BMC_CREDENTIALS.IPMI_USER.value]} "
+                                      "-P {bmc_info_dict[BMC_CREDENTIALS.IPMI_AUTH_KEY.value]} chassis power off")
         except Exception as e:
             raise Exception(f"Failed to run IPMItool Command. Error : {e}")
 

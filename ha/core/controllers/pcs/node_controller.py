@@ -34,7 +34,7 @@ from ha.core.system_health.const import NODE_MAP_ATTRIBUTES, CLUSTER_ELEMENTS, H
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.system_health.system_health import SystemHealth, SystemHealthManager
 from ha.core.config.config_manager import ConfigManager
-from ha.util.ipmitool import Ipmitool
+from ha.util.ipmi_fencing_agent import IpmiFencingAgent
 from ha.core.controllers.pcs.service_controller import PcsServiceController
 
 class PcsNodeController(NodeController, PcsController):
@@ -293,12 +293,37 @@ class PcsVMNodeController(PcsNodeController):
             Log.error(f"{nodeid} status is {_node_status}, node may not be started.")
             raise ClusterManagerError(f"Failed to start {nodeid} as found unhandled status {_node_status}")
 
+    @controller_error_handler
+    def stop(self, node_id: str, timeout: int= -1, **op_kwargs) -> dict:
+        timeout = const.NODE_STOP_TIMEOUT if timeout < 0 else timeout
+        node_status = self.nodes_status([node_id]).get(node_id)
+        if node_status == NODE_STATUSES.CLUSTER_OFFLINE.value:
+            Log.info(f"For stop {node_id}, Node already in offline state.")
+            status = f"Node {node_id} is already in offline state."
+        elif node_status == NODE_STATUSES.POWEROFF.value:
+            raise ClusterManagerError(f"Failed to stop {node_id}."
+                f"node is in {node_status}.")
+        else:
+            if self.heal_resource(node_id):
+                time.sleep(const.BASE_WAIT_TIME)
+            try:
+                Log.info(f"Please Wait, trying to stop node: {node_id}")
+                self._execute.run_cmd(const.PCS_STOP_NODE.replace("<node>", node_id)
+                        .replace("<seconds>", str(timeout)))
+                Log.info(f"Executed node stop for {node_id}, Waiting to stop resource")
+                time.sleep(const.BASE_WAIT_TIME)
+                status = f"Stop for {node_id} is in progress, waiting to stop resource"
+            except Exception as e:
+                raise ClusterManagerError(f"Failed to stop {node_id}, Error: {e}")
+        return {"status": const.STATUSES.IN_PROGRESS.value, "output": status, "error": ""}
+
 class PcsHWNodeController(PcsNodeController):
     def initialize(self, controllers):
         """
         Initialize the storageset controller
         """
         self._controllers = controllers
+        self.ipmifenceagent = IpmiFencingAgent()
 
     @controller_error_handler
     def shutdown(self, nodeid: str) -> dict:
@@ -397,8 +422,7 @@ class PcsHWNodeController(PcsNodeController):
 
             # Node power off
             if poweroff:
-                ipmitool = Ipmitool()
-                ipmitool.power_off(nodeid=node_id)
+                self.ipmifenceagent.power_off(nodeid=node_id)
             status = f"Power off for {node_id} is in progress"
             Log.info("Node power off successfull")
             return {"status": const.STATUSES.IN_PROGRESS.value, "msg": status}
