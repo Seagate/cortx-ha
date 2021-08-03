@@ -54,9 +54,9 @@ class HealthEventGenerator:
             rack_id = Conf.get(conf_index, f"server_node{_DELIM}{self._machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.RACK_ID.value}")
             storageset_id = Conf.get(conf_index, f"server_node{_DELIM}{self._machine_id}{_DELIM}{CONFSTORE_KEY_ATTRIBUTES.STORAGE_SET_ID.value}")
             host_id = Conf.get(conf_index, f"server_node{_DELIM}{self._machine_id}{_DELIM}network{_DELIM}management{_DELIM}public_fqdn")
-
+            Log.error(f'###{type(last_modified)}')
             timestamp = last_modified
-            event_id = timestamp + str(uuid.uuid4().hex)
+            event_id = str(timestamp) + str(uuid.uuid4().hex)
             initial_event = {
                 EVENT_ATTRIBUTES.EVENT_ID : event_id,
                 EVENT_ATTRIBUTES.EVENT_TYPE : RESOURCE_TO_HEALTH_STATUS_MAPPING[status.upper()],

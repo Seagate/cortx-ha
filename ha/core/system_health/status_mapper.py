@@ -28,6 +28,8 @@ class StatusMapper:
         "missing": "offline",
         "insertion": "online",
         "failed": "failed",
+        "active": "active",
+        "inactive": "inactive",
         "unknown": "unknown",
         "threshold_breached:low": "degraded",
         "threshold_breached:high": "degraded"

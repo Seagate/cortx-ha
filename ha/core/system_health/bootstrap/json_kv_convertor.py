@@ -22,6 +22,8 @@ from cortx.utils.log import Log
 from ha.core.system_health.system_health_exception import InvalidHealthDataException
 from ha.core.system_health.bootstrap.health_event_generator import HealthEventGenerator
 from ha.execute import SimpleCommand
+from cortx.utils.conf_store import Conf
+
 
 class KVGenerator:
 
@@ -51,63 +53,51 @@ class KVGenerator:
             self._last_modified = val
         elif re.search(self._filter_list[2].replace(':',''), key):
             self._status = val
+            if self._status == "NA":
+                return
             # cleanup the key
-            self._key = key.replace('sites.racks.cortx_nodes.','').replace('.health.status','')
-
-            # create health event
+            self._key = key.replace('.health.status','')
             self._healthEvent.create_health_event(self._key, self._uid, self._last_modified, self._status, self._conf_index, self._conf_store)
             self._uid = self._last_modified = self._status = self._key = None
 
-
-    def _update_kv(self, k , v):
-
-        kv = f"{k}:{v}\n"
-
-        for pattern in self._filter_list:
-            if re.search(pattern, kv):
-                if pattern == "uid:":
-                    if re.search("health.specifics", kv) or re.search("sites.uid:", kv) or re.search("sites.racks.uid:", kv) or  re.search("sites.racks.cortx_nodes.uid:", kv) :
-                        break
-                elif  re.search("sites.racks.cortx_nodes.last_updated:", kv):
-                    break
-
-                self._update_health(k,v)
-
-
-    def _walk(self, d):
-
-        for k,v in d.items():
-            if isinstance(v, dict):
-                self._path.append(k)
-                self._walk(v)
-                self._path.pop()
-
-            elif isinstance(v, list):
-                self._path.append(k)
-                if not v:
-                    key = (".".join(self._path))
-                    val = v
-                    self._update_kv(key, val)
-                    self._path.pop()
-
+    def _get_required_kv(self, key='node.compute'):
+        """Get the required key values from Confstore"""
+        self.compute_health_list = Conf.get('node_health', 'node>compute[0]')
+        compute_resource_list = []
+        for compute_component in self.compute_health_list:
+            compute_resource_list.append(compute_component)
+        for compute_res in compute_resource_list:
+            if isinstance(self.compute_health_list[compute_res], dict):
+                if compute_res == 'health':
+                    new_key = key + f'.{compute_res}.status'
+                    val = self.compute_health_list[compute_res]['status']
+                    self._update_health(new_key, val)
                 else:
-                    if isinstance(v[0], dict):
-                        for v_int in v:
-                            self._walk(v_int)
-                    # End value in the KV  is a list
-                    else:
-                        key = (".".join(self._path))
-                        val = v
-                        self._update_kv(key, val)
-                    self._path.pop()
+                    for comp in self.compute_health_list[compute_res]:
+                        new_key = key + f'.{compute_res}.{comp}'
+                        self._parse_health_comp_dict(self.compute_health_list[compute_res][comp], new_key)
+            elif compute_res == 'uid' or compute_res == 'last_updated':
+                new_key = key + f'.{compute_res}'
+                val = self.compute_health_list[compute_res]
+                self._update_health(new_key, val)
 
-            else:
-                # conditions handled isinstance(v, str) or isinstance(v, int) etc
-                self._path.append(k)
-                key = (".".join(self._path))
-                val = v
-                self._update_kv(key, val)
-                self._path.pop()
+    def _parse_health_comp_dict(self, component, key):
+        if isinstance(component, list) and component:
+            for res_comp in component:
+                if 'uid' in res_comp and 'last_updated' in res_comp:
+                    val = res_comp['uid']
+                    self._update_health(f'{key}.uid', val)
+                    val = res_comp['last_updated']
+                    self._update_health(f'{key}.last_updated', val)
+                if 'health' in res_comp:
+                    new_key = key + '.health.status'
+                    val = res_comp['health']['status']
+                    self._update_health(new_key, val)
+        else:
+            if isinstance(component, dict) and component:
+                for sub_comp in component:
+                    self._parse_health_comp_dict(sub_comp, key)
+
 
     # parse json and generate health events
     def generate_health(self, json_file_nm, conf_index, conf_store):
@@ -116,10 +106,8 @@ class KVGenerator:
         self._conf_store = conf_store
 
         try:
-            with open(json_file_nm, "r") as fi:
-                schema = json.load(fi)
-
-            self._walk(schema)
+            Conf.load('node_health', f'json://{json_file_nm}')
+            self._get_required_kv()
             Log.info(f"Health updates successful for {json_file_nm}  ")
 
         except Exception as e:

@@ -40,6 +40,8 @@ class HEALTH_EVENTS(Enum):
     MISSING = "missing"
     INSERTION = "insertion"
     FAILED = "failed"
+    ACTIVE = "active"
+    INACTIVE = "inactive"
     THRESHOLD_BREACHED_LOW = "threshold_breached:low"
     THRESHOLD_BREACHED_HIGH = "threshold_breached:high"
     # [TBD] support needs to be added for this event type in health event
@@ -79,20 +81,26 @@ RESOURCE_TO_HEALTH_STATUS_MAPPING = {
     "OK" : HEALTH_EVENTS.INSERTION.value,
     "FAULT" : HEALTH_EVENTS.FAULT.value,
     "NONE" : HEALTH_EVENTS.UNKNOWN.value,
+    "ACTIVE" : HEALTH_EVENTS.ACTIVE.value,
+    "INACTIVE" : HEALTH_EVENTS.INACTIVE.value,
+    "FAILED" : HEALTH_EVENTS.FAILED.value,
     # [TBD] To be enabled once support for "degraded" is avilable in HEALTH_EVENTS
     #"DEGRADED" : HEALTH_EVENTS.DEGRADED.value
     "DEGRADED" : HEALTH_EVENTS.FAULT.value
 }
 
 # Constants for getting health data from Discovery module
-NODE_HEALTH_RETRY_COUNT = 10
+NODE_HEALTH_RETRY_COUNT = 30
 NODE_HEALTH_RETRY_INTERVAL = 2
 CMD_GET_MACHINE_ID = "cat /etc/machine-id"
 
 # Mapping to identify the SEVERITY based on EVENT_TYPE
 HEALTH_STATUS_TO_EVENT_SEVERITY_MAPPING = {
     "OK" : EVENT_SEVERITIES.INFORMATIONAL.value,
+    "ACTIVE" : EVENT_SEVERITIES.INFORMATIONAL.value,
+    "INACTIVE" : EVENT_SEVERITIES.WARNING.value,
     "FAULT" : EVENT_SEVERITIES.CRITICAL.value,
+    "FAILED" : EVENT_SEVERITIES.ALERT.value,
     "NONE" : EVENT_SEVERITIES.INFORMATIONAL.value,
     "DEGRADED" : EVENT_SEVERITIES.ALERT.value
 }
@@ -112,10 +120,17 @@ RESOURCE_TYPE_MAPPING = {
     "storage_nodes.hw.platform_sensors.voltage_sensors" : "enclosure:sensor:voltage",
     "storage_nodes.hw.platform_sensors.current_sensors" : "enclosure:sensor:current",
     "storage_nodes.hw.sas_ports" : "enclosure:interface:sas",
-    "compute_nodes.hw.psus" : "node:fru:psu",
-    "compute_nodes.hw.fans" : "node:fru:fan",
-    "compute_nodes.hw.disks" : "node:fru:disk",
-    "compute_nodes.hw.platform_sensors.temperature_sensors" : "node:sensor:temperature",
+    "node.compute.hw.psu" : "node:fru:psu",
+    "node.compute.hw.cpu" : "node:os:psu",
+    "node.compute.hw.memory" : "node:os:memory",
+    "node.compute.hw.fan" : "node:fru:fan",
+    "node.compute.hw.nw_port" : "node:fru:psu",
+    "node.compute.hw.sas_hba" : "node:fru:psu",
+    "node.compute.hw.sas_port" : "node:fru:psu",
+    "node.compute.hw.disk" : "node:fru:psu",
+    "node.compute.hw.platform_sensor.temperature" : "node:fru:psu",
+    "node.compute.hw.platform_sensor.voltage" : "node:fru:psu",
+    "node.compute.hw.platform_sensor.current" : "node:fru:psu",
     "compute_nodes.hw.platform_sensors.voltage_sensors" : "node:sensor:voltage",
     # [TBD] this mapping should be corrected once input is received from SSPL
     "compute_nodes.hw.platform_sensors.current_sensors" : "node",
@@ -125,8 +140,8 @@ RESOURCE_TYPE_MAPPING = {
     "compute_nodes.hw.nw_ports" : "node:interface:nw",
     "compute_nodes.hw.sas_hba" : "node:interface:sas",
     "compute_nodes.hw.sas_ports" : "node:interface:sas:port",
-    "compute_nodes.sw.cortx_sw_services" : "node:sw:os:service",
-    "compute_nodes.sw.external_sw_services" : "node:sw:os:service",
-    "compute_nodes" : "node",
+    "node.compute.sw.cortx_sw_services" : "node:sw:os:service",
+    "node.compute.sw.external_sw_services" : "node:sw:os:service",
+    "node.compute" : "node",
     "storage_nodes" : "enclosure"
 }
