@@ -496,8 +496,7 @@ class ConfigCmd(Cmd):
                     self._create_resource(s3_instances=s3_instances, mgmt_info=mgmt_info, node_count=len(nodelist),
                                           ios_instances=ios_instances, stonith_config=all_nodes_stonith_config.get(node_name))
                     # configure stonith for each node from that node only
-                    if enable_stonith:
-                        configure_stonith(push=True, stonith_config=all_nodes_stonith_config.get(node_name))
+                    self._configure_stonith(all_nodes_stonith_config, node_name, enable_stonith)
                     self._confstore.set(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
                 except Exception as e:
                     Log.error(f"Cluster creation failed; destroying the cluster. Error: {e}")
@@ -516,14 +515,10 @@ class ConfigCmd(Cmd):
                 # Add node with SSH
                 self._add_node_remotely(node_name, cluster_user, cluster_secret)
                 # configure stonith for each node from that node only
-                if enable_stonith:
-                    self._execute.run_cmd(const.PCS_CLEANUP)
-                    configure_stonith(push=True, stonith_config=all_nodes_stonith_config.get(node_name))
+                self._configure_stonith(all_nodes_stonith_config, node_name, enable_stonith)
         else:
             # configure stonith for each node from that node only
-            if enable_stonith:
-                self._execute.run_cmd(const.PCS_CLEANUP)
-                configure_stonith(push=True, stonith_config=all_nodes_stonith_config.get(node_name))
+            self._configure_stonith(all_nodes_stonith_config, node_name, enable_stonith)
             for node in nodelist:
                 if node != node_name:
                     Log.info(f"Adding node {node} to Cluster {cluster_name}")
@@ -534,6 +529,22 @@ class ConfigCmd(Cmd):
         # Create Alert if not exists
         self._alert_config.create_alert()
         Log.info("config command is successful")
+
+    def _configure_stonith(self, all_nodes_stonith_config: dict, node_name: str, enable_stonith : bool = False) -> None:
+        """
+        configure stonith
+        Args:
+            all_nodes_stonith_config: required config stonith for each node
+            node_name: node name to get stonith config from all nodes stonith config
+            enable_stonith: default value is False
+
+        Returns:
+            None
+
+        """
+        if enable_stonith:
+            self._execute.run_cmd(const.PCS_CLEANUP)
+            configure_stonith(push=True, stonith_config=all_nodes_stonith_config.get(node_name))
 
     def _create_resource(self, ios_instances, s3_instances, mgmt_info, node_count, stonith_config=None):
         Log.info("Creating pacemaker resources")
@@ -642,7 +653,6 @@ class ConfigCmd(Cmd):
                         self._confstore.delete(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
         except Exception as e:
             raise HaConfigException(f"Failed to add node {node_name} remotely. Error: {e}")
-
 
     def _update_env(self, node_name: str, node_type: str, cluster_type: str, s3_instances: int, ios_instances: int) -> None:
         """
