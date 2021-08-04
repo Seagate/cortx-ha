@@ -16,7 +16,7 @@
 # cortx-questions@seagate.com.
 
 class SubscribeEvent:
-    def __init__(self, resource_type : str, states : str):
+    def __init__(self, resource_type : str, states : list):
         """
         Subscribe event object.
         For HA state will be dict of {state: actions}
@@ -24,7 +24,7 @@ class SubscribeEvent:
 
         Args:
             resource_type (str): Type of resource.
-            states (any): States
+            states (list): States
         """
         self.resource_type = resource_type
         self.states = states
