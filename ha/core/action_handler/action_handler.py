@@ -17,13 +17,12 @@
 from cortx.utils.log import Log
 
 from ha.core.error import HAUnimplemented
-from ha.core.action_handler.error import InvalidEvent, InvalidAction
+from ha.core.health_monitor.error import InvalidEvent, InvalidAction
 from ha.core.event_manager.event_manager import EventManager
 from ha.core.event_manager.model.action_event import RecoveryActionEvent
 from ha.core.health_monitor.const import HEALTH_MON_ACTIONS
 from ha.core.system_health.const import HEALTH_STATUSES
 from ha.core.system_health.model.health_event import HealthEvent
-
 
 class ActionHandler:
     """
@@ -120,7 +119,6 @@ class ActionHandler:
         """
         raise HAUnimplemented()
 
-
 class DefaultActionHandler(ActionHandler):
     """
     Default action handler
@@ -147,9 +145,9 @@ class DefaultActionHandler(ActionHandler):
         else:
             raise InvalidAction()
 
-class NodeFailureActionHandler(ActionHandler):
+class NodeActionHandler(ActionHandler):
     """
-    Node failure action handler
+    Node action handler
     """
 
     def __init__(self):

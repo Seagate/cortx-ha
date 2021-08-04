@@ -27,10 +27,12 @@ class SUBSCRIPTION_LIST(enum.Enum, metaclass=EnumListMeta):
     HA = "ha"
     TEST = "test"
 
+class EVENT_MANAGER_KEYS(enum.Enum, metaclass=EnumListMeta):
+    MESSAGE_TYPE_VALUE = "ha_event_<component_id>"
+    MESSAGE_TYPE_KEY = "message_type/<component_id>"
+    SUBSCRIPTION_KEY = "events/subscribe/<component_id>"
+    EVENT_KEY = "events/<resource>/<state>"
+
 ACTION_EVENT_VERSION = "2.0"
 EVENT_MANAGER_LOG="event_manager"
-COMPONENT_KEY = 'events/subscribe'
-EVENT_KEY = 'events'
 EVENT_MGR_PRODUCER_ID = "ha_event_manager_<component_id>"
-EVENT_MGR_MESSAGE_TYPE = "ha_event_<component_id>"
-EVENT_MGR_MESSAGE_TYPE_KEY = "message_type/<component_id>"

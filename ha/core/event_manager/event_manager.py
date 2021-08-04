@@ -31,6 +31,9 @@ from ha.core.event_manager.error import UnSubscribeException
 from ha.core.event_manager.error import PublishException
 from ha.core.event_manager.model.action_event import RecoveryActionEvent
 from ha.core.event_manager.const import SUBSCRIPTION_LIST
+from ha.core.event_manager.const import EVENT_MANAGER_KEYS
+from ha.core.health_monitor.const import HEALTH_MON_ACTIONS
+from ha.core.health_monitor.monitor_rules_manager import MonitorRulesManager
 
 class EventManager:
     """
@@ -64,6 +67,8 @@ class EventManager:
         if default_log_enable:
             ConfigManager.init(const.EVENT_MANAGER_LOG)
         self._confstore = ConfigManager.get_confstore()
+        self._monitor_rule = MonitorRulesManager()
+        self._default_action = HEALTH_MON_ACTIONS.PUBLISH_ACT.value
 
     @staticmethod
     def _validate_events(events: list) -> None:
@@ -97,10 +102,10 @@ class EventManager:
             str: Message type.
         """
         # TODO: Separate this logic in another class
-        message_type = const.EVENT_MGR_MESSAGE_TYPE.replace("<component_id>", component)
+        message_type = EVENT_MANAGER_KEYS.MESSAGE_TYPE_VALUE.value.replace("<component_id>", component)
         MessageBus.register(message_type)
         # Add message type key/value to confstore
-        message_type_key = const.EVENT_MGR_MESSAGE_TYPE_KEY.replace("<component_id>", component)
+        message_type_key = EVENT_MANAGER_KEYS.MESSAGE_TYPE_KEY.value.replace("<component_id>", component)
         if not self._confstore.key_exists(message_type_key):
             self._confstore.set(message_type_key, message_type)
         Log.debug(f"Created {message_type} with {message_type_key}")
@@ -113,10 +118,10 @@ class EventManager:
         Args:
             component (str): Component name.
         """
-        message_type = const.EVENT_MGR_MESSAGE_TYPE.replace("<component_id>", component)
+        message_type = EVENT_MANAGER_KEYS.MESSAGE_TYPE_VALUE.value.replace("<component_id>", component)
         MessageBus.deregister(message_type)
         # Remove message type key from confstore
-        message_type_key = const.EVENT_MGR_MESSAGE_TYPE_KEY.replace("<component_id>", component)
+        message_type_key = EVENT_MANAGER_KEYS.MESSAGE_TYPE_KEY.value.replace("<component_id>", component)
         if self._confstore.key_exists(message_type_key):
             self._confstore.delete(message_type_key)
         Log.info(f"Unsubscribed component {component} from message_type {message_type}")
@@ -163,7 +168,7 @@ class EventManager:
                        Key is: {key}')
             self._confstore.set(f'{key}', event_list)
 
-    def _store_event_key(self, key: str, resource_type: str, states: list = None, comp: str = None) -> None:
+    def _store_event_key(self, resource_type: str, states: list = None, comp: str = None) -> None:
         '''
            Perform actual confstore store operation for event keys
            key: /cortx/ha/v1/events/enclosure:hw:disk/online
@@ -171,7 +176,7 @@ class EventManager:
         '''
         if states:
             for state in states:
-                new_key = key + f'/{resource_type}/{state}'
+                new_key = EVENT_MANAGER_KEYS.EVENT_KEY.value.replace("<resource>", resource_type).replace("<state>", state)
                 if self._confstore.key_exists(new_key):
                     comp_json_list = self._confstore.get(new_key)
 
@@ -185,7 +190,7 @@ class EventManager:
                     # Store new updated list in json string format to confstore
                     new_comp_list = json.dumps(comp_list)
                     Log.debug(f'Final newly added list of subscription is: {new_comp_list}, \
-                                Key is: {key}')
+                                Key is: {new_key}')
                     self._confstore.update(new_key, new_comp_list)
                 else:
                     new_comp_list = []
@@ -193,7 +198,7 @@ class EventManager:
                     # Store in go confstore in the json string format
                     comp_list = json.dumps(new_comp_list)
                     Log.debug(f'Final newly added list of subscription is: {new_comp_list}, \
-                                Key is: {key}')
+                                Key is: {new_key}')
                     self._confstore.set(f'{new_key}', comp_list)
 
     def _delete_component_key(self, component: str, resource_type: str, states: list = None) -> None:
@@ -211,8 +216,9 @@ class EventManager:
         '''
         for state in states:
             delete_required_state = resource_type + '/' + state
-            if self._confstore.key_exists(f'{const.COMPONENT_KEY}/{component}'):
-                comp_json_list = self._confstore.get(f'{const.COMPONENT_KEY}/{component}')
+            key = EVENT_MANAGER_KEYS.SUBSCRIPTION_KEY.value.replace("<component_id>", component)
+            if self._confstore.key_exists(key):
+                comp_json_list = self._confstore.get(key)
                 # Get the event list from confstore
                 _, event_list = comp_json_list.popitem()
                 event_list = json.loads(event_list)
@@ -224,20 +230,19 @@ class EventManager:
                     # After deletion, if list is not empty, update the confstore key
                     new_event_list = json.dumps(event_list)
                     Log.debug(f'Updating the subscription for {component}. new list: {new_event_list}')
-                    self._confstore.update(f'{const.COMPONENT_KEY}/{component}', new_event_list)
+                    self._confstore.update(key, new_event_list)
                 else:
                     Log.debug(f'Deleting subscription for {component} completely as there are \
                                 no other subscriptions')
                     # else, delete the whole component
-                    self._confstore.delete(f'{const.COMPONENT_KEY}/{component}')
+                    self._confstore.delete(key)
                     # As there is no subscription for this component,
                     # delete the topic key
                     self._delete_message_type(component)
             else:
                 # If component key is not there, means event with that key will not be there,
                 # hence safely raise exception here so that _delete_event_key will not be called
-                raise UnSubscribeException('Can not unsubscribe the component: \
-                                            {component} as it was not registered earlier')
+                raise UnSubscribeException(f"Can not unsubscribe the component: {component} as it was not registered earlier")
 
     def _delete_event_key(self, component: str, resource_type: str, states: list = None):
         '''
@@ -248,8 +253,9 @@ class EventManager:
           Stored key after deletion will be: cortx/ha/v1/events/node:os:memory_usage/failed:["motr"]
         '''
         for state in states:
-            if self._confstore.key_exists(f'{const.EVENT_KEY}/{resource_type}/{state}'):
-                comp_json_list = self._confstore.get(f'{const.EVENT_KEY}/{resource_type}/{state}')
+            key = EVENT_MANAGER_KEYS.EVENT_KEY.value.replace("<resource>", resource_type).replace("<state>", state)
+            if self._confstore.key_exists(key):
+                comp_json_list = self._confstore.get(key)
                 # Get the component list
                 _, comp_list = comp_json_list.popitem()
                 comp_list = json.loads(comp_list)
@@ -261,14 +267,14 @@ class EventManager:
                     # If still list is not empty, update the confstore key
                     new_comp_list = json.dumps(comp_list)
                     Log.debug(f'Updating the key for {resource_type}/{state}. new comp list:{new_comp_list}')
-                    self._confstore.update(f'{const.EVENT_KEY}/{resource_type}/{state}', new_comp_list)
+                    self._confstore.update(key, new_comp_list)
                 # Else delete the event from the confstore
                 else:
                     Log.debug(f'Deleting the key for {resource_type}/{state} completely \
                                 as there are no more subscriptions')
-                    self._confstore.delete(f'{const.EVENT_KEY}/{resource_type}/{state}')
+                    self._confstore.delete(key)
             else:
-                Log.error(f'Key: {const.EVENT_KEY}/{resource_type}/{state} does not present')
+                Log.error(f'Key: {key} does not present')
 
     def _get_producer(self, component: str) -> object:
         """
@@ -278,26 +284,12 @@ class EventManager:
             component (str): Component
         """
         producer_id = const.EVENT_MGR_PRODUCER_ID.replace("<component_id>", component)
-        message_type_key = const.EVENT_MGR_MESSAGE_TYPE_KEY.replace("<component_id>", component)
+        message_type_key = EVENT_MANAGER_KEYS.MESSAGE_TYPE_KEY.value.replace("<component_id>", component)
         message_type_key_val = self._confstore.get(message_type_key)
         _, message_type = message_type_key_val.popitem()
         return MessageBus.get_producer(producer_id, message_type)
 
-    def check_event_key(self, resource_type: str, state: str = None) -> bool:
-        """
-        Check if event exists.
-
-        Args:
-            resource_type (str): Event key.
-            state (str, optional): Status. Defaults to None.
-
-        Returns:
-            bool: True if key exists.
-        """
-        event_key = f"{const.EVENT_KEY}/{resource_type}/{state}"
-        return self._confstore.key_exists(event_key)
-
-    def subscribe(self, component: str = None, events: list = None) -> None:
+    def subscribe(self, component: str, events: list) -> str:
         """
         Register all the events for the notification. It maintains
         list of events registered by the components. It maps the event
@@ -311,21 +303,23 @@ class EventManager:
         Raise:
             SubscribeException: Raise error if failed.
         """
-        # TODO: Add health monitor rules
-        Log.info(f'Received a subscribe request from {component}')
+        Log.info(f"Received a subscribe request from {component}")
         try:
             EventManager._validate_component(component)
             EventManager._validate_events(events)
             message_type = self._create_message_type(component)
             for event in events:
-                self._store_component_key(f'{const.COMPONENT_KEY}/{component}', event.resource_type, event.states)
-                self._store_event_key(f'{const.EVENT_KEY}', event.resource_type, event.states, comp=component)
+                subscription_key = EVENT_MANAGER_KEYS.SUBSCRIPTION_KEY.value.replace("<component_id>", component)
+                self._store_component_key(subscription_key, event.resource_type, event.states)
+                self._store_event_key(event.resource_type, event.states, comp=component)
+                for state in event.states:
+                    self._monitor_rule.add_rule(event.resource_type, state, self._default_action)
             Log.info(f"Successfully Subscribed component {component} with message_type {message_type}")
             return message_type
         except Exception as e:
             raise SubscribeException(f"Failed to subscribe {component}. Error: {e}")
 
-    def unsubscribe(self, component: str = None, events: list = None):
+    def unsubscribe(self, component: str, events: list, action: str = None) -> None:
         """
         Deregister the event for the specific component and the component \
         for the event using consul deletion
@@ -342,9 +336,16 @@ class EventManager:
         try:
             self._validate_component(component)
             self._validate_events(events)
+            if not action:
+                action = HEALTH_MON_ACTIONS.PUBLISH_ACT.value
             for event in events:
                 self._delete_component_key(component, event.resource_type, event.states)
                 self._delete_event_key(component, event.resource_type, event.states)
+                for state in event.states:
+                    key = EVENT_MANAGER_KEYS.EVENT_KEY.value.replace(
+                        "<resource>", event.resource_type).replace("<state>", state)
+                    if not self._confstore.key_exists(key):
+                        self._monitor_rule.remove_rule(event.resource_type, state, self._default_action)
             Log.info(f"Successfully UnSubscribed component {component}")
         except Exception as e:
             raise UnSubscribeException(f"Failed to unsubscribe {component}. Error: {e}")
@@ -359,7 +360,7 @@ class EventManager:
         Returns:
             list: List of events.
         """
-        key = f'{const.COMPONENT_KEY}/{component}'
+        key = EVENT_MANAGER_KEYS.SUBSCRIPTION_KEY.value.replace("<component_id>", component)
         value = []
         Log.debug(f"Fetching subscribed events for {key}")
 
@@ -380,7 +381,8 @@ class EventManager:
         try:
             component_list = []
             # Run through list of components subscribed for this event and send event to each of them
-            component_list_key = f'{const.EVENT_KEY}/{event.resource_type}/{event.event_type}'
+            component_list_key = EVENT_MANAGER_KEYS.EVENT_KEY.value.replace(
+                "<resource>", event.resource_type).replace("<state>", event.event_type)
             component_list_key_val = self._confstore.get(component_list_key)
             if component_list_key_val:
                 _, value = component_list_key_val.popitem()
@@ -400,7 +402,7 @@ class EventManager:
         Args:
             component (str): component name.
         """
-        key = const.EVENT_MGR_MESSAGE_TYPE_KEY.replace("<component_id>", component)
+        key = EVENT_MANAGER_KEYS.MESSAGE_TYPE_KEY.value.replace("<component_id>", component)
         value = None
         Log.debug(f"Fetching message type for {key}")
 

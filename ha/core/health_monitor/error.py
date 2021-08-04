@@ -27,3 +27,9 @@ class HealthMonitorError(HAError):
         _message_id = HA_HEALTH_MONITOR_ERROR
         _rc = 1
         super(HealthMonitorError, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
+
+class InvalidAction(HealthMonitorError):
+    """Exception to indicate action missing for process."""
+
+class InvalidEvent(HealthMonitorError):
+    """Exception to indicate action missing for process."""

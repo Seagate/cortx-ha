@@ -16,7 +16,15 @@
 # cortx-questions@seagate.com.
 
 class SubscribeEvent:
-    def __init__(self, resource_type : str, states : list):
+    def __init__(self, resource_type : str, states : str):
+        """
+        Subscribe event object.
+        For HA state will be dict of {state: actions}
+        For Other Component states will be list.
+
+        Args:
+            resource_type (str): Type of resource.
+            states (any): States
+        """
         self.resource_type = resource_type
         self.states = states
-

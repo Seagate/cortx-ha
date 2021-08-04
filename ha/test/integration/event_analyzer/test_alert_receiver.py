@@ -17,7 +17,6 @@
 
 import sys
 import json
-
 from cortx.utils.message_bus import MessageConsumer
 
 if __name__ == '__main__':
