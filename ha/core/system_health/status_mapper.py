@@ -27,6 +27,7 @@ class StatusMapper:
         "fault_resolved": "online",
         "missing": "offline",
         "insertion": "online",
+        "degraded": "degraded",
         "failed": "failed",
         "active": "active",
         "inactive": "inactive",

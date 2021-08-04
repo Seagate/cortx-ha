@@ -53,19 +53,15 @@ class KVGenerator:
             self._last_modified = val
         elif re.search(self._filter_list[2].replace(':',''), key):
             self._status = val
-            if self._status == "NA":
+            if self._status.upper() in ["NA", "UNKNOWN", "N/A"]:
                 return
             # cleanup the key
             self._key = key.replace('.health.status','')
             self._healthEvent.create_health_event(self._key, self._uid, self._last_modified, self._status, self._conf_index, self._conf_store)
             self._uid = self._last_modified = self._status = self._key = None
 
-    def _get_required_kv(self, key='node.compute'):
+    def _get_required_compute_kv(self, compute_resource_list, key=None):
         """Get the required key values from Confstore"""
-        self.compute_health_list = Conf.get('node_health', 'node>compute[0]')
-        compute_resource_list = []
-        for compute_component in self.compute_health_list:
-            compute_resource_list.append(compute_component)
         for compute_res in compute_resource_list:
             if isinstance(self.compute_health_list[compute_res], dict):
                 if compute_res == 'health':
@@ -79,6 +75,23 @@ class KVGenerator:
             elif compute_res == 'uid' or compute_res == 'last_updated':
                 new_key = key + f'.{compute_res}'
                 val = self.compute_health_list[compute_res]
+                self._update_health(new_key, val)
+
+    def _get_required_storage_kv(self, storage_resource_list, key=None):
+        """Get the required key values from Confstore"""
+        for storage_res in storage_resource_list:
+            if isinstance(self.storage_health_list[storage_res], dict):
+                if storage_res == 'health':
+                    new_key = key + f'.{storage_res}.status'
+                    val = self.storage_health_list[storage_res]['status']
+                    self._update_health(new_key, val)
+                else:
+                    for comp in self.storage_health_list[storage_res]:
+                        new_key = key + f'.{storage_res}.{comp}'
+                        self._parse_health_comp_dict(self.storage_health_list[storage_res][comp], new_key)
+            elif storage_res == 'uid' or storage_res == 'last_updated':
+                new_key = key + f'.{storage_res}'
+                val = self.storage_health_list[storage_res]
                 self._update_health(new_key, val)
 
     def _parse_health_comp_dict(self, component, key):
@@ -107,9 +120,17 @@ class KVGenerator:
 
         try:
             Conf.load('node_health', f'json://{json_file_nm}')
-            self._get_required_kv()
+            self.compute_health_list = Conf.get('node_health', f'node>compute[0]')
+            self.storage_health_list = Conf.get('node_health', f'node>storage[0]')
+            compute_resource_list = []
+            storage_resource_list = []
+            for compute_component in self.compute_health_list:
+                compute_resource_list.append(compute_component)
+            for storage_component in self.storage_health_list:
+                storage_resource_list.append(storage_component)
+            self._get_required_compute_kv(compute_resource_list, key='node.compute')
+            self._get_required_storage_kv(storage_resource_list, key='node.storage')
             Log.info(f"Health updates successful for {json_file_nm}  ")
-
         except Exception as e:
             Log.error(f"Failed parsing file {json_file_nm}, Exception received {e} ")
             raise InvalidHealthDataException(f"Failed parsing file {json_file_nm}")

@@ -84,9 +84,9 @@ RESOURCE_TO_HEALTH_STATUS_MAPPING = {
     "ACTIVE" : HEALTH_EVENTS.ACTIVE.value,
     "INACTIVE" : HEALTH_EVENTS.INACTIVE.value,
     "FAILED" : HEALTH_EVENTS.FAILED.value,
-    # [TBD] To be enabled once support for "degraded" is avilable in HEALTH_EVENTS
-    #"DEGRADED" : HEALTH_EVENTS.DEGRADED.value
-    "DEGRADED" : HEALTH_EVENTS.FAULT.value
+    "DISABLED/FAILED" : HEALTH_EVENTS.FAILED.value,
+    "DEGRADED" : HEALTH_EVENTS.DEGRADED.value
+    #"DEGRADED" : HEALTH_EVENTS.FAULT.value
 }
 
 # Constants for getting health data from Discovery module
@@ -101,6 +101,7 @@ HEALTH_STATUS_TO_EVENT_SEVERITY_MAPPING = {
     "INACTIVE" : EVENT_SEVERITIES.WARNING.value,
     "FAULT" : EVENT_SEVERITIES.CRITICAL.value,
     "FAILED" : EVENT_SEVERITIES.ALERT.value,
+    "DISABLED/FAILED" : EVENT_SEVERITIES.ALERT.value,
     "NONE" : EVENT_SEVERITIES.INFORMATIONAL.value,
     "DEGRADED" : EVENT_SEVERITIES.ALERT.value
 }
@@ -109,39 +110,32 @@ HEALTH_STATUS_TO_EVENT_SEVERITY_MAPPING = {
 # Note: If the KV parsing output changes the strings in this mapping will need to be modified
 # [TBD] This mapping to be confirmed with SSPL
 RESOURCE_TYPE_MAPPING = {
-    "storage_nodes.hw.controllers" : "enclosure:hw:controller",
-    "storage_nodes.hw.disks" : "enclosure:hw:disk ",
-    "storage_nodes.hw.fanmodules" : "enclosure:hw:fan",
-    "storage_nodes.hw.psus" : "enclosure:hw:psu",
-    "storage_nodes.hw.sideplane_expander" : "enclosure:hw:sideplane",
-    "storage_nodes.fw.logical_volumes" : "enclosure:cortx:logical_volume",
-    "storage_nodes.fw.disk_groups" : "enclosure:cortx:disk_group",
-    "storage_nodes.hw.platform_sensors.temperature_sensors" : "enclosure:sensor:temperature",
-    "storage_nodes.hw.platform_sensors.voltage_sensors" : "enclosure:sensor:voltage",
-    "storage_nodes.hw.platform_sensors.current_sensors" : "enclosure:sensor:current",
-    "storage_nodes.hw.sas_ports" : "enclosure:interface:sas",
+    "node.storage.hw.controller" : "enclosure:hw:controller",
+    "node.storage.hw.disk" : "enclosure:hw:disk ",
+    "node.storage.hw.fan" : "enclosure:hw:fan",
+    "node.storage.hw.psu" : "enclosure:hw:psu",
+    "node.storage.hw.sideplane_expander" : "enclosure:hw:sideplane",
+    "node.storage.fw.logical_volume" : "enclosure:cortx:logical_volume",
+    "node.storage.fw.disk_group" : "enclosure:cortx:disk_group",
+    "node.storage.hw.platform_sensor.temperature" : "enclosure:sensor:temperature",
+    "node.storage.hw.platform_sensor.voltage" : "enclosure:sensor:voltage",
+    "node.storage.hw.platform_sensor.current" : "enclosure:sensor:current",
+    "node.storage.hw.sas_port" : "enclosure:interface:sas",
+    "node.storage.hw.nw_port" : "enclosure:interface:nw",
     "node.compute.hw.psu" : "node:fru:psu",
-    "node.compute.hw.cpu" : "node:os:psu",
+    "node.compute.hw.cpu" : "node:os:cpu",
     "node.compute.hw.memory" : "node:os:memory",
     "node.compute.hw.fan" : "node:fru:fan",
-    "node.compute.hw.nw_port" : "node:fru:psu",
-    "node.compute.hw.sas_hba" : "node:fru:psu",
-    "node.compute.hw.sas_port" : "node:fru:psu",
-    "node.compute.hw.disk" : "node:fru:psu",
+    "node.compute.hw.nw_port" : "node:interface:nw",
+    "node.compute.hw.sas_hba" : "node:interface:sas",
+    "node.compute.hw.sas_port" : "node:interface:sas:port",
+    "node.compute.hw.disk" : "node:fru:disk",
     "node.compute.hw.platform_sensor.temperature" : "node:fru:psu",
     "node.compute.hw.platform_sensor.voltage" : "node:fru:psu",
     "node.compute.hw.platform_sensor.current" : "node:fru:psu",
-    "compute_nodes.hw.platform_sensors.voltage_sensors" : "node:sensor:voltage",
-    # [TBD] this mapping should be corrected once input is received from SSPL
-    "compute_nodes.hw.platform_sensors.current_sensors" : "node",
-    "compute_nodes.hw.cpu" : "node:os:cpu",
-    "compute_nodes.hw.memory" : "node:os:memory",
-    "compute_nodes.sw.os.raid_array" : "node:os:raid_data",
-    "compute_nodes.hw.nw_ports" : "node:interface:nw",
-    "compute_nodes.hw.sas_hba" : "node:interface:sas",
-    "compute_nodes.hw.sas_ports" : "node:interface:sas:port",
+    "node.compute.sw.raid" : "node:os:raid_data",
     "node.compute.sw.cortx_sw_services" : "node:sw:os:service",
     "node.compute.sw.external_sw_services" : "node:sw:os:service",
     "node.compute" : "node",
-    "storage_nodes" : "enclosure"
+    "node.storage" : "enclosure"
 }
