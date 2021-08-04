@@ -28,6 +28,7 @@ class StatusMapper:
         "missing": "offline",
         "insertion": "online",
         "degraded": "degraded",
+        "unrecoverebale": "unrecoverable",
         "failed": "failed",
         "active": "active",
         "inactive": "inactive",

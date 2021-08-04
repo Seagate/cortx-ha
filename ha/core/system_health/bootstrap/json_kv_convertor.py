@@ -109,8 +109,8 @@ class KVGenerator:
         else:
             if isinstance(component, dict) and component:
                 for sub_comp in component:
-                    self._parse_health_comp_dict(sub_comp, key)
-
+                    new_key = key + f'.{sub_comp.lower()}'
+                    self._parse_health_comp_dict(component[sub_comp], new_key)
 
     # parse json and generate health events
     def generate_health(self, json_file_nm, conf_index, conf_store):

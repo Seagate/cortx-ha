@@ -46,6 +46,7 @@ class HEALTH_EVENTS(Enum):
     THRESHOLD_BREACHED_HIGH = "threshold_breached:high"
     # [TBD] support needs to be added for this event type in health event
     DEGRADED = "degraded"
+    UNRECOVERABLE = "unrecoverebale"
     UNKNOWN = "unknown"
 
 # Health event severities
@@ -85,7 +86,8 @@ RESOURCE_TO_HEALTH_STATUS_MAPPING = {
     "INACTIVE" : HEALTH_EVENTS.INACTIVE.value,
     "FAILED" : HEALTH_EVENTS.FAILED.value,
     "DISABLED/FAILED" : HEALTH_EVENTS.FAILED.value,
-    "DEGRADED" : HEALTH_EVENTS.DEGRADED.value
+    "DEGRADED" : HEALTH_EVENTS.DEGRADED.value,
+    "UNRECOVERABLE" : HEALTH_EVENTS.UNRECOVERABLE.value
     #"DEGRADED" : HEALTH_EVENTS.FAULT.value
 }
 
@@ -103,7 +105,8 @@ HEALTH_STATUS_TO_EVENT_SEVERITY_MAPPING = {
     "FAILED" : EVENT_SEVERITIES.ALERT.value,
     "DISABLED/FAILED" : EVENT_SEVERITIES.ALERT.value,
     "NONE" : EVENT_SEVERITIES.INFORMATIONAL.value,
-    "DEGRADED" : EVENT_SEVERITIES.ALERT.value
+    "DEGRADED" : EVENT_SEVERITIES.ALERT.value,
+    "UNRECOVERABLE": EVENT_SEVERITIES.CRITICAL.value
 }
 
 # Mapping resource_type received in health view schema to the one in alerts
