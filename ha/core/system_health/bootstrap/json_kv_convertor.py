@@ -46,7 +46,13 @@ class KVGenerator:
 
     # collct kvs and if all 3 values for a component are avilable, generate healthEvent
     def _update_health(self, key, val):
-
+        """
+           Get the required uid, last_updated abd helath status value.
+           Cleans up the key. Ex: node.compute.hw.cpu.health.status will
+           be node.compute.hw.cpu. If health status value is appropriate,
+           calls the API to create health event with above and additional
+           conf index and conf store object parameters
+        """
         if re.search(self._filter_list[0].replace(':',''), key):
             self._uid = val
         elif re.search(self._filter_list[1].replace(':',''), key):
@@ -61,7 +67,22 @@ class KVGenerator:
             self._uid = self._last_modified = self._status = self._key = None
 
     def _get_required_compute_kv(self, compute_resource_list, key=None):
-        """Get the required key values from Confstore"""
+        """
+           The node health json structure is:
+           {
+              node: {
+                        compute: []
+                    },
+                    {
+                        storage: []
+                    }
+           }
+           This routine will help to get the all required key values from
+           confstore. Prefix: 'node_health' key: node>compute[0]
+           uid, last_updated_status and health status will be updated for
+           each compute as well as sub component of compute
+           Ex: node.compute.hw.cpu.uid CPU-0
+        """
         for compute_res in compute_resource_list:
             if isinstance(self.compute_health_list[compute_res], dict):
                 if compute_res == 'health':
@@ -78,7 +99,22 @@ class KVGenerator:
                 self._update_health(new_key, val)
 
     def _get_required_storage_kv(self, storage_resource_list, key=None):
-        """Get the required key values from Confstore"""
+        """
+           The node health json structure is:
+           {
+              node: {
+                        compute: []
+                    },
+                    {
+                        storage: []
+                    }
+           }
+           This routine will help to get the all required key values from
+           confstore. Prefix: 'node_health' key: node>storage[0]
+           uid, last_updated_status and health status will be updated for
+           storage as well as each sub component of storage
+           Ex: node.storage.fw.logical_volume.last_updated 1626950494
+        """
         for storage_res in storage_resource_list:
             if isinstance(self.storage_health_list[storage_res], dict):
                 if storage_res == 'health':
@@ -95,6 +131,23 @@ class KVGenerator:
                 self._update_health(new_key, val)
 
     def _parse_health_comp_dict(self, component, key):
+        """
+           The node health json structure is:
+           {
+              node: {
+                        compute: [
+                            "hw": {
+                                "cpu": [ {"uid": CPU-0, ...}, {}, ...]
+                                }
+                            "platform_sensor": {[], [], []}
+                        ]
+                    },
+                    {
+                        storage: []
+                    }
+           }
+           This routine further handles the inside hierarchy of compute and storage.
+        """
         if isinstance(component, list) and component:
             for res_comp in component:
                 if 'uid' in res_comp and 'last_updated' in res_comp:
