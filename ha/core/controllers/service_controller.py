@@ -51,7 +51,7 @@ class ServiceController(ElementController):
         raise HAUnimplemented("This operation is not implemented.")
 
     @controller_error_handler
-    def stop(self, service: str, nodeids: list = None) -> dict:
+    def stop(self, nodeid: str, excludeResourceList: list = None) -> dict:
         """
         Stop service.
 
