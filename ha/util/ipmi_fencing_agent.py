@@ -51,8 +51,8 @@ class IpmiFencingAgent(FencingAgent):
                 _, value = bmc_info.popitem()
                 bmc_info_dict = ast.literal_eval(value)
                 self._execute.run_cmd(f"ipmitool -I lanplus -H {bmc_info_dict[BMC_CREDENTIALS.IPMI_IPADDR.value]} "
-                                      "-U {bmc_info_dict[BMC_CREDENTIALS.IPMI_USER.value]} "
-                                      "-P {bmc_info_dict[BMC_CREDENTIALS.IPMI_AUTH_KEY.value]} chassis power off")
+                                      f"-U {bmc_info_dict[BMC_CREDENTIALS.IPMI_USER.value]} "
+                                      f"-P {bmc_info_dict[BMC_CREDENTIALS.IPMI_AUTH_KEY.value]} chassis power off")
         except Exception as e:
             raise Exception(f"Failed to run IPMItool Command. Error : {e}")
 

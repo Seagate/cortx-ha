@@ -30,7 +30,7 @@ from ha.core.controllers.node_controller import NodeController
 from ha.core.controllers.controller_annotation import controller_error_handler
 from ha import const
 from ha.const import NODE_STATUSES
-from ha.core.system_health.const import NODE_MAP_ATTRIBUTES, CLUSTER_ELEMENTS, HEALTH_EVENTS, EVENT_SEVERITIES
+from ha.core.system_health.const import NODE_MAP_ATTRIBUTES, CLUSTER_ELEMENTS, HEALTH_EVENTS, EVENT_SEVERITIES, HEALTH_STATUSES
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.system_health.system_health import SystemHealth, SystemHealthManager
 from ha.core.config.config_manager import ConfigManager
@@ -227,6 +227,41 @@ class PcsNodeController(NodeController, PcsController):
         Log.info(f"List of offline node ids in cluster in sorted ascending order: {sorted(nodes_ids)}")
         return sorted(nodes_ids), node_list
 
+    def create_health_event(self, nodeid: str, event_type: str) -> dict:
+        """
+        Create health event
+        Args:
+            nodeid (str): nodeid
+            event_type (str): event type will be offline, online, failed
+
+        Returns:
+            dict: Return dictionary of health event
+        """
+        key = self._system_health._prepare_key(const.COMPONENTS.NODE_MAP.value, node_id=nodeid)
+        node_map_val = self._health_manager.get_key(key)
+        if node_map_val is None:
+            raise ClusterManagerError("Failed to fetch node_map value")
+        node_map_dict = ast.literal_eval(node_map_val)
+
+        timestamp = str(int(time.time()))
+        event_id = timestamp + str(uuid.uuid4().hex)
+        initial_event = {
+            const.EVENT_ATTRIBUTES.EVENT_ID : event_id,
+            const.EVENT_ATTRIBUTES.EVENT_TYPE : event_type,
+            const.EVENT_ATTRIBUTES.SEVERITY : EVENT_SEVERITIES.WARNING.value,
+            const.EVENT_ATTRIBUTES.SITE_ID : node_map_dict[NODE_MAP_ATTRIBUTES.SITE_ID.value],
+            const.EVENT_ATTRIBUTES.RACK_ID : node_map_dict[NODE_MAP_ATTRIBUTES.RACK_ID.value],
+            const.EVENT_ATTRIBUTES.CLUSTER_ID : node_map_dict[NODE_MAP_ATTRIBUTES.CLUSTER_ID.value],
+            const.EVENT_ATTRIBUTES.STORAGESET_ID : node_map_dict[NODE_MAP_ATTRIBUTES.STORAGESET_ID.value],
+            const.EVENT_ATTRIBUTES.NODE_ID : nodeid,
+            const.EVENT_ATTRIBUTES.HOST_ID : node_map_dict[NODE_MAP_ATTRIBUTES.HOST_ID.value],
+            const.EVENT_ATTRIBUTES.RESOURCE_TYPE : CLUSTER_ELEMENTS.NODE.value,
+            const.EVENT_ATTRIBUTES.TIMESTAMP : timestamp,
+            const.EVENT_ATTRIBUTES.RESOURCE_ID : nodeid,
+            const.EVENT_ATTRIBUTES.SPECIFIC_INFO : None
+        }
+        return initial_event
+
 class PcsVMNodeController(PcsNodeController):
     def initialize(self, controllers):
         """
@@ -349,29 +384,25 @@ class PcsHWNodeController(PcsNodeController):
         """
         check_cluster = op_kwargs.get("check_cluster") if op_kwargs.get("check_cluster") is not None else True
         poweroff = op_kwargs.get("poweroff") if op_kwargs.get("poweroff") is not None else False
+        storageoff = op_kwargs.get("storageoff") if op_kwargs.get("storageoff") is not None else False
         try:
             # Raise exception if user does not have proper permissions
             self._validate_permissions()
             # Raise exception if node_id is not valid
             self.validate_node(node_id=node_id)
 
-            # Prepare key and read the node_map values.
+            # Get the nodeid from pvtfqdn
             nodeid = self._health_manager.get_key(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_id}")
-            key = self._system_health._prepare_key(const.COMPONENTS.NODE_MAP.value, node_id=nodeid)
-            node_map_val = self._health_manager.get_key(key)
-            if node_map_val is None:
-                raise ClusterManagerError("Failed to fetch node_map value")
-            node_map_dict = ast.literal_eval(node_map_val)
 
             # stop all services running on node with node_id
-            timeout = const.NODE_STOP_TIMEOUT if timeout < 0 else timeout
-            node_status = self.nodes_status([node_id]).get(node_id)
-            if node_status == NODE_STATUSES.CLUSTER_OFFLINE.value:
+            node_status = self._system_health.get_node_status(node_id=nodeid).get("status")
+            if node_status == HEALTH_STATUSES.OFFLINE.value:
                 Log.info(f"For stop {node_id}, Node already in offline state.")
                 status = f"Node {node_id} is already in offline state."
-            elif node_status == NODE_STATUSES.POWEROFF.value:
+                return {"status": const.STATUSES.SUCCEEDED.value, "msg": status}
+            elif node_status == HEALTH_STATUSES.FAILED.value:
                 raise ClusterManagerError(f"Failed to stop {node_id}."
-                                          f"node is in {node_status}.")
+                                          f"node is in {node_status} state.")
             else:
                 if check_cluster:
                     # Checks whether cluster is going to be offline if node with node_id is stopped.
@@ -381,41 +412,23 @@ class PcsHWNodeController(PcsNodeController):
                 if self.heal_resource(node_id):
                     time.sleep(const.BASE_WAIT_TIME)
 
-                # Stop all the resources except sspl-ll
-                resources: list = []
-                output, _, _ = self._execute.run_cmd(const.LIST_PCS_RESOURCES, check_error=False)
-                if not "NO resources" in output:
-                    for resource in output.split("\n"):
-                        res = resource.split(":")[0]
-                        if res != "" and res not in resources and res != "sspl-ll":
-                            resources.append(res)
-                    self._service_controller.ban_resources(resources=resources, node_id=node_id)
-                Log.info(f"Waiting to stop resource on node {node_id}")
-                time.sleep(const.BASE_WAIT_TIME)
+                if storageoff:
+                    print("Staorage off")
+                    # Stop services on node except sspl-ll
+                    self._service_controller.stop(nodeid=node_id, excludeResourceList=["sspl-ll"])
 
-            # TODO: The storage enclosure is stopped on the node.
+	                # TODO: storage enclosure is stopped on the node
 
-            # Stop sspl service
-            self._service_controller.ban_resources(resources=["sspl-ll"], node_id=node_id)
+                    # Put node in standby mode
+                    self._execute.run_cmd(const.PCS_NODE_STANDBY.replace("<node>", node_id), f" --wait={const.CLUSTER_STANDBY_UNSTANDBY_TIMEOUT}")
+                    Log.info(f"Executed node standby for {node_id}")
+                    self._service_controller.clear_resources(node_id=node_id)
+                else:
+                    self._execute.run_cmd(const.PCS_NODE_STANDBY.replace("<node>", node_id), f" --wait={const.CLUSTER_STANDBY_UNSTANDBY_TIMEOUT}")
+                    Log.info(f"Executed node standby for {node_id}")
 
             # Update node health
-            timestamp = str(int(time.time()))
-            event_id = timestamp + str(uuid.uuid4().hex)
-            initial_event = {
-                const.EVENT_ATTRIBUTES.EVENT_ID : event_id,
-                const.EVENT_ATTRIBUTES.EVENT_TYPE : HEALTH_EVENTS.FAULT.value,
-                const.EVENT_ATTRIBUTES.SEVERITY : EVENT_SEVERITIES.WARNING.value,
-                const.EVENT_ATTRIBUTES.SITE_ID : node_map_dict[NODE_MAP_ATTRIBUTES.SITE_ID.value],
-                const.EVENT_ATTRIBUTES.RACK_ID : node_map_dict[NODE_MAP_ATTRIBUTES.RACK_ID.value],
-                const.EVENT_ATTRIBUTES.CLUSTER_ID : node_map_dict[NODE_MAP_ATTRIBUTES.CLUSTER_ID.value],
-                const.EVENT_ATTRIBUTES.STORAGESET_ID : node_map_dict[NODE_MAP_ATTRIBUTES.STORAGESET_ID.value],
-                const.EVENT_ATTRIBUTES.NODE_ID : nodeid,
-                const.EVENT_ATTRIBUTES.HOST_ID : node_map_dict[NODE_MAP_ATTRIBUTES.HOST_ID.value],
-                const.EVENT_ATTRIBUTES.RESOURCE_TYPE : CLUSTER_ELEMENTS.NODE.value,
-                const.EVENT_ATTRIBUTES.TIMESTAMP : timestamp,
-                const.EVENT_ATTRIBUTES.RESOURCE_ID : nodeid,
-                const.EVENT_ATTRIBUTES.SPECIFIC_INFO : None
-            }
+            initial_event = self.create_health_event(nodeid=nodeid, event_type=HEALTH_EVENTS.FAULT.value)
             Log.debug(f"Node health : {initial_event} updated for node {nodeid}")
             health_event = HealthEvent.dict_to_object(initial_event)
             self._system_health.process_event(health_event)

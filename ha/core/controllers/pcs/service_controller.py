@@ -15,6 +15,9 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
+import time
+from cortx.utils.log import Log
+from ha import const
 from ha.core.error import ClusterManagerError, HAUnimplemented
 from ha.core.controllers.pcs.pcs_controller import PcsController
 from ha.core.controllers.service_controller import ServiceController
@@ -53,20 +56,33 @@ class PcsServiceController(ServiceController, PcsController):
         raise HAUnimplemented("This operation is not implemented.")
 
     @controller_error_handler
-    def stop(self, service: str, nodeids: list = None) -> dict:
+    def stop(self, nodeid: str, excludeResourceList: list = None) -> dict:
         """
         Stop service.
 
         Args:
-            service (str): Service name.
-            nodeids (list, optional): Node ids, if none then all node status.
-                    Defaults to None.
+            nodeid (str): Private fqdn define in conf store.
+            excludeResourceList (list): Service list which are not stopped.
 
         Returns:
             ([dict]): Return dictionary. {"status": "", "msg":""}
                 status: Succeeded, Failed, InProgress
         """
-        raise HAUnimplemented("This operation is not implemented.")
+        try:
+            resources: list = []
+            output, _, _ = self._execute.run_cmd(const.LIST_PCS_RESOURCES, check_error=False)
+            if "NO resources" not in output:
+                for resource in output.split("\n"):
+                    res = resource.split(":")[0]
+                    if res != "" and res not in resources and res not in excludeResourceList:
+                        resources.append(res)
+            for resource in resources:
+                self._execute.run_cmd(f"pcs resource ban {resource} {nodeid}")
+            Log.info(f"Waiting to stop resource on node {nodeid}")
+            time.sleep(const.BASE_WAIT_TIME)
+            return {"status": const.STATUSES.SUCCEEDED.value, "msg": f"Resources stopped on node {nodeid}"}
+        except Exception as e:
+            raise ClusterManagerError(f"Failed to stop resources on {nodeid}, Error: {e}")
 
     @controller_error_handler
     def status(self, service: str, nodeids: list = None) -> dict:
@@ -84,9 +100,24 @@ class PcsServiceController(ServiceController, PcsController):
         """
         raise HAUnimplemented("This operation is not implemented.")
 
-    def ban_resources(self, resources: list, node_id: str):
+    def clear_resources(self, node_id: str):
+        """
+        Clear resources on node.
+
+        Args:
+            nodeid (str): Private fqdn define in conf store.
+        """
         try:
+            resources: list = []
+            output, _, _ = self._execute.run_cmd(const.LIST_PCS_RESOURCES, check_error=False)
+            if "NO resources" not in output:
+                for resource in output.split("\n"):
+                    res = resource.split(":")[0]
+                    if res != "" and res not in resources:
+                        resources.append(res)
             for resource in resources:
-                self._execute.run_cmd(f"pcs resource ban {resource} {node_id}")
+                self._execute.run_cmd(f"pcs resource clear {resource} {node_id}")
+            Log.info(f"Waiting to clear resource on node {node_id}")
+            time.sleep(20)
         except Exception as e:
-            raise ClusterManagerError(f"Failed to stop resources on {node_id}, Error: {e}")
+            raise ClusterManagerError(f"Failed to clear resources on {node_id}, Error: {e}")
