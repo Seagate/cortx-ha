@@ -466,12 +466,11 @@ def configure_stonith(cib_xml=None, push=False, **kwargs):
     if stonith_config and stonith_config.get("node_type").lower() == const.INSTALLATION_TYPE.HW.value.lower():
         Log.info("Configuring stonith.")
         resource_id = stonith_config.get("resource_id")
-        node_name = stonith_config.get("node_name")
 
         # check for stonith config present for that node
         _output, _err, _rc = process.run_cmd(const.PCS_STONITH_SHOW.replace("<resource_id>", resource_id), check_error=False)
         if _output and "Error" not in _output and resource_id in _output:
-            Log.info(f"Stonith configuration already exists for node {node_name}.")
+            Log.info(f"Stonith configuration already exists for node {resource_id}.")
             return
 
         ipaddr = stonith_config.get("ipaddr")
