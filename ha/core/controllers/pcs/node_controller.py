@@ -413,7 +413,6 @@ class PcsHWNodeController(PcsNodeController):
                     time.sleep(const.BASE_WAIT_TIME)
 
                 if storageoff:
-                    print("Staorage off")
                     # Stop services on node except sspl-ll
                     self._service_controller.stop(nodeid=node_id, excludeResourceList=["sspl-ll"])
 
