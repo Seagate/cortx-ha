@@ -37,8 +37,7 @@ class BootstrapHealth:
         self._node_name = node_name
         Log.info(f"Bootstrapping node health for {node_name}")
 
-        # request_id = self._generate_node_health()
-        request_id = 20210803204026923717
+        request_id = self._generate_node_health()
         self._update_node_health(request_id, conf_index, conf_store)
 
         self._cleanup_health_data()
