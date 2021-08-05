@@ -30,6 +30,11 @@ from ha.util.fencing_agent import FencingAgent
 class IpmiFencingAgent(FencingAgent):
     """ Tool to manage IPMI-enabled devices """
 
+    NODE_BMC_INFO_KEY = "node_bmc_info"
+    IPMI_IPADDR = "ipmi_ipaddr"
+    IPMI_USER = "ipmi_user"
+    IPMI_AUTH_KEY = "ipmi_auth_key"
+
     def __init__(self):
         """
         Initialize IPMI Fencing Agent class.
