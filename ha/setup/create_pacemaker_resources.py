@@ -464,13 +464,13 @@ def configure_stonith(cib_xml=None, push=False, **kwargs):
 
     stonith_config = kwargs.get("stonith_config")
     if stonith_config and stonith_config.get("node_type").lower() == const.INSTALLATION_TYPE.HW.value.lower():
-        Log.info("Configuring stonith.")
         resource_id = stonith_config.get("resource_id")
+        Log.info(f"Configuring stonith resource : {resource_id}")
 
         # check for stonith config present for that node
         _output, _err, _rc = process.run_cmd(const.PCS_STONITH_SHOW.replace("<resource_id>", resource_id), check_error=False)
         if _output and "Error" not in _output and resource_id in _output:
-            Log.info(f"Stonith configuration already exists for node {resource_id}.")
+            Log.info(f"Stonith resource already configured : {resource_id}.")
             return
 
         ipaddr = stonith_config.get("ipaddr")
@@ -482,10 +482,11 @@ def configure_stonith(cib_xml=None, push=False, **kwargs):
         process.run_cmd(f"pcs -f {cib_xml} stonith create {resource_id} fence_ipmilan ipaddr={ipaddr} \
             login={login} passwd={passwd} pcmk_host_list={pcmk_host_list} pcmk_host_check=static-list \
             lanplus=true auth={auth} power_timeout=40 verbose=true \
-            op monitor interval=10s meta failure-timeout=15s --group ha_group")
+            op monitor interval=10s meta failure-timeout=15s --group ha_group", secret=passwd)
         process.run_cmd(f"pcs -f {cib_xml} constraint location {resource_id} avoids {pcmk_host_list}")
         process.run_cmd(f"pcs -f {cib_xml} resource clone {resource_id}")
 
+        Log.info(f"Configured stonith resource : {resource_id}")
         if push:
             cib_push(cib_xml)
     else:

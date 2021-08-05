@@ -779,7 +779,9 @@ class InitCmd(Cmd):
         Log.info("Processing init command")
         env_type = self.get_installation_type().lower()
         if env_type == const.INSTALLATION_TYPE.HW.value.lower():
+            Log.info("Enabling the stonith.")
             self._execute.run_cmd(const.PCS_STONITH_ENABLE)
+            Log.info("Stonith enabled successfully.")
         elif env_type == const.INSTALLATION_TYPE.VM.value.lower():
             Log.warn("Stonith configuration not available, detected VM env")
         else:
