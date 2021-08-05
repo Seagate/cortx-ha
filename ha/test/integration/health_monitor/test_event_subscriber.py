@@ -42,7 +42,7 @@ class TestEventManager(unittest.TestCase):
 
     def test_subscriber(self):
         self.event_manager.subscribe(self.component, [self.event])
-        #self.event_manager.unsubscribe(self.component, [self.event])
+        self.event_manager.unsubscribe(self.component, [self.event])
 
 if __name__ == "__main__":
     unittest.main()
