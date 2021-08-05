@@ -23,9 +23,12 @@ HACLUSTER_KEY = "cortx"
 SERVER_NODE_KEY = "server_node"
 RA_LOG_DIR="/var/log/seagate/cortx/ha"
 PACEMAKER_LOG="/var/log/pacemaker.log"
+AUTH_DIR="/var/lib/pcsd"
 PCSD_LOG="/var/log/pcsd/pcsd.log"
 HA_CMDS_OUTPUT="{}/ha_cmds_output".format(RA_LOG_DIR)
 COROSYNC_LOG="/var/log/cluster"
+PCSD_DIR="/var/log/pcsd"
+LOG_DIR="/var/log"
 CONFIG_DIR="/etc/cortx/ha"
 SYSTEM_DIR="/etc/systemd/system"
 SUPPORT_BUNDLE_ERR="{}/support_bundle.err".format(RA_LOG_DIR)
@@ -57,6 +60,8 @@ COMPONENTS_CONFIG_DIR = "{}/components".format(CONFIG_DIR)
 SOURCE_HEALTH_HIERARCHY_FILE = "{}/system_health_hierarchy.json".format(SOURCE_CONFIG_PATH)
 HEALTH_HIERARCHY_FILE = "{}/system_health_hierarchy.json".format(CONFIG_DIR)
 IEM_SCHEMA="{}/iem_ha.json".format(CONFIG_DIR)
+SOURCE_LOGROTATE_CONF_FILE = "{}/conf/logrotate/cortx_ha_log.conf".format(SOURCE_PATH)
+LOGROTATE_CONF_DIR="/etc/logrotate.d"
 
 # IEM DESCRIPTION string: To be removed
 IEM_DESCRIPTION="WS0080010001,Node, The cluster has lost $host server. System is running in degraded mode. For more information refer the Troubleshooting guide. Extra Info: host=$host; status=$status;"
@@ -145,10 +150,16 @@ PCS_CLUSTER_DESTROY="pcs cluster destroy"
 PCS_CLUSTER_KILL="pcs cluster kill"
 PCS_NODE_STANDBY="pcs node standby <node>"
 PCS_CLUSTER_STANDBY="pcs node standby --all"
+PCS_NODE_UNSTANDBY="pcs node unstandby <node>"
+PCS_RESOURCE_REFRESH="pcs resource refresh --force"
+PCS_DELETE_RESOURCE="pcs resource delete <resource> --force"
 PCS_STONITH_DISABLE="pcs property set stonith-enabled=False"
 LIST_PCS_RESOURCES = '/usr/sbin/crm_resource --list-raw'
 CHECK_PCS_STANDBY_MODE = '/usr/sbin/crm_standby --query | awk \'{print $3}\''
 GET_CLUSTER_STATUS = "crm_mon --as-xml"
+GET_ONLINE_NODES_CMD = "crm_mon --as-xml"
+GET_LOCAL_NODE_ID_CMD = "crm_node -i"
+GET_LOCAL_NODE_NAME_CMD = "crm_node -n"
 
 # Cluster manager
 CM_CONTROLLER_INDEX="cluster_controller_interfaces"
@@ -301,3 +312,9 @@ class BMC_CREDENTIALS(Enum):
     IPMI_IPADDR = "ipmi_ipaddr"
     IPMI_USER = "ipmi_user"
     IPMI_AUTH_KEY = "ipmi_auth_key"
+class CLUSTER_STATUS(Enum):
+    OFFLINE = "offline"
+    STANDBY = "standby"
+    DEGRADED = "degraded"
+    UNHEALTHY = "unhealthy"
+    ONLINE = "online"

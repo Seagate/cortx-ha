@@ -43,7 +43,7 @@ class NodeController(ElementController):
             nodeid (str): Node ID from cluster nodes.
 
         Returns:
-            ([dict]): Return dictionary. {"status": "", "msg":""}
+            ([dict]): Return dictionary. {"status": "", "output": "", "error": ""}
                 status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
@@ -57,7 +57,7 @@ class NodeController(ElementController):
             nodeid (str): Node ID from cluster nodes.
 
         Returns:
-            ([dict]): Return dictionary. {"status": "", "msg":""}
+            ([dict]): Return dictionary. {"status": "", "output": "", "error": ""}
                 status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
@@ -71,7 +71,7 @@ class NodeController(ElementController):
             nodeid (str): Node ID from cluster nodes.
 
         Returns:
-            ([dict]): Return dictionary. {"status": "", "msg":""}
+            ([dict]): Return dictionary. {"status": "", "output": "", "error": ""}
                 status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
@@ -85,7 +85,7 @@ class NodeController(ElementController):
             nodeid (str): Node ID from cluster nodes.
 
         Returns:
-            ([dict]): Return dictionary. {"status": "", "msg":""}
+            ([dict]): Return dictionary. {"status": "", "output": "", "error": ""}
                 status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
@@ -101,7 +101,7 @@ class NodeController(ElementController):
                 if 'local' then provide local node status.
 
         Returns:
-            ([dict]): Return dictionary. {"status": "", "msg":{}}}
+            ([dict]): Return dictionary. {"status": "", "output": "", "error": ""}
                 status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")

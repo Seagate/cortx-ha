@@ -21,7 +21,7 @@ from ha.core.controllers.controller_annotation import controller_error_handler
 
 
 class ClusterController(ElementController):
-    """ Pcs cluster controller to perform pcs cluster level operation. """
+    """ Cluster controller to perform cluster level operation. """
 
     def __init__(self):
         """
@@ -36,23 +36,31 @@ class ClusterController(ElementController):
         raise HAUnimplemented("This operation is not implemented.")
 
     @controller_error_handler
-    def start(self) -> dict:
+    def start(self, sync=False, timeout=30) -> dict:
         """
         Start cluster and all service.
 
+        Args:
+            sync (bool, optional): if sync is True then start will check the status for timeout seconds.
+            timeout (int, optional): timeout(in seconds) can be specified for sync=True otherwise ignored.
+
         Returns:
-            ([dict]): Return dictionary. {"status": "", "msg":""}
+            ([dict]): Return dictionary. {"status": "", "output":"", "error":""}
                 status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
 
     @controller_error_handler
-    def stop(self) -> dict:
+    def stop(self, sync=True, timeout=30) -> dict:
         """
         Stop cluster and all service.
 
+        Args:
+            sync (bool, optional): if sync is True then stop will check the status for timeout seconds.
+            timeout (int, optional): timeout(in seconds) can be specified for sync=True otherwise ignored.
+
         Returns:
-            ([dict]): Return dictionary. {"status": "", "msg":""}
+            ([dict]): Return dictionary. {"status": "", "output":"", "error":""}
                 status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
@@ -63,30 +71,38 @@ class ClusterController(ElementController):
         Status cluster and all service. It gives status for all resources.
 
         Returns:
-            ([dict]): Return dictionary. {"status": "", "msg":{}}
-                status: Succeeded, Failed, InProgress
-                msg: dict of resource and status.
+            ([dict]): Return dictionary. {"status": "", "output":"", "error":""}
+                status: Succeeded, Failed
+                output: dict of resource and status.
         """
         raise HAUnimplemented("This operation is not implemented.")
 
     @controller_error_handler
-    def standby(self) -> dict:
+    def standby(self, sync=True, timeout=30) -> dict:
         """
         Put cluster in standby mode.
 
+        Args:
+            sync (bool, optional): if sync is True then standby will check the status for timeout seconds.
+            timeout (int, optional): timeout(in seconds) can be specified for sync=True otherwise ignored.
+
         Returns:
-            ([dict]): Return dictionary. {"status": "", "msg":""}
+            ([dict]): Return dictionary. {"status": "", "output":"", "error":""}
                 status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
 
     @controller_error_handler
-    def active(self) -> dict:
+    def active(self, sync=True, timeout=30) -> dict:
         """
         Activate all node.
 
+        Args:
+            sync (bool, optional): if sync is True then standby will check the status for timeout seconds.
+            timeout (int, optional): timeout(in seconds) can be specified for sync=True otherwise ignored.
+
         Returns:
-            ([dict]): Return dictionary. {"status": "", "msg":""}
+            ([dict]): Return dictionary. {"status": "", "output":"", "error":""}
                 status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
@@ -97,8 +113,8 @@ class ClusterController(ElementController):
         Provide node list.
 
         Returns:
-            ([dict]): Return dictionary. {"status": "", "msg":[]}
-                status: Succeeded, Failed, InProgress
+            ([dict]): Return dictionary. {"status": "", "output":"", "error":""}
+                status: Succeeded, Failed
         """
         raise HAUnimplemented("This operation is not implemented.")
 
@@ -108,8 +124,8 @@ class ClusterController(ElementController):
         Provide service list.
 
         Returns:
-            ([dict]): Return dictionary. {"status": "", "msg":[]}
-                status: Succeeded, Failed, InProgress
+            ([dict]): Return dictionary. {"status": "", "output":"", "error":""}
+                status: Succeeded, Failed
         """
         raise HAUnimplemented("This operation is not implemented.")
 
@@ -119,8 +135,8 @@ class ClusterController(ElementController):
         Provide storageset list.
 
         Returns:
-            ([dict]): Return dictionary. {"status": "", "msg":[]}
-                status: Succeeded, Failed, InProgress
+            ([dict]): Return dictionary. {"status": "", "output":"", "error":""}
+                status: Succeeded, Failed
         """
         raise HAUnimplemented("This operation is not implemented.")
 
@@ -135,7 +151,7 @@ class ClusterController(ElementController):
             cluster_password (str, required): Provide cluster_password.
 
         Returns:
-            ([dict]): Return dictionary. {"status": "", "msg":""}
+            ([dict]): Return dictionary. {"status": "", "output":"", "error":""}
                 status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
@@ -150,7 +166,7 @@ class ClusterController(ElementController):
             filename (str, optional): Provide descfile. Defaults to None.
 
         Returns:
-            ([dict]): Return dictionary. {"status": "", "msg":""}
+            ([dict]): Return dictionary. {"status": "", "output":"", "error":""}
                 status: Succeeded, Failed, InProgress
         """
         raise HAUnimplemented("This operation is not implemented.")
