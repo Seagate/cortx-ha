@@ -191,9 +191,9 @@ class PcsNodeController(NodeController, PcsController):
         self.validate_node(node_id=nodeid)
         offline_nodes, node_list = self._get_offline_nodes()
         if (len(offline_nodes) + 1) >= ((len(node_list)//2) + 1):
-            return {"status": const.STATUSES.WARNING.value, "msg": "Stopping the node will cause a loss of the quorum"}
+            return {"status": const.STATUSES.FAILED.value, "error": "Stopping the node will cause a loss of the quorum"}
         else:
-            return {"status": const.STATUSES.SUCCEEDED.value, "msg": "Stopping the node will not cause a loss of the quorum"}
+            return {"status": const.STATUSES.SUCCEEDED.value, "error": ""}
 
     def validate_node(self, node_id: str) -> bool:
         """
@@ -399,7 +399,7 @@ class PcsHWNodeController(PcsNodeController):
             if node_status == HEALTH_STATUSES.OFFLINE.value:
                 Log.info(f"For stop {node_id}, Node already in offline state.")
                 status = f"Node {node_id} is already in offline state."
-                return {"status": const.STATUSES.SUCCEEDED.value, "msg": status}
+                return {"status": const.STATUSES.SUCCEEDED.value, "output": node_status, "error": "", "msg": status}
             elif node_status == HEALTH_STATUSES.FAILED.value:
                 raise ClusterManagerError(f"Failed to stop {node_id}."
                                           f"node is in {node_status} state.")
@@ -407,7 +407,7 @@ class PcsHWNodeController(PcsNodeController):
                 if check_cluster:
                     # Checks whether cluster is going to be offline if node with node_id is stopped.
                     res = self.check_cluster_feasibility(nodeid=node_id)
-                    if res.get("status") == const.STATUSES.WARNING.value:
+                    if res.get("status") == const.STATUSES.FAILED.value:
                         return res
                 if self.heal_resource(node_id):
                     time.sleep(const.BASE_WAIT_TIME)
@@ -438,6 +438,6 @@ class PcsHWNodeController(PcsNodeController):
                 self.ipmifenceagent.power_off(nodeid=node_id)
                 status = f"Power off for {node_id} is in progress"
             Log.info("Node power off successfull")
-            return {"status": const.STATUSES.IN_PROGRESS.value, "msg": status}
+            return {"status": const.STATUSES.IN_PROGRESS.value, "error": "", "output": HEALTH_STATUSES.OFFLINE.value, "msg": status}
         except Exception as e:
             raise ClusterManagerError(f"Failed to stop {node_id}, Error: {e}")
