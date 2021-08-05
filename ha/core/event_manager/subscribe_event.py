@@ -15,8 +15,12 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
+from typing import List
+from ha.core.event_manager.resources import RESOURCE_STATUS
+from ha.core.event_manager.resources import RESOURCE_TYPES
+
 class SubscribeEvent:
-    def __init__(self, resource_type : str, states : list):
+    def __init__(self, resource_type : RESOURCE_TYPES, states : List[RESOURCE_STATUS]):
         """
         Subscribe event object.
         For HA state will be dict of {state: actions}
@@ -26,5 +30,10 @@ class SubscribeEvent:
             resource_type (str): Type of resource.
             states (list): States
         """
-        self.resource_type = resource_type
-        self.states = states
+        self.states = []
+        self.resource_type = resource_type.value \
+            if isinstance(resource_type, RESOURCE_TYPES) \
+                else resource_type
+        for state in states:
+            st = state.value if isinstance(state, RESOURCE_STATUS) else state
+            self.states.append(st)

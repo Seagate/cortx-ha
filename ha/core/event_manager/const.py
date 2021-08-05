@@ -18,15 +18,6 @@
 import enum
 from ha.util.enum_list import EnumListMeta
 
-class SUBSCRIPTION_LIST(enum.Enum, metaclass=EnumListMeta):
-    SSPL = "sspl"
-    CSM = "csm"
-    S3 = "s3"
-    MOTR = "motr"
-    HARE = "hare"
-    HA = "ha"
-    TEST = "test"
-
 class EVENT_MANAGER_KEYS(enum.Enum, metaclass=EnumListMeta):
     MESSAGE_TYPE_VALUE = "ha_event_<component_id>"
     MESSAGE_TYPE_KEY = "message_type/<component_id>"

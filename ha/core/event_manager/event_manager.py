@@ -20,6 +20,8 @@
 
 import json
 from collections import OrderedDict
+from typing import List
+from ha.core.event_manager.subscribe_event import SubscribeEvent
 from cortx.utils.log import Log
 from ha.util.message_bus import MessageBus
 from ha.core.config.config_manager import ConfigManager
@@ -30,10 +32,12 @@ from ha.core.event_manager.error import SubscribeException
 from ha.core.event_manager.error import UnSubscribeException
 from ha.core.event_manager.error import PublishException
 from ha.core.event_manager.model.action_event import RecoveryActionEvent
-from ha.core.event_manager.const import SUBSCRIPTION_LIST
+from ha.core.event_manager.resources import SUBSCRIPTION_LIST
 from ha.core.event_manager.const import EVENT_MANAGER_KEYS
 from ha.core.health_monitor.const import HEALTH_MON_ACTIONS
 from ha.core.health_monitor.monitor_rules_manager import MonitorRulesManager
+from ha.core.event_manager.resources import RESOURCE_STATUS
+from ha.core.event_manager.resources import RESOURCE_TYPES
 
 class EventManager:
     """
@@ -289,7 +293,7 @@ class EventManager:
         _, message_type = message_type_key_val.popitem()
         return MessageBus.get_producer(producer_id, message_type)
 
-    def subscribe(self, component: str, events: list) -> str:
+    def subscribe(self, component: SUBSCRIPTION_LIST, events: List[SubscribeEvent]) -> str:
         """
         Register all the events for the notification. It maintains
         list of events registered by the components. It maps the event
@@ -304,6 +308,8 @@ class EventManager:
             SubscribeException: Raise error if failed.
         """
         Log.info(f"Received a subscribe request from {component}")
+        if isinstance(component, SUBSCRIPTION_LIST):
+            component = component.value
         try:
             EventManager._validate_component(component)
             EventManager._validate_events(events)
@@ -331,6 +337,8 @@ class EventManager:
         Raise:
             UnSubscribeException: Raise error if failed.
         """
+        if isinstance(component, SUBSCRIPTION_LIST):
+            component = component.value
         #TODO: Provide way to unsubscribe all event
         Log.info(f"Received unsubscribe for {component}")
         try:
@@ -360,6 +368,8 @@ class EventManager:
         Returns:
             list: List of events.
         """
+        if isinstance(component, SUBSCRIPTION_LIST):
+            component = component.value
         key = EVENT_MANAGER_KEYS.SUBSCRIPTION_KEY.value.replace("<component_id>", component)
         value = []
         Log.debug(f"Fetching subscribed events for {key}")
@@ -402,6 +412,7 @@ class EventManager:
         Args:
             component (str): component name.
         """
+        component = component.value
         key = EVENT_MANAGER_KEYS.MESSAGE_TYPE_KEY.value.replace("<component_id>", component)
         value = None
         Log.debug(f"Fetching message type for {key}")
