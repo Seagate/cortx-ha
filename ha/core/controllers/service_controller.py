@@ -56,9 +56,8 @@ class ServiceController(ElementController):
         Stop service.
 
         Args:
-            service (str): Service name.
-            nodeids (list, optional): Node ids, if none then all node status.
-                    Defaults to None.
+            nodeid (str): Private fqdn define in conf store.
+            excludeResourceList (list): Service list which are not stopped.
 
         Returns:
             ([dict]): Return dictionary. {"status": "", "msg":""}

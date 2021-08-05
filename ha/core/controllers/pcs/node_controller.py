@@ -412,19 +412,20 @@ class PcsHWNodeController(PcsNodeController):
                 if self.heal_resource(node_id):
                     time.sleep(const.BASE_WAIT_TIME)
 
-                if storageoff:
-                    # Stop services on node except sspl-ll
-                    self._service_controller.stop(nodeid=node_id, excludeResourceList=["sspl-ll"])
+            if storageoff:
+                # Stop services on node except sspl-ll
+                self._service_controller.stop(nodeid=node_id, excludeResourceList=["sspl-ll"])
 
-	                # TODO: storage enclosure is stopped on the node
+                # TODO: storage enclosure is stopped on the node
 
-                    # Put node in standby mode
-                    self._execute.run_cmd(const.PCS_NODE_STANDBY.replace("<node>", node_id), f" --wait={const.CLUSTER_STANDBY_UNSTANDBY_TIMEOUT}")
-                    Log.info(f"Executed node standby for {node_id}")
-                    self._service_controller.clear_resources(node_id=node_id)
-                else:
-                    self._execute.run_cmd(const.PCS_NODE_STANDBY.replace("<node>", node_id), f" --wait={const.CLUSTER_STANDBY_UNSTANDBY_TIMEOUT}")
-                    Log.info(f"Executed node standby for {node_id}")
+                # Put node in standby mode
+                self._execute.run_cmd(const.PCS_NODE_STANDBY.replace("<node>", node_id), f" --wait={const.CLUSTER_STANDBY_UNSTANDBY_TIMEOUT}")
+                Log.info(f"Executed node standby for {node_id}")
+                self._service_controller.clear_resources(node_id=node_id)
+            else:
+                self._execute.run_cmd(const.PCS_NODE_STANDBY.replace("<node>", node_id), f" --wait={const.CLUSTER_STANDBY_UNSTANDBY_TIMEOUT}")
+                Log.info(f"Executed node standby for {node_id}")
+            status = f"{node_id} Node Standby is in progress"
 
             # Update node health
             initial_event = self.create_health_event(nodeid=nodeid, event_type=HEALTH_EVENTS.FAULT.value)
@@ -435,7 +436,7 @@ class PcsHWNodeController(PcsNodeController):
             # Node power off
             if poweroff:
                 self.ipmifenceagent.power_off(nodeid=node_id)
-            status = f"Power off for {node_id} is in progress"
+                status = f"Power off for {node_id} is in progress"
             Log.info("Node power off successfull")
             return {"status": const.STATUSES.IN_PROGRESS.value, "msg": status}
         except Exception as e:
