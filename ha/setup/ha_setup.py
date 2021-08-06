@@ -783,7 +783,7 @@ class InitCmd(Cmd):
             self._execute.run_cmd(const.PCS_STONITH_ENABLE)
             Log.info("Stonith enabled successfully.")
         elif env_type == const.INSTALLATION_TYPE.VM.value.lower():
-            Log.warn("Stonith configuration not available, detected VM env")
+            Log.warn(f"Stonith configuration not available, detected {env_type} env")
         else:
             raise HaConfigException(f"Invalid env detected, {env_type}")
         Log.info("init command is successful")
