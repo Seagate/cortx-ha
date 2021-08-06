@@ -33,6 +33,7 @@ from ha.core.system_health.const import NODE_MAP_ATTRIBUTES
 from ha.core.system_health.const import CONFSTORE_KEY_ATTRIBUTES
 
 from ha.execute import SimpleCommand
+from ha.util.ha_utils import HaUtils
 from ha import const
 from ha.const import STATUSES
 from ha.setup.create_pacemaker_resources import create_all_resources, configure_stonith
@@ -77,6 +78,7 @@ class Cmd:
         self._execute = SimpleCommand()
         self._confstore = ConfigManager.get_confstore()
         self._cluster_manager = None
+        self._ha_utils = HaUtils()
 
     @property
     def args(self) -> str:
@@ -888,6 +890,7 @@ class CleanupCmd(Cmd):
         self._cluster_manager = CortxClusterManager(default_log_enable=False)
         self._post_install_cmd = PostInstallCmd(args=None)
 
+
     def process(self):
         """
         Process cleanup command.
@@ -897,6 +900,9 @@ class CleanupCmd(Cmd):
             nodes = self._confstore.get(const.CLUSTER_CONFSTORE_NODES_KEY)
             node_count: int = 0 if nodes is None else len(nodes)
             node_name = self.get_node_name()
+            first_in_lexicographical = self.is_first_in_lexicographical_nodes()
+            # Set cleanup key
+            self._confstore.set(const.CLUSTER_CONFSTORE_CLEANUP_KEY + f"/{node_name}")
             # Standby
             standby_output: str = self._cluster_manager.node_controller.standby(node_name)
             if json.loads(standby_output).get("status") == STATUSES.FAILED.value:
@@ -913,7 +919,7 @@ class CleanupCmd(Cmd):
             else:
                 # Destroy
                 self._cluster_manager.cluster_controller.destroy_cluster()
-                self._confstore.delete(recurse=True)
+                self.remove_consul_keys(node_name, first_in_lexicographical)
 
             # Delete the config file
             self.remove_config_files()
@@ -957,6 +963,95 @@ class CleanupCmd(Cmd):
 
         for file in files:
             CleanupCmd.remove_file(file)
+
+    def remove_consul_keys(self, node_name:str, first_in_lexicographical:bool = False) -> None:
+        """
+        Remove consul keys for the node
+        Args:
+            node_name:
+            first_in_lexicographical:
+
+        Returns:
+            None
+        """
+        # remove consul keys for current node
+        self._confstore.delete(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
+        # delete node_map key
+        self._confstore.delete(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_name}")
+        # remove it from system health
+        machine_id = self.get_machine_id()
+        system_health_obj = SystemHealth(self._confstore)
+        node_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}node_id")
+        cluster_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}cluster_id")
+        site_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}site_id")
+        rack_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}rack_id")
+        # get node map id
+        system_health_node_map_key = system_health_obj._prepare_key(const.COMPONENTS.NODE_MAP.value,
+                                                                    node_id=node_id)
+        self._confstore.delete(system_health_node_map_key)
+        system_health_node_key = system_health_obj._prepare_key(const.COMPONENTS.NODE.value,
+                                                                cluster_id=cluster_id, site_id=site_id,
+                                                                rack_id=rack_id, node_id=node_id)
+        self._confstore.delete(system_health_node_key)
+        # check cleanup keys for system health hierarchy
+        cleanup_nodes = self._confstore.get(const.CLUSTER_CONFSTORE_CLEANUP_KEY)
+        if not cleanup_nodes:
+            # No cleanup keys are present hence do nothing on that node
+            return
+        if cleanup_nodes and len(cleanup_nodes.items()) == 1:
+            # update system health hierarchy
+            self.update_system_health_hierarchy(system_health_obj, site_id, rack_id, cluster_id)
+        elif first_in_lexicographical:
+            # wait till there is only one key
+            while True:
+                cleanup_nodes = self._confstore.get(const.CLUSTER_CONFSTORE_CLEANUP_KEY)
+                if not cleanup_nodes:
+                    # No cleanup keys are present hence return
+                    return
+                if cleanup_nodes is not None and len(cleanup_nodes.items()) == 1:
+                    break
+            # update system health hierarchy
+            self.update_system_health_hierarchy(system_health_obj, site_id, rack_id, cluster_id)
+        # delete the cleanup key
+        self._confstore.delete(const.CLUSTER_CONFSTORE_CLEANUP_KEY + f"/{node_name}")
+
+    def update_system_health_hierarchy(self, system_health_obj, rack_id, site_id, cluster_id):
+        """
+        Update system health hierarchy
+        Args:
+            system_health_obj: SystemHealth object
+            rack_id: Rack ID
+            site_id: Site ID
+            cluster_id: Cluster ID
+
+        Returns:
+            None
+
+        """
+        # update system health hierarchy
+        system_health_rack_key = system_health_obj._prepare_key(const.COMPONENTS.CLUSTER.value,
+                                                                rack_id=rack_id, site_id=site_id,
+                                                                cluster_id=cluster_id)
+        self._confstore.update(system_health_rack_key, {})
+        system_health_site_key = system_health_obj._prepare_key(const.COMPONENTS.CLUSTER.value,
+                                                                site_id=site_id, cluster_id=cluster_id)
+        self._confstore.update(system_health_site_key, {})
+        system_health_cluster_key = system_health_obj._prepare_key(const.COMPONENTS.CLUSTER.value,
+                                                                   cluster_id=cluster_id)
+        self._confstore.update(system_health_cluster_key, {})
+
+    def is_first_in_lexicographical_nodes(self) -> bool:
+        """
+        Return whether current node is first in lexicographical or not
+        Returns:
+            True or False
+        """
+        node_ids = self._ha_utils.get_online_nodes()
+        local_node_id, local_node_name = self._ha_utils.get_local_node()
+        # Generate and send IEM only through the highest online node in cluster.
+        if node_ids[0].strip() == local_node_id.strip():
+            return True
+        return False
 
 class BackupCmd(Cmd):
     """

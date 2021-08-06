@@ -68,6 +68,7 @@ IEM_DESCRIPTION="WS0080010001,Node, The cluster has lost $host server. System is
 
 # Mini-provisioning
 CLUSTER_CONFSTORE_NODES_KEY="nodes"
+CLUSTER_CONFSTORE_CLEANUP_KEY="cleanup"
 
 #Confstore delimiter
 _DELIM=">"

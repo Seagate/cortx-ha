@@ -19,10 +19,9 @@ import xml.etree.ElementTree as ET
 
 from cortx.utils.log import Log
 
-from ha import const
+from ha.util.ha_utils import HaUtils
 from ha.alert.alert_monitor import AlertMonitor
 from ha.alert.iem import IemGenerator
-from ha.execute import SimpleCommand
 
 
 class NodeAlertMonitor(AlertMonitor):
@@ -32,41 +31,15 @@ class NodeAlertMonitor(AlertMonitor):
         Init node alert monitor
         """
         super(NodeAlertMonitor, self).__init__()
-        self.process = SimpleCommand()
-
-    def _get_online_nodes(self):
-        """
-        Get list of online nodes ids.
-        """
-        online_nodes_xml = self.process.run_cmd(const.GET_ONLINE_NODES_CMD)
-        # create element tree object
-        root = ET.fromstring(online_nodes_xml[0])
-        nodes_ids = []
-        # iterate news items
-        for item in root.findall('nodes'):
-            # iterate child elements of item
-            for child in item:
-                if child.attrib['online'] == 'true':
-                    nodes_ids.append(child.attrib['id'])
-        Log.info(f"List of online nodes ids in cluster in sorted ascending order: {sorted(nodes_ids)}")
-        return sorted(nodes_ids)
-
-    def _get_local_node(self):
-        """
-        Get Local node name and id.
-        """
-        local_node_id = self.process.run_cmd(const.GET_LOCAL_NODE_ID_CMD)
-        local_node_name = self.process.run_cmd(const.GET_LOCAL_NODE_NAME_CMD)
-        Log.info(f"Local node name: {local_node_name[0]} \n Local node id: {local_node_id[0]}")
-        return local_node_id[0], local_node_name[0]
+        self.ha_utils = HaUtils()
 
     def process_alert(self):
         Log.debug("Processing event for NodeAlertMonitor")
         # Environment variable are available in self.crm_env
         self.iem = IemGenerator()
         # Get online nodeids from corosync.
-        nodes_ids = self._get_online_nodes()
-        local_node_id, local_node_name = self._get_local_node()
+        nodes_ids = self.ha_utils.get_online_nodes()
+        local_node_id, local_node_name = self.ha_utils.get_local_node()
         # Generate and send IEM only through the highest online node in cluster.
         if nodes_ids[-1].strip() == local_node_id.strip():
             self.iem.generate_iem(self.crm_env["CRM_alert_node"], self.alert_event_module, self.alert_event_type)
