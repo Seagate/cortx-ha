@@ -80,7 +80,8 @@ class PcsServiceController(ServiceController, PcsController):
                 self._execute.run_cmd(f"pcs resource ban {resource} {nodeid}")
             Log.info(f"Waiting to stop resource on node {nodeid}")
             time.sleep(const.BASE_WAIT_TIME)
-            return {"status": const.STATUSES.SUCCEEDED.value, "msg": f"Resources stopped on node {nodeid}"}
+            # TODO: Check if the resources are stopped
+            return {"status": const.STATUSES.IN_PROGRESS.value, "msg": f"Resources stopped on node {nodeid}"}
         except Exception as e:
             raise ClusterManagerError(f"Failed to stop resources on {nodeid}, Error: {e}")
 

@@ -42,15 +42,15 @@ class IpmiFencingAgent(FencingAgent):
         self._confstore = ConfigManager.get_confstore()
         self._execute = SimpleCommand()
 
-    def power_off(self, nodeid: str):
+    def power_off(self, node_id: str):
         """
         Power OFF node with nodeid
 
         Args:
-            nodeid (str): private fqdn define in conf store.
+            node_id (str): private fqdn define in conf store.
         """
         try:
-            bmc_info = self._confstore.get(f"{IpmiFencingAgent.NODE_BMC_INFO_KEY}/node/{nodeid}")
+            bmc_info = self._confstore.get(f"{IpmiFencingAgent.NODE_BMC_INFO_KEY}/node/{node_id}")
             if bmc_info is not None:
                 _, value = bmc_info.popitem()
                 bmc_info_dict = ast.literal_eval(value)
@@ -60,12 +60,12 @@ class IpmiFencingAgent(FencingAgent):
         except Exception as e:
             raise Exception(f"Failed to run IPMItool Command. Error : {e}")
 
-    def power_on(self, nodeid: str):
+    def power_on(self, node_id: str):
         """
         Power ON node with nodeid
 
         Args:
-            nodeid (str): Node ID from cluster nodes.
+            node_id (str): Node ID from cluster nodes.
         """
         pass
 

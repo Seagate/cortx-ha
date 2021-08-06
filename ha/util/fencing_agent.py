@@ -28,20 +28,20 @@ class FencingAgent:
         """
         pass
 
-    def power_off(self, nodeid: str):
+    def power_off(self, node_id: str):
         """
         Power OFF node with nodeid
 
         Args:
-            nodeid (str): Node ID from cluster nodes.
+            node_id (str): Node ID from cluster nodes.
         """
         pass
 
-    def power_on(self, nodeid: str):
+    def power_on(self, node_id: str):
         """
         Power ON node with nodeid
 
         Args:
-            nodeid (str): Node ID from cluster nodes.
+            node_id (str): Node ID from cluster nodes.
         """
         pass

@@ -15,9 +15,8 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
+import json
 import time
-import ast
-import uuid
 import xml.etree.ElementTree as ET
 
 from cortx.utils.log import Log
@@ -27,11 +26,12 @@ from ha.core.controllers.node_controller import NodeController
 from ha.core.controllers.controller_annotation import controller_error_handler
 from ha import const
 from ha.const import NODE_STATUSES
-from ha.core.system_health.const import NODE_MAP_ATTRIBUTES, CLUSTER_ELEMENTS, HEALTH_EVENTS, EVENT_SEVERITIES, HEALTH_STATUSES
+from ha.core.system_health.const import HEALTH_EVENTS, HEALTH_STATUSES
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.system_health.system_health import SystemHealth, SystemHealthManager
 from ha.core.config.config_manager import ConfigManager
 from ha.util.ipmi_fencing_agent import IpmiFencingAgent
+from ha.setup.const import RESOURCE
 
 class PcsNodeController(NodeController, PcsController):
     """ Controller to manage node. """
@@ -167,6 +167,7 @@ class PcsNodeController(NodeController, PcsController):
         """
         raise HAUnimplemented("This operation is not implemented.")
 
+    @controller_error_handler
     def check_cluster_feasibility(self, nodeid: str) -> dict:
         """
             Check whether the cluster is going to be offline after node with nodeid is stopped.
@@ -176,7 +177,8 @@ class PcsNodeController(NodeController, PcsController):
             Dictionary : {"status": "", "msg":""}
         """
         self._is_node_in_cluster(node_id=nodeid)
-        offline_nodes, node_list = self._get_offline_nodes()
+        node_list = self._get_node_list()
+        offline_nodes = self._get_offline_nodes()
         if (len(offline_nodes) + 1) >= ((len(node_list)//2) + 1):
             return {"status": const.STATUSES.FAILED.value, "output": "", "error": "Stopping the node will cause a loss of the quorum"}
         else:
@@ -184,59 +186,17 @@ class PcsNodeController(NodeController, PcsController):
 
     def _get_offline_nodes(self):
         """
-        Get the list offline nodes & all nodes
+        Get the list offline And failed nodes
         Returns:
-            [tuple]: tuple of offline_nodes & all_nodes
+            [list]: list of offline & failed nodes
         """
-        cluster_status_xml = self._execute.run_cmd(const.GET_CLUSTER_STATUS)
-        # create element tree object
-        root = ET.fromstring(cluster_status_xml[0])
-        node_list = []
-        nodes_ids = []
-        # iterate news items
-        for item in root.findall('nodes'):
-            # iterate child elements of item
-            for child in item:
-                if child.attrib['online'] == 'false':
-                    nodes_ids.append(child.attrib['id'])
-                node_list.append(child.attrib['name'])
-        Log.info(f"List of offline node ids in cluster in sorted ascending order: {sorted(nodes_ids)}")
-        return sorted(nodes_ids), node_list
-
-    def create_health_event(self, nodeid: str, event_type: str) -> dict:
-        """
-        Create health event
-        Args:
-            nodeid (str): nodeid
-            event_type (str): event type will be offline, online, failed
-
-        Returns:
-            dict: Return dictionary of health event
-        """
-        key = self._system_health._prepare_key(const.COMPONENTS.NODE_MAP.value, node_id=nodeid)
-        node_map_val = self._health_manager.get_key(key)
-        if node_map_val is None:
-            raise ClusterManagerError("Failed to fetch node_map value")
-        node_map_dict = ast.literal_eval(node_map_val)
-
-        timestamp = str(int(time.time()))
-        event_id = timestamp + str(uuid.uuid4().hex)
-        initial_event = {
-            const.EVENT_ATTRIBUTES.EVENT_ID : event_id,
-            const.EVENT_ATTRIBUTES.EVENT_TYPE : event_type,
-            const.EVENT_ATTRIBUTES.SEVERITY : EVENT_SEVERITIES.WARNING.value,
-            const.EVENT_ATTRIBUTES.SITE_ID : node_map_dict[NODE_MAP_ATTRIBUTES.SITE_ID.value],
-            const.EVENT_ATTRIBUTES.RACK_ID : node_map_dict[NODE_MAP_ATTRIBUTES.RACK_ID.value],
-            const.EVENT_ATTRIBUTES.CLUSTER_ID : node_map_dict[NODE_MAP_ATTRIBUTES.CLUSTER_ID.value],
-            const.EVENT_ATTRIBUTES.STORAGESET_ID : node_map_dict[NODE_MAP_ATTRIBUTES.STORAGESET_ID.value],
-            const.EVENT_ATTRIBUTES.NODE_ID : nodeid,
-            const.EVENT_ATTRIBUTES.HOST_ID : node_map_dict[NODE_MAP_ATTRIBUTES.HOST_ID.value],
-            const.EVENT_ATTRIBUTES.RESOURCE_TYPE : CLUSTER_ELEMENTS.NODE.value,
-            const.EVENT_ATTRIBUTES.TIMESTAMP : timestamp,
-            const.EVENT_ATTRIBUTES.RESOURCE_ID : nodeid,
-            const.EVENT_ATTRIBUTES.SPECIFIC_INFO : None
-        }
-        return initial_event
+        nodes_status = self.nodes_status()
+        offline_nodes = []
+        for node_name in self._get_node_list():
+            if nodes_status[node_name] == HEALTH_STATUSES.OFFLINE.value or nodes_status[node_name] == HEALTH_STATUSES.FAILED.value:
+                offline_nodes.append(node_name)
+        return offline_nodes
+    
 
 class PcsVMNodeController(PcsNodeController):
     def initialize(self, controllers):
@@ -342,7 +302,7 @@ class PcsHWNodeController(PcsNodeController):
         Initialize the storageset controller
         """
         self._controllers = controllers
-        self.ipmifenceagent = IpmiFencingAgent()
+        self.fencing_agent = IpmiFencingAgent()
 
     @controller_error_handler
     def shutdown(self, nodeid: str) -> dict:
@@ -387,7 +347,7 @@ class PcsHWNodeController(PcsNodeController):
             else:
                 if check_cluster:
                     # Checks whether cluster is going to be offline if node with node_id is stopped.
-                    res = self.check_cluster_feasibility(nodeid=node_id)
+                    res = json.loads(self.check_cluster_feasibility(nodeid=node_id))
                     if res.get("status") == const.STATUSES.FAILED.value:
                         return res
                 if self.heal_resource(node_id):
@@ -395,7 +355,7 @@ class PcsHWNodeController(PcsNodeController):
 
             if storageoff:
                 # Stop services on node except sspl-ll
-                self._controllers[const.SERVICE_CONTROLLER].stop(nodeid=node_id, excludeResourceList=["sspl-ll"])
+                self._controllers[const.SERVICE_CONTROLLER].stop(nodeid=node_id, excludeResourceList=[RESOURCE.SSPL_LL.value])
 
                 # TODO: storage enclosure is stopped on the node
 
@@ -409,16 +369,16 @@ class PcsHWNodeController(PcsNodeController):
             status = f"{node_id} Node Standby is in progress"
 
             # Update node health
-            initial_event = self.create_health_event(nodeid=nodeid, event_type=HEALTH_EVENTS.FAULT.value)
+            initial_event = self._system_health.get_health_event_template(nodeid=nodeid, event_type=HEALTH_EVENTS.FAULT_RESOLVED.value)
             Log.debug(f"Node health : {initial_event} updated for node {node_id}")
             health_event = HealthEvent.dict_to_object(initial_event)
             self._system_health.process_event(health_event)
 
             # Node power off
             if poweroff:
-                self.ipmifenceagent.power_off(nodeid=node_id)
+                self.fencing_agent.power_off(node_id=node_id)
                 status = f"Power off for {node_id} is in progress"
-            Log.info("Node power off successfull")
+            Log.info(f"Node power off successfull. status : {status}")
             return {"status": const.STATUSES.SUCCEEDED.value, "error": "", "output": HEALTH_STATUSES.OFFLINE.value, "msg": status}
         except Exception as e:
             raise ClusterManagerError(f"Failed to stop {node_id}, Error: {e}")
