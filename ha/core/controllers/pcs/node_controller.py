@@ -17,7 +17,6 @@
 
 import json
 import time
-import xml.etree.ElementTree as ET
 
 from cortx.utils.log import Log
 from ha.core.error import HAUnimplemented, ClusterManagerError
@@ -196,7 +195,7 @@ class PcsNodeController(NodeController, PcsController):
             if nodes_status[node_name] == HEALTH_STATUSES.OFFLINE.value or nodes_status[node_name] == HEALTH_STATUSES.FAILED.value:
                 offline_nodes.append(node_name)
         return offline_nodes
-    
+
 
 class PcsVMNodeController(PcsNodeController):
     def initialize(self, controllers):
