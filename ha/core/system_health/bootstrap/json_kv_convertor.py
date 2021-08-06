@@ -169,31 +169,40 @@ class KVGenerator:
         try:
             Conf.load(NODE_HEALTH_CONF_INDEX, f'json://{json_file_nm}')
             node_health_list = Conf.get(NODE_HEALTH_CONF_INDEX, NODE_DATA_KEY)
-
             # Specifically to retrieve upper_level keys such as:
             # node.compute.<'uid', 'last_updated', 'health.status'>
             # node.storage.<'uid', 'last_updated', 'health.status'>
             for node_comp in node_health_list:
-                uid = node_health_list[node_comp][0]['uid']
-                self._update_health(f'node.{node_comp}.uid', uid)
-                last_updated = node_health_list[node_comp][0]['last_updated']
-                self._update_health(f'node.{node_comp}.last_updated', last_updated)
-                health_status = node_health_list[node_comp][0]['health']['status']
-                self._update_health(f'node.{node_comp}.health.status', health_status)
+                if node_health_list[node_comp]:
+                    uid = node_health_list[node_comp][0]['uid']
+                    self._update_health(f'node.{node_comp}.uid', uid)
+                    last_updated = node_health_list[node_comp][0]['last_updated']
+                    self._update_health(f'node.{node_comp}.last_updated', last_updated)
+                    health_status = node_health_list[node_comp][0]['health']['status']
+                    self._update_health(f'node.{node_comp}.health.status', health_status)
 
             # Get the node.compute[0] and node.storage[0] data and iterate over it
             self.compute_health_list = Conf.get(NODE_HEALTH_CONF_INDEX, NODE_COMPUTE_DATA_KEY)
             self.storage_health_list = Conf.get(NODE_HEALTH_CONF_INDEX, NODE_STORAGE_DATA_KEY)
 
-            for compute_component in self.compute_health_list:
-                # This will form the compute list as ['hw', 'sw', 'platform_sensor'] etc
-                self.compute_resource_list.append(compute_component)
-            for storage_component in self.storage_health_list:
-                # This will form the storage list as ['hw', 'sw', 'platform_sensor'] etc
-                self.storage_resource_list.append(storage_component)
+            if self.compute_health_list:
+                for compute_component in self.compute_health_list:
+                    # This will form the compute list as ['hw', 'sw', 'platform_sensor'] etc
+                    self.compute_resource_list.append(compute_component)
+                if self.compute_resource_list:
+                    self._get_required_compute_kv(key=HA_ALERT_COMPUTE_KEY)
+            else:
+                Log.warn(f'storage health event is empty')
 
-            self._get_required_compute_kv(key=HA_ALERT_COMPUTE_KEY)
-            self._get_required_storage_kv(key=HA_ALERT_STORAGE_KEY)
+            if self.storage_health_list:
+                for storage_component in self.storage_health_list:
+                    # This will form the storage list as ['hw', 'sw', 'platform_sensor'] etc
+                    self.storage_resource_list.append(storage_component)
+                if self.storage_resource_list:
+                    self._get_required_storage_kv(key=HA_ALERT_STORAGE_KEY)
+            else:
+                Log.warn(f'storage health event is empty')
+
             Log.info(f"Health updates successful for {json_file_nm}  ")
         except Exception as err:
             Log.error(f"Failed parsing file {json_file_nm}, Exception received {err} ")
