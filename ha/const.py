@@ -74,7 +74,6 @@ _DELIM=">"
 
 # Node name mapping keys
 PVTFQDN_TO_NODEID_KEY="pvtfqdn_to_nodeid"
-NODE_BMC_INFO_KEY="node_bmc_info"
 
 # Cortx commands
 CORTX_CLUSTER_NODE_ADD="cortx cluster add node --nodeid=<node> --username=<user> --password=<secret>"
@@ -168,6 +167,7 @@ CM_ELEMENT=["cluster", "node", "service", "storageset"]
 RETRY_COUNT = 2
 PCS_NODE_GROUP_SIZE = 3
 NODE_CONTROLLER = "node_controller"
+SERVICE_CONTROLLER = "service_controller"
 CLUSTER_RETRY_COUNT = 6
 BASE_WAIT_TIME = 5
 NODE_STOP_TIMEOUT = 300 # 300 sec to stop single node
@@ -308,10 +308,7 @@ class AlertEventConstants(Enum):
     IEM_COMPONENTS = f"iem{_DELIM}components"
     IEM_MODULES = f"iem{_DELIM}modules"
 
-class BMC_CREDENTIALS(Enum):
-    IPMI_IPADDR = "ipmi_ipaddr"
-    IPMI_USER = "ipmi_user"
-    IPMI_AUTH_KEY = "ipmi_auth_key"
+
 class CLUSTER_STATUS(Enum):
     OFFLINE = "offline"
     STANDBY = "standby"

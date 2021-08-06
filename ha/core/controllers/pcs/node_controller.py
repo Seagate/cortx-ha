@@ -48,7 +48,6 @@ class PcsNodeController(NodeController, PcsController):
         self._confstore = ConfigManager.get_confstore()
         self._system_health = SystemHealth(self._confstore)
         self._health_manager = SystemHealthManager(self._confstore)
-        self._service_controller = PcsServiceController()
 
     def initialize(self, controllers):
         """
@@ -172,37 +171,6 @@ class PcsNodeController(NodeController, PcsController):
         """
         raise HAUnimplemented("This operation is not implemented.")
 
-    def _validate_permissions(self) -> None:
-
-        # confirm that user is root or part of haclient group"
-        user = getpass.getuser()
-        group_id = os.getgid()
-
-        try:
-            # find group id for root and haclient
-            id_ha = grp.getgrnam(const.USER_GROUP_HACLIENT)
-            id_root = grp.getgrnam(const.USER_GROUP_ROOT)
-
-            # if group not root or haclient return error
-            if group_id != id_ha.gr_gid and group_id != id_root.gr_gid:
-                Log.error(f"User {user} does not have necessary permissions to execute this CLI")
-                raise HAInvalidPermission(
-                            f"User {user} does not have necessary permissions to execute this CLI")
-
-            # The user name "hauser"; which is part of the "haclient" group;
-            # is used by HA.
-            # internal commands are allowed only if the user is "hauser"
-            # As of now, every HA CLI will be internal command. So, we
-            # do not need this change. We can revisit this if needed in future
-            #if user == const.USER_HA_INTERNAL:
-            #    self._is_hauser = True
-
-
-        # TBD : If required raise seperate exception  for root and haclient
-        except KeyError:
-            Log.error("Group root / haclient is not defined")
-            raise HAInvalidPermission("Group root / haclient is not defined ")
-
     def check_cluster_feasibility(self, nodeid: str) -> dict:
         """
             Check whether the cluster is going to be offline after node with nodeid is stopped.
@@ -211,25 +179,12 @@ class PcsNodeController(NodeController, PcsController):
         Returns:
             Dictionary : {"status": "", "msg":""}
         """
-        self.validate_node(node_id=nodeid)
+        self._is_node_in_cluster(node_id=nodeid)
         offline_nodes, node_list = self._get_offline_nodes()
         if (len(offline_nodes) + 1) >= ((len(node_list)//2) + 1):
-            return {"status": const.STATUSES.FAILED.value, "error": "Stopping the node will cause a loss of the quorum"}
+            return {"status": const.STATUSES.FAILED.value, "output": "", "error": "Stopping the node will cause a loss of the quorum"}
         else:
-            return {"status": const.STATUSES.SUCCEEDED.value, "error": ""}
-
-    def validate_node(self, node_id: str) -> bool:
-        """
-        Check node is a part of cluster
-        Args:
-            node_id ([str]): Private fqdn define in conf store.
-        Raises: ClusterManagerError
-        Returns: bool
-        """
-        _, node_list = self._get_offline_nodes()
-        if node_id in node_list:
-            return True
-        raise ClusterManagerError(f"nodeid = {node_id} is not a valid node id")
+            return {"status": const.STATUSES.SUCCEEDED.value, "output": "", "error": ""}
 
     def _get_offline_nodes(self):
         """
@@ -409,10 +364,8 @@ class PcsHWNodeController(PcsNodeController):
         poweroff = op_kwargs.get("poweroff") if op_kwargs.get("poweroff") is not None else False
         storageoff = op_kwargs.get("storageoff") if op_kwargs.get("storageoff") is not None else False
         try:
-            # Raise exception if user does not have proper permissions
-            self._validate_permissions()
             # Raise exception if node_id is not valid
-            self.validate_node(node_id=node_id)
+            self._is_node_in_cluster(node_id=node_id)
 
             # Get the nodeid from pvtfqdn
             nodeid = self._health_manager.get_key(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_id}")
@@ -424,8 +377,7 @@ class PcsHWNodeController(PcsNodeController):
                 status = f"Node {node_id} is already in offline state."
                 return {"status": const.STATUSES.SUCCEEDED.value, "output": node_status, "error": "", "msg": status}
             elif node_status == HEALTH_STATUSES.FAILED.value:
-                raise ClusterManagerError(f"Failed to stop {node_id}."
-                                          f"node is in {node_status} state.")
+                raise ClusterManagerError(f"Failed to stop {node_id}. node is in {node_status} state.")
             else:
                 if check_cluster:
                     # Checks whether cluster is going to be offline if node with node_id is stopped.
@@ -437,14 +389,14 @@ class PcsHWNodeController(PcsNodeController):
 
             if storageoff:
                 # Stop services on node except sspl-ll
-                self._service_controller.stop(nodeid=node_id, excludeResourceList=["sspl-ll"])
+                self._controllers[const.SERVICE_CONTROLLER].stop(nodeid=node_id, excludeResourceList=["sspl-ll"])
 
                 # TODO: storage enclosure is stopped on the node
 
                 # Put node in standby mode
                 self._execute.run_cmd(const.PCS_NODE_STANDBY.replace("<node>", node_id), f" --wait={const.CLUSTER_STANDBY_UNSTANDBY_TIMEOUT}")
                 Log.info(f"Executed node standby for {node_id}")
-                self._service_controller.clear_resources(node_id=node_id)
+                self._controllers[const.SERVICE_CONTROLLER].clear_resources(node_id=node_id)
             else:
                 self._execute.run_cmd(const.PCS_NODE_STANDBY.replace("<node>", node_id), f" --wait={const.CLUSTER_STANDBY_UNSTANDBY_TIMEOUT}")
                 Log.info(f"Executed node standby for {node_id}")
@@ -461,6 +413,6 @@ class PcsHWNodeController(PcsNodeController):
                 self.ipmifenceagent.power_off(nodeid=node_id)
                 status = f"Power off for {node_id} is in progress"
             Log.info("Node power off successfull")
-            return {"status": const.STATUSES.IN_PROGRESS.value, "error": "", "output": HEALTH_STATUSES.OFFLINE.value, "msg": status}
+            return {"status": const.STATUSES.SUCCEEDED.value, "error": "", "output": HEALTH_STATUSES.OFFLINE.value, "msg": status}
         except Exception as e:
             raise ClusterManagerError(f"Failed to stop {node_id}, Error: {e}")

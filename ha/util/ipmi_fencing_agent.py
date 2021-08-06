@@ -20,10 +20,9 @@
 # from this class.
 
 import ast
-from ha import const
+import json
 from ha.core.config.config_manager import ConfigManager
 from ha.execute import SimpleCommand
-from ha.const import BMC_CREDENTIALS
 from ha.util.fencing_agent import FencingAgent
 
 
@@ -51,13 +50,13 @@ class IpmiFencingAgent(FencingAgent):
             nodeid (str): private fqdn define in conf store.
         """
         try:
-            bmc_info = self._confstore.get(f"{const.NODE_BMC_INFO_KEY}/node/{nodeid}")
+            bmc_info = self._confstore.get(f"{IpmiFencingAgent.NODE_BMC_INFO_KEY}/node/{nodeid}")
             if bmc_info is not None:
                 _, value = bmc_info.popitem()
                 bmc_info_dict = ast.literal_eval(value)
-                self._execute.run_cmd(f"ipmitool -I lanplus -H {bmc_info_dict[BMC_CREDENTIALS.IPMI_IPADDR.value]} "
-                                      f"-U {bmc_info_dict[BMC_CREDENTIALS.IPMI_USER.value]} "
-                                      f"-P {bmc_info_dict[BMC_CREDENTIALS.IPMI_AUTH_KEY.value]} chassis power off")
+                self._execute.run_cmd(f"ipmitool -I lanplus -H {bmc_info_dict[IpmiFencingAgent.IPMI_IPADDR]} "
+                                      f"-U {bmc_info_dict[IpmiFencingAgent.IPMI_USER]} "
+                                      f"-P {bmc_info_dict[IpmiFencingAgent.IPMI_AUTH_KEY]} chassis power off")
         except Exception as e:
             raise Exception(f"Failed to run IPMItool Command. Error : {e}")
 
@@ -69,3 +68,14 @@ class IpmiFencingAgent(FencingAgent):
             nodeid (str): Node ID from cluster nodes.
         """
         pass
+
+    def setup_ipmi_credentials(self, ipmi_ipaddr: str, ipmi_user: str, ipmi_password: str, node_name: str):
+        """
+        Get the BMC credentials & store it in confstore
+
+        """
+        bmc_info_keys = {IpmiFencingAgent.IPMI_IPADDR: ipmi_ipaddr, IpmiFencingAgent.IPMI_USER: ipmi_user,
+                            IpmiFencingAgent.IPMI_AUTH_KEY: ipmi_password}
+        if not self._confstore.key_exists(f"{IpmiFencingAgent.NODE_BMC_INFO_KEY}/node/{node_name}"):
+            self._confstore.set(f"{IpmiFencingAgent.NODE_BMC_INFO_KEY}/node/{node_name}", json.dumps(bmc_info_keys))
+

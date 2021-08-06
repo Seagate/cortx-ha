@@ -25,6 +25,7 @@ import json
 import grp, pwd
 import time
 import uuid
+
 from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
 from cortx.utils.validator.v_pkg import PkgV
@@ -34,7 +35,7 @@ from ha.core.system_health.const import CONFSTORE_KEY_ATTRIBUTES
 
 from ha.execute import SimpleCommand
 from ha import const
-from ha.const import STATUSES, BMC_CREDENTIALS
+from ha.const import STATUSES
 from ha.setup.create_pacemaker_resources import create_all_resources, configure_stonith
 from ha.setup.pcs_config.alert_config import AlertConfig
 from ha.setup.post_disruptive_upgrade import perform_post_upgrade
@@ -54,6 +55,8 @@ from ha.core.system_health.system_health import SystemHealth
 from ha.core.system_health.const import CLUSTER_ELEMENTS, HEALTH_EVENTS, EVENT_SEVERITIES
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.const import _DELIM
+from ha.util.ipmi_fencing_agent import IpmiFencingAgent
+
 
 class Cmd:
     """
@@ -292,12 +295,9 @@ class Cmd:
                 key = Cipher.generate_key(machine, const.SERVER_NODE_KEY)
                 ipmi_password = Cipher.decrypt(key, ipmi_password_encrypted.encode('ascii')).decode()
 
-                # Push node BMC Credentials to store
-                confstore = ConfigManager.get_confstore()
-                bmc_info_keys = {BMC_CREDENTIALS.IPMI_IPADDR.value: ipmi_ipaddr, BMC_CREDENTIALS.IPMI_USER.value: ipmi_user,
-                                 BMC_CREDENTIALS.IPMI_AUTH_KEY.value: ipmi_password}
-                if not confstore.key_exists(f"{const.NODE_BMC_INFO_KEY}/node/{node_name}"):
-                    confstore.set(f"{const.NODE_BMC_INFO_KEY}/node/{node_name}", json.dumps(bmc_info_keys))
+                # setup BMC Credentials for ipmi_fencing_agent
+                ipmi_fencing_agent = IpmiFencingAgent()
+                ipmi_fencing_agent.setup_ipmi_credentials(ipmi_ipaddr=ipmi_ipaddr, ipmi_user=ipmi_user, ipmi_password=ipmi_password, node_name=node_name)
 
                 stonith_config[node_name] = {
                     "resource_id": f"stonith-{node_name}",

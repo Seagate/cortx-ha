@@ -71,7 +71,7 @@ class PcsServiceController(ServiceController, PcsController):
         try:
             resources: list = []
             output, _, _ = self._execute.run_cmd(const.LIST_PCS_RESOURCES, check_error=False)
-            if "NO resources" not in output:
+            if "NO resources".lower() not in output.lower():
                 for resource in output.split("\n"):
                     res = resource.split(":")[0]
                     if res != "" and res not in resources and res not in excludeResourceList:
@@ -110,7 +110,7 @@ class PcsServiceController(ServiceController, PcsController):
         try:
             resources: list = []
             output, _, _ = self._execute.run_cmd(const.LIST_PCS_RESOURCES, check_error=False)
-            if "NO resources" not in output:
+            if "NO resources".lower() not in output.lower():
                 for resource in output.split("\n"):
                     res = resource.split(":")[0]
                     if res != "" and res not in resources:
