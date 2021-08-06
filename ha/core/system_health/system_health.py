@@ -344,7 +344,7 @@ class SystemHealth(Subscriber):
         """
         Create health event
         Args:
-            nodeid (str): nodeid 
+            nodeid (str): nodeid
             event_type (str): event type will be offline, online, failed
 
         Returns:
