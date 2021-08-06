@@ -224,7 +224,7 @@ class PcsController(ElementController):
         Args:
             node_id (str): Private fqdn define in conf store.
         Raises: HAInvalidNode
-        Returns: bool
+        If Node is not present in cluster or Node is not valid raise Exception
         """
         if node_id in self._get_node_list():
             return True

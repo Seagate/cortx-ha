@@ -15,16 +15,13 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-import grp
-import os
 import time
 import ast
 import uuid
-import getpass
 import xml.etree.ElementTree as ET
 
 from cortx.utils.log import Log
-from ha.core.error import HAInvalidPermission, HAUnimplemented, ClusterManagerError
+from ha.core.error import HAUnimplemented, ClusterManagerError
 from ha.core.controllers.pcs.pcs_controller import PcsController
 from ha.core.controllers.node_controller import NodeController
 from ha.core.controllers.controller_annotation import controller_error_handler
@@ -35,7 +32,6 @@ from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.system_health.system_health import SystemHealth, SystemHealthManager
 from ha.core.config.config_manager import ConfigManager
 from ha.util.ipmi_fencing_agent import IpmiFencingAgent
-from ha.core.controllers.pcs.service_controller import PcsServiceController
 
 class PcsNodeController(NodeController, PcsController):
     """ Controller to manage node. """
@@ -70,7 +66,7 @@ class PcsNodeController(NodeController, PcsController):
     @controller_error_handler
     def stop(self, node_id: str, timeout: int, **op_kwargs) -> dict:
         """
-        Stop Cluster on node with nodeid.
+        Stop Node with nodeid.
         Args:
             nodeid (str): Node ID from cluster nodes.
         Returns:
@@ -188,7 +184,9 @@ class PcsNodeController(NodeController, PcsController):
 
     def _get_offline_nodes(self):
         """
-        Get list of offline nodes ids.
+        Get the list offline nodes & all nodes
+        Returns:
+            [tuple]: tuple of offline_nodes & all_nodes
         """
         cluster_status_xml = self._execute.run_cmd(const.GET_CLUSTER_STATUS)
         # create element tree object
@@ -308,6 +306,14 @@ class PcsVMNodeController(PcsNodeController):
 
     @controller_error_handler
     def stop(self, node_id: str, timeout: int= -1, **op_kwargs) -> dict:
+        """
+        Stop Node with nodeid.
+        Args:
+            nodeid (str): Node ID from cluster nodes.
+        Returns:
+            ([dict]): Return dictionary. {"status": "", "output": "", "error": ""}
+                status: Succeeded, Failed, InProgress
+        """
         timeout = const.NODE_STOP_TIMEOUT if timeout < 0 else timeout
         node_status = self.nodes_status([node_id]).get(node_id)
         if node_status == NODE_STATUSES.CLUSTER_OFFLINE.value:
@@ -353,7 +359,7 @@ class PcsHWNodeController(PcsNodeController):
     @controller_error_handler
     def stop(self, node_id: str, timeout: int = -1, **op_kwargs) -> dict:
         """
-        Stop Cluster on node with node_id.
+        Stop (poweroff) node with node_id.
         Args:
             node_id (str): Private fqdn define in conf store.
         Returns:
@@ -404,7 +410,7 @@ class PcsHWNodeController(PcsNodeController):
 
             # Update node health
             initial_event = self.create_health_event(nodeid=nodeid, event_type=HEALTH_EVENTS.FAULT.value)
-            Log.debug(f"Node health : {initial_event} updated for node {nodeid}")
+            Log.debug(f"Node health : {initial_event} updated for node {node_id}")
             health_event = HealthEvent.dict_to_object(initial_event)
             self._system_health.process_event(health_event)
 

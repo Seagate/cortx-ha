@@ -117,7 +117,6 @@ class PcsServiceController(ServiceController, PcsController):
                         resources.append(res)
             for resource in resources:
                 self._execute.run_cmd(f"pcs resource clear {resource} {node_id}")
-            Log.info(f"Waiting to clear resource on node {node_id}")
-            time.sleep(20)
+            Log.info(f"Cleared resource on node {node_id}")
         except Exception as e:
             raise ClusterManagerError(f"Failed to clear resources on {node_id}, Error: {e}")
