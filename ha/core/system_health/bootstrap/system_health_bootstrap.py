@@ -21,8 +21,8 @@ from ha.core.system_health.system_health_exception import InvalidHealthDataExcep
 from ha.core.system_health.const import NODE_HEALTH_RETRY_COUNT
 from ha.core.system_health.const import NODE_HEALTH_RETRY_INTERVAL
 from ha.core.system_health.bootstrap.json_kv_convertor import KVGenerator
+from ha.execute import SimpleCommand
 from cortx.utils.discovery import Discovery
-
 
 
 class BootstrapHealth:
@@ -31,6 +31,7 @@ class BootstrapHealth:
 
         self._node_name = None
         self._kvGen = KVGenerator()
+        self.json_node_health = None
 
     def bootstrap_node_health(self, node_name, conf_index, conf_store):
 
@@ -54,7 +55,6 @@ class BootstrapHealth:
 
         for _ in range(0, int(NODE_HEALTH_RETRY_COUNT)):
             status = Discovery.get_gen_node_health_status(request_id)
-            # [TBD] this part to be tested /verified after integration with Dicovery module
             if status == "Success":
                 Log.info(f"Node health generation successful for {self._node_name}")
                 return request_id
@@ -75,16 +75,14 @@ class BootstrapHealth:
             Log.error(f"Node health generation failed; Invalid URL {url} received for {self._node_name}")
             raise InvalidHealthDataException(f"Node health generation failed; Invalid URL {url} received for {self._node_name}")
 
-        # [TBD] url verification, parsing to be verified after integration with Dicovery module
-        url = url.replace('json://', '')
+        self.json_node_health = url.replace('json://', '')
 
         Log.info(f"Updating node health for {self._node_name}")
         # Get the necesary data in KV format
-        self._kvGen.generate_health(url, conf_index, conf_store)
+        self._kvGen.generate_health(self.json_node_health, conf_index, conf_store)
 
 
     def _cleanup_health_data(self):
 
         # Delete the json file created by Discovery module
-        # [TBD] this part to be implemented during integration with Dicovery module
-        pass
+        SimpleCommand().run_cmd(f"rm -f {self.json_node_health}")

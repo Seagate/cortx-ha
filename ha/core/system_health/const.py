@@ -96,6 +96,15 @@ NODE_HEALTH_RETRY_COUNT = 30
 NODE_HEALTH_RETRY_INTERVAL = 2
 CMD_GET_MACHINE_ID = "cat /etc/machine-id"
 
+# Constants for storing and getting the node health data to confstore
+NODE_HEALTH_CONF_INDEX = 'node_health'
+NODE_DATA_KEY = 'node'
+NODE_COMPUTE_DATA_KEY = 'node>compute[0]'
+NODE_STORAGE_DATA_KEY = 'node>storage[0]'
+
+HA_ALERT_COMPUTE_KEY = 'node.compute'
+HA_ALERT_STORAGE_KEY = 'node.storage'
+
 # Mapping to identify the SEVERITY based on EVENT_TYPE
 HEALTH_STATUS_TO_EVENT_SEVERITY_MAPPING = {
     "OK" : EVENT_SEVERITIES.INFORMATIONAL.value,
@@ -113,32 +122,32 @@ HEALTH_STATUS_TO_EVENT_SEVERITY_MAPPING = {
 # Note: If the KV parsing output changes the strings in this mapping will need to be modified
 # [TBD] This mapping to be confirmed with SSPL
 RESOURCE_TYPE_MAPPING = {
-    "node.storage.hw.controller" : "enclosure:hw:controller",
-    "node.storage.hw.disk" : "enclosure:hw:disk ",
-    "node.storage.hw.fan" : "enclosure:hw:fan",
-    "node.storage.hw.psu" : "enclosure:hw:psu",
-    "node.storage.hw.sideplane_expander" : "enclosure:hw:sideplane",
-    "node.storage.fw.logical_volume" : "enclosure:cortx:logical_volume",
-    "node.storage.fw.disk_group" : "enclosure:cortx:disk_group",
-    "node.storage.hw.platform_sensor.temperature" : "enclosure:sensor:temperature",
-    "node.storage.hw.platform_sensor.voltage" : "enclosure:sensor:voltage",
-    "node.storage.hw.platform_sensor.current" : "enclosure:sensor:current",
-    "node.storage.hw.sas_port" : "enclosure:interface:sas",
-    "node.storage.hw.nw_port" : "enclosure:interface:nw",
-    "node.compute.hw.psu" : "node:fru:psu",
-    "node.compute.hw.cpu" : "node:os:cpu",
-    "node.compute.hw.memory" : "node:os:memory",
-    "node.compute.hw.fan" : "node:fru:fan",
-    "node.compute.hw.nw_port" : "node:interface:nw",
-    "node.compute.hw.sas_hba" : "node:interface:sas",
-    "node.compute.hw.sas_port" : "node:interface:sas:port",
-    "node.compute.hw.disk" : "node:fru:disk",
-    "node.compute.hw.platform_sensor.temperature" : "node:fru:psu",
-    "node.compute.hw.platform_sensor.voltage" : "node:fru:psu",
-    "node.compute.hw.platform_sensor.current" : "node:fru:psu",
-    "node.compute.sw.raid" : "node:os:raid_data",
-    "node.compute.sw.cortx_sw_services" : "node:sw:os:service",
-    "node.compute.sw.external_sw_services" : "node:sw:os:service",
-    "node.compute" : "node",
-    "node.storage" : "enclosure"
+    "storage.hw.controller" : "enclosure:hw:controller",
+    "storage.hw.disk" : "enclosure:hw:disk ",
+    "storage.hw.fan" : "enclosure:hw:fan",
+    "storage.hw.psu" : "enclosure:hw:psu",
+    "storage.hw.sideplane_expander" : "enclosure:hw:sideplane",
+    "storage.fw.logical_volume" : "enclosure:cortx:logical_volume",
+    "storage.fw.disk_group" : "enclosure:cortx:disk_group",
+    "storage.hw.platform_sensor.temperature" : "enclosure:sensor:temperature",
+    "storage.hw.platform_sensor.voltage" : "enclosure:sensor:voltage",
+    "storage.hw.platform_sensor.current" : "enclosure:sensor:current",
+    "storage.hw.sas_port" : "enclosure:interface:sas",
+    "storage.hw.nw_port" : "enclosure:interface:nw",
+    "compute.hw.psu" : "node:fru:psu",
+    "compute.hw.cpu" : "node:os:cpu",
+    "compute.hw.memory" : "node:os:memory",
+    "compute.hw.fan" : "node:fru:fan",
+    "compute.hw.nw_port" : "node:interface:nw",
+    "compute.hw.sas_hba" : "node:interface:sas",
+    "compute.hw.sas_port" : "node:interface:sas:port",
+    "compute.hw.disk" : "node:fru:disk",
+    "compute.hw.platform_sensor.temperature" : "node:fru:psu",
+    "compute.hw.platform_sensor.voltage" : "node:fru:psu",
+    "compute.hw.platform_sensor.current" : "node:fru:psu",
+    "compute.sw.raid" : "node:os:raid_data",
+    "compute.sw.cortx_sw_services" : "node:sw:os:service",
+    "compute.sw.external_sw_services" : "node:sw:os:service",
+    "compute" : "node",
+    "storage" : "enclosure"
 }
