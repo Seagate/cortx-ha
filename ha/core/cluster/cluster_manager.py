@@ -322,13 +322,6 @@ class CortxClusterManager:
                             f"User {user} does not have necessary permissions to execute this CLI")
 
             # TODO : Check if user needs to be changed to hauser
-            # is used by HA.
-            # internal commands are allowed only if the user is "hauser"
-            # As of now, every HA CLI will be internal command. So, we
-            # do not need this change. We can revisit this if needed in future
-            #if user == const.USER_HA_INTERNAL:
-            #    self._is_hauser = True
-
 
         except KeyError:
             Log.error("haclient group is not present on the system")
