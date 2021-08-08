@@ -66,8 +66,6 @@ class KVGenerator:
             self._last_modified = val
         elif re.search(self._filter_list[2].replace(':',''), key):
             self._status = val
-            if self._status.upper() in ["NA", "UNKNOWN", "N/A"]:
-                return
             # cleanup the key
             # Previous key is node.compute....health.status or node.storage....helath.status
             # Remove node. and .health.status and form a new key as compute... or storage...
@@ -192,7 +190,7 @@ class KVGenerator:
                 if self.compute_resource_list:
                     self._get_required_compute_kv(key=HA_ALERT_COMPUTE_KEY)
             else:
-                Log.warn(f'storage health event is empty')
+                Log.warn('storage health event is empty')
 
             if self.storage_health_list:
                 for storage_component in self.storage_health_list:
