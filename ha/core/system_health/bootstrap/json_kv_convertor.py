@@ -199,7 +199,7 @@ class KVGenerator:
                 if self.storage_resource_list:
                     self._get_required_storage_kv(key=HA_ALERT_STORAGE_KEY)
             else:
-                Log.warn(f'storage health event is empty')
+                Log.warn('storage health event is empty')
 
             Log.info(f"Health updates successful for {json_file_nm}  ")
         except Exception as err:
