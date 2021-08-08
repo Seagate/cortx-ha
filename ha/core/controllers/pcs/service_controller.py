@@ -56,12 +56,12 @@ class PcsServiceController(ServiceController, PcsController):
         raise HAUnimplemented("This operation is not implemented.")
 
     @controller_error_handler
-    def stop(self, nodeid: str, excludeResourceList: list = None) -> dict:
+    def stop(self, node_id: str, excludeResourceList: list = None) -> dict:
         """
         Stop service.
 
         Args:
-            nodeid (str): Private fqdn define in conf store.
+            node_id (str): Private fqdn define in conf store.
             excludeResourceList (list): Service list which are not stopped.
 
         Returns:
@@ -77,13 +77,13 @@ class PcsServiceController(ServiceController, PcsController):
                     if res != "" and res not in resources and res not in excludeResourceList:
                         resources.append(res)
             for resource in resources:
-                self._execute.run_cmd(f"pcs resource ban {resource} {nodeid}")
-            Log.info(f"Waiting to stop resource on node {nodeid}")
+                self._execute.run_cmd(f"pcs resource ban {resource} {node_id}")
+            Log.info(f"Waiting to stop resource on node {node_id}")
             time.sleep(const.BASE_WAIT_TIME)
             # TODO: Check if the resources are stopped
-            return {"status": const.STATUSES.IN_PROGRESS.value, "msg": f"Resources stopped on node {nodeid}"}
+            return {"status": const.STATUSES.IN_PROGRESS.value, "msg": f"Resources stopped on node {node_id}"}
         except Exception as e:
-            raise ClusterManagerError(f"Failed to stop resources on {nodeid}, Error: {e}")
+            raise ClusterManagerError(f"Failed to stop resources on {node_id}, Error: {e}")
 
     @controller_error_handler
     def status(self, service: str, nodeids: list = None) -> dict:

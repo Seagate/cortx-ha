@@ -167,15 +167,16 @@ class PcsNodeController(NodeController, PcsController):
         raise HAUnimplemented("This operation is not implemented.")
 
     @controller_error_handler
-    def check_cluster_feasibility(self, nodeid: str) -> dict:
+    def check_cluster_feasibility(self, node_id: str) -> dict:
         """
-            Check whether the cluster is going to be offline after node with nodeid is stopped.
+            Check whether the cluster is going to be offline after node with node_id is stopped.
         Args:
-            nodeid (str): Private fqdn define in conf store.
+            node_id (str): Private fqdn define in conf store.
         Returns:
             Dictionary : {"status": "", "msg":""}
         """
-        self._is_node_in_cluster(node_id=nodeid)
+        # Raise exception if node_id is not valid
+        self._is_node_in_cluster(node_id=node_id)
         node_list = self._get_node_list()
         offline_nodes = self._get_offline_nodes()
         if (len(offline_nodes) + 1) >= ((len(node_list)//2) + 1):
@@ -279,8 +280,7 @@ class PcsVMNodeController(PcsNodeController):
             Log.info(f"For stop {node_id}, Node already in offline state.")
             status = f"Node {node_id} is already in offline state."
         elif node_status == NODE_STATUSES.POWEROFF.value:
-            raise ClusterManagerError(f"Failed to stop {node_id}."
-                f"node is in {node_status}.")
+            raise ClusterManagerError(f"Failed to stop {node_id}. Node is in {node_status}.")
         else:
             if self.heal_resource(node_id):
                 time.sleep(const.BASE_WAIT_TIME)
@@ -346,7 +346,7 @@ class PcsHWNodeController(PcsNodeController):
             else:
                 if check_cluster:
                     # Checks whether cluster is going to be offline if node with node_id is stopped.
-                    res = json.loads(self.check_cluster_feasibility(nodeid=node_id))
+                    res = json.loads(self.check_cluster_feasibility(node_id=node_id))
                     if res.get("status") == const.STATUSES.FAILED.value:
                         return res
                 if self.heal_resource(node_id):
@@ -354,7 +354,7 @@ class PcsHWNodeController(PcsNodeController):
 
             if storageoff:
                 # Stop services on node except sspl-ll
-                self._controllers[const.SERVICE_CONTROLLER].stop(nodeid=node_id, excludeResourceList=[RESOURCE.SSPL_LL.value])
+                self._controllers[const.SERVICE_CONTROLLER].stop(node_id=node_id, excludeResourceList=[RESOURCE.SSPL_LL.value])
 
                 # TODO: storage enclosure is stopped on the node
 
@@ -368,7 +368,7 @@ class PcsHWNodeController(PcsNodeController):
             status = f"{node_id} Node Standby is in progress"
 
             # Update node health
-            initial_event = self._system_health.get_health_event_template(nodeid=nodeid, event_type=HEALTH_EVENTS.FAULT_RESOLVED.value)
+            initial_event = self._system_health.get_health_event_template(nodeid=nodeid, event_type=HEALTH_EVENTS.FAULT.value)
             Log.debug(f"Node health : {initial_event} updated for node {node_id}")
             health_event = HealthEvent.dict_to_object(initial_event)
             self._system_health.process_event(health_event)

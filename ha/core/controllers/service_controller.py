@@ -51,12 +51,12 @@ class ServiceController(ElementController):
         raise HAUnimplemented("This operation is not implemented.")
 
     @controller_error_handler
-    def stop(self, nodeid: str, excludeResourceList: list = None) -> dict:
+    def stop(self, node_id: str, excludeResourceList: list = None) -> dict:
         """
         Stop service.
 
         Args:
-            nodeid (str): Private fqdn define in conf store.
+            node_id (str): Private fqdn define in conf store.
             excludeResourceList (list): Service list which are not stopped.
 
         Returns:
