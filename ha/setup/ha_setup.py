@@ -25,6 +25,7 @@ import json
 import grp, pwd
 import time
 import uuid
+
 from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
 from cortx.utils.validator.v_pkg import PkgV
@@ -54,6 +55,8 @@ from ha.core.system_health.system_health import SystemHealth
 from ha.core.system_health.const import CLUSTER_ELEMENTS, HEALTH_EVENTS, EVENT_SEVERITIES
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.const import _DELIM
+from ha.util.ipmi_fencing_agent import IpmiFencingAgent
+
 
 class Cmd:
     """
@@ -291,6 +294,10 @@ class Cmd:
                 ipmi_password_encrypted = nodes_schema.get(machine).get('bmc').get('secret')
                 key = Cipher.generate_key(machine, const.SERVER_NODE_KEY)
                 ipmi_password = Cipher.decrypt(key, ipmi_password_encrypted.encode('ascii')).decode()
+
+                # setup BMC Credentials for ipmi_fencing_agent
+                ipmi_fencing_agent = IpmiFencingAgent()
+                ipmi_fencing_agent.setup_ipmi_credentials(ipmi_ipaddr=ipmi_ipaddr, ipmi_user=ipmi_user, ipmi_password=ipmi_password, node_name=node_name)
 
                 stonith_config[node_name] = {
                     "resource_id": f"stonith-{node_name}",
@@ -711,8 +718,10 @@ class ConfigCmd(Cmd):
         site_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.SITE_ID.value}")
         rack_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.RACK_ID.value}")
         storageset_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{CONFSTORE_KEY_ATTRIBUTES.STORAGE_SET_ID.value}")
+        host_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}network{_DELIM}management{_DELIM}public_fqdn")
         node_map = {NODE_MAP_ATTRIBUTES.CLUSTER_ID.value: cluster_id, NODE_MAP_ATTRIBUTES.SITE_ID.value: site_id,
-                    NODE_MAP_ATTRIBUTES.RACK_ID.value: rack_id, NODE_MAP_ATTRIBUTES.STORAGESET_ID.value: storageset_id}
+                    NODE_MAP_ATTRIBUTES.RACK_ID.value: rack_id, NODE_MAP_ATTRIBUTES.STORAGESET_ID.value: storageset_id,
+                    NODE_MAP_ATTRIBUTES.HOST_ID.value: host_id}
         system_health = SystemHealth(self._confstore)
         key = system_health._prepare_key(const.COMPONENTS.NODE_MAP.value, node_id=node_id)
         # Check key is already exist if not, store the node map.

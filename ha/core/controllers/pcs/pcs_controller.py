@@ -218,12 +218,14 @@ class PcsController(ElementController):
                 raise HAClusterCLIError(f'{node_id} not a valid node_id: {err}')
         return True
 
-    def _is_node_in_cluster(self, node_id):
-        '''
-           Checks if node_id present in cluster or not
-           Returns: bool
-           Exception: HAInvalidNode
-        '''
+    def _is_node_in_cluster(self, node_id: str):
+        """
+        Checks if node_id present in cluster or not
+        Args:
+            node_id (str): Private fqdn define in conf store.
+        Raises: HAInvalidNode
+        If Node is not present in cluster or Node is not valid raise Exception
+        """
         if node_id in self._get_node_list():
             return True
         raise HAInvalidNode(f"The node {node_id} is not present in the cluster.")
