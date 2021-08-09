@@ -321,19 +321,11 @@ class CortxClusterManager:
                 raise HAInvalidPermission(
                             f"User {user} does not have necessary permissions to execute this CLI")
 
-            # The user name "hauser"; which is part of the "haclient" group;
-            # is used by HA.
-            # internal commands are allowed only if the user is "hauser"
-            # As of now, every HA CLI will be internal command. So, we
-            # do not need this change. We can revisit this if needed in future
-            #if user == const.USER_HA_INTERNAL:
-            #    self._is_hauser = True
+            # TODO : Check if user needs to be changed to hauser
 
-
-        # TBD : If required raise seperate exception  for root and haclient
         except KeyError:
-            Log.error("root / haclient group is not present on the system")
-            raise HAInvalidPermission("root / haclient group is not present on the system")
+            Log.error("haclient group is not present on the system")
+            raise HAInvalidPermission("haclient group is not present on the system")
 
     @property
     def controller_list(self) -> list:
