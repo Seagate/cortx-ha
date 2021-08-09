@@ -18,13 +18,14 @@ import re
 import time
 import ast
 import json
+import uuid
 
 from cortx.utils.log import Log
 from ha import const
 from ha.core.system_health.health_evaluators.element_health_evaluator import ElementHealthEvaluator
 
 
-from ha.core.system_health.const import NODE_MAP_ATTRIBUTES
+from ha.core.system_health.const import EVENT_SEVERITIES, NODE_MAP_ATTRIBUTES
 from ha.core.event_analyzer.subscriber import Subscriber
 from ha.core.system_health.system_health_metadata import SystemHealthComponents, SystemHealthHierarchy
 from ha.core.system_health.model.health_event import HealthEvent
@@ -338,3 +339,38 @@ class SystemHealth(Subscriber):
         except Exception as e:
             Log.error(f"Failed processing system health event with Error: {e}")
             raise HaSystemHealthException("Failed processing system health event")
+
+    def get_health_event_template(self, nodeid: str, event_type: str) -> dict:
+        """
+        Create health event
+        Args:
+            nodeid (str): nodeid
+            event_type (str): event type will be offline, online, failed
+
+        Returns:
+            dict: Return dictionary of health event
+        """
+        key = self._prepare_key(const.COMPONENTS.NODE_MAP.value, node_id=nodeid)
+        node_map_val = self.healthmanager.get_key(key)
+        if node_map_val is None:
+            raise HaSystemHealthException("Failed to fetch node_map value")
+        node_map_dict = ast.literal_eval(node_map_val)
+
+        timestamp = str(int(time.time()))
+        event_id = timestamp + str(uuid.uuid4().hex)
+        initial_event = {
+            const.EVENT_ATTRIBUTES.EVENT_ID : event_id,
+            const.EVENT_ATTRIBUTES.EVENT_TYPE : event_type,
+            const.EVENT_ATTRIBUTES.SEVERITY : EVENT_SEVERITIES.WARNING.value,
+            const.EVENT_ATTRIBUTES.SITE_ID : node_map_dict[NODE_MAP_ATTRIBUTES.SITE_ID.value],
+            const.EVENT_ATTRIBUTES.RACK_ID : node_map_dict[NODE_MAP_ATTRIBUTES.RACK_ID.value],
+            const.EVENT_ATTRIBUTES.CLUSTER_ID : node_map_dict[NODE_MAP_ATTRIBUTES.CLUSTER_ID.value],
+            const.EVENT_ATTRIBUTES.STORAGESET_ID : node_map_dict[NODE_MAP_ATTRIBUTES.STORAGESET_ID.value],
+            const.EVENT_ATTRIBUTES.NODE_ID : nodeid,
+            const.EVENT_ATTRIBUTES.HOST_ID : node_map_dict[NODE_MAP_ATTRIBUTES.HOST_ID.value],
+            const.EVENT_ATTRIBUTES.RESOURCE_TYPE : CLUSTER_ELEMENTS.NODE.value,
+            const.EVENT_ATTRIBUTES.TIMESTAMP : timestamp,
+            const.EVENT_ATTRIBUTES.RESOURCE_ID : nodeid,
+            const.EVENT_ATTRIBUTES.SPECIFIC_INFO : None
+        }
+        return initial_event
