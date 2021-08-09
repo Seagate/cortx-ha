@@ -156,6 +156,7 @@ PCS_STONITH_DISABLE="pcs property set stonith-enabled=False"
 PCS_BAN_RESOURCES="pcs resource ban <resource_id> <node>"
 PCS_CLEAR_RESOURCES="pcs resource clear <resource_id> <node>"
 LIST_PCS_RESOURCES = '/usr/sbin/crm_resource --list-raw'
+DISABLE_STONITH="pcs resource disable stonith-<node>-clone"
 CHECK_PCS_STANDBY_MODE = '/usr/sbin/crm_standby --query | awk \'{print $3}\''
 GET_CLUSTER_STATUS = "crm_mon --as-xml"
 GET_ONLINE_NODES_CMD = "crm_mon --as-xml"

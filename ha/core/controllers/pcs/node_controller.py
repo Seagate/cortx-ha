@@ -178,21 +178,26 @@ class PcsNodeController(NodeController, PcsController):
         self._is_node_in_cluster(node_id=node_id)
         node_list = self._get_node_list()
         offline_nodes = self._get_offline_nodes()
-        if (len(offline_nodes) + 1) >= ((len(node_list)//2) + 1):
+        Log.debug(f"nodelist : {node_list} offlinenodes : {offline_nodes}")
+        num_nodes = len(node_list)
+        max_nodes_offline = num_nodes // 2 if num_nodes % 2 == 1 else (num_nodes // 2) - 1
+        if (len(offline_nodes) + 1) > max_nodes_offline:
+            Log.debug("Stopping the node will cause a loss of the quorum")
             return {"status": const.STATUSES.FAILED.value, "output": "", "error": "Stopping the node will cause a loss of the quorum"}
         else:
+            Log.debug("Stopping the node will not cause a loss of the quorum")
             return {"status": const.STATUSES.SUCCEEDED.value, "output": "", "error": ""}
 
     def _get_offline_nodes(self):
         """
-        Get the list offline And failed nodes
+        Get the list offline, standby, failed nodes
         Returns:
             [list]: list of offline & failed nodes
         """
         nodes_status = self.nodes_status()
         offline_nodes = []
         for node_name in self._get_node_list():
-            if nodes_status[node_name] == HEALTH_STATUSES.OFFLINE.value or nodes_status[node_name] == HEALTH_STATUSES.FAILED.value:
+            if nodes_status[node_name] != HEALTH_STATUSES.ONLINE.value:
                 offline_nodes.append(node_name)
         return offline_nodes
 
@@ -343,7 +348,7 @@ class PcsHWNodeController(PcsNodeController):
             if node_status == HEALTH_STATUSES.OFFLINE.value:
                 Log.info(f"For stop {node_id}, Node already in offline state.")
                 status = f"Node {node_id} is already in offline state."
-                return {"status": const.STATUSES.SUCCEEDED.value, "output": node_status, "error": "", "msg": status}
+                return {"status": const.STATUSES.SUCCEEDED.value, "output": status, "error": ""}
             elif node_status == HEALTH_STATUSES.FAILED.value:
                 raise ClusterManagerError(f"Failed to stop {node_id}. node is in {node_status} state.")
             else:
@@ -379,10 +384,11 @@ class PcsHWNodeController(PcsNodeController):
 
             # Node power off
             if poweroff:
+                self._execute.run_cmd(const.DISABLE_STONITH.replace("<node>", node_id))
                 self.fencing_agent.power_off(node_id=node_id)
                 status = f"Power off for {node_id} is in progress"
             Log.info(f"Node power off successfull. status : {status}")
             # TODO : return status should be changed according to passed parameters
-            return {"status": const.STATUSES.SUCCEEDED.value, "error": "", "output": HEALTH_STATUSES.OFFLINE.value, "msg": status}
+            return {"status": const.STATUSES.SUCCEEDED.value, "error": "", "output": status}
         except Exception as e:
             raise ClusterManagerError(f"Failed to stop {node_id}, Error: {e}")
