@@ -27,7 +27,7 @@ from ha import const
 from ha.const import NODE_STATUSES
 from ha.core.system_health.const import HEALTH_EVENTS, HEALTH_STATUSES
 from ha.core.system_health.model.health_event import HealthEvent
-from ha.core.system_health.system_health import SystemHealth, SystemHealthManager
+from ha.core.system_health.system_health import SystemHealth
 from ha.core.config.config_manager import ConfigManager
 from ha.util.ipmi_fencing_agent import IpmiFencingAgent
 from ha.setup.const import RESOURCE
@@ -42,7 +42,6 @@ class PcsNodeController(NodeController, PcsController):
         super(PcsNodeController, self).__init__()
         self._confstore = ConfigManager.get_confstore()
         self._system_health = SystemHealth(self._confstore)
-        self._health_manager = SystemHealthManager(self._confstore)
 
     def initialize(self, controllers):
         """
@@ -274,7 +273,9 @@ class PcsVMNodeController(PcsNodeController):
             ([dict]): Return dictionary. {"status": "", "output": "", "error": ""}
                 status: Succeeded, Failed, InProgress
         """
+        # TODO: check_cluster - boolean.It checks whether cluster is going to be offline if node with node_id is stopped.
         timeout = const.NODE_STOP_TIMEOUT if timeout < 0 else timeout
+        # TODO: Get the node_status from system health status
         node_status = self.nodes_status([node_id]).get(node_id)
         if node_status == NODE_STATUSES.CLUSTER_OFFLINE.value:
             Log.info(f"For stop {node_id}, Node already in offline state.")
@@ -291,6 +292,7 @@ class PcsVMNodeController(PcsNodeController):
                 Log.info(f"Executed node stop for {node_id}, Waiting to stop resource")
                 time.sleep(const.BASE_WAIT_TIME)
                 status = f"Stop for {node_id} is in progress, waiting to stop resource"
+                # TODO: Update node_status in system_health
             except Exception as e:
                 raise ClusterManagerError(f"Failed to stop {node_id}, Error: {e}")
         return {"status": const.STATUSES.IN_PROGRESS.value, "output": status, "error": ""}
@@ -333,7 +335,8 @@ class PcsHWNodeController(PcsNodeController):
             self._is_node_in_cluster(node_id=node_id)
 
             # Get the nodeid from pvtfqdn
-            nodeid = self._health_manager.get_key(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_id}")
+            nodeid_dict = self._confstore.get(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_id}")
+            _, nodeid = nodeid_dict.popitem()
 
             # stop all services running on node with node_id
             node_status = self._system_health.get_node_status(node_id=nodeid).get("status")
@@ -368,6 +371,7 @@ class PcsHWNodeController(PcsNodeController):
             status = f"{node_id} Node Standby is in progress"
 
             # Update node health
+            # TODO : Health event update to be removed once fault_tolerance branch is merged
             initial_event = self._system_health.get_health_event_template(nodeid=nodeid, event_type=HEALTH_EVENTS.FAULT.value)
             Log.debug(f"Node health : {initial_event} updated for node {node_id}")
             health_event = HealthEvent.dict_to_object(initial_event)
@@ -378,6 +382,7 @@ class PcsHWNodeController(PcsNodeController):
                 self.fencing_agent.power_off(node_id=node_id)
                 status = f"Power off for {node_id} is in progress"
             Log.info(f"Node power off successfull. status : {status}")
+            # TODO : return status should be changed according to passed parameters
             return {"status": const.STATUSES.SUCCEEDED.value, "error": "", "output": HEALTH_STATUSES.OFFLINE.value, "msg": status}
         except Exception as e:
             raise ClusterManagerError(f"Failed to stop {node_id}, Error: {e}")

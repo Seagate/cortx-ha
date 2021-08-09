@@ -153,6 +153,8 @@ PCS_NODE_UNSTANDBY="pcs node unstandby <node>"
 PCS_RESOURCE_REFRESH="pcs resource refresh --force"
 PCS_DELETE_RESOURCE="pcs resource delete <resource> --force"
 PCS_STONITH_DISABLE="pcs property set stonith-enabled=False"
+PCS_BAN_RESOURCES="pcs resource ban <resource_id> <node>"
+PCS_CLEAR_RESOURCES="pcs resource clear <resource_id> <node>"
 LIST_PCS_RESOURCES = '/usr/sbin/crm_resource --list-raw'
 CHECK_PCS_STANDBY_MODE = '/usr/sbin/crm_standby --query | awk \'{print $3}\''
 GET_CLUSTER_STATUS = "crm_mon --as-xml"

@@ -77,7 +77,7 @@ class PcsServiceController(ServiceController, PcsController):
                     if res != "" and res not in resources and res not in excludeResourceList:
                         resources.append(res)
             for resource in resources:
-                self._execute.run_cmd(f"pcs resource ban {resource} {node_id}")
+                self._execute.run_cmd(const.PCS_BAN_RESOURCES.replace("<resource_id>", resource).replace("<node>", node_id))
             Log.info(f"Waiting to stop resource on node {node_id}")
             time.sleep(const.BASE_WAIT_TIME)
             # TODO: Check if the resources are stopped EOS-23386
@@ -117,7 +117,7 @@ class PcsServiceController(ServiceController, PcsController):
                     if res != "" and res not in resources:
                         resources.append(res)
             for resource in resources:
-                self._execute.run_cmd(f"pcs resource clear {resource} {node_id}")
+                self._execute.run_cmd(const.PCS_CLEAR_RESOURCES.replace("<resource_id>", resource).replace("<node>", node_id))
             Log.info(f"Cleared resource on node {node_id}")
         except Exception as e:
             raise ClusterManagerError(f"Failed to clear resources on {node_id}, Error: {e}")
