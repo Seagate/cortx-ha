@@ -153,8 +153,12 @@ PCS_NODE_UNSTANDBY="pcs node unstandby <node>"
 PCS_RESOURCE_REFRESH="pcs resource refresh --force"
 PCS_DELETE_RESOURCE="pcs resource delete <resource> --force"
 PCS_STONITH_DISABLE="pcs property set stonith-enabled=False"
+PCS_BAN_RESOURCES="pcs resource ban <resource_id> <node>"
+PCS_CLEAR_RESOURCES="pcs resource clear <resource_id> <node>"
 LIST_PCS_RESOURCES = '/usr/sbin/crm_resource --list-raw'
+DISABLE_STONITH="pcs resource disable stonith-<node>-clone"
 CHECK_PCS_STANDBY_MODE = '/usr/sbin/crm_standby --query | awk \'{print $3}\''
+GET_CLUSTER_STATUS = "crm_mon --as-xml"
 GET_ONLINE_NODES_CMD = "crm_mon --as-xml"
 GET_LOCAL_NODE_ID_CMD = "crm_node -i"
 GET_LOCAL_NODE_NAME_CMD = "crm_node -n"
@@ -166,6 +170,7 @@ CM_ELEMENT=["cluster", "node", "service", "storageset"]
 RETRY_COUNT = 2
 PCS_NODE_GROUP_SIZE = 3
 NODE_CONTROLLER = "node_controller"
+SERVICE_CONTROLLER = "service_controller"
 CLUSTER_RETRY_COUNT = 6
 BASE_WAIT_TIME = 5
 NODE_STOP_TIMEOUT = 300 # 300 sec to stop single node
@@ -199,6 +204,7 @@ class STATUSES(Enum):
     SUCCEEDED = "Succeeded"
     PARTIAL = "Partial"
     FAILED = "Failed"
+    WARNING = "warning"
 
 class NODE_STATUSES(Enum):
     CLUSTER_OFFLINE = "Offline".lower() # Cluster not running on current node.
@@ -306,6 +312,7 @@ class AlertEventConstants(Enum):
     ALERT_RESOURCE_TYPE = f"alert{_DELIM}resource_type"
     IEM_COMPONENTS = f"iem{_DELIM}components"
     IEM_MODULES = f"iem{_DELIM}modules"
+
 
 class CLUSTER_STATUS(Enum):
     OFFLINE = "offline"
