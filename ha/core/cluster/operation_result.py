@@ -15,17 +15,25 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-
-from ha.const import _DELIM
-
-# pacemaker alerts constants
-class ALERTS:
-    REQUIRED_COMPONENT = "ha"
-    REQUIRED_EVENTS = ["node" , "resource"]
-    ALERT_FILTER_TYPE = f"alert{_DELIM}filter_type"
-    PK_ALERT_EVENT_COMPONENTS = f"alert{_DELIM}components"
-    PK_ALERT_EVENT_COMPONENT_MODULES = f"alert{_DELIM}modules"
-    PK_ALERT_EVENT_OPERATIONS = f"alert{_DELIM}operations"
-    logger_utility_iec_cmd="logger -i -p local3.err"
+import json
+from enum import Enum
 
 
+class ResultFields(Enum):
+    STATUS = "status"
+    OUTPUT = "output"
+    ERROR = "error"
+
+
+class OperationResult:
+    def __init__(self, result_str):
+        self._result = json.loads(result_str)
+
+    def get_status(self):
+        return self._result[ResultFields.STATUS.value]
+
+    def get_output(self):
+        return self._result[ResultFields.OUTPUT.value]
+
+    def get_error(self):
+        return self._result[ResultFields.ERROR.value]

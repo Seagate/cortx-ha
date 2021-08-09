@@ -51,6 +51,10 @@ LOCAL_NODE=${config[LOCAL_NODE]}
     [ -z ${config[NODE1]} ] && { echo "error: NODE1 is empty"; exit 1; }
     MACHINE_ID1=${config[MACHINE_ID1]}
     NODE1=${config[NODE1]}
+    ENV_TYPE=${config[ENV_TYPE]}
+    BMC_IP_1=${config[BMC_IP_1]}
+    BMC_USER_1=${config[BMC_USER_1]}
+    BMC_SECRET_1=${config[BMC_SECRET_1]}
 } || {
     [ -z ${config[MACHINE_ID1]} ] && { echo "error: MACHINE_ID1 is empty"; exit 1; }
     [ -z ${config[MACHINE_ID2]} ] && { echo "error: MACHINE_ID2 is empty"; exit 1; }
@@ -64,6 +68,16 @@ LOCAL_NODE=${config[LOCAL_NODE]}
     NODE1=${config[NODE1]}
     NODE2=${config[NODE2]}
     NODE3=${config[NODE3]}
+    ENV_TYPE=${config[ENV_TYPE]}
+    BMC_IP_1=${config[BMC_IP_1]}
+    BMC_USER_1=${config[BMC_USER_1]}
+    BMC_SECRET_1=${config[BMC_SECRET_1]}
+    BMC_IP_2=${config[BMC_IP_2]}
+    BMC_USER_2=${config[BMC_USER_2]}
+    BMC_SECRET_2=${config[BMC_SECRET_2]}
+    BMC_IP_3=${config[BMC_IP_3]}
+    BMC_USER_3=${config[BMC_USER_3]}
+    BMC_SECRET_3=${config[BMC_SECRET_3]}
 }
 
 cd ${BASE_DIR}
@@ -194,6 +208,10 @@ systemctl daemon-reload
     cp -rf ${BASE_DIR}/conf/example_config_singlenode.json /root/example_config.json
     sed -i -e "s|<MACHINE_ID1>|${MACHINE_ID1}|g" /root/example_config.json
     sed -i -e "s|<NODE1>|${NODE1}|g" /root/example_config.json
+    sed -i -e "s|<ENV_TYPE>|${ENV_TYPE}|g" /root/example_config.json
+    sed -i -e "s|<BMC_IP_1>|${BMC_IP_1}|g" /root/example_config.json
+    sed -i -e "s|<BMC_USER_1>|${BMC_USER_1}|g" /root/example_config.json
+    sed -i -e "s|<BMC_SECRET_1>|${BMC_SECRET_1}|g" /root/example_config.json
 } || {
     cp -rf ${BASE_DIR}/conf/example_config_multinode.json /root/example_config.json
     sed -i -e "s|<MACHINE_ID1>|${MACHINE_ID1}|g" /root/example_config.json
@@ -202,6 +220,16 @@ systemctl daemon-reload
     sed -i -e "s|<NODE1>|${NODE1}|g" /root/example_config.json
     sed -i -e "s|<NODE2>|${NODE2}|g" /root/example_config.json
     sed -i -e "s|<NODE3>|${NODE3}|g" /root/example_config.json
+    sed -i -e "s|<ENV_TYPE>|${ENV_TYPE}|g" /root/example_config.json
+    sed -i -e "s|<BMC_IP_1>|${BMC_IP_1}|g" /root/example_config.json
+    sed -i -e "s|<BMC_USER_1>|${BMC_USER_1}|g" /root/example_config.json
+    sed -i -e "s|<BMC_SECRET_1>|${BMC_SECRET_1}|g" /root/example_config.json
+    sed -i -e "s|<BMC_IP_2>|${BMC_IP_2}|g" /root/example_config.json
+    sed -i -e "s|<BMC_USER_2>|${BMC_USER_2}|g" /root/example_config.json
+    sed -i -e "s|<BMC_SECRET_2>|${BMC_SECRET_2}|g" /root/example_config.json
+    sed -i -e "s|<BMC_IP_3>|${BMC_IP_3}|g" /root/example_config.json
+    sed -i -e "s|<BMC_USER_3>|${BMC_USER_3}|g" /root/example_config.json
+    sed -i -e "s|<BMC_SECRET_3>|${BMC_SECRET_3}|g" /root/example_config.json
 }
 
 # Update hctl interface
