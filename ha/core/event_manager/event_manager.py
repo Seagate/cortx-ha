@@ -36,8 +36,6 @@ from ha.core.event_manager.resources import SUBSCRIPTION_LIST
 from ha.core.event_manager.const import EVENT_MANAGER_KEYS
 from ha.core.health_monitor.const import HEALTH_MON_ACTIONS
 from ha.core.health_monitor.monitor_rules_manager import MonitorRulesManager
-from ha.core.event_manager.resources import RESOURCE_STATUS
-from ha.core.event_manager.resources import RESOURCE_TYPES
 
 class EventManager:
     """

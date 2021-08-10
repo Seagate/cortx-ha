@@ -65,7 +65,7 @@ class HealthMonitorService:
         if HealthMonitorService.__instance is None:
             HealthMonitorService.__instance = self
         else:
-            raise Exception("EventManager is singleton class, use EventManager.get_instance().")
+            raise Exception("HealthMonitorService is singleton class, use HealthMonitorService.get_instance().")
         # initialize
         ConfigManager.init(const.HEALTH_MONITOR_LOG)
         Log.info("Health Monitor daemon initializations...")

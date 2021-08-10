@@ -28,14 +28,14 @@ from ha.core.system_health.model.health_event import HealthEvent
 from ha.util.message_bus import MessageBus
 from ha.core.action_handler.action_factory import ActionFactory
 from ha.core.event_manager.resources import SUBSCRIPTION_LIST
-from ha.core.event_manager.resources import RESOURCE_STATUS
 from ha.core.event_manager.resources import RESOURCE_TYPES
 
-MESSAGE = False
+MSG = False
 
 def receive(message):
     print(message)
-    MESSAGE = True
+    global MSG
+    MSG = True
 
 if __name__ == '__main__':
     try:
@@ -50,14 +50,14 @@ if __name__ == '__main__':
         print(f"Subscribed {component}, message type is {message_type}")
         health_event = HealthEvent("event_1", "offline", "fault", "site_1", "rack_1", "cluster_1", "storageset_1",
                                    "node_1", "abcd.com", "node", "16215009572", "disk_1", None)
-        action_handler_obj = ActionFactory.get_action_handler(action=actions, event=health_event)
+        action_handler_obj = ActionFactory.get_action_handler(actions=actions, event=health_event)
         action_handler_obj.act(event=health_event, action=actions)
         print("Consuming the action event")
         message_consumer = MessageBus.get_consumer(consumer_id="1",
                                                    consumer_group='test_publisher',
-                                                   callback=receive, message_types=[message_type])
+                                                   callback=receive, message_type=message_type)
         message_consumer.start()
-        while not MESSAGE:
+        while not MSG:
             time.sleep(2)
             print("waiting for msg")
         message_consumer.stop()
