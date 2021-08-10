@@ -20,6 +20,7 @@ from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
 from ha import const
 from ha.core.error import HaEntityHealthException
+from ha.const import _DELIM
 
 class EntityEvent:
     """
@@ -92,7 +93,7 @@ class EntityHealth:
         # Insert the new event as a first element in th events array
         self.events.insert(0, event)
         # Keep the history of events as per the configuration
-        num_events = Conf.get(const.HA_GLOBAL_INDEX, "SYSTEM_HEALTH.num_entity_health_events")
+        num_events = Conf.get(const.HA_GLOBAL_INDEX, f"SYSTEM_HEALTH{_DELIM}num_entity_health_events")
         if len(self.events) > num_events:
             # Delete the last event entry
             del self.events[len(self.events) - 1]
@@ -118,6 +119,15 @@ class EntityHealth:
         """
 
         return vars(self)
+
+    def get_latest_event(self) -> EntityEvent:
+        """
+        Get latest event object.
+
+        Returns:
+            [EntityEvent]: last event
+        """
+        return self.events[0]
 
     @staticmethod
     def write(entity_health) -> str:

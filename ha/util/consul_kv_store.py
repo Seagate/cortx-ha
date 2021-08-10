@@ -93,6 +93,9 @@ class ConsulKvStore:
         key: list = [x for x in self._prefix.split("/") + key.split("/") if x != ""]
         return "/".join(key)
 
+    def get_prefix(self):
+        return self._prefix
+
     def key_exists(self, key: str):
         """
         Check if key exists.
@@ -160,9 +163,12 @@ class ConsulKvStore:
             key_val[key['Key']] = key['Value'].decode("utf-8") if isinstance(key['Value'], bytes) else key['Value']
         return key_val
 
-    def delete(self, key: str = ""):
+    def delete(self, key: str = "", recurse: bool = False):
         """
-        Delete values. Default it will delete all keys.
+        Delete values.
+        If called with no parameter then it will not delete anything.
+        If called with delete(recurse=True) then delete all keys.
+        If called with delete(key="key", recurse=True) then delete all under key
 
         Args:
             key (str): Key.
@@ -171,5 +177,5 @@ class ConsulKvStore:
             str: Return dictionary of all key val pair.
         """
         data = self.get(key)
-        self._consul.kv.delete(self._prepare_key(key), recurse=True)
+        self._consul.kv.delete(self._prepare_key(key), recurse=recurse)
         return data

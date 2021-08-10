@@ -24,6 +24,7 @@ sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..'
 from ha.core.event_analyzer.parser.parser import AlertParser
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.config.config_manager import ConfigManager
+from ha.const import ALERT_ATTRIBUTES, EVENT_ATTRIBUTES
 
 # Test case for alert filter
 if __name__ == '__main__':
@@ -31,66 +32,74 @@ if __name__ == '__main__':
     alert_parser = AlertParser()
     print("********Alert Parser********")
     resource_type = "enclosure:fru:fan"
-    TestMsg = {
-        "sspl_ll_msg_header": {
-        "msg_version": "1.0.0",
-        "schema_version": "1.0.0",
-        "sspl_version": "1.0.0"
-        },
-        "sensor_response_type": {
-            "info": {
-                "event_time": "1574075909",
-                "resource_id": "Fan Module 4",
-                "site_id": 1,
-                "node_id": 1,
-                "cluster_id": 1,
-                "rack_id": 1,
-                "resource_type": resource_type,
-                "description": "The fan module is not installed."
+    TestAlert = {
+        ALERT_ATTRIBUTES.USERNAME: "sspl-ll",
+        ALERT_ATTRIBUTES.DESCRIPTION: "Seagate Storage Platform Library - Sensor Response",
+        ALERT_ATTRIBUTES.TITLE: "SSPL Sensor Response",
+        ALERT_ATTRIBUTES.EXPIRES: 3600,
+        ALERT_ATTRIBUTES.SIGNATURE: "None",
+        ALERT_ATTRIBUTES.TITLE: "1621581798",
+        ALERT_ATTRIBUTES.MESSAGE: {
+            ALERT_ATTRIBUTES.HEADER: {
+            ALERT_ATTRIBUTES.MSG_VERSION: "1.0.0",
+            ALERT_ATTRIBUTES.SCHEMA_VERSION: "1.0.0",
+            ALERT_ATTRIBUTES.SSPL_VERSION: "1.0.0"
             },
-            "alert_type": "missing",
-            "severity": "critical",
-            "specific_info": {
-                "status": "Not Installed",
-                "name": "Fan Module 4",
-                "enclosure-id": 0,
-                "durable-id": "fan_module_0.4",
-                "fans": [],
-                "health-reason": "The fan module is not installed.",
-                "health": "Fault",
-                "location": "Enclosure 0 - Right",
-                "position": "Indexed",
-                "health-recommendation": "Install the missing fan module."
-            },
-            "alert_id": "15740759091a4e14bca51d46908ac3e9102605d560",
-            "host_id": "s3node-host-1"
+            ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE: {
+                ALERT_ATTRIBUTES.INFO: {
+                    ALERT_ATTRIBUTES.EVENT_TIME: "1574075909",
+                    ALERT_ATTRIBUTES.RESOURCE_ID: "Fan Module 4",
+                    ALERT_ATTRIBUTES.SITE_ID: 1,
+                    ALERT_ATTRIBUTES.NODE_ID: 1,
+                    ALERT_ATTRIBUTES.CLUSTER_ID: 1,
+                    ALERT_ATTRIBUTES.RACK_ID: 1,
+                    ALERT_ATTRIBUTES.RESOURCE_TYPE: resource_type,
+                    ALERT_ATTRIBUTES.DESCRIPTION: "The fan module is not installed."
+                },
+                ALERT_ATTRIBUTES.ALERT_TYPE: "missing",
+                ALERT_ATTRIBUTES.SEVERITY: "critical",
+                ALERT_ATTRIBUTES.SPECIFIC_INFO: {
+                    ALERT_ATTRIBUTES.STATUS: "Not Installed",
+                    ALERT_ATTRIBUTES.NAME: "Fan Module 4",
+                    ALERT_ATTRIBUTES.ENCLOSURE_ID: 0,
+                    ALERT_ATTRIBUTES.DURABLE_ID: "fan_module_0.4",
+                    ALERT_ATTRIBUTES.FANS: [],
+                    ALERT_ATTRIBUTES.HEALTH_REASON: "The fan module is not installed.",
+                    ALERT_ATTRIBUTES.HEALTH: "Fault",
+                    ALERT_ATTRIBUTES.LOCATION: "Enclosure 0 - Right",
+                    ALERT_ATTRIBUTES.POSITION: "Indexed",
+                    ALERT_ATTRIBUTES.HEALTH_RECOMMENDATION: "Install the missing fan module."
+                },
+                "alert_id": "15740759091a4e14bca51d46908ac3e9102605d560",
+                "host_id": "s3node-host-1"
+            }
         }
     }
 
-    health_event = alert_parser.parse_event(json.dumps(TestMsg))
+    health_event = alert_parser.parse_event(json.dumps(TestAlert))
 
     if isinstance(health_event, HealthEvent):
-        print(f"event_id : {health_event.event_id}")
-        print(f"event_type : {health_event.event_type}")
-        print(f"severity : {health_event.severity}")
-        print(f"site_id : {health_event.site_id}")
-        print(f"rack_id : {health_event.rack_id}")
-        print(f"cluster_id : {health_event.cluster_id}")
-        print(f"storageset_id : {health_event.storageset_id}")
-        print(f"node_id : {health_event.node_id}")
-        print(f"host_id : {health_event.host_id}")
-        print(f"resource_type : {health_event.resource_type}")
-        print(f"timestamp : {health_event.timestamp}")
-        print(f"resource_id : {health_event.resource_id}")
-        print(f"specific_info : {health_event.specific_info}")
+        print(f"{EVENT_ATTRIBUTES.EVENT_ID} : {health_event.event_id}")
+        print(f"{EVENT_ATTRIBUTES.EVENT_TYPE} : {health_event.event_type}")
+        print(f"{EVENT_ATTRIBUTES.SEVERITY} : {health_event.severity}")
+        print(f"{EVENT_ATTRIBUTES.SITE_ID} : {health_event.site_id}")
+        print(f"{EVENT_ATTRIBUTES.RACK_ID} : {health_event.rack_id}")
+        print(f"{EVENT_ATTRIBUTES.CLUSTER_ID} : {health_event.cluster_id}")
+        print(f"{EVENT_ATTRIBUTES.STORAGESET_ID} : {health_event.storageset_id}")
+        print(f"{EVENT_ATTRIBUTES.NODE_ID} : {health_event.node_id}")
+        print(f"{EVENT_ATTRIBUTES.HOST_ID} : {health_event.host_id}")
+        print(f"{EVENT_ATTRIBUTES.RESOURCE_TYPE} : {health_event.resource_type}")
+        print(f"{EVENT_ATTRIBUTES.TIMESTAMP} : {health_event.timestamp}")
+        print(f"{EVENT_ATTRIBUTES.RESOURCE_ID} : {health_event.resource_id}")
+        print(f"{EVENT_ATTRIBUTES.SPECIFIC_INFO} : {health_event.specific_info}")
         print("Event alert parser test passed successfully")
     else:
         print("Event alert parser test failed")
 
     #Delete one key of the alert msg and validate the exception handling
-    del TestMsg["sensor_response_type"]["alert_id"]
-    msg_test = json.dumps(TestMsg)
+    del TestAlert[ALERT_ATTRIBUTES.MESSAGE][ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.ALERT_ID]
+    msg_test = json.dumps(TestAlert)
     try:
-        health_event = alert_parser.parse_event(json.dumps(TestMsg))
+        health_event = alert_parser.parse_event(json.dumps(TestAlert))
     except Exception as e:
         print(f"Negative test case passed successfully, caught err: {e}")
