@@ -18,6 +18,12 @@ EVENT_ANALYZER:
             consumer_group: iem_analyzer
             event_filter: ha.core.event_analyzer.filter.filter.IEMFilter
             event_parser: ha.core.event_analyzer.parser.parser.IEMParser
+ACTUATOR_MANAGER:
+    req_message_type: requests
+    resp_message_type: alerts
+    producer_id: 1
+    consumer_group: actualtor_req_manager
+    consumer_id: 1
 SERVICE_INSTANCE_COUNTER:
 - instances: 1
   resource: motr-confd

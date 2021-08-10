@@ -31,6 +31,7 @@ from ha.core.system_health.system_health import SystemHealth
 from ha.core.config.config_manager import ConfigManager
 from ha.util.ipmi_fencing_agent import IpmiFencingAgent
 from ha.setup.const import RESOURCE
+from ha.core.controllers.pcs.actuator_req_manager import ActuatorManager
 
 class PcsNodeController(NodeController, PcsController):
     """ Controller to manage node. """
@@ -367,7 +368,17 @@ class PcsHWNodeController(PcsNodeController):
                 # Stop services on node except sspl-ll
                 self._controllers[const.SERVICE_CONTROLLER].stop(node_id=node_name, excludeResourceList=[RESOURCE.SSPL_LL.value])
 
-                # TODO: storage enclosure is stopped on the node
+                # Stop the storage enclosure on the node
+                # TBD check if warnign is sufficient or exception needed
+                actuator_mgr = ActuatorManager()
+                # Node name expected here
+                encl_status = actuator_mgr.enclosure_stop(node_id)
+                if encl_status == False:
+                    Log.warn(f"Enclosure stop failed for {node_id}")
+                else:
+                    Log.info(f"Enclosure stopped for {node_id}")
+
+
 
                 # Put node in standby mode
                 self._execute.run_cmd(const.PCS_NODE_STANDBY.replace("<node>", node_name), f" --wait={const.CLUSTER_STANDBY_UNSTANDBY_TIMEOUT}")
