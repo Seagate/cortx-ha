@@ -513,6 +513,7 @@ class ConfigCmd(Cmd):
                     if node != node_name:
                         Log.info(f"Adding node {node} to Cluster {cluster_name}")
                         self._add_node(node, cluster_user, cluster_secret)
+                        self._configure_stonith(all_nodes_stonith_config, node, enable_stonith)
             else:
                 # Add node with SSH
                 self._add_node_remotely(node_name, cluster_user, cluster_secret)
@@ -525,9 +526,8 @@ class ConfigCmd(Cmd):
                 if node != node_name:
                     Log.info(f"Adding node {node} to Cluster {cluster_name}")
                     self._add_node(node, cluster_user, cluster_secret)
+                    self._configure_stonith(all_nodes_stonith_config, node, enable_stonith)
         self._execute.run_cmd(const.PCS_CLEANUP)
-        if enable_stonith:
-            self._execute.run_cmd(const.PCS_STONITH_ENABLE)
         # Create Alert if not exists
         self._alert_config.create_alert()
         Log.info("config command is successful")
@@ -779,6 +779,15 @@ class InitCmd(Cmd):
         Process init command.
         """
         Log.info("Processing init command")
+        env_type = self.get_installation_type().lower()
+        if env_type == const.INSTALLATION_TYPE.HW.value.lower():
+            Log.info("Enabling the stonith.")
+            self._execute.run_cmd(const.PCS_STONITH_ENABLE)
+            Log.info("Stonith enabled successfully.")
+        elif env_type == const.INSTALLATION_TYPE.VM.value.lower():
+            Log.warn(f"Stonith configuration not available, detected {env_type} env")
+        else:
+            raise HaConfigException(f"Invalid env detected, {env_type}")
         Log.info("init command is successful")
 
 class TestCmd(Cmd):
