@@ -379,6 +379,7 @@ class PostInstallCmd(Cmd):
             PostInstallCmd.copy_file(const.SOURCE_HEALTH_HIERARCHY_FILE, const.HEALTH_HIERARCHY_FILE)
             PostInstallCmd.copy_file(const.SOURCE_IEM_SCHEMA_PATH, const.IEM_SCHEMA)
             PostInstallCmd.copy_file(const.SOURCE_LOGROTATE_CONF_FILE, const.LOGROTATE_CONF_DIR)
+            PostInstallCmd.copy_file(const.SOURCE_ACTUATOR_SCHEMA, const.ACTUATOR_SCHEMA)
             self._execute.run_cmd("systemctl daemon-reload")
             Log.info(f"{self.name}: Copied HA configs file.")
             # Pre-requisite checks are done here.
