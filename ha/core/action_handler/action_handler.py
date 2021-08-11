@@ -145,7 +145,7 @@ class DefaultActionHandler(ActionHandler):
         else:
             raise InvalidAction()
 
-class NodeActionHandler(ActionHandler):
+class NodeActionHandler(DefaultActionHandler):
     """
     Node action handler
     """
@@ -153,6 +153,7 @@ class NodeActionHandler(ActionHandler):
     def __init__(self):
         super().__init__()
 
+    #TODO: Implement act method if needed else default method will be used
     def on_online(self, event: HealthEvent, publish: bool) -> None:
         """
         on online event handle
