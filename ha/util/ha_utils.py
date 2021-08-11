@@ -32,24 +32,32 @@ class HaUtils:
         """
         Get list of online nodes ids.
         """
-        online_nodes_xml = self.process.run_cmd(const.GET_ONLINE_NODES_CMD)
-        # create element tree object
-        root = ET.fromstring(online_nodes_xml[0])
-        nodes_ids = []
-        # iterate news items
-        for item in root.findall('nodes'):
-            # iterate child elements of item
-            for child in item:
-                if child.attrib['online'] == 'true':
-                    nodes_ids.append(child.attrib['id'])
-        Log.info(f"List of online node ids in cluster in sorted ascending order: {sorted(nodes_ids)}")
-        return sorted(nodes_ids)
+        try:
+            online_nodes_xml = self.process.run_cmd(const.GET_ONLINE_NODES_CMD)
+            # create element tree object
+            root = ET.fromstring(online_nodes_xml[0])
+            nodes_ids = []
+            # iterate news items
+            for item in root.findall('nodes'):
+                # iterate child elements of item
+                for child in item:
+                    if child.attrib['online'] == 'true':
+                        nodes_ids.append(child.attrib['id'])
+            Log.info(f"List of online node ids in cluster in sorted ascending order: {sorted(nodes_ids)}")
+            return sorted(nodes_ids)
+        except Exception as e:
+            Log.info(f"Found error in getting online node : {e}")
+            return []
 
     def get_local_node(self):
         """
         Get Local node name and id.
         """
-        local_node_id = self.process.run_cmd(const.GET_LOCAL_NODE_ID_CMD)
-        local_node_name = self.process.run_cmd(const.GET_LOCAL_NODE_NAME_CMD)
-        Log.info(f"Local node name: {local_node_name[0]} \n Local node id: {local_node_id[0]}")
-        return local_node_id[0], local_node_name[0]
+        try:
+            local_node_id = self.process.run_cmd(const.GET_LOCAL_NODE_ID_CMD)
+            local_node_name = self.process.run_cmd(const.GET_LOCAL_NODE_NAME_CMD)
+            Log.info(f"Local node name: {local_node_name[0]} \n Local node id: {local_node_id[0]}")
+            return local_node_id[0], local_node_name[0]
+        except Exception as e:
+            Log.info(f"Found error in getting local node : {e}")
+            return None, None

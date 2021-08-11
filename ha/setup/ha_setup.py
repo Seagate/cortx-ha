@@ -905,6 +905,7 @@ class CleanupCmd(Cmd):
         Process cleanup command.
         """
         Log.info("Processing cleanup command")
+        node_name = None
         try:
             nodes = self._confstore.get(const.CLUSTER_CONFSTORE_NODES_KEY)
             node_count: int = 0 if nodes is None else len(nodes)
@@ -937,6 +938,8 @@ class CleanupCmd(Cmd):
                 self._post_install_cmd.process()
 
         except Exception as e:
+            Log.error(f"Deleting node cleanup key from consul for node {node_name}")
+            self._confstore.delete(const.CLUSTER_CONFSTORE_CLEANUP_KEY + f"/{node_name}")
             Log.error(f"Cluster cleanup command failed. Error: {e}")
             raise HaCleanupException("Cluster cleanup failed")
         Log.info("cleanup command is successful")
@@ -1038,16 +1041,16 @@ class CleanupCmd(Cmd):
 
         """
         # update system health hierarchy
-        system_health_rack_key = system_health_obj._prepare_key(const.COMPONENTS.CLUSTER.value,
+        system_health_rack_key = system_health_obj._prepare_key(const.COMPONENTS.RACK.value,
                                                                 rack_id=rack_id, site_id=site_id,
                                                                 cluster_id=cluster_id)
-        self._confstore.update(system_health_rack_key, {})
-        system_health_site_key = system_health_obj._prepare_key(const.COMPONENTS.CLUSTER.value,
+        self._confstore.update(system_health_rack_key, None)
+        system_health_site_key = system_health_obj._prepare_key(const.COMPONENTS.SITE.value,
                                                                 site_id=site_id, cluster_id=cluster_id)
-        self._confstore.update(system_health_site_key, {})
+        self._confstore.update(system_health_site_key, None)
         system_health_cluster_key = system_health_obj._prepare_key(const.COMPONENTS.CLUSTER.value,
                                                                    cluster_id=cluster_id)
-        self._confstore.update(system_health_cluster_key, {})
+        self._confstore.update(system_health_cluster_key, None)
 
     def is_first_in_lexicographical_nodes(self) -> bool:
         """
