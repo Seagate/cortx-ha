@@ -366,9 +366,7 @@ class PcsHWNodeController(PcsNodeController):
                 self._controllers[const.SERVICE_CONTROLLER].stop(node_id=node_id, excludeResourceList=[RESOURCE.SSPL_LL.value])
 
                 # Stop the storage enclosure on the node
-                # TBD check if warnign is sufficient or exception needed
                 actuator_mgr = ActuatorManager()
-                # Node name expected here
                 encl_status = actuator_mgr.enclosure_stop(node_id)
                 if encl_status == False:
                     Log.warn(f"Enclosure stop failed for {node_id}")
