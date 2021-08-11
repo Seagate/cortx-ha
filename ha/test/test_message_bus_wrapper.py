@@ -70,7 +70,7 @@ class TestMessageBus(unittest.TestCase):
             consumer.stop()
         print("all work is done stop thread")
 
-    def test_safe_close(self):
+    def test_force_close(self):
         """
         Test force close thread
         """
