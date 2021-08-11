@@ -171,12 +171,14 @@ class PcsNodeController(NodeController, PcsController):
         """
             Check whether the cluster is going to be offline after node with node_id is stopped.
         Args:
-            node_id (str): Private fqdn define in conf store.
+            node_id (str): Node ID from cluster nodes.
         Returns:
             Dictionary : {"status": "", "msg":""}
         """
-        # Raise exception if node_id is not valid
-        self._is_node_in_cluster(node_id=node_id)
+        # Get the node_name (pvtfqdn) fron nodeid
+        node_name = self._get_node_name(node_id=node_id)
+        # Raise exception if node_name is not valid
+        self._is_node_in_cluster(node_id=node_name)
         node_list = self._get_node_list()
         offline_nodes = self._get_offline_nodes()
         Log.debug(f"nodelist : {node_list} offlinenodes : {offline_nodes}")
@@ -274,34 +276,36 @@ class PcsVMNodeController(PcsNodeController):
         """
         Stop Node with nodeid.
         Args:
-            nodeid (str): Node ID from cluster nodes.
+            node_id (str): Node ID from cluster nodes.
         Returns:
             ([dict]): Return dictionary. {"status": "", "output": "", "error": ""}
                 status: Succeeded, Failed, InProgress
         """
+        # Get the node_name (pvtfqdn) fron nodeid
+        node_name = self._get_node_name(node_id=node_id)
         # TODO: check_cluster - boolean.It checks whether cluster is going to be offline if node with node_id is stopped.
         timeout = const.NODE_STOP_TIMEOUT if timeout < 0 else timeout
         # TODO: Get the node_status from system health status
-        node_status = self.nodes_status([node_id]).get(node_id)
+        node_status = self.nodes_status([node_name]).get(node_name)
         if node_status == NODE_STATUSES.CLUSTER_OFFLINE.value:
-            Log.info(f"For stop {node_id}, Node already in offline state.")
-            status = f"Node {node_id} is already in offline state."
+            Log.info(f"For stop {node_name}, Node already in offline state.")
+            status = f"Node {node_name} is already in offline state."
         elif node_status == NODE_STATUSES.POWEROFF.value:
-            raise ClusterManagerError(f"Failed to stop {node_id}. Node is in {node_status}.")
+            raise ClusterManagerError(f"Failed to stop {node_name}. Node is in {node_status}.")
         else:
-            if self.heal_resource(node_id):
+            if self.heal_resource(node_name):
                 time.sleep(const.BASE_WAIT_TIME)
             try:
-                Log.info(f"Please Wait, trying to stop node: {node_id}")
-                self._execute.run_cmd(const.PCS_STOP_NODE.replace("<node>", node_id)
-                        .replace("<seconds>", str(timeout)))
-                Log.info(f"Executed node stop for {node_id}, Waiting to stop resource")
+                Log.info(f"Please Wait, trying to stop node: {node_name}")
+                # TODO: Use PCS_STOP_NODE from const.py with timeout value
+                self._execute.run_cmd(f"pcs cluster stop {node_name}")
+                Log.info(f"Executed node stop for {node_name}, Waiting to stop resource")
                 time.sleep(const.BASE_WAIT_TIME)
-                status = f"Stop for {node_id} is in progress, waiting to stop resource"
+                status = f"Stop for {node_name} is in progress, waiting to stop resource"
                 # TODO: Update node_status in system_health
             except Exception as e:
-                raise ClusterManagerError(f"Failed to stop {node_id}, Error: {e}")
-        return {"status": const.STATUSES.IN_PROGRESS.value, "output": status, "error": ""}
+                raise ClusterManagerError(f"Failed to stop {node_name}, Error: {e}")
+        return {"status": const.STATUSES.SUCCEEDED.value, "output": status, "error": ""}
 
 class PcsHWNodeController(PcsNodeController):
     def initialize(self, controllers):
@@ -328,7 +332,7 @@ class PcsHWNodeController(PcsNodeController):
         """
         Stop (poweroff) node with node_id.
         Args:
-            node_id (str): Private fqdn define in conf store.
+            node_id (str): Node ID from cluster nodes.
         Returns:
             ([dict]): Return dictionary. {"status": "", "msg":""}
                 status: Succeeded, Failed, InProgress
@@ -337,33 +341,32 @@ class PcsHWNodeController(PcsNodeController):
         poweroff = op_kwargs.get("poweroff") if op_kwargs.get("poweroff") is not None else False
         storageoff = op_kwargs.get("storageoff") if op_kwargs.get("storageoff") is not None else False
         try:
-            # Raise exception if node_id is not valid
-            self._is_node_in_cluster(node_id=node_id)
 
-            # Get the nodeid from pvtfqdn
-            nodeid_dict = self._confstore.get(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_id}")
-            _, nodeid = nodeid_dict.popitem()
+            # Get the node_name (pvtfqdn) fron nodeid
+            node_name = self._get_node_name(node_id=node_id)
+            # Raise exception if node_id is not valid
+            self._is_node_in_cluster(node_id=node_name)
 
             # stop all services running on node with node_id
-            node_status = self._system_health.get_node_status(node_id=nodeid).get("status")
+            node_status = self._system_health.get_node_status(node_id=node_id).get("status")
             if node_status == HEALTH_STATUSES.OFFLINE.value:
-                Log.info(f"For stop {node_id}, Node already in offline state.")
-                status = f"Node {node_id} is already in offline state."
+                Log.info(f"For stop {node_name}, Node already in offline state.")
+                status = f"Node {node_name} is already in offline state."
                 return {"status": const.STATUSES.SUCCEEDED.value, "output": status, "error": ""}
             elif node_status == HEALTH_STATUSES.FAILED.value:
-                raise ClusterManagerError(f"Failed to stop {node_id}. node is in {node_status} state.")
+                raise ClusterManagerError(f"Failed to stop {node_name}. node is in {node_status} state.")
             else:
                 if check_cluster:
-                    # Checks whether cluster is going to be offline if node with node_id is stopped.
+                    # Checks whether cluster is going to be offline if node with node_name is stopped.
                     res = json.loads(self.check_cluster_feasibility(node_id=node_id))
                     if res.get("status") == const.STATUSES.FAILED.value:
                         return res
-                if self.heal_resource(node_id):
+                if self.heal_resource(node_name):
                     time.sleep(const.BASE_WAIT_TIME)
 
             if storageoff:
                 # Stop services on node except sspl-ll
-                self._controllers[const.SERVICE_CONTROLLER].stop(node_id=node_id, excludeResourceList=[RESOURCE.SSPL_LL.value])
+                self._controllers[const.SERVICE_CONTROLLER].stop(node_id=node_name, excludeResourceList=[RESOURCE.SSPL_LL.value])
 
                 # Stop the storage enclosure on the node
                 actuator_mgr = ActuatorManager()
@@ -376,28 +379,28 @@ class PcsHWNodeController(PcsNodeController):
 
 
                 # Put node in standby mode
-                self._execute.run_cmd(const.PCS_NODE_STANDBY.replace("<node>", node_id), f" --wait={const.CLUSTER_STANDBY_UNSTANDBY_TIMEOUT}")
-                Log.info(f"Executed node standby for {node_id}")
-                self._controllers[const.SERVICE_CONTROLLER].clear_resources(node_id=node_id)
+                self._execute.run_cmd(const.PCS_NODE_STANDBY.replace("<node>", node_name), f" --wait={const.CLUSTER_STANDBY_UNSTANDBY_TIMEOUT}")
+                Log.info(f"Executed node standby for {node_name}")
+                self._controllers[const.SERVICE_CONTROLLER].clear_resources(node_id=node_name)
             else:
-                self._execute.run_cmd(const.PCS_NODE_STANDBY.replace("<node>", node_id), f" --wait={const.CLUSTER_STANDBY_UNSTANDBY_TIMEOUT}")
-                Log.info(f"Executed node standby for {node_id}")
-            status = f"{node_id} Node Standby is in progress"
+                self._execute.run_cmd(const.PCS_NODE_STANDBY.replace("<node>", node_name), f" --wait={const.CLUSTER_STANDBY_UNSTANDBY_TIMEOUT}")
+                Log.info(f"Executed node standby for {node_name}")
+            status = f"{node_name} Node Standby is in progress"
 
             # Update node health
             # TODO : Health event update to be removed once fault_tolerance branch is merged
-            initial_event = self._system_health.get_health_event_template(nodeid=nodeid, event_type=HEALTH_EVENTS.FAULT.value)
-            Log.debug(f"Node health : {initial_event} updated for node {node_id}")
+            initial_event = self._system_health.get_health_event_template(nodeid=node_id, event_type=HEALTH_EVENTS.FAULT.value)
+            Log.debug(f"Node health : {initial_event} updated for node {node_name}")
             health_event = HealthEvent.dict_to_object(initial_event)
             self._system_health.process_event(health_event)
 
             # Node power off
             if poweroff:
-                self._execute.run_cmd(const.DISABLE_STONITH.replace("<node>", node_id))
-                self.fencing_agent.power_off(node_id=node_id)
-                status = f"Power off for {node_id} is in progress"
+                self._execute.run_cmd(const.DISABLE_STONITH.replace("<node>", node_name))
+                self.fencing_agent.power_off(node_id=node_name)
+                status = f"Power off for {node_name} is in progress"
             Log.info(f"Node power off successfull. status : {status}")
             # TODO : return status should be changed according to passed parameters
             return {"status": const.STATUSES.SUCCEEDED.value, "error": "", "output": status}
         except Exception as e:
-            raise ClusterManagerError(f"Failed to stop {node_id}, Error: {e}")
+            raise ClusterManagerError(f"Failed to stop {node_name}, Error: {e}")
