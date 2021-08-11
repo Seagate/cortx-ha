@@ -1059,7 +1059,11 @@ class CleanupCmd(Cmd):
             True or False
         """
         node_ids = self._ha_utils.get_online_nodes()
+        if not node_ids:
+            return False
         local_node_id, local_node_name = self._ha_utils.get_local_node()
+        if local_node_id is None:
+            return False
         # Generate and send IEM only through the highest online node in cluster.
         if node_ids[0].strip() == local_node_id.strip():
             Log.info(f"Lexicographical node info - name: {local_node_name}, id: {local_node_id}")
