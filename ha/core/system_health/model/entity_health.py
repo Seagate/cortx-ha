@@ -107,7 +107,7 @@ class EntityHealth:
 
     def add_attributes(self, attributes: dict):
         """
-        Add attibutes to the existing attributes.
+        Add attributes to the existing attributes.
         """
 
         for key, value in attributes.items():
