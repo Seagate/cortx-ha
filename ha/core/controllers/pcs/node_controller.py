@@ -175,14 +175,7 @@ class PcsNodeController(NodeController, PcsController):
             Dictionary : {"status": "", "msg":""}
         """
         # Get the node_name (pvtfqdn) fron nodeid
-        nodeid_dict = self._confstore.get(f"{const.PVTFQDN_TO_NODEID_KEY}")
-        node_name = ""
-        for key, nodeid in nodeid_dict.items():
-            if nodeid == node_id:
-                node_name = key.split('/')[-1]
-        if node_name == "":
-            raise ClusterManagerError(f"Failed to get node_name for nodeid: {node_id} from conf_store")
-
+        node_name = self._get_node_name(node_id=node_id)
         # Raise exception if node_name is not valid
         self._is_node_in_cluster(node_id=node_name)
         node_list = self._get_node_list()
@@ -288,14 +281,7 @@ class PcsVMNodeController(PcsNodeController):
                 status: Succeeded, Failed, InProgress
         """
         # Get the node_name (pvtfqdn) fron nodeid
-        nodeid_dict = self._confstore.get(f"{const.PVTFQDN_TO_NODEID_KEY}")
-        node_name = ""
-        for key, nodeid in nodeid_dict.items():
-            if nodeid == node_id:
-                node_name = key.split('/')[-1]
-        if node_name == "":
-            raise ClusterManagerError(f"Failed to get node_name for nodeid: {node_id} from conf_store")
-
+        node_name = self._get_node_name(node_id=node_id)
         # TODO: check_cluster - boolean.It checks whether cluster is going to be offline if node with node_id is stopped.
         timeout = const.NODE_STOP_TIMEOUT if timeout < 0 else timeout
         # TODO: Get the node_status from system health status
@@ -310,8 +296,7 @@ class PcsVMNodeController(PcsNodeController):
                 time.sleep(const.BASE_WAIT_TIME)
             try:
                 Log.info(f"Please Wait, trying to stop node: {node_name}")
-                self._execute.run_cmd(const.PCS_STOP_NODE.replace("<node>", node_name)
-                        .replace("<seconds>", str(timeout))+" --force")
+                self._execute.run_cmd(f"pcs cluster stop {node_name}")
                 Log.info(f"Executed node stop for {node_name}, Waiting to stop resource")
                 time.sleep(const.BASE_WAIT_TIME)
                 status = f"Stop for {node_name} is in progress, waiting to stop resource"
@@ -356,14 +341,7 @@ class PcsHWNodeController(PcsNodeController):
         try:
 
             # Get the node_name (pvtfqdn) fron nodeid
-            nodeid_dict = self._confstore.get(f"{const.PVTFQDN_TO_NODEID_KEY}")
-            node_name = ""
-            for key, nodeid in nodeid_dict.items():
-                if nodeid == node_id:
-                    node_name = key.split('/')[-1]
-            if node_name == "":
-                raise ClusterManagerError(f"Failed to get node_name for nodeid: {node_id} from conf_store")
-
+            node_name = self._get_node_name(node_id=node_id)
             # Raise exception if node_id is not valid
             self._is_node_in_cluster(node_id=node_name)
 
