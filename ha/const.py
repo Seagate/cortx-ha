@@ -62,6 +62,7 @@ HEALTH_HIERARCHY_FILE = "{}/system_health_hierarchy.json".format(CONFIG_DIR)
 IEM_SCHEMA="{}/iem_ha.json".format(CONFIG_DIR)
 SOURCE_LOGROTATE_CONF_FILE = "{}/conf/logrotate/cortx_ha_log.conf".format(SOURCE_PATH)
 LOGROTATE_CONF_DIR="/etc/logrotate.d"
+
 SOURCE_ACTUATOR_SCHEMA="{}/actuator_req.json".format(SOURCE_CONFIG_PATH)
 ACTUATOR_SCHEMA="{}/actuator_req.json".format(CONFIG_DIR)
 
