@@ -296,6 +296,7 @@ class PcsVMNodeController(PcsNodeController):
                 time.sleep(const.BASE_WAIT_TIME)
             try:
                 Log.info(f"Please Wait, trying to stop node: {node_name}")
+                # TODO: Use PCS_STOP_NODE from const.py with timeout value
                 self._execute.run_cmd(f"pcs cluster stop {node_name}")
                 Log.info(f"Executed node stop for {node_name}, Waiting to stop resource")
                 time.sleep(const.BASE_WAIT_TIME)
