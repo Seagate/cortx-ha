@@ -15,7 +15,6 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-import uuid
 import time
 import json
 import ast
@@ -30,10 +29,9 @@ from cortx.utils.log import Log
 from ha.const import PVTFQDN_TO_NODEID_KEY
 
 from ha.core.system_health.system_health import SystemHealth, SystemHealthManager
-
+from ha.core.error import ClusterManagerError
 from ha.util.message_bus import MessageBus
 from ha.core.config.config_manager import ConfigManager
-from ha import const
 
 
 class ActuatorManager:
@@ -46,7 +44,7 @@ class ActuatorManager:
         self._conf_store = ConfigManager.get_confstore()
         self._execute = SimpleCommand()
         self._machine_id = self._get_machine_id()
-        self.uuid = None
+        self._uuid = None
         self._is_resp_received = False
         self._encl_shutdown_successful = False
 
@@ -88,16 +86,16 @@ class ActuatorManager:
         #ARCH TBD for now raise exception if response is not received.
 
         if self._is_resp_received and self._encl_shutdown_successful:
-            Log.info(f"Enclosure shutdown successful on node {node_id}")
+            Log.info(f"Enclosure shutdown successful on node {node_name}")
             print(f"Enclosure shutdown successful on node {node_name}")
             self._is_resp_received = self._encl_shutdown_successful = False
             return True
 
         if not self._is_resp_received:
-            Log.warn(f"Actuator response not received; enclosure shutdown failed on node {node_id}")
+            Log.warn(f"Actuator response not received; enclosure shutdown failed on node {node_name}")
             print(f"Actuator response not received; enclosure shutdown failed on node {node_name}")
         else:
-            Log.warn(f"Unable to shutdown enclosure on node {node_id}")
+            Log.warn(f"Unable to shutdown enclosure on node {node_name}")
             print(f"Unable to shutdown enclosure on node {node_name}")
 
         # ARCH TBD check if node shutdown does anything with thi True/False that is sent
@@ -211,8 +209,8 @@ class ActuatorManager:
         elif severity == "warning":
             return False
         else:
-            Log.warn(f"Unexpected status received in {resp}")
-            print(f"Unexpected status received in {resp}")
+            Log.warn(f"Unexpected status received in {msg}")
+            print(f"Unexpected status received in {msg}")
             # ARCH TBD Raise exception or just ignore
             return False
 
