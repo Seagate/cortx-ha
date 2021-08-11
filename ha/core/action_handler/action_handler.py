@@ -143,7 +143,7 @@ class DefaultActionHandler(ActionHandler):
         elif HEALTH_MON_ACTIONS.PUBLISH_ACT.value in action and len(action) == 1:
             self.publish_event(event)
         else:
-            raise InvalidAction()
+            raise InvalidAction(f"{action} is invalid, DefaultActionHandler will only allow {HEALTH_MON_ACTIONS.PUBLISH_ACT.value}")
 
 class NodeActionHandler(DefaultActionHandler):
     """
@@ -153,7 +153,19 @@ class NodeActionHandler(DefaultActionHandler):
     def __init__(self):
         super().__init__()
 
-    #TODO: Implement act method if needed else default method will be used
+    def act(self, event: HealthEvent, action: list) -> None:
+        """
+        act on the event handled in default action handler
+        Args:
+            event (HealthEvent): HealthEvent object
+            action (list): Actions list.
+
+        Returns:
+            None
+        """
+        if HEALTH_MON_ACTIONS.PUBLISH_ACT.value in action:
+            self.publish_event(event)
+
     def on_online(self, event: HealthEvent, publish: bool) -> None:
         """
         on online event handle
