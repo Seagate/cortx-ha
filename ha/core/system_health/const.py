@@ -102,10 +102,10 @@ CMD_GET_MACHINE_ID = "cat /etc/machine-id"
 # Constants for storing and getting the node health data to confstore
 NODE_HEALTH_CONF_INDEX = 'node_health'
 NODE_DATA_KEY = 'node'
-NODE_COMPUTE_DATA_KEY = 'node>compute[0]'
+NODE_COMPUTE_DATA_KEY = 'node>server[0]'
 NODE_STORAGE_DATA_KEY = 'node>storage[0]'
 
-HA_ALERT_COMPUTE_KEY = 'node.compute'
+HA_ALERT_COMPUTE_KEY = 'node.server'
 HA_ALERT_STORAGE_KEY = 'node.storage'
 
 # Mapping to identify the SEVERITY based on EVENT_TYPE
@@ -140,20 +140,20 @@ RESOURCE_TYPE_MAPPING = {
     "storage.hw.platform_sensor.current" : "enclosure:sensor:current",
     "storage.hw.sas_port" : "enclosure:interface:sas",
     "storage.hw.nw_port" : "enclosure:interface:nw",
-    "compute.hw.psu" : "node:fru:psu",
-    "compute.hw.cpu" : "node:os:cpu",
-    "compute.hw.memory" : "node:os:memory",
-    "compute.hw.fan" : "node:fru:fan",
-    "compute.hw.nw_port" : "node:interface:nw",
-    "compute.hw.sas_hba" : "node:interface:sas",
-    "compute.hw.sas_port" : "node:interface:sas:port",
-    "compute.hw.disk" : "node:fru:disk",
-    "compute.hw.platform_sensor.temperature" : "node:sensor:temperature",
-    "compute.hw.platform_sensor.voltage" : "node:sensor:voltage",
-    "compute.hw.platform_sensor.current" : "node:sensor:current",
-    "compute.sw.raid" : "node:os:raid_data",
-    "compute.sw.cortx_sw_services" : "node:sw:os:service",
-    "compute.sw.external_sw_services" : "node:sw:os:service",
-    "compute" : "node",
+    "server.hw.psu" : "node:fru:psu",
+    "server.hw.cpu" : "node:os:cpu",
+    "server.hw.memory" : "node:os:memory",
+    "server.hw.fan" : "node:fru:fan",
+    "server.hw.nw_port" : "node:interface:nw",
+    "server.hw.sas_hba" : "node:interface:sas",
+    "server.hw.sas_port" : "node:interface:sas:port",
+    "server.hw.disk" : "node:fru:disk",
+    "server.hw.platform_sensor.temperature" : "node:sensor:temperature",
+    "server.hw.platform_sensor.voltage" : "node:sensor:voltage",
+    "server.hw.platform_sensor.current" : "node:sensor:current",
+    "server.sw.raid" : "node:os:raid_data",
+    "server.sw.cortx_sw_services" : "node:sw:os:service",
+    "server.sw.external_sw_services" : "node:sw:os:service",
+    "server": "node",
     "storage" : "enclosure"
 }
