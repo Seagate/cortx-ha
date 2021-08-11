@@ -309,6 +309,7 @@ class CortxClusterManager:
 
         user = getpass.getuser()
         group_id = os.getgid()
+        group_list = os.getgrouplist(user, group_id)
 
         try:
             # find group id for root and haclient
@@ -316,7 +317,7 @@ class CortxClusterManager:
             id_root = grp.getgrnam(const.USER_GROUP_ROOT)
 
             # if group not root or haclient return error
-            if group_id != id_ha.gr_gid and group_id != id_root.gr_gid:
+            if id_ha.gr_gid not in group_list and id_root.gr_gid not in group_list:
                 Log.error(f"User {user} does not have necessary permissions to execute this CLI")
                 raise HAInvalidPermission(
                             f"User {user} does not have necessary permissions to execute this CLI")
