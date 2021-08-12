@@ -22,7 +22,6 @@ from cortx.utils.message_bus import MessageBusAdmin
 from cortx.utils.message_bus.error import MessageBusError
 from cortx.utils.message_bus import MessageProducer
 from cortx.utils.message_bus import MessageConsumer
-import ctypes
 
 class MessageBusProducer:
     PRODUCER_METHOD = "sync"
@@ -46,14 +45,25 @@ class MessageBusProducer:
         Produce message to message bus.
 
         Args:
-            message (dict): Message.
+            message (any): Message.
+            If msg is dict it will be dumped as json.
+            If msg is string then it will be send directly.
+            If message is list, it should have all string element, all items will be published.
         """
         if isinstance(message, dict):
             self.producer.send([json.dumps(message)])
         elif isinstance(message, str):
             self.producer.send([message])
+        elif isinstance(message, list):
+            self.producer.send(message)
         else:
             raise Exception(f"Invalid type of message {message}")
+
+class CONSUMER_STATUS:
+    SUCCESS = "success"
+    FAILED = "failed"
+    FAILED_STOP = "failed_stop"
+    SUCCESS_STOP = "success_stop"
 
 class MessageBusConsumer:
 
@@ -71,34 +81,54 @@ class MessageBusConsumer:
             offset (str, optional): Offset for messages. Defaults to "earliest".
         """
         self.callback = callback
-        self.consumer = MessageConsumer(consumer_id=str(consumer_id),
-                        consumer_group=consumer_group,
-                        message_types=[message_type],
-                        auto_ack=auto_ack, offset=offset)
-        self.consumer_thread = Thread(target=self.run)
-        self.consumer_thread.setDaemon(True)
         self.stop_thread = False
+        self.consumer_id = consumer_id
+        self.consumer_group = consumer_group
+        self.message_type = message_type
+        self.auto_ack = auto_ack
+        self.offset = offset
 
     def run(self):
         """
         Overloaded of Thread.
-        Stop thread by
-        1. Return True from callback passed during initialization.
-        2. Close main thread as deamon this thread will be closed after main.
+        1. return success and ack		SUCCESS
+        2. send same msg again			FAILED
+        3. ack and skip					SUCCESS
+        4. not ack and stop				FAILED_STOP
+        5. consume stop					SUCCESS_STOP
+        6. default						FAILED
+        7. If callback return any exception then it will be swallowed and retry again without ack.
+        8. Closing main thread will close this thread as it is running as deamon.
 
         As self.consumer.receive(timeout=0) is block call t1.join() will not stop thread.
+        Stop thread by completing work as per above cases.
         """
         while not self.stop_thread:
             try:
                 message = self.consumer.receive(timeout=0)
-                if self.callback(message):
+                status = self.callback(message)
+                if status == CONSUMER_STATUS.SUCCESS:
+                    self.consumer.ack()
+                elif status == CONSUMER_STATUS.FAILED_STOP:
+                    break
+                elif status == CONSUMER_STATUS.SUCCESS_STOP:
                     self.consumer.ack()
                     break
-                self.consumer.ack()
+                else:
+                    continue
             except Exception as e:
-                raise MessageBusError(f"Failed to receive message, error: {e}. Retrying to receive.")
+                try:
+                    raise MessageBusError(f"Caught exception. Error: {e}. Retry...")
+                except:
+                    pass
 
     def start(self):
+        self.consumer = MessageConsumer(consumer_id=str(self.consumer_id),
+                        consumer_group=self.consumer_group,
+                        message_types=[self.message_type],
+                        auto_ack=self.auto_ack, offset=self.offset)
+        self.consumer_thread = Thread(target=self.run)
+        self.consumer_thread.setDaemon(True)
         self.consumer_thread.start()
 
     def stop(self):
@@ -106,7 +136,7 @@ class MessageBusConsumer:
         self.consumer_thread.join()
 
 class MessageBus:
-    ADMIN_ID = "admin"
+    ADMIN_ID = "ha_admin"
 
     @staticmethod
     def get_consumer(consumer_id: int, consumer_group: str, message_type: str,
@@ -162,5 +192,5 @@ class MessageBus:
             message_type (str): Message type.
         """
         admin = MessageBusAdmin(admin_id=MessageBus.ADMIN_ID)
-        if message_type not in admin.list_message_types():
+        if message_type in admin.list_message_types():
             admin.deregister_message_type(message_types=[message_type])
