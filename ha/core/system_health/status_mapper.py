@@ -34,7 +34,8 @@ class StatusMapper:
         "inactive": "inactive",
         "unknown": "unknown",
         "threshold_breached:low": "degraded",
-        "threshold_breached:high": "degraded"
+        "threshold_breached:high": "degraded",
+        "not_available": "not_available"
     }
 
     def __init__(self):
