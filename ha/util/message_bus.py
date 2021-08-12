@@ -91,33 +91,42 @@ class MessageBusConsumer:
     def run(self):
         """
         Overloaded of Thread.
-        1. return success and ack		SUCCESS
-        2. send same msg again			FAILED
-        3. ack and skip					SUCCESS
-        4. not ack and stop				FAILED_STOP
-        5. consume stop					SUCCESS_STOP
-        6. default						FAILED
+        Note: Please properly handle failure cases to avoid stuck in loop
+
+        1. Caller received and processed message		                            SUCCESS
+        2. Caller received but not able to process need retry			            FAILED
+        3. Caller received but message is irrelevant to caller					    SUCCESS
+        4. Caller received	message but failed to process and not want to retry		FAILED_STOP
+        5. Caller received message and want to sop listen to message				SUCCESS_STOP
+        6. If nothing is passed it will be case 2						            FAILED
         7. If callback return any exception then it will be swallowed and retry again without ack.
         8. Closing main thread will close this thread as it is running as deamon.
 
         As self.consumer.receive(timeout=0) is block call t1.join() will not stop thread.
         Stop thread by completing work as per above cases.
         """
+        retry = False
         while not self.stop_thread:
             try:
-                message = self.consumer.receive(timeout=0)
+                if not retry:
+                    message = self.consumer.receive(timeout=0)
                 status = self.callback(message)
                 if status == CONSUMER_STATUS.SUCCESS:
                     self.consumer.ack()
                 elif status == CONSUMER_STATUS.FAILED_STOP:
+                    # TODO: check if can be handled internally, currently message will get ack by message bus api
                     break
                 elif status == CONSUMER_STATUS.SUCCESS_STOP:
                     self.consumer.ack()
                     break
                 else:
+                    retry = True
                     continue
+                retry = False
             except Exception as e:
                 try:
+                    if message:
+                        retry = True
                     raise MessageBusError(f"Caught exception. Error: {e}. Retry...")
                 except:
                     pass

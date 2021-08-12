@@ -36,11 +36,11 @@ class Watcher:
         """
         Initalize Watcher class to monitor message bus event.
         Args:
-            id (int): Consumer ID for message bus.
+            consumer_id (int): Consumer ID for message bus.
             message_type (str): Message type for getting event.
-            group (str): Consumer Group of message bus.
+            consumer_group (str): Consumer Group of message bus.
             event_filter (Filter): Filter unused event.
-            parser (Parser): Parse event to HealthEvent
+            event_parser (Parser): Parse event to HealthEvent
             subscriber (Subscriber): Pass event to Subscriber.
         """
         Log.info(f"Initalizing watcher {message_type}-{str(consumer_id)}")
@@ -69,14 +69,12 @@ class Watcher:
         """
         Callback function to get message.
         Args:
-            message (str): Message.
+            message (str): Message received from message bus.
         """
         try:
             message = json.loads(message.decode('utf-8'))
         except Exception as e:
             Log.error(f"Invalid message {message}, sollow exception and ack it. Error: {e}")
-            return CONSUMER_STATUS.SUCCESS
-        if message is None:
             return CONSUMER_STATUS.SUCCESS
         try:
             Log.debug(f"Captured message: {message}")
