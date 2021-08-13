@@ -97,6 +97,17 @@
             "corosync": {
                 "user": "hacluster",
                 "secret": "gAAAAABgb_TOAgT7_eHMHpmNW6KLTlC_hJ0Zq6N5sRFKXf7rhftdwP35tGsWXsW1mbt0YtWed5n_Yn3vDg0jIpC512d5iq60mg=="
+            },
+            "common": {
+                "message_bus_type": "kafka"
+            },
+            "kafka": {
+                "servers": [
+                    "<NODE1>:9092",
+                    "<NODE2>:9092",
+                    "<NODE3>:9092"
+                  ]
+
             }
         }
     }

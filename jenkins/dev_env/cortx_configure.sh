@@ -86,24 +86,9 @@ cd ${BASE_DIR}
 DIR=/root/service
 mkdir -p ${DIR}
 
-mkdir -p /var/lib/ha_env
-
 ls /var/lib/ha_env/ | grep yum_init || {
-    # Configure cortx-py-utils
-    yum-config-manager --add-repo ${THIRD_PARTY}
-    yum-config-manager --add-repo ${CORTX_ISO}
-    yum clean all
-    rpm --import ${GPG_CHECK}
+    echo "Please complete preqs."
 }
-
-########### Configure cortx-py-utils #########
-
-yum install -y gcc rpm-build python36 python36-pip python36-devel python36-setuptools openssl-devel libffi-devel  --nogpgcheck
-yum group -y install "Development Tools" --nogpgcheck
-
-python3 -m pip install -r https://raw.githubusercontent.com/Seagate/cortx-utils/main/py-utils/python_requirements.txt
-python3 -m pip install -r https://raw.githubusercontent.com/Seagate/cortx-utils/main/py-utils/python_requirements.ext.txt
-yum remove -y cortx-py-utils; yum install -y cortx-py-utils --nogpgcheck;
 
 ########### Configure other component #########
 
@@ -243,5 +228,3 @@ systemctl enable corosync
 systemctl enable pacemaker
 echo "Seagate" | passwd --stdin hacluster
 systemctl start pcsd
-
-touch /var/lib/ha_env/yum_init
