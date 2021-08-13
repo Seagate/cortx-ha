@@ -404,7 +404,7 @@ def event_analyzer(cib_xml, push=False, **kwargs):
         cib_push(cib_xml)
 
 def health_monitor(cib_xml, push=False, **kwargs):
-    """Create event analyzer resource."""
+    """Create health monitor resource."""
     health_monitor_start = str(get_res_timeout(RESOURCE.HEALTH_MONITOR.value, TIMEOUT_ACTION.START.value, "health_monitor"))
     health_monitor_stop = str(get_res_timeout(RESOURCE.HEALTH_MONITOR.value, TIMEOUT_ACTION.STOP.value, "health_monitor"))
     process.run_cmd(f"pcs -f {cib_xml} resource create {RESOURCE.HEALTH_MONITOR.value} systemd:health_monitor \

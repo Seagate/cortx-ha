@@ -32,4 +32,4 @@ class InvalidAction(HealthMonitorError):
     """Exception to indicate action missing for process."""
 
 class InvalidEvent(HealthMonitorError):
-    """Exception to indicate action missing for process."""
+    """Exception to indicate invalid or missing event for process."""

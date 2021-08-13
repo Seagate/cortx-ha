@@ -145,7 +145,7 @@ class DefaultActionHandler(ActionHandler):
         else:
             raise InvalidAction(f"{action} is invalid, DefaultActionHandler will only allow {HEALTH_MON_ACTIONS.PUBLISH_ACT.value}")
 
-class NodeActionHandler(DefaultActionHandler):
+class NodeActionHandler(ActionHandler):
     """
     Node action handler
     """
