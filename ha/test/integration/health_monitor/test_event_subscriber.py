@@ -35,7 +35,7 @@ class TestEventManager(unittest.TestCase):
         self.event_manager = EventManager.get_instance()
         self.component = SUBSCRIPTION_LIST.TEST
         self.event = SubscribeEvent(RESOURCE_TYPES.NODE,
-            [RESOURCE_STATUS.FAILED, RESOURCE_STATUS.ONLINE, RESOURCE_STATUS.DEGRADED])
+            [RESOURCE_STATUS.FAILED, RESOURCE_STATUS.ONLINE, RESOURCE_STATUS.DEGRADED, RESOURCE_STATUS.OFFLINE])
 
     def tearDown(self):
         pass

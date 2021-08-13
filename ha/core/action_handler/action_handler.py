@@ -137,7 +137,7 @@ class DefaultActionHandler(ActionHandler):
         Returns:
             None
         """
-        Log.info(f"Default action handler with Event: {event} and actions : {action}")
+        Log.info(f"Default action handler with Event: {event.event_id} and actions : {action}")
         if len(action) == 0:
             return
         elif HEALTH_MON_ACTIONS.PUBLISH_ACT.value in action and len(action) == 1:

@@ -101,7 +101,7 @@ class MonitorRulesManager:
         kv = self._get_val(key)
         if kv:
             _, val = self._get_k_v(kv)
-        Log.debug(f"Evaluated action {val} for key {key}")
+        Log.info(f"Evaluated action {val} for key {key}")
         return val
 
     def add_rule(self, resource: str, event: HEALTH_STATUSES , action: HEALTH_MON_ACTIONS):
