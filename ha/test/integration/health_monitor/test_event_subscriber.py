@@ -18,13 +18,13 @@
 import os
 import sys
 import pathlib
-import unittest
 sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..', '..', '..'))
-from cortx.utils.log import Log
+import unittest
 from ha.core.event_manager.event_manager import EventManager
-from ha.core.event_manager.const import SUBSCRIPTION_LIST
 from ha.core.event_manager.subscribe_event import SubscribeEvent
-from ha.core.system_health.const import HEALTH_STATUSES
+from ha.core.event_manager.resources import SUBSCRIPTION_LIST
+from ha.core.event_manager.resources import RESOURCE_STATUS
+from ha.core.event_manager.resources import RESOURCE_TYPES
 
 class TestEventManager(unittest.TestCase):
     """
@@ -32,11 +32,10 @@ class TestEventManager(unittest.TestCase):
     """
 
     def setUp(self):
-        Log.init(service_name='event_manager', log_path="/tmp", level="DEBUG")
         self.event_manager = EventManager.get_instance()
-        self.component = SUBSCRIPTION_LIST.TEST.value
-        self.event = SubscribeEvent("enclosure:hw:controller",
-            [HEALTH_STATUSES.FAILED.value, HEALTH_STATUSES.ONLINE.value])
+        self.component = SUBSCRIPTION_LIST.TEST
+        self.event = SubscribeEvent(RESOURCE_TYPES.NODE,
+            [RESOURCE_STATUS.FAILED, RESOURCE_STATUS.ONLINE, RESOURCE_STATUS.DEGRADED, RESOURCE_STATUS.OFFLINE])
 
     def tearDown(self):
         pass

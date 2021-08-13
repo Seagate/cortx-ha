@@ -22,6 +22,7 @@ from ha.core.health_monitor.const import HEALTH_MON_KEYS
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.config.config_manager import ConfigManager
 from ha.core.system_health.const import HEALTH_STATUSES
+from ha.core.health_monitor.error import InvalidAction
 
 class MonitorRulesManager:
 
@@ -73,6 +74,16 @@ class MonitorRulesManager:
         val = json.loads(val)
         return key, val
 
+    def _validate_action(self, action: str):
+        """
+        Check action.
+
+        Args:
+            action (str): Action
+        """
+        if action not in HEALTH_MON_ACTIONS:
+            raise InvalidAction(f"Action for MonitorRule: {action} is not valid.")
+
     def evaluate(self, event: HealthEvent) -> list:
         """
         Check if rule exists for received HealthEvent
@@ -86,15 +97,14 @@ class MonitorRulesManager:
         """
         val = []
         key = self._prepare_key(event.resource_type, event.event_type)
-
         Log.debug(f"Evaluating rule for {key}")
         kv = self._get_val(key)
         if kv:
             _, val = self._get_k_v(kv)
+        Log.info(f"Evaluated action {val} for key {key}")
         return val
 
     def add_rule(self, resource: str, event: HEALTH_STATUSES , action: HEALTH_MON_ACTIONS):
-
         """
         Add rule to confstore for resource/event.
         If rule exists, append the "action" to same rule
@@ -103,15 +113,11 @@ class MonitorRulesManager:
             resource(str): resource name
             event(str): event type
             action(str): action to be added
-
-        Returns: None
-
         """
+        self._validate_action(action)
         key = self._prepare_key(resource, event)
         val = []
-
         Log.info(f"Adding rule for key: {key} ,value: {action}")
-
         kv = self._get_val(key)
         if kv:
             _, val = self._get_k_v(kv)
@@ -122,12 +128,10 @@ class MonitorRulesManager:
             else:
                 Log.warn(f"key value already exists for {key} , {action}")
                 return
-
         else:
             val.append(action)
             val = json.dumps(val)
             self._confstore.set(key, val)
-
 
     def remove_rule(self, resource: str, event: HEALTH_STATUSES , action: HEALTH_MON_ACTIONS):
         """
@@ -138,15 +142,11 @@ class MonitorRulesManager:
             resource(str): resource name
             event(str): event type
             action(str): action to be removed
-
-        Returns: None
-
         """
-
+        self._validate_action(action)
         key = self._prepare_key(resource, event)
         val = []
         Log.info(f"Removing rule for key: {key} ,value: {action}")
-
         kv = self._get_val(key)
         if kv:
             _, val = self._get_k_v(kv)
@@ -163,4 +163,3 @@ class MonitorRulesManager:
                     Log.debug(f"KV removed for {key} , {action}")
         else:
             Log.warn(f"key {key} not found")
-

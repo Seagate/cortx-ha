@@ -17,13 +17,12 @@
 from cortx.utils.log import Log
 
 from ha.core.error import HAUnimplemented
-from ha.core.action_handler.error import InvalidEvent, InvalidAction
+from ha.core.health_monitor.error import InvalidEvent, InvalidAction
 from ha.core.event_manager.event_manager import EventManager
 from ha.core.event_manager.model.action_event import RecoveryActionEvent
 from ha.core.health_monitor.const import HEALTH_MON_ACTIONS
 from ha.core.system_health.const import HEALTH_STATUSES
 from ha.core.system_health.model.health_event import HealthEvent
-
 
 class ActionHandler:
     """
@@ -31,7 +30,7 @@ class ActionHandler:
     """
 
     def __init__(self):
-        self.event_manager = EventManager.get_instance()
+        self.event_manager = EventManager.get_instance(default_log_enable=False)
 
     def act(self, event: HealthEvent, action: list) -> None:
         """
@@ -120,7 +119,6 @@ class ActionHandler:
         """
         raise HAUnimplemented()
 
-
 class DefaultActionHandler(ActionHandler):
     """
     Default action handler
@@ -139,20 +137,34 @@ class DefaultActionHandler(ActionHandler):
         Returns:
             None
         """
-        Log.info(f"Default action handler with Event: {event} and actions : {action}")
-        if HEALTH_MON_ACTIONS.PUBLISH_ACT.value in action and len(action) == 1:
+        Log.info(f"Default action handler with Event: {event.event_id} and actions : {action}")
+        if len(action) == 0:
+            return
+        elif HEALTH_MON_ACTIONS.PUBLISH_ACT.value in action and len(action) == 1:
             self.publish_event(event)
         else:
-            raise InvalidAction()
+            raise InvalidAction(f"{action} is invalid, DefaultActionHandler will only allow {HEALTH_MON_ACTIONS.PUBLISH_ACT.value}")
 
-
-class NodeFailureActionHandler(ActionHandler):
+class NodeActionHandler(ActionHandler):
     """
-    Node failure action handler
+    Node action handler
     """
 
     def __init__(self):
         super().__init__()
+
+    def act(self, event: HealthEvent, action: list) -> None:
+        """
+        act on the event handled in default action handler
+        Args:
+            event (HealthEvent): HealthEvent object
+            action (list): Actions list.
+
+        Returns:
+            None
+        """
+        if HEALTH_MON_ACTIONS.PUBLISH_ACT.value in action:
+            self.publish_event(event)
 
     def on_online(self, event: HealthEvent, publish: bool) -> None:
         """

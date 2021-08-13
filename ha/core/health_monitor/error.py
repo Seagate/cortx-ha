@@ -15,25 +15,21 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-import sys
-import json
-from cortx.utils.message_bus import MessageConsumer
+from ha.core.error import HA_HEALTH_MONITOR_ERROR
+from ha.core.error import HAError
 
-if __name__ == '__main__':
-    message_types = ["alerts", "health_events", "ha_event_test"] \
-        if len(sys.argv) == 1 else [sys.argv[1]]
-    consumer = MessageConsumer(consumer_id="1",
-                                consumer_group='iem_analyzer',
-                                message_types=message_types,
-                                auto_ack=False, offset='earliest')
+class HealthMonitorError(HAError):
+    def __init__(self, desc=None):
+        """
+        Handle Health Monitor error.
+        """
+        _desc = "HA Health Monitor failure" if desc is None else desc
+        _message_id = HA_HEALTH_MONITOR_ERROR
+        _rc = 1
+        super(HealthMonitorError, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
 
-    while True:
-        try:
-            print("In receiver")
-            message = consumer.receive(timeout=0)
-            msg = json.loads(message.decode('utf-8'))
-            print(msg)
-            consumer.ack()
-        except Exception as e:
-            print(e)
-            sys.exit(0)
+class InvalidAction(HealthMonitorError):
+    """Exception to indicate action missing for process."""
+
+class InvalidEvent(HealthMonitorError):
+    """Exception to indicate invalid or missing event for process."""

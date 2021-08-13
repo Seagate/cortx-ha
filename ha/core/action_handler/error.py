@@ -27,9 +27,3 @@ class HAActionHandlerError(HAError):
         _message_id = HA_ACTION_HANDLER_ERROR
         _rc = 1
         super(HAActionHandlerError, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
-
-class InvalidAction(HAActionHandlerError):
-    """Exception to indicate action missing for process."""
-
-class InvalidEvent(HAActionHandlerError):
-    """Exception to indicate action missing for process."""

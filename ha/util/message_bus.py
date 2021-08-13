@@ -29,12 +29,10 @@ class MessageBusProducer:
     def __init__(self, producer_id: str, message_type: str, partitions: int):
         """
         Register message types with message bus.
-
         Args:
             producer_id (str): producer id.
             message_types (str): Message type.
             partitions (int, optional): No. of partitions. Defaults to 1.
-
         Raises:
             MessageBusError: Message bus error.
         """
@@ -43,7 +41,6 @@ class MessageBusProducer:
     def publish(self, message: any):
         """
         Produce message to message bus.
-
         Args:
             message (any): Message.
             If msg is dict it will be dumped as json.
@@ -71,7 +68,6 @@ class MessageBusConsumer:
                 callback: Callable, auto_ack: bool, offset: str):
         """
         Initalize consumer.
-
         Args:
             consumer_id (int): Consumer ID.
             consumer_group (str): Consumer Group.
@@ -152,12 +148,11 @@ class MessageBus:
                 callback: Callable, auto_ack: bool = False, offset: str = "earliest") -> MessageBusConsumer:
         """
         Get consumer.
-
         Args:
             consumer_id (int): Consumer ID.
             consumer_group (str): Consumer Group.
             message_type (str): Message Type.
-            callback (Callable): function to get message.
+            callback (Callable): callback function to process message.
             auto_ack (bool, optional): Check auto ack. Defaults to False.
             offset (str, optional): Offset for messages. Defaults to "earliest".
         """
@@ -167,12 +162,10 @@ class MessageBus:
     def get_producer(producer_id: str, message_type: str, partitions: int = 1) -> MessageBusProducer:
         """
         Register message types with message bus. and get Producer.
-
         Args:
             producer_id (str): producer id.
             message_types (str): Message type.
             partitions (int, optional): No. of partitions. Defaults to 1.
-
         Raises:
             MessageBusError: Message bus error.
         """
@@ -183,7 +176,6 @@ class MessageBus:
     def register(message_type: str, partitions: int = 1):
         """
         Register message type to message bus.
-
         Args:
             message_type (str): Message type.
             partitions (int): Number of partition.
@@ -196,7 +188,6 @@ class MessageBus:
     def deregister(message_type: str):
         """
         Deregister message type to message bus.
-
         Args:
             message_type (str): Message type.
         """

@@ -24,3 +24,5 @@ class HEALTH_MON_ACTIONS(enum.Enum, metaclass=EnumListMeta):
 
 class HEALTH_MON_KEYS(enum.Enum, metaclass=EnumListMeta):
     ACT_RULE = "action"
+
+HEALTH_MONITOR_LOG = "health_monitor"
