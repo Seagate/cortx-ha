@@ -11,7 +11,7 @@ cd cortx-ha
 
 3. Copy `cortx-ha/jenkins/dev_env` dir to `/root` on all node
 
-4. Update hosts file
+4. Update `/etc/hosts` file
 ```
 # For single node env
 <ip-1>  srvnode-1
@@ -25,7 +25,7 @@ cd cortx-ha
 5. Install Packages
   - Copy `/root/dev_env/conf/dev.conf` to `/root/dev.conf` and fill it.
   - Fill as per `singlenode` or `multinode` setup
-  - execute script
+  - Run script
 ```bash
 bash -x /root/dev_env/build_cortx_util_and_prerq.sh /root/dev.conf
 ```
