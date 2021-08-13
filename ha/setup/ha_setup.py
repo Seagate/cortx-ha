@@ -38,6 +38,8 @@ from ha.const import STATUSES
 from ha.setup.create_pacemaker_resources import create_all_resources, configure_stonith
 from ha.setup.pcs_config.alert_config import AlertConfig
 from ha.setup.post_disruptive_upgrade import perform_post_upgrade
+from ha.setup.pre_disruptive_upgrade import (backup_configuration,
+                                             delete_resources)
 from ha.core.cluster.cluster_manager import CortxClusterManager
 from ha.core.config.config_manager import ConfigManager
 from ha.remote_execution.ssh_communicator import SSHRemoteExecutor
@@ -45,6 +47,7 @@ from ha.core.error import HaPrerequisiteException
 from ha.core.error import HaConfigException
 from ha.core.error import HaInitException
 from ha.core.error import HaCleanupException
+from ha.core.error import HaResetException
 from ha.core.error import SetupError
 from ha.setup.cluster_validator.cluster_test import TestExecutor
 from ha.core.system_health.system_health import SystemHealth
@@ -59,6 +62,7 @@ class Cmd:
     _index = "conf"
     DEV_CHECK = False
     LOCAL_CHECK = False
+    PRE_FACTORY_CHECK = False
     PROV_CONFSTORE = "provisioner"
     HA_CONFSTORE = "confstore"
 
@@ -66,9 +70,10 @@ class Cmd:
         """
         Init method.
         """
-        self._url = args.config
-        Conf.load(self._index, self._url)
-        self._args = args.args
+        if args is not None:
+            self._url = args.config
+            Conf.load(self._index, self._url)
+            self._args = args.args
         self._execute = SimpleCommand()
         self._confstore = ConfigManager.get_confstore()
         self._cluster_manager = None
@@ -89,7 +94,7 @@ class Cmd:
         sys.stderr.write(
             f"usage: {prog} [-h] <cmd> <--config url> <args>...\n"
             f"where:\n"
-            f"cmd   post_install, prepare, config, init, test, upgrade, reset, cleanup, backup, restore\n"
+            f"cmd   post_install, prepare, config, init, test, upgrade, reset, cleanup, backup, restore, pre_upgrade, post_upgrade\n"
             f"--config   Config URL")
 
     @staticmethod
@@ -107,6 +112,7 @@ class Cmd:
         args = parser.parse_args(argv)
         Cmd.DEV_CHECK = args.dev
         Cmd.LOCAL_CHECK = args.local
+        Cmd.PRE_FACTORY_CHECK = args.pre_factory
         return args.command(args)
 
     @staticmethod
@@ -118,6 +124,7 @@ class Cmd:
         setup_arg_parser.add_argument('--config', help='Config URL')
         setup_arg_parser.add_argument('--dev', action='store_true', help='Dev check')
         setup_arg_parser.add_argument('--local', action='store_true', help='Local check')
+        setup_arg_parser.add_argument('--pre-factory', action='store_true', help='Pre-factory check')
         setup_arg_parser.add_argument('args', nargs='*', default=[], help='args')
         setup_arg_parser.set_defaults(command=cls)
 
@@ -146,8 +153,7 @@ class Cmd:
             source (str): [description]
             dest (str): [description]
         """
-        Cmd.remove_file(dest)
-        shutil.copyfile(source, dest)
+        shutil.copy(source, dest)
 
     def get_machine_id(self):
         command = "cat /etc/machine-id"
@@ -300,6 +306,39 @@ class Cmd:
             Log.error(f"Not found stonith config, Error: {e}")
             raise HaConfigException(f"Not found stonith config, Error: {e}")
 
+
+    def get_mgmt_vip(self, machine_id: str, cluster_id: str) -> dict:
+        """
+        Get Mgmt info.
+
+        Args:
+            machine_id (str): Get machine ID.
+            cluster_id (str): Get Cluster ID.
+
+        Raises:
+            HaConfigException: Raise exception.
+
+        Returns:
+            dict: Mgmt info.
+        """
+        mgmt_info: dict = {}
+        try:
+            node_count: int = len(Conf.get(self._index, "server_node"))
+            if ConfigCmd.DEV_CHECK == True or node_count < 2:
+                return mgmt_info
+            mgmt_info["mgmt_vip"] = Conf.get(self._index, f"cluster{_DELIM}{cluster_id}{_DELIM}network{_DELIM}management{_DELIM}virtual_host")
+            netmask = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}network{_DELIM}management{_DELIM}netmask")
+            if netmask is None:
+                raise HaConfigException("Detected invalid netmask, It should not be empty.")
+            mgmt_info["mgmt_netmask"] = sum(bin(int(x)).count('1') for x in netmask.split('.'))
+            mgmt_info["mgmt_iface"] = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}network{_DELIM}management{_DELIM}interfaces")[0]
+            Log.info(f"Mgmt vip configuration: {str(mgmt_info)}")
+            return mgmt_info
+        except Exception as e:
+            Log.error(f"Failed to get mgmt ip address. Error: {e}")
+            raise HaConfigException(f"Failed to get mgmt ip address. Error: {e}.")
+
+
 class PostInstallCmd(Cmd):
     """
     PostInstall Setup Cmd
@@ -333,6 +372,7 @@ class PostInstallCmd(Cmd):
             PostInstallCmd.copy_file(const.SOURCE_HEALTH_MONITOR_SERVICE_FILE, const.SYSTEM_HEALTH_MONITOR_SERVICE_FILE)
             PostInstallCmd.copy_file(const.SOURCE_HEALTH_HIERARCHY_FILE, const.HEALTH_HIERARCHY_FILE)
             PostInstallCmd.copy_file(const.SOURCE_IEM_SCHEMA_PATH, const.IEM_SCHEMA)
+            PostInstallCmd.copy_file(const.SOURCE_LOGROTATE_CONF_FILE, const.LOGROTATE_CONF_DIR)
             self._execute.run_cmd("systemctl daemon-reload")
             Log.info(f"{self.name}: Copied HA configs file.")
             # Pre-requisite checks are done here.
@@ -412,18 +452,25 @@ class ConfigCmd(Cmd):
         cluster_secret = Conf.get(self._index, f"cortx{_DELIM}software{_DELIM}{const.HA_CLUSTER_SOFTWARE}{_DELIM}secret")
         key = Cipher.generate_key(cluster_id, const.HACLUSTER_KEY)
         cluster_secret = Cipher.decrypt(key, cluster_secret.encode('ascii')).decode()
-        mgmt_info: dict = self._get_mgmt_vip(machine_id, cluster_id)
+        mgmt_info: dict = self.get_mgmt_vip(machine_id, cluster_id)
         s3_instances = ConfigCmd.get_s3_instance(machine_id)
         ios_instances = ConfigCmd.get_ios_instance(machine_id)
-
-        # fetch all nodes stonith config
-        all_nodes_stonith_config: dict = {}
-        if self.get_installation_type().lower() == const.INSTALLATION_TYPE.HW.value.lower():
-            all_nodes_stonith_config = ConfigCmd.get_stonith_config()
 
         self._update_env(node_name, node_type, const.HA_CLUSTER_SOFTWARE, s3_instances, ios_instances)
         self._fetch_fids()
         self._update_cluster_manager_config()
+
+        # fetch all nodes stonith config
+        all_nodes_stonith_config: dict = {}
+        enable_stonith = False
+        env_type = self.get_installation_type().lower()
+        if env_type == const.INSTALLATION_TYPE.HW.value.lower():
+            all_nodes_stonith_config = ConfigCmd.get_stonith_config()
+            enable_stonith = True
+        elif env_type == const.INSTALLATION_TYPE.VM.value.lower():
+            Log.warn("Stonith configuration not available, detected VM env")
+        else:
+            raise HaConfigException(f"Invalid env detected, {env_type}")
 
         # Push node name mapping to store
         if not self._confstore.key_exists(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_name}"):
@@ -437,7 +484,7 @@ class ConfigCmd(Cmd):
         # Update cluster and resources
         self._cluster_manager = CortxClusterManager(default_log_enable=False)
         Log.info("Checking if cluster exists already")
-        cluster_exists = bool(json.loads(self._cluster_manager.cluster_controller.cluster_exists()).get("msg"))
+        cluster_exists = bool(json.loads(self._cluster_manager.cluster_controller.cluster_exists()).get("output"))
         Log.info(f"Cluster exists? {cluster_exists}")
 
         if not cluster_exists:
@@ -450,7 +497,7 @@ class ConfigCmd(Cmd):
                     self._create_resource(s3_instances=s3_instances, mgmt_info=mgmt_info, node_count=len(nodelist),
                                           ios_instances=ios_instances, stonith_config=all_nodes_stonith_config.get(node_name))
                     # configure stonith for each node from that node only
-                    configure_stonith(push=True, stonith_config=all_nodes_stonith_config.get(node_name))
+                    self._configure_stonith(all_nodes_stonith_config, node_name, enable_stonith)
                     self._confstore.set(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
                 except Exception as e:
                     Log.error(f"Cluster creation failed; destroying the cluster. Error: {e}")
@@ -465,30 +512,46 @@ class ConfigCmd(Cmd):
                     if node != node_name:
                         Log.info(f"Adding node {node} to Cluster {cluster_name}")
                         self._add_node(node, cluster_user, cluster_secret)
+                        self._configure_stonith(all_nodes_stonith_config, node, enable_stonith)
             else:
                 # Add node with SSH
                 self._add_node_remotely(node_name, cluster_user, cluster_secret)
                 # configure stonith for each node from that node only
-                configure_stonith(push=True, stonith_config=all_nodes_stonith_config.get(node_name))
+                self._configure_stonith(all_nodes_stonith_config, node_name, enable_stonith)
         else:
             # configure stonith for each node from that node only
-            configure_stonith(push=True, stonith_config=all_nodes_stonith_config.get(node_name))
+            self._configure_stonith(all_nodes_stonith_config, node_name, enable_stonith)
             for node in nodelist:
                 if node != node_name:
                     Log.info(f"Adding node {node} to Cluster {cluster_name}")
                     self._add_node(node, cluster_user, cluster_secret)
+                    self._configure_stonith(all_nodes_stonith_config, node, enable_stonith)
         self._execute.run_cmd(const.PCS_CLEANUP)
-        if self.get_installation_type().lower() == const.INSTALLATION_TYPE.HW.value.lower():
-            self._execute.run_cmd(const.PCS_STONITH_ENABLE)
         # Create Alert if not exists
         self._alert_config.create_alert()
         Log.info("config command is successful")
 
-    def _create_resource(self, s3_instances, mgmt_info, node_count, ios_instances, stonith_config=None):
+    def _configure_stonith(self, all_nodes_stonith_config: dict, node_name: str, enable_stonith : bool = False) -> None:
+        """
+        configure stonith
+        Args:
+            all_nodes_stonith_config: required config stonith for each node
+            node_name: node name to get stonith config from all nodes stonith config
+            enable_stonith: default value is False
+
+        Returns:
+            None
+
+        """
+        if enable_stonith:
+            self._execute.run_cmd(const.PCS_CLEANUP)
+            configure_stonith(push=True, stonith_config=all_nodes_stonith_config.get(node_name))
+
+    def _create_resource(self, ios_instances, s3_instances, mgmt_info, node_count, stonith_config=None):
         Log.info("Creating pacemaker resources")
         try:
             # TODO: create resource if not already exists.
-            create_all_resources(s3_instances=s3_instances, ios_instances=ios_instances, mgmt_info=mgmt_info, node_count=node_count, stonith_config=stonith_config)
+            create_all_resources(ios_instances=ios_instances, s3_instances=s3_instances, mgmt_info=mgmt_info, node_count=node_count, stonith_config=stonith_config)
         except Exception as e:
             Log.info(f"Resource creation failed. Error {e}")
             raise HaConfigException("Resource creation failed.")
@@ -534,6 +597,12 @@ class ConfigCmd(Cmd):
             add_node_cli = const.CORTX_CLUSTER_NODE_ADD.replace("<node>", node_name)\
                 .replace("<user>", cluster_user).replace("<secret>", cluster_secret)
             self._execute.run_cmd(add_node_cli, check_error=False, secret=cluster_secret)
+            node_status =  self._cluster_manager.cluster_controller.wait_for_node_online(node_name)
+            # Nodes are added to the cluster during cluster creation
+            # Node is expected to be Online when it is added
+            if node_status != True:
+                raise HaConfigException(f"Node {node_name} did not come online; Add node failed")
+
             self.standby_node(node_name)
             self._confstore.set(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
             Log.info(f"The node {node_name} added in the existing cluster.")
@@ -561,6 +630,12 @@ class ConfigCmd(Cmd):
                     remote_executor.execute(const.CORTX_CLUSTER_NODE_ADD.replace("<node>", node_name)
                         .replace("<user>", cluster_user).replace("<secret>", "'" + cluster_secret + "'"),
                         secret=cluster_secret)
+                    node_status =  self._cluster_manager.cluster_controller.wait_for_node_online(node_name)
+                    # Nodes are added to the cluster during cluster creation
+                    # Node is expected to be Online when it is added
+                    if node_status != True:
+                        raise HaConfigException(f"Node {node_name} did not come online; Add node failed")
+
                     self.standby_node(node_name)
                     self._confstore.set(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
                     Log.info(f"Added new node: {node_name} using {remote_node}")
@@ -579,37 +654,6 @@ class ConfigCmd(Cmd):
                         self._confstore.delete(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
         except Exception as e:
             raise HaConfigException(f"Failed to add node {node_name} remotely. Error: {e}")
-
-    def _get_mgmt_vip(self, machine_id: str, cluster_id: str) -> dict:
-        """
-        Get Mgmt info.
-
-        Args:
-            machine_id (str): Get machine ID.
-            cluster_id (str): Get Cluster ID.
-
-        Raises:
-            HaConfigException: Raise exception.
-
-        Returns:
-            dict: Mgmt info.
-        """
-        mgmt_info: dict = {}
-        try:
-            node_count: int = len(Conf.get(self._index, "server_node"))
-            if ConfigCmd.DEV_CHECK == True or node_count < 2:
-                return mgmt_info
-            mgmt_info["mgmt_vip"] = Conf.get(self._index, f"cluster{_DELIM}{cluster_id}{_DELIM}network{_DELIM}management{_DELIM}virtual_host")
-            netmask = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}network{_DELIM}management{_DELIM}netmask")
-            if netmask is None:
-                raise HaConfigException("Detected invalid netmask, It should not be empty.")
-            mgmt_info["mgmt_netmask"] = sum(bin(int(x)).count('1') for x in netmask.split('.'))
-            mgmt_info["mgmt_iface"] = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}network{_DELIM}management{_DELIM}interfaces")[0]
-            Log.info(f"Mgmt vip configuration: {str(mgmt_info)}")
-            return mgmt_info
-        except Exception as e:
-            Log.error(f"Failed to get mgmt ip address. Error: {e}")
-            raise HaConfigException(f"Failed to get mgmt ip address. Error: {e}.")
 
     def _update_env(self, node_name: str, node_type: str, cluster_type: str, s3_instances: int, ios_instances: int) -> None:
         """
@@ -734,6 +778,15 @@ class InitCmd(Cmd):
         Process init command.
         """
         Log.info("Processing init command")
+        env_type = self.get_installation_type().lower()
+        if env_type == const.INSTALLATION_TYPE.HW.value.lower():
+            Log.info("Enabling the stonith.")
+            self._execute.run_cmd(const.PCS_STONITH_ENABLE)
+            Log.info("Stonith enabled successfully.")
+        elif env_type == const.INSTALLATION_TYPE.VM.value.lower():
+            Log.warn(f"Stonith configuration not available, detected {env_type} env")
+        else:
+            raise HaConfigException(f"Invalid env detected, {env_type}")
         Log.info("init command is successful")
 
 class TestCmd(Cmd):
@@ -777,14 +830,11 @@ class UpgradeCmd(Cmd):
         Init method.
         """
         super().__init__(args)
-        machine_id = self.get_machine_id()
-        self.s3_instance = UpgradeCmd.get_s3_instance(machine_id)
 
     def process(self):
         """
         Process upgrade command.
         """
-        perform_post_upgrade(self.s3_instance)
 
 class ResetCmd(Cmd):
     """
@@ -802,7 +852,36 @@ class ResetCmd(Cmd):
         """
         Process reset command.
         """
-        pass # TBD
+        Log.info("Processing reset command")
+        try:
+            # create new version of log file
+            services = ["pcsd", "corosync", "cortx_ha_log.conf", "pacemaker"]
+            for service in services:
+                self._execute.run_cmd(f"logrotate --force /etc/logrotate.d/{service}")
+
+            older_logs = []
+            log_dirs = [const.COROSYNC_LOG, const.RA_LOG_DIR, const.PCSD_DIR]
+            for log_dir in log_dirs:
+                log_list = [file for file in os.listdir(log_dir) if file.split(".")[-1] not in ["log", "xml"]]
+                for log_file in log_list:
+                    older_logs.append(os.path.join(log_dir, log_file))
+
+            pacemaker_log_list = [file for file in os.listdir(const.LOG_DIR) if file
+                                  .split(".")[-1] not in ["log"] and file.startswith("pacemaker")]
+            for log_file in pacemaker_log_list:
+                older_logs.append(os.path.join(const.LOG_DIR, log_file))
+
+            self._remove_logs(older_logs)
+        except Exception as e:
+            Log.error(f"Cluster reset command failed. Error: {e}")
+            raise HaResetException("Cluster reset failed")
+
+    def _remove_logs(self, logs: list):
+        """
+        Remove logs.
+        """
+        for log in logs:
+            ResetCmd.remove_file(log)
 
 class CleanupCmd(Cmd):
     """
@@ -817,6 +896,7 @@ class CleanupCmd(Cmd):
         super().__init__(args)
         # TODO: cluster_manager fails if cleanup run multiple time EOS-20947
         self._cluster_manager = CortxClusterManager(default_log_enable=False)
+        self._post_install_cmd = PostInstallCmd(args=None)
 
     def process(self):
         """
@@ -828,27 +908,29 @@ class CleanupCmd(Cmd):
             node_count: int = 0 if nodes is None else len(nodes)
             node_name = self.get_node_name()
             # Standby
-            # TODO: handle multiple case for standby EOS-20855
             standby_output: str = self._cluster_manager.node_controller.standby(node_name)
             if json.loads(standby_output).get("status") == STATUSES.FAILED.value:
                 Log.warn(f"Standby for {node_name} failed with output: {standby_output}."
                         "Cluster will be destroyed forcefully")
             if CleanupCmd.LOCAL_CHECK and node_count > 1:
+                node_id = Conf.get(self._index, f"server_node{_DELIM}{self.get_machine_id()}{_DELIM}node_id")
+                node_map_key = SystemHealth(self._confstore)._prepare_key(const.COMPONENTS.NODE_MAP.value, node_id=node_id)
                 # TODO: Update cluster kill for --local option also
-                # Remove SSH
                 self._remove_node(node_name)
+                self._confstore.delete(node_map_key)
+                self._confstore.delete(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
+                self._confstore.delete(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_name}")
             else:
                 # Destroy
                 self._cluster_manager.cluster_controller.destroy_cluster()
-                # self._destroy_cluster(node_name)
+                self._confstore.delete(recurse=True)
 
-            if self._confstore.key_exists(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}"):
-                self._confstore.delete(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
-            # Delete node name mapping from store
-            if self._confstore.key_exists(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_name}"):
-                self._confstore.delete(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_name}")
             # Delete the config file
             self.remove_config_files()
+            if CleanupCmd.PRE_FACTORY_CHECK is not True:
+                Log.info("Post_install being called from cleanup command")
+                self._post_install_cmd.process()
+
         except Exception as e:
             Log.error(f"Cluster cleanup command failed. Error: {e}")
             raise HaCleanupException("Cluster cleanup failed")
@@ -875,23 +957,16 @@ class CleanupCmd(Cmd):
             except Exception as e:
                 Log.error(f"Node remove failed with Error: {e}, Trying with other node.")
 
-    def _destroy_cluster(self, node_name: str):
-        """
-        Destroy Cluster on current node.
-
-        Args:
-            node_name (str): Node name
-        """
-        Log.info(f"Destroying the cluster on {node_name}.")
-        output = self._execute.run_cmd(const.PCS_CLUSTER_KILL)
-        output = self._execute.run_cmd(const.PCS_CLUSTER_DESTROY)
-        Log.info(f"Cluster destroyed. Output: {output}")
-
     def remove_config_files(self):
         """
         Remove file created by ha.
         """
-        CleanupCmd.remove_file(const.CONFIG_DIR)
+        files = [const.CONFIG_DIR]
+        for pcsd_file in os.listdir(const.AUTH_DIR):
+            files.append(os.path.join(const.AUTH_DIR, pcsd_file))
+
+        for file in files:
+            CleanupCmd.remove_file(file)
 
 class BackupCmd(Cmd):
     """
@@ -929,6 +1004,75 @@ class RestoreCmd(Cmd):
         """
         pass # TBD
 
+
+class PreUpgradeCmd(Cmd):
+    """
+    Pre-Upgrade Cmd
+    """
+    name = "pre_upgrade"
+
+    def __init__(self, args):
+        """
+        Init method.
+        """
+        super().__init__(args)
+
+    def process(self):
+        """
+        Process command.
+
+        NOTE: Consul is not expected to be upgraded, so no need to backup
+        consul config
+        Configuration backup is performed for every node while pacemaker setup
+        only on one node (cluster level).
+        """
+        try:
+            if os.environ['PRVSNR_MINI_LEVEL'] == 'cluster':
+                Log.info("Performing pre disruptive upgrade routines on cluster \
+                         level")
+                delete_resources()
+            else:
+                Log.info("Performing pre disruptive upgrade routines on node \
+                         level")
+                backup_configuration()
+        except Exception as err:
+            raise SetupError("Pre-upgrade routines failed") from err
+
+
+class PostUpgradeCmd(Cmd):
+    """
+    Post-Upgrade Cmd
+    """
+    name = "post_upgrade"
+
+    def __init__(self, args):
+        """
+        Init method.
+        """
+        super().__init__(args)
+        machine_id = self.get_machine_id()
+        self.s3_instance = UpgradeCmd.get_s3_instance(machine_id)
+
+    def process(self):
+        """
+        Process command.
+        """
+        try:
+            if os.environ['PRVSNR_MINI_LEVEL'] == 'cluster':
+                machine_id = self.get_machine_id()
+                cluster_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}cluster_id")
+                mgmt_info: dict = self.get_mgmt_vip(machine_id, cluster_id)
+                ios_instances = self.get_ios_instance(machine_id)
+                node_count: int = len(self.get_nodelist(fetch_from=UpgradeCmd.HA_CONFSTORE))
+
+                Log.info(f"Performing post disruptive upgrade routines on cluster \
+                        level. cluster_id: {cluster_id}, mgmt_info: {mgmt_info}, node_count: {node_count}")
+                perform_post_upgrade(ios_instances=ios_instances, s3_instances=self.s3_instance, do_unstandby=False,
+                                     mgmt_info=mgmt_info, node_count=node_count)
+        except Exception as err:
+            raise SetupError("Post-upgrade routines failed") from err
+
+
 def main(argv: list):
     try:
         if sys.argv[1] == "post_install":
@@ -937,6 +1081,15 @@ def main(argv: list):
             log_path = Conf.get(const.HA_GLOBAL_INDEX, f"LOG{_DELIM}path")
             log_level = Conf.get(const.HA_GLOBAL_INDEX, f"LOG{_DELIM}level")
             Log.init(service_name='ha_setup', log_path=log_path, level=log_level)
+        elif sys.argv[1] == "cleanup":
+            if not os.path.exists(const.HA_CONFIG_FILE):
+                a_str = f'Cleanup can not be proceed as \
+                           HA config file: {const.HA_CONFIG_FILE} \
+                           is missing. Either cleanup is already done or there \
+                           is some other problem'
+                sys.stdout.write(a_str)
+                return 0
+            ConfigManager.init("ha_setup")
         else:
             ConfigManager.init("ha_setup")
 

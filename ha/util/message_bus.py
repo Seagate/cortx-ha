@@ -88,6 +88,7 @@ class MessageBusConsumer:
         """
         Overloaded of Thread.
         Note: Please properly handle failure cases to avoid stuck in loop
+
         1. Caller received and processed message		                            SUCCESS
         2. Caller received but not able to process need retry			            FAILED
         3. Caller received but message is irrelevant to caller					    SUCCESS
@@ -96,6 +97,7 @@ class MessageBusConsumer:
         6. If nothing is passed it will be case 2						            FAILED
         7. If callback return any exception then it will be swallowed and retry again without ack.
         8. Closing main thread will close this thread as it is running as deamon.
+
         As self.consumer.receive(timeout=0) is block call t1.join() will not stop thread.
         Stop thread by completing work as per above cases.
         """
