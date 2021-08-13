@@ -34,6 +34,7 @@ from ha.core.action_handler.action_factory import ActionFactory
 from ha.core.health_monitor import const
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.util.message_bus import MessageBus
+from ha.util.message_bus import CONSUMER_STATUS
 from ha.core.config.config_manager import ConfigManager
 from ha.core.health_monitor.monitor_rules_manager import MonitorRulesManager
 from ha.core.health_monitor.error import HealthMonitorError
@@ -92,16 +93,19 @@ class HealthMonitorService:
         """
         try:
             event = json.loads(message.decode('utf-8'))
+            health_event = HealthEvent.dict_to_object(event)
         except Exception as e:
             Log.error(f"Invalid format for event {message}, Error: {e}. Forcefully ack.")
+            return CONSUMER_STATUS.SUCCESS
         Log.debug(f"Captured {message} for evaluating health monitor.")
+        action_handler = None
         try:
-            health_event = HealthEvent.dict_to_object(event)
             action_list = self._rule_manager.evaluate(health_event)
             if action_list:
                 Log.info(f"Evaluated {health_event} with action {action_list}")
                 action_handler = ActionFactory.get_action_handler(health_event, action_list)
                 action_handler.act(health_event, action_list)
+            return CONSUMER_STATUS.SUCCESS
         except Exception as e:
             Log.error(f"Failed to process {message} error: {e} {traceback.format_exc()}")
             raise HealthMonitorError(f"Failed to process {message} error: {e} {traceback.format_exc()}")

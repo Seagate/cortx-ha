@@ -29,12 +29,10 @@ class MessageBusProducer:
     def __init__(self, producer_id: str, message_type: str, partitions: int):
         """
         Register message types with message bus.
-
         Args:
             producer_id (str): producer id.
             message_types (str): Message type.
             partitions (int, optional): No. of partitions. Defaults to 1.
-
         Raises:
             MessageBusError: Message bus error.
         """
@@ -43,24 +41,33 @@ class MessageBusProducer:
     def publish(self, message: any):
         """
         Produce message to message bus.
-
         Args:
-            message (dict): Message.
+            message (any): Message.
+            If msg is dict it will be dumped as json.
+            If msg is string then it will be send directly.
+            If message is list, it should have all string element, all items will be published.
         """
         if isinstance(message, dict):
             self.producer.send([json.dumps(message)])
         elif isinstance(message, str):
             self.producer.send([message])
+        elif isinstance(message, list):
+            self.producer.send(message)
         else:
             raise Exception(f"Invalid type of message {message}")
 
-class MessageBusConsumer(Thread):
+class CONSUMER_STATUS:
+    SUCCESS = "success"
+    FAILED = "failed"
+    FAILED_STOP = "failed_stop"
+    SUCCESS_STOP = "success_stop"
+
+class MessageBusConsumer:
 
     def __init__(self, consumer_id: int, consumer_group: str, message_type: str,
                 callback: Callable, auto_ack: bool, offset: str):
         """
         Initalize consumer.
-
         Args:
             consumer_id (int): Consumer ID.
             consumer_group (str): Consumer Group.
@@ -69,39 +76,81 @@ class MessageBusConsumer(Thread):
             auto_ack (bool, optional): Check auto ack. Defaults to False.
             offset (str, optional): Offset for messages. Defaults to "earliest".
         """
-        super(MessageBusConsumer, self).__init__(name=f"{message_type}-{str(consumer_id)}", daemon=True)
         self.callback = callback
-        self.consumer = MessageConsumer(consumer_id=str(consumer_id),
-                        consumer_group=consumer_group,
-                        message_types=[message_type],
-                        auto_ack=auto_ack, offset=offset)
+        self.stop_thread = False
+        self.consumer_id = consumer_id
+        self.consumer_group = consumer_group
+        self.message_type = message_type
+        self.auto_ack = auto_ack
+        self.offset = offset
 
     def run(self):
         """
         Overloaded of Thread.
+        Note: Please properly handle failure cases to avoid stuck in loop
+        1. Caller received and processed message		                            SUCCESS
+        2. Caller received but not able to process need retry			            FAILED
+        3. Caller received but message is irrelevant to caller					    SUCCESS
+        4. Caller received	message but failed to process and not want to retry		FAILED_STOP
+        5. Caller received message and want to sop listen to message				SUCCESS_STOP
+        6. If nothing is passed it will be case 2						            FAILED
+        7. If callback return any exception then it will be swallowed and retry again without ack.
+        8. Closing main thread will close this thread as it is running as deamon.
+        As self.consumer.receive(timeout=0) is block call t1.join() will not stop thread.
+        Stop thread by completing work as per above cases.
         """
-        while True:
+        retry = False
+        while not self.stop_thread:
             try:
-                message = self.consumer.receive(timeout=0)
-                self.callback(message)
-                self.consumer.ack()
+                if not retry:
+                    message = self.consumer.receive(timeout=0)
+                status = self.callback(message)
+                if status == CONSUMER_STATUS.SUCCESS:
+                    self.consumer.ack()
+                elif status == CONSUMER_STATUS.FAILED_STOP:
+                    # TODO: check if can be handled internally, currently message will get ack by message bus api
+                    break
+                elif status == CONSUMER_STATUS.SUCCESS_STOP:
+                    self.consumer.ack()
+                    break
+                else:
+                    retry = True
+                    continue
+                retry = False
             except Exception as e:
-                raise MessageBusError(f"Failed to receive message, error: {e}. Retrying to receive.")
+                try:
+                    if message:
+                        retry = True
+                    raise MessageBusError(f"Caught exception. Error: {e}. Retry...")
+                except:
+                    pass
+
+    def start(self):
+        self.consumer = MessageConsumer(consumer_id=str(self.consumer_id),
+                        consumer_group=self.consumer_group,
+                        message_types=[self.message_type],
+                        auto_ack=self.auto_ack, offset=self.offset)
+        self.consumer_thread = Thread(target=self.run)
+        self.consumer_thread.setDaemon(True)
+        self.consumer_thread.start()
+
+    def stop(self):
+        self.stop_tread = True
+        self.consumer_thread.join()
 
 class MessageBus:
-    ADMIN_ID = "admin"
+    ADMIN_ID = "ha_admin"
 
     @staticmethod
     def get_consumer(consumer_id: int, consumer_group: str, message_type: str,
                 callback: Callable, auto_ack: bool = False, offset: str = "earliest") -> MessageBusConsumer:
         """
         Get consumer.
-
         Args:
             consumer_id (int): Consumer ID.
             consumer_group (str): Consumer Group.
             message_type (str): Message Type.
-            callback (Callable): function to get message.
+            callback (Callable): callback function to process message.
             auto_ack (bool, optional): Check auto ack. Defaults to False.
             offset (str, optional): Offset for messages. Defaults to "earliest".
         """
@@ -111,12 +160,10 @@ class MessageBus:
     def get_producer(producer_id: str, message_type: str, partitions: int = 1) -> MessageBusProducer:
         """
         Register message types with message bus. and get Producer.
-
         Args:
             producer_id (str): producer id.
             message_types (str): Message type.
             partitions (int, optional): No. of partitions. Defaults to 1.
-
         Raises:
             MessageBusError: Message bus error.
         """
@@ -127,7 +174,6 @@ class MessageBus:
     def register(message_type: str, partitions: int = 1):
         """
         Register message type to message bus.
-
         Args:
             message_type (str): Message type.
             partitions (int): Number of partition.
@@ -140,10 +186,9 @@ class MessageBus:
     def deregister(message_type: str):
         """
         Deregister message type to message bus.
-
         Args:
             message_type (str): Message type.
         """
         admin = MessageBusAdmin(admin_id=MessageBus.ADMIN_ID)
-        if message_type not in admin.list_message_types():
+        if message_type in admin.list_message_types():
             admin.deregister_message_type(message_types=[message_type])
