@@ -31,7 +31,7 @@ from ha.core.system_health.system_health import SystemHealth
 from ha.core.config.config_manager import ConfigManager
 from ha.util.ipmi_fencing_agent import IpmiFencingAgent
 from ha.setup.const import RESOURCE
-from ha.core.controllers.pcs.actuator_req_manager import ActuatorManager
+from ha.util.actuator_req_manager import ActuatorManager
 
 class PcsNodeController(NodeController, PcsController):
     """ Controller to manage node. """
