@@ -35,12 +35,12 @@ class NodeController(ElementController):
         raise HAUnimplemented("This operation is not implemented.")
 
     @controller_error_handler
-    def start(self, nodeid: str) -> dict:
+    def start(self, node_id: str, **op_kwargs) -> dict:
         """
-        Start node with nodeid.
+        Start node with the node_id.
 
         Args:
-            nodeid (str): Node ID from cluster nodes.
+            node_id (str): Node ID from cluster nodes.
 
         Returns:
             ([dict]): Return dictionary. {"status": "", "output": "", "error": ""}
