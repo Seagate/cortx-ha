@@ -370,11 +370,8 @@ class PcsHWNodeController(PcsNodeController):
 
                 # Stop the storage enclosure on the node
                 actuator_mgr = ActuatorManager()
-                encl_status = actuator_mgr.enclosure_stop(node_name)
-                if encl_status == False:
-                    Log.warn(f"Enclosure stop failed for {node_name}")
-                else:
-                    Log.info(f"Enclosure stopped for {node_name}")
+                actuator_mgr.enclosure_stop(node_name)
+                Log.info(f"Enclosure stopped for {node_name}")
 
 
 

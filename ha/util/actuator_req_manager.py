@@ -101,7 +101,7 @@ class ActuatorManager:
 
     def _create_req(self, target_node_name: str) -> str:
         """
-        Create actualtor request for enclosure stop
+        Create actuator request for enclosure stop
 
         Args:
             target_node_name : node on which enclosure is to be stopped

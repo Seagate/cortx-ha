@@ -56,7 +56,7 @@ def send_response(msg):
 
 if __name__ == '__main__':
     consumer = MessageConsumer(consumer_id="1",
-                                consumer_group='actualtor_req_manager',
+                                consumer_group='actuator_req_manager',
                                 message_types=["requests"],
                                 auto_ack=False, offset='earliest')
 
