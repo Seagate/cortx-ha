@@ -63,6 +63,7 @@ class PcsNodeController(NodeController, PcsController):
             # Get the node_name (pvtfqdn) from node_id
             node_name = self._get_node_name(node_id=node_id)
             self._is_node_in_cluster(node_id=node_name)
+            # TODO: Check status from system health instead of pcs below.
             node_status = self.nodes_status([node_name])[node_name]
             Log.debug(f"Node {node_name} status is {node_status}")
             if node_status == NODE_STATUSES.ONLINE.value:
@@ -328,15 +329,16 @@ class PcsHWNodeController(PcsNodeController):
             node_name = self._get_node_name(node_id=node_id)
             self._is_node_in_cluster(node_id=node_name)
             power_status = self.fencing_agent.power_status(node_id=node_name)
-            if power_status == const.BMC_POWER_STATUS.OFF and poweron is False:
+            if power_status == const.BMC_POWER_STATUS.OFF.value and poweron is False:
                 Log.debug(f"Node {node_name} is powered-off and poweron was not set")
                 return {"status": const.STATUSES.FAILED.value, "output": "", "error": f"Node {node_id} is powered-off, use poweron option"}
-            elif power_status == const.BMC_POWER_STATUS.OFF and poweron is True:
+            elif power_status == const.BMC_POWER_STATUS.OFF.value and poweron is True:
                 self.fencing_agent.power_on(node_id=node_name)
-                Log.debug(f"Node {node_name} is powered-on")
-            # TODO: Add some sleep here
+                Log.debug(f"Node {node_name} is powered-on, waiting for node boot")
+                time.sleep(const.NODE_POWERON_DELAY)
             start_status =  super().start(node_id, **op_kwargs)
             # TODO: Move this to base class after during stop stonith is disabled for VM as well.
+            start_status = json.loads(start_status)
             if start_status["status"] == const.STATUSES.SUCCEEDED.value:
                 self._execute.run_cmd(const.ENABLE_STONITH.replace("<node>", node_name))
             return start_status

@@ -177,6 +177,7 @@ CLUSTER_RETRY_COUNT = 6
 BASE_WAIT_TIME = 5
 NODE_STOP_TIMEOUT = 300 # 300 sec to stop single node
 CLUSTER_STANDBY_UNSTANDBY_TIMEOUT = 600 # 600 sec to stop single node
+NODE_POWERON_DELAY = 300 # Delay after node is powered-on before cluster start
 
 # Event Analyzer
 INCLUSION = "inclusion"
