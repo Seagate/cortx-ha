@@ -144,6 +144,7 @@ class MessageBusConsumer:
         self.stop_tread = True
         self.consumer_thread.join()
 
+# comment
 class MessageBus:
     ADMIN_ID = "ha_admin"
 
