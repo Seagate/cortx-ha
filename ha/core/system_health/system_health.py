@@ -278,6 +278,8 @@ class SystemHealth(Subscriber):
         Returns:
             bool: return true if update is needed.
         """
+        if not current_health:
+            return True
         is_needed: bool = True
         old_health = json.loads(current_health)
         new_health = json.loads(updated_health)
