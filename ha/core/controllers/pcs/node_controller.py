@@ -76,8 +76,7 @@ class PcsNodeController(NodeController, PcsController):
         node_name = self._get_node_name(node_id=node_id)
         try:
             timeout = const.NODE_STOP_TIMEOUT if timeout < 0 else timeout
-            # TODO: Get the node_status from system health status
-            node_status = self.nodes_status([node_name]).get(node_name)
+            node_status = self._system_health.get_node_status(node_id=node_id).get("status")
             if node_status == NODE_STATUSES.CLUSTER_OFFLINE.value:
                 Log.info(f"For stop {node_name}, Node already in offline state.")
                 status = f"Node {node_name} is already in offline state."
@@ -92,13 +91,6 @@ class PcsNodeController(NodeController, PcsController):
                     res = json.loads(self.check_cluster_feasibility(node_id=node_id))
                     if res.get("status") == const.STATUSES.FAILED.value:
                         return res
-
-            # Update node health
-            # TODO : Health event update to be removed once fault_tolerance branch is merged
-            initial_event = self._system_health.get_health_event_template(nodeid=node_id, event_type=HEALTH_EVENTS.FAULT.value)
-            Log.debug(f"Node health : {initial_event} updated for node {node_name}")
-            health_event = HealthEvent.dict_to_object(initial_event)
-            self._system_health.process_event(health_event)
         except Exception as e:
                 raise ClusterManagerError(f"Failed to stop {node_name}, Error: {e}")
 
@@ -322,6 +314,13 @@ class PcsVMNodeController(PcsNodeController):
             Log.info(f"Executed node stop for {node_name}, Waiting to stop resource")
             time.sleep(const.BASE_WAIT_TIME)
             status = f"Stop for {node_name} is in progress, waiting to stop resource"
+
+            # Update node health
+            # TODO : Health event update to be removed once fault_tolerance branch is merged
+            initial_event = self._system_health.get_health_event_template(nodeid=node_id, event_type=HEALTH_EVENTS.FAULT.value)
+            Log.debug(f"Node health : {initial_event} updated for node {node_name}")
+            health_event = HealthEvent.dict_to_object(initial_event)
+            self._system_health.process_event(health_event)
             return {"status": const.STATUSES.SUCCEEDED.value, "output": status, "error": ""}
 
         except Exception as e:
@@ -381,6 +380,13 @@ class PcsHWNodeController(PcsNodeController):
                 self._execute.run_cmd(const.PCS_NODE_STANDBY.replace("<node>", node_name), f" --wait={const.CLUSTER_STANDBY_UNSTANDBY_TIMEOUT}")
                 Log.info(f"Executed node standby for {node_name}")
             status = f"{node_name} Node Standby is in progress"
+
+            # Update node health
+            # TODO : Health event update to be removed once fault_tolerance branch is merged
+            initial_event = self._system_health.get_health_event_template(nodeid=node_id, event_type=HEALTH_EVENTS.FAULT.value)
+            Log.debug(f"Node health : {initial_event} updated for node {node_name}")
+            health_event = HealthEvent.dict_to_object(initial_event)
+            self._system_health.process_event(health_event)
 
             # Node power off
             if poweroff:
