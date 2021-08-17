@@ -21,7 +21,7 @@ import ast
 
 from cortx.utils.conf_store import Conf
 from ha.core.system_health.const import NODE_MAP_ATTRIBUTES
-from ha.execute import SimpleCommand
+from ha.util.machine_id import MachineId
 from ha.const import ACTUATOR_SCHEMA, ACTUATOR_ATTRIBUTES, ACTUATOR_RESP_RETRY_COUNT, ACTUATOR_RESP_WAIT_TIME
 from ha.const import _DELIM
 from ha import const
@@ -38,10 +38,8 @@ from ha.core.config.config_manager import ConfigManager
 class ActuatorManager:
 
     def __init__(self):
-
         self._conf_store = ConfigManager.get_confstore()
-        self._execute = SimpleCommand()
-        self._machine_id = self._get_machine_id()
+        self._machine_id = MachineId.get_machine_id()
         self._uuid = None
         self._is_resp_received = False
         self._encl_shutdown_successful = False
@@ -53,13 +51,6 @@ class ActuatorManager:
         same uuid is expected in actuatore response
         """
         self._uuid = str(int(time.time()))
-
-    def _get_machine_id(self):
-        command = "cat /etc/machine-id"
-        machine_id, err, rc = self._execute.run_cmd(command, check_error=True)
-        Log.info(f"Read machine-id. Output: {machine_id}, Err: {err}, RC: {rc}")
-        print(f"Read machine-id. Output: {machine_id}")
-        return machine_id.strip()
 
     def enclosure_stop(self, node_name: str) -> bool :
         """
