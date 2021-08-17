@@ -145,6 +145,7 @@ class MessageBusConsumer:
         self.consumer_thread.join()
 
 # comment
+# commit 2
 class MessageBus:
     ADMIN_ID = "ha_admin"
 
