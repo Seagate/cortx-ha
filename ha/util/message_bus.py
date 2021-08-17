@@ -16,6 +16,8 @@
 # cortx-questions@seagate.com.
 
 import json
+import ctypes
+import threading
 from typing import Callable
 from threading import Thread
 from cortx.utils.message_bus import MessageBusAdmin
@@ -143,6 +145,19 @@ class MessageBusConsumer:
     def stop(self):
         self.stop_tread = True
         self.consumer_thread.join()
+
+    def force_stop(self):
+        thread_id = self._get_id()
+        res = ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, ctypes.py_object(SystemExit))
+        if res > 1:
+            ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, 0)
+
+    def _get_id(self):
+        if hasattr(self, '_thread_id'):
+            return self._thread_id
+        for id, thread in threading._active.items():
+            if thread is self:
+                return id
 
 class MessageBus:
     ADMIN_ID = "ha_admin"

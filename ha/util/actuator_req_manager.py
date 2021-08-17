@@ -31,7 +31,7 @@ from ha.const import PVTFQDN_TO_NODEID_KEY
 from ha.core.system_health.system_health import SystemHealth, SystemHealthManager
 from ha.core.system_health.const import EVENT_SEVERITIES
 from ha.core.error import ClusterManagerError
-from ha.util.message_bus import MessageBus
+from ha.util.message_bus import MessageBus, CONSUMER_STATUS
 from ha.core.config.config_manager import ConfigManager
 
 
@@ -71,11 +71,8 @@ class ActuatorManager:
         for _ in range(0, ACTUATOR_RESP_RETRY_COUNT):
             time.sleep(ACTUATOR_RESP_WAIT_TIME)
             if self._is_resp_received:
+               self.consumer.stop()
                break
-
-        # Stop the thread that was created
-        # TBD once the changes are done as part of PR#530.
-        #self.consumer.stop()
 
         if self._is_resp_received and self._encl_shutdown_successful:
             Log.info(f"Enclosure shutdown successful on node {node_name}")
@@ -83,6 +80,9 @@ class ActuatorManager:
             return True
 
         if not self._is_resp_received:
+            # Stop the thread if no reponse received in expected time.
+            # In remaining cases Thread stop happens inside HA messagebus wrapper itself
+            self.consumer.force_stop()
             Log.error(f"Actuator response not received; enclosure shutdown failed on node {node_name}")
         else:
             Log.error(f"Unable to shutdown enclosure on node {node_name}")
@@ -219,9 +219,7 @@ class ActuatorManager:
             resp = json.loads(resp.decode('utf-8'))
         except Exception as e:
             Log.error(f"Invalid resp {resp}, Error: {e}")
-            return
-        if resp is None:
-            return
+            return CONSUMER_STATUS.SUCCESS
 
         Log.debug(f"Received message {resp}")
         if self._filter_event(json.dumps(resp)):
@@ -233,5 +231,6 @@ class ActuatorManager:
             # cleanup
             self._uuid = None
             self._is_resp_received = True
-            MessageBus.deregister(self.resp_message_type)
-        return
+            return CONSUMER_STATUS.SUCCESS_STOP
+
+        return CONSUMER_STATUS.SUCCESS
