@@ -21,10 +21,9 @@ import json
 import uuid
 
 from cortx.utils.log import Log
+
 from ha import const
 from ha.core.system_health.health_evaluators.element_health_evaluator import ElementHealthEvaluator
-
-
 from ha.core.system_health.const import EVENT_SEVERITIES, NODE_MAP_ATTRIBUTES
 from ha.core.event_analyzer.subscriber import Subscriber
 from ha.core.system_health.system_health_metadata import SystemHealthComponents, SystemHealthHierarchy
@@ -38,6 +37,7 @@ from ha.core.cluster.const import SYSTEM_HEALTH_OUTPUT_V2, GET_SYS_HEALTH_ARGS
 from ha.core.system_health.const import CLUSTER_ELEMENTS, HEALTH_STATUSES
 from ha.core.system_health.model.health_status import StatusOutput, ComponentStatus
 from ha.core.system_health.system_health_hierarchy import HealthHierarchy
+from ha.core.event_manager.resources import RESOURCE_TYPES
 
 class SystemHealth(Subscriber):
     """
@@ -255,6 +255,36 @@ class SystemHealth(Subscriber):
         """
         get cluster status method. This method is for returning a status of a cluster.
         """
+        pass
+
+    def _is_update_required(self, current_health: str, updated_health: str, event: HealthEvent) -> bool:
+        """
+        Check if update is needed for system health.
+
+        Args:
+            current_health (dict): current health.
+            healthevent (HealthEvent): health event object.
+
+        Returns:
+            bool: return true if update is needed.
+        """
+        is_needed: bool = True
+        old_health = json.loads(current_health)
+        new_health = json.loads(updated_health)
+        old_status = old_health["events"][0]["status"]
+        new_status = new_health["events"][0]["status"]
+
+        # Common cases
+        if old_status == new_status:
+            is_needed = False
+
+        # specific cases
+        # 1. Do not overwrite node status to failed if offline already
+        if event.resource_type == RESOURCE_TYPES.NODE.value and \
+            old_status == HEALTH_STATUSES.OFFLINE.value and new_status == HEALTH_STATUSES.FAILED.value:
+            Log.info(f"Updating is not needed node is in {old_status} and received {new_status}")
+            is_needed = False
+        return is_needed
 
     def _update(self, healthevent: HealthEvent, healthvalue: str, next_component: str=None):
         """
@@ -287,7 +317,6 @@ class SystemHealth(Subscriber):
         """
 
         # TODO: Check the user and see if allowed to update the system health.
-
         try:
             status = self.statusmapper.map_event(healthevent.event_type)
             component = SystemHealthComponents.get_component(healthevent.resource_type)
@@ -310,6 +339,7 @@ class SystemHealth(Subscriber):
                                         rack_id=healthevent.rack_id, storageset_id=healthevent.storageset_id,
                                         node_id=healthevent.node_id, server_id=healthevent.node_id,
                                         storage_id=healthevent.node_id)
+
             if current_health:
                 # Update the current health value itself.
                 updated_health = EntityHealth.read(current_health)
@@ -333,9 +363,9 @@ class SystemHealth(Subscriber):
                              'rack_id':healthevent.rack_id, 'storageset_id':healthevent.storageset_id}
 
             # Update in the store.
-            self._update(healthevent, updated_health, next_component=next_component)
-            Log.info(f"Updated health for component: {component}, Type: {component_type}, Id: {component_id}")
-
+            if self._is_update_required(current_health, updated_health, healthevent):
+                self._update(healthevent, updated_health, next_component=next_component)
+                Log.info(f"Updated health for component: {component}, Type: {component_type}, Id: {component_id}")
         except Exception as e:
             Log.error(f"Failed processing system health event with Error: {e}")
             raise HaSystemHealthException("Failed processing system health event")
