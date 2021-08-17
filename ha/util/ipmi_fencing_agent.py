@@ -95,7 +95,7 @@ class IpmiFencingAgent(FencingAgent):
                                          f"-U {bmc_info_dict[IpmiFencingAgent.IPMI_USER]} "
                                          f"-P {bmc_info_dict[IpmiFencingAgent.IPMI_AUTH_KEY]} chassis power status")
                 if _rc != 0:
-                    raise Exception(f"Failed to run IPMItool Command. Error : {e}")
+                    raise Exception(f"Failed to run IPMItool Command. Error : {_err}")
                 if const.BMC_POWER_STATUS.ON.value in _output.lower():
                     return const.BMC_POWER_STATUS.ON.value
                 elif const.BMC_POWER_STATUS.OFF.value in _output.lower():
