@@ -24,6 +24,7 @@ from ha import const
 from ha.util.message_bus import MessageBus
 from cortx.utils.conf_store.conf_store import Conf
 from ha.const import _DELIM
+from ha.core.config.config_manager import ConfigManager
 from ha.core.system_health.health_evaluators.element_health_evaluator import ElementHealthEvaluator
 from ha.core.system_health.const import NODE_MAP_ATTRIBUTES
 from ha.core.event_analyzer.subscriber import Subscriber
@@ -267,6 +268,7 @@ class SystemHealth(Subscriber):
         Produce event
         """
         healthevent.event_type = json.loads(healthvalue).get("events")[0]["status"]
+        healthevent.node_id = ConfigManager.get_node_name(healthevent.node_id)
         self.producer.publish(str(healthevent))
 
     def _update(self, healthevent: HealthEvent, healthvalue: str, next_component: str=None):
