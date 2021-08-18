@@ -322,7 +322,7 @@ class CLUSTER_STATUS(Enum):
     UNHEALTHY = "unhealthy"
     ONLINE = "online"
 
-class BMC_POWER_STATUS(Enum, metaclass=EnumListMeta):
+class SERVER_POWER_STATUS(Enum, metaclass=EnumListMeta):
     ON = "on"
     OFF = "off"
     UNKNOWN = "unknown"
