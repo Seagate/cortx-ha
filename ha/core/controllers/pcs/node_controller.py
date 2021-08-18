@@ -372,7 +372,7 @@ class PcsHWNodeController(PcsNodeController):
                 actuator_mgr = ActuatorManager()
                 actuator_mgr.enclosure_stop(node_name)
                 Log.info(f"Enclosure stopped for {node_name}")
-
+                # TODO: Update enclosure health
 
 
                 # Put node in standby mode

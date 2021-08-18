@@ -22,7 +22,6 @@ ACTUATOR_MANAGER:
     req_message_type: requests
     resp_message_type: alerts
     producer_id: 1
-    consumer_group: actuator_req_manager
     consumer_id: 1
 SERVICE_INSTANCE_COUNTER:
 - instances: 1

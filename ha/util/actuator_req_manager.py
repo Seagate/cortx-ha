@@ -22,7 +22,7 @@ import ast
 from cortx.utils.conf_store import Conf
 from ha.core.system_health.const import NODE_MAP_ATTRIBUTES
 from ha.util.machine_id import MachineId
-from ha.const import ACTUATOR_SCHEMA, ACTUATOR_ATTRIBUTES, ACTUATOR_RESP_RETRY_COUNT, ACTUATOR_RESP_WAIT_TIME
+from ha.const import ACTUATOR_SCHEMA, ACTUATOR_ATTRIBUTES, ACTUATOR_RESP_RETRY_COUNT, ACTUATOR_RESP_WAIT_TIME, ACTUATOR_MSG_WAIT_TIME
 from ha.const import _DELIM
 from ha import const
 from cortx.utils.log import Log
@@ -43,6 +43,7 @@ class ActuatorManager:
         self._uuid = None
         self._is_resp_received = False
         self._encl_shutdown_successful = False
+        self.timeout_reached = False
 
     def _generate_uuid(self):
         """
@@ -52,7 +53,7 @@ class ActuatorManager:
         """
         self._uuid = str(int(time.time()))
 
-    def enclosure_stop(self, node_name: str) -> bool :
+    def enclosure_stop(self, node_name: str, timeout: int = int(ACTUATOR_RESP_RETRY_COUNT*ACTUATOR_RESP_WAIT_TIME)) -> bool :
         """
         Send actuator request to monitor for stopping enclosure
 
@@ -62,13 +63,13 @@ class ActuatorManager:
         Return:
             True : if enclose stop successful; else exception is raised
         """
-
         req = self._create_req(node_name)
+        self._register_for_resp()
         self._send_req(req)
-        self._wait_for_resp()
+        retry_count = int(timeout//ACTUATOR_RESP_WAIT_TIME)
 
         # Wait for 60 sec max. Expected max wait time = 40 sec + 20 sec buffer
-        for _ in range(0, ACTUATOR_RESP_RETRY_COUNT):
+        for _ in range(0, retry_count):
             time.sleep(ACTUATOR_RESP_WAIT_TIME)
             if self._is_resp_received:
                self.consumer.stop()
@@ -80,9 +81,9 @@ class ActuatorManager:
             return True
 
         if not self._is_resp_received:
-            # Stop the thread if no reponse received in expected time.
-            # In remaining cases Thread stop happens inside HA messagebus wrapper itself
-            self.consumer.force_stop()
+            self.timeout_reached = True
+            self.consumer.stop()
+            self.timeout_reached = False
             Log.error(f"Actuator response not received; enclosure shutdown failed on node {node_name}")
         else:
             Log.error(f"Unable to shutdown enclosure on node {node_name}")
@@ -149,20 +150,24 @@ class ActuatorManager:
         Log.debug(f"Publishing request {req} on message_type {self.req_message_type}")
         self.producer.publish(req)
 
-    def _wait_for_resp(self):
+    def _register_for_resp(self):
         """
         Register to wait for a response to the sent request.
         """
-        self.consumer_group =  Conf.get(const.HA_GLOBAL_INDEX, f"ACTUATOR_MANAGER{_DELIM}consumer_group")
+        # Unique consumer_group for each actuator response
+        self.consumer_group = self._uuid
         self.consumer_id =  Conf.get(const.HA_GLOBAL_INDEX, f"ACTUATOR_MANAGER{_DELIM}consumer_id")
         self.resp_message_type = Conf.get(const.HA_GLOBAL_INDEX, f"ACTUATOR_MANAGER{_DELIM}resp_message_type")
 
         self.consumer = MessageBus.get_consumer(consumer_id=str(self.consumer_id),
                                 consumer_group=self.consumer_group,
                                 message_type=self.resp_message_type,
-                                callback=self.process_resp)
+                                callback=self.process_resp,
+                                offset="latest",
+                                timeout=ACTUATOR_MSG_WAIT_TIME )
         # Start the thread to listen to response
         self.consumer.start()
+
         Log.debug(f"Waiting to get response on message_type {self.resp_message_type}")
 
     def _filter_event(self, msg: str) -> bool :
@@ -215,6 +220,8 @@ class ActuatorManager:
         Args:
             resp : received response
         """
+        if self.timeout_reached == True:
+            return CONSUMER_STATUS.FAILED_STOP
         try:
             resp = json.loads(resp.decode('utf-8'))
         except Exception as e:
