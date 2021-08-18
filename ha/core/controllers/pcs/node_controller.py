@@ -65,8 +65,10 @@ class PcsNodeController(NodeController, PcsController):
             self._is_node_in_cluster(node_id=node_name)
             # TODO: Check status from system health instead of pcs below.
             node_status = self.nodes_status([node_name])[node_name]
-            Log.debug(f"Node {node_name} status is {node_status}")
-            if node_status == NODE_STATUSES.ONLINE.value:
+            Log.debug(f"Node {node_name} cluster status is {node_status}")
+            node_health = self._system_health.get_node_status(node_id=node_id).get("status")
+            Log.debug(f"Node {node_name} health is {node_health}")
+            if node_status == NODE_STATUSES.ONLINE.value and node_health == const.HEALTH_STATUSES.ONLINE.value:
                 Log.debug(f"Node {node_name} is already online")
                 return {"status": const.STATUSES.SUCCEEDED.value, "output": NODE_STATUSES.ONLINE.value, "error": ""}
             elif node_status == NODE_STATUSES.STANDBY.value or node_status == NODE_STATUSES.STANDBY_WITH_RESOURCES_RUNNING.value:
@@ -338,8 +340,8 @@ class PcsHWNodeController(PcsNodeController):
                 time.sleep(const.NODE_POWERON_DELAY)
             start_status =  super().start(node_id, **op_kwargs)
             # TODO: Move this to base class after during stop stonith is disabled for VM as well.
-            start_status = json.loads(start_status)
-            if start_status["status"] == const.STATUSES.SUCCEEDED.value:
+            start_status_json = json.loads(start_status)
+            if start_status_json["status"] == const.STATUSES.SUCCEEDED.value:
                 self._execute.run_cmd(const.ENABLE_STONITH.replace("<node>", node_name))
             return start_status
         except Exception as e:
