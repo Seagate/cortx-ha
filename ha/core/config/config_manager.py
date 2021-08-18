@@ -129,14 +129,15 @@ class ConfigManager:
         return Conf.get(const.HA_GLOBAL_INDEX, f"CLUSTER_MANAGER{_DELIM}env")
 
     @staticmethod
-    def get_node_name(self, node_id: str) -> str:
+    def get_node_name(node_id: str) -> str:
             """
             Get node_name(pvtfqdn) from node_id
             Args:
                 node_id (str): Node ID from cluster nodes.
             Returns: str
             """
-            nodeid_dict = self._confstore.get(f"{const.PVTFQDN_TO_NODEID_KEY}")
+            confstore = ConfigManager.get_confstore()
+            nodeid_dict = confstore.get(f"{const.PVTFQDN_TO_NODEID_KEY}")
             for key, nodeid in nodeid_dict.items():
                 if nodeid == node_id:
                     node_name = key.split('/')[-1]
