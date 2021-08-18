@@ -268,8 +268,10 @@ class SystemHealth(Subscriber):
         Produce event
         """
         healthevent.event_type = json.loads(healthvalue).get("events")[0]["status"]
-        healthevent.node_id = ConfigManager.get_node_name(str(healthevent.node_id))
+        node_id = healthevent.node_id
+        healthevent.node_id = ConfigManager.get_node_name(str(node_id))
         self.producer.publish(str(healthevent))
+        healthevent.node_id = node_id
 
     def _update(self, healthevent: HealthEvent, healthvalue: str, next_component: str=None):
         """
