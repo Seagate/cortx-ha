@@ -63,12 +63,11 @@ class PcsNodeController(NodeController, PcsController):
             # Get the node_name (pvtfqdn) from node_id
             node_name = self._get_node_name(node_id=node_id)
             self._is_node_in_cluster(node_id=node_name)
-            # TODO: Check status from system health instead of pcs below.
             node_status = self.nodes_status([node_name])[node_name]
             Log.debug(f"Node {node_name} cluster status is {node_status}")
             node_health = self._system_health.get_node_status(node_id=node_id).get("status")
             Log.debug(f"Node {node_name} health is {node_health}")
-            if node_status == NODE_STATUSES.ONLINE.value and node_health == const.HEALTH_STATUSES.ONLINE.value:
+            if node_status == NODE_STATUSES.ONLINE.value and node_health == HEALTH_STATUSES.ONLINE.value:
                 Log.debug(f"Node {node_name} is already online")
                 return {"status": const.STATUSES.SUCCEEDED.value, "output": NODE_STATUSES.ONLINE.value, "error": ""}
             elif node_status == NODE_STATUSES.STANDBY.value or node_status == NODE_STATUSES.STANDBY_WITH_RESOURCES_RUNNING.value:
@@ -102,15 +101,19 @@ class PcsNodeController(NodeController, PcsController):
                 Log.error(f"{node_name} status is {node_status}, node cannot be started.")
                 return {"status": const.STATUSES.FAILED.value, "output": "", "error": f"Node {node_id} status is {node_status}, node cannot be started."}
 
+            # TODO: Update the storage enclosure status in system health.
             # Update the node status in system health
-            event_template = self._system_health.get_health_event_template(nodeid=node_id, event_type=HEALTH_EVENTS.FAULT_RESOLVED.value)
-            health_event = HealthEvent.dict_to_object(event_template)
-            self._system_health.process_event(health_event)
-            Log.debug(f"Node health: {event_template} updated for node {node_id}")
+            self._update_health(const.COMPONENTS.NODE.value, node_id, HEALTH_EVENTS.FAULT_RESOLVED.value)
             return {"status": const.STATUSES.SUCCEEDED.value, "output": NODE_STATUSES.ONLINE.value, "error": ""}
         except Exception as e:
             Log.error(f"Failed to start node {node_id}")
             raise ClusterManagerError(f"Failed to start node {node_id}, Error {e}")
+
+    def _update_health(self, resource_type: str, resource_id: str, event_type: str):
+        event_template = self._system_health.get_health_event_template(nodeid=resource_id, event_type=event_type)
+        health_event = HealthEvent.dict_to_object(event_template)
+        self._system_health.process_event(health_event)
+        Log.debug(f"{resource_type}:{resource_id} health updated to: {event_template}")
 
     @controller_error_handler
     def stop(self, node_id: str, timeout: int, **op_kwargs) -> dict:
@@ -331,10 +334,10 @@ class PcsHWNodeController(PcsNodeController):
             node_name = self._get_node_name(node_id=node_id)
             self._is_node_in_cluster(node_id=node_name)
             power_status = self.fencing_agent.power_status(node_id=node_name)
-            if power_status == const.BMC_POWER_STATUS.OFF.value and poweron is False:
+            if power_status == const.SERVER_POWER_STATUS.OFF.value and poweron is False:
                 Log.debug(f"Node {node_name} is powered-off and poweron was not set")
                 return {"status": const.STATUSES.FAILED.value, "output": "", "error": f"Node {node_id} is powered-off, use poweron option"}
-            elif power_status == const.BMC_POWER_STATUS.OFF.value and poweron is True:
+            elif power_status == const.SERVER_POWER_STATUS.OFF.value and poweron is True:
                 self.fencing_agent.power_on(node_id=node_name)
                 Log.debug(f"Node {node_name} is powered-on, waiting for node boot")
                 time.sleep(const.NODE_POWERON_DELAY)
