@@ -14,6 +14,7 @@
 # cortx-questions@seagate.com.
 
 from enum import Enum
+from ha.util.enum_list import EnumListMeta
 
 #LOGS and config
 CORTX_VERSION_1="1"
@@ -157,6 +158,7 @@ PCS_BAN_RESOURCES="pcs resource ban <resource_id> <node>"
 PCS_CLEAR_RESOURCES="pcs resource clear <resource_id> <node>"
 LIST_PCS_RESOURCES = '/usr/sbin/crm_resource --list-raw'
 DISABLE_STONITH="pcs resource disable stonith-<node>-clone"
+ENABLE_STONITH="pcs resource enable stonith-<node>-clone"
 CHECK_PCS_STANDBY_MODE = '/usr/sbin/crm_standby --query | awk \'{print $3}\''
 GET_CLUSTER_STATUS = "crm_mon --as-xml"
 GET_ONLINE_NODES_CMD = "crm_mon --as-xml"
@@ -175,6 +177,7 @@ CLUSTER_RETRY_COUNT = 6
 BASE_WAIT_TIME = 5
 NODE_STOP_TIMEOUT = 300 # 300 sec to stop single node
 CLUSTER_STANDBY_UNSTANDBY_TIMEOUT = 600 # 600 sec to stop single node
+NODE_POWERON_DELAY = 300 # Delay after node is powered-on before cluster start
 
 # Event Analyzer
 INCLUSION = "inclusion"
@@ -318,3 +321,8 @@ class CLUSTER_STATUS(Enum):
     DEGRADED = "degraded"
     UNHEALTHY = "unhealthy"
     ONLINE = "online"
+
+class SERVER_POWER_STATUS(Enum, metaclass=EnumListMeta):
+    ON = "on"
+    OFF = "off"
+    UNKNOWN = "unknown"
