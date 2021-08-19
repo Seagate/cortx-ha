@@ -28,6 +28,7 @@ from cortx.utils.conf_store.conf_store import Conf
 from ha import const
 from ha.util.consul_kv_store import ConsulKvStore
 from ha.const import _DELIM
+from ha.core.error import HAInvalidNode
 
 # TODO: redefine class as per config manager module design
 class ConfigManager:
@@ -126,3 +127,19 @@ class ConfigManager:
         Get if system is running on VM or actual h/w.
         """
         return Conf.get(const.HA_GLOBAL_INDEX, f"CLUSTER_MANAGER{_DELIM}env")
+
+    @staticmethod
+    def get_node_name(node_id: str) -> str:
+        """
+        Get node_name(pvtfqdn) from node_id
+        Args:
+            node_id (str): Node ID from cluster nodes.
+        Returns: str
+        """
+        confstore = ConfigManager.get_confstore()
+        nodeid_dict = confstore.get(f"{const.PVTFQDN_TO_NODEID_KEY}")
+        for key, nodeid in nodeid_dict.items():
+            if nodeid == node_id:
+                node_name = key.split('/')[-1]
+                return node_name
+        raise HAInvalidNode(f"node_id {node_id} is not valid.") 
