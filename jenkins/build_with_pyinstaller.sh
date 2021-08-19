@@ -148,7 +148,6 @@ then
      cp -rf $BASE_DIR/conf/script/v1/* $HA_DIR/conf/script/
      cp -rf $BASE_DIR/conf/iostack-ha/ $HA_DIR/conf/
      cp -rf $BASE_DIR/conf/mini_provisioner/v1/setup.yaml $HA_DIR/conf/setup.yaml
-     cp -rf $BASE_DIR/conf/mini_provisioner/v1/support.yaml $HA_DIR/conf/support.yaml
 
      # Update HA path in setup
      sed -i -e "s|<HA_PATH>|${HA_PATH}/ha|g" ${HA_DIR}/conf/script/ha_setup
