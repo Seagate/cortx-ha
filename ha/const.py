@@ -63,6 +63,8 @@ HEALTH_HIERARCHY_FILE = "{}/system_health_hierarchy.json".format(CONFIG_DIR)
 IEM_SCHEMA="{}/iem_ha.json".format(CONFIG_DIR)
 SOURCE_LOGROTATE_CONF_FILE = "{}/conf/logrotate/cortx_ha_log.conf".format(SOURCE_PATH)
 LOGROTATE_CONF_DIR="/etc/logrotate.d"
+SOURCE_ACTUATOR_SCHEMA="{}/actuator_req.json".format(SOURCE_CONFIG_PATH)
+ACTUATOR_SCHEMA="{}/actuator_req.json".format(CONFIG_DIR)
 
 # IEM DESCRIPTION string: To be removed
 IEM_DESCRIPTION="WS0080010001,Node, The cluster has lost $host server. System is running in degraded mode. For more information refer the Troubleshooting guide. Extra Info: host=$host; status=$status;"
@@ -291,6 +293,25 @@ class ALERT_ATTRIBUTES:
     LOCATION = "location"
     POSITION = "position"
     HEALTH_RECOMMENDATION = "health-recommendation"
+
+# TBD combine ACTUATOR_ATTRIBUTES and ALERT_ATTRIBUTES to a single class
+# or have common class and derive both from it
+# Actuator request-response attributes
+class ACTUATOR_ATTRIBUTES(ALERT_ATTRIBUTES):
+    UUID = "uuid"
+    REQUEST_PATH = "request_path"
+    RESPONSE_DEST = "response_dest"
+    TARGET_NODE_ID ="target_node_id"
+    ACTUATOR_REQUEST_TYPE =  "actuator_request_type"
+    STORAGE_ENCLOSURE =  "storage_enclosure"
+    ENCLOSURE_REQUEST =  "enclosure_request"
+    RESOURCE = "resource"
+    COMMAND = "command"
+
+# Timout = ACTUATOR_RESP_RETRY_COUNT * ACTUATOR_RESP_WAIT_TIME
+ACTUATOR_RESP_RETRY_COUNT = 30
+ACTUATOR_RESP_WAIT_TIME = 2
+ACTUATOR_MSG_WAIT_TIME = 2
 
 # Health event attribute constants
 class EVENT_ATTRIBUTES:
