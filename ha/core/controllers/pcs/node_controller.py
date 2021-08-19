@@ -137,6 +137,7 @@ class PcsNodeController(NodeController, PcsController):
                 status = f"Node with node id {node_id} is already in offline state."
                 return {"status": const.STATUSES.SUCCEEDED.value, "output": status, "error": ""}
             elif node_status == HEALTH_STATUSES.FAILED.value:
+                # In case VM, if node is Poweroff or Disconnected, system health will be updated with status FAILED.
                 return {"status": const.STATUSES.FAILED.value, "output": "", "error": f"Node {node_id} status is {node_status}, node cannot be stopped."}
             else:
                 if self.heal_resource(node_name):
