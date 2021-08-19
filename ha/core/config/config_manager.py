@@ -142,4 +142,4 @@ class ConfigManager:
             if nodeid == node_id:
                 node_name = key.split('/')[-1]
                 return node_name
-        raise HAInvalidNode(f"node_id {node_id} is not valid.") 
+        raise HAInvalidNode(f"node_id {node_id} is not valid.")

@@ -195,7 +195,7 @@ class PcsNodeController(NodeController, PcsController):
         Returns:
             Dictionary : {"status": "", "msg":""}
         """
-        # Get the node_name (pvtfqdn) fron nodeid
+        # Get the node_name (pvtfqdn) fron nodeid and raise exception if node_id is not valid
         node_name = ConfigManager.get_node_name(node_id=node_id)
         node_list = self._get_node_list()
         offline_nodes = self._get_offline_nodes()
@@ -310,12 +310,12 @@ class PcsVMNodeController(PcsNodeController):
                 elif stop_status["status"] == const.STATUSES.FAILED.value:
                     # Node is in failed state.
                     return stop_status
-            Log.info(f"Please Wait, trying to stop node with node_id : {node_id}")
-            # TODO: EOS-23859 : Use PCS_STOP_NODE from const.py with timeout value
-            self._execute.run_cmd(f"pcs cluster stop {node_name} --force")
-            Log.info(f"Executed node stop for node {node_id}, Waiting to stop resource")
-            time.sleep(const.BASE_WAIT_TIME)
-            status = f"Stop for node {node_id} is in progress, waiting to stop resource"
+
+            # Put node in standby mode
+            self._execute.run_cmd(const.PCS_NODE_STANDBY.replace("<node>", node_name), f" --wait={const.CLUSTER_STANDBY_UNSTANDBY_TIMEOUT}")
+            Log.info(f"Executed node standby for node {node_id}")
+            # TODO: EOS-23859 : STOP NODE - Use PCS_STOP_NODE from const.py with timeout value
+            status = f"Standby for node {node_id} is in progress"
 
             # Update node health
             # TODO : Health event update to be removed once fault_tolerance branch is merged
