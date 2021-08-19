@@ -21,6 +21,7 @@
 
 import ast
 import json
+from ha import const
 from ha.core.config.config_manager import ConfigManager
 from ha.execute import SimpleCommand
 from ha.util.fencing_agent import FencingAgent
@@ -67,7 +68,42 @@ class IpmiFencingAgent(FencingAgent):
         Args:
             node_id (str): Node ID from cluster nodes.
         """
-        pass
+        try:
+            bmc_info = self._confstore.get(f"{IpmiFencingAgent.NODE_BMC_INFO_KEY}/node/{node_id}")
+            if bmc_info is not None:
+                _, value = bmc_info.popitem()
+                bmc_info_dict = ast.literal_eval(value)
+                self._execute.run_cmd(f"ipmitool -I lanplus -H {bmc_info_dict[IpmiFencingAgent.IPMI_IPADDR]} "
+                                      f"-U {bmc_info_dict[IpmiFencingAgent.IPMI_USER]} "
+                                      f"-P {bmc_info_dict[IpmiFencingAgent.IPMI_AUTH_KEY]} chassis power on")
+        except Exception as e:
+            raise Exception(f"Failed to run IPMItool Command. Error : {e}")
+
+    def power_status(self, node_id: str) -> str:
+        """
+        Get power status of node with nodeid
+
+        Args:
+            node_id (str): Node ID from cluster nodes.
+        """
+        try:
+            bmc_info = self._confstore.get(f"{IpmiFencingAgent.NODE_BMC_INFO_KEY}/node/{node_id}")
+            if bmc_info is not None:
+                _, value = bmc_info.popitem()
+                bmc_info_dict = ast.literal_eval(value)
+                _output, _err, _rc = self._execute.run_cmd(f"ipmitool -I lanplus -H {bmc_info_dict[IpmiFencingAgent.IPMI_IPADDR]} "
+                                         f"-U {bmc_info_dict[IpmiFencingAgent.IPMI_USER]} "
+                                         f"-P {bmc_info_dict[IpmiFencingAgent.IPMI_AUTH_KEY]} chassis power status")
+                if _rc != 0:
+                    raise Exception(f"Failed to run IPMItool Command. Error : {_err}")
+                if const.SERVER_POWER_STATUS.ON.value in _output.lower():
+                    return const.SERVER_POWER_STATUS.ON.value
+                elif const.SERVER_POWER_STATUS.OFF.value in _output.lower():
+                    return const.SERVER_POWER_STATUS.OFF.value
+                else:
+                    return const.SERVER_POWER_STATUS.UNKNOWN.value
+        except Exception as e:
+            raise Exception(f"Failed to run IPMItool Command. Error : {e}")
 
     def setup_ipmi_credentials(self, ipmi_ipaddr: str, ipmi_user: str, ipmi_password: str, node_name: str):
         """

@@ -68,7 +68,7 @@ class CONSUMER_STATUS:
 class MessageBusConsumer:
 
     def __init__(self, consumer_id: int, consumer_group: str, message_type: str,
-                callback: Callable, auto_ack: bool, offset: str):
+                callback: Callable, auto_ack: bool, offset: str, timeout: int):
         """
         Initalize consumer.
 
@@ -87,6 +87,7 @@ class MessageBusConsumer:
         self.message_type = message_type
         self.auto_ack = auto_ack
         self.offset = offset
+        self.timeout = timeout
 
     def run(self):
         """
@@ -102,14 +103,14 @@ class MessageBusConsumer:
         7. If callback return any exception then it will be swallowed and retry again without ack.
         8. Closing main thread will close this thread as it is running as deamon.
 
-        As self.consumer.receive(timeout=0) is block call t1.join() will not stop thread.
+        As self.consumer.receive(timeout) is block call t1.join() will not stop thread.
         Stop thread by completing work as per above cases.
         """
         retry = False
         while not self.stop_thread:
             try:
                 if not retry:
-                    message = self.consumer.receive(timeout=0)
+                    message = self.consumer.receive(self.timeout)
                 status = self.callback(message)
                 if status == CONSUMER_STATUS.SUCCESS:
                     self.consumer.ack()
@@ -149,7 +150,7 @@ class MessageBus:
 
     @staticmethod
     def get_consumer(consumer_id: int, consumer_group: str, message_type: str,
-                callback: Callable, auto_ack: bool = False, offset: str = "earliest") -> MessageBusConsumer:
+                callback: Callable, auto_ack: bool = False, offset: str = "earliest", timeout: int = 0) -> MessageBusConsumer:
         """
         Get consumer.
 
@@ -160,8 +161,9 @@ class MessageBus:
             callback (Callable): function to get message.
             auto_ack (bool, optional): Check auto ack. Defaults to False.
             offset (str, optional): Offset for messages. Defaults to "earliest".
+            timeout (int, optional): Max wait time for thread to wait for a message. Default: timeout is 0 and so call is blocking
         """
-        return MessageBusConsumer(consumer_id, consumer_group, message_type, callback, auto_ack, offset)
+        return MessageBusConsumer(consumer_id, consumer_group, message_type, callback, auto_ack, offset, timeout)
 
     @staticmethod
     def get_producer(producer_id: str, message_type: str, partitions: int = 1) -> MessageBusProducer:
