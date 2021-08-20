@@ -107,7 +107,12 @@ class MessageBusConsumer:
             try:
                 if not retry:
                     message = self.consumer.receive(timeout=0)
-                status = self.callback(message)
+                try:
+                    status = self.callback(message)
+                except Exception as e:
+                    Log.error(f"Caught exception from caller: {e}. retry again ...")
+                    retry = True
+                    continue
                 if status == CONSUMER_STATUS.SUCCESS:
                     self.consumer.ack()
                 elif status == CONSUMER_STATUS.FAILED_STOP:
@@ -121,7 +126,7 @@ class MessageBusConsumer:
                     continue
                 retry = False
             except Exception as e:
-                Log.error(f"Supressing exception exception {e}")
+                Log.error(f"Supressing exception from message bus {e}")
                 retry = False
 
     def start(self):
