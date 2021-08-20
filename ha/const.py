@@ -14,6 +14,7 @@
 # cortx-questions@seagate.com.
 
 from enum import Enum
+from ha.util.enum_list import EnumListMeta
 
 #LOGS and config
 CORTX_VERSION_1="1"
@@ -62,6 +63,8 @@ HEALTH_HIERARCHY_FILE = "{}/system_health_hierarchy.json".format(CONFIG_DIR)
 IEM_SCHEMA="{}/iem_ha.json".format(CONFIG_DIR)
 SOURCE_LOGROTATE_CONF_FILE = "{}/conf/logrotate/cortx_ha_log.conf".format(SOURCE_PATH)
 LOGROTATE_CONF_DIR="/etc/logrotate.d"
+SOURCE_ACTUATOR_SCHEMA="{}/actuator_req.json".format(SOURCE_CONFIG_PATH)
+ACTUATOR_SCHEMA="{}/actuator_req.json".format(CONFIG_DIR)
 
 # IEM DESCRIPTION string: To be removed
 IEM_DESCRIPTION="WS0080010001,Node, The cluster has lost $host server. System is running in degraded mode. For more information refer the Troubleshooting guide. Extra Info: host=$host; status=$status;"
@@ -157,6 +160,7 @@ PCS_BAN_RESOURCES="pcs resource ban <resource_id> <node>"
 PCS_CLEAR_RESOURCES="pcs resource clear <resource_id> <node>"
 LIST_PCS_RESOURCES = '/usr/sbin/crm_resource --list-raw'
 DISABLE_STONITH="pcs resource disable stonith-<node>-clone"
+ENABLE_STONITH="pcs resource enable stonith-<node>-clone"
 CHECK_PCS_STANDBY_MODE = '/usr/sbin/crm_standby --query | awk \'{print $3}\''
 GET_CLUSTER_STATUS = "crm_mon --as-xml"
 GET_ONLINE_NODES_CMD = "crm_mon --as-xml"
@@ -175,6 +179,7 @@ CLUSTER_RETRY_COUNT = 6
 BASE_WAIT_TIME = 5
 NODE_STOP_TIMEOUT = 300 # 300 sec to stop single node
 CLUSTER_STANDBY_UNSTANDBY_TIMEOUT = 600 # 600 sec to stop single node
+NODE_POWERON_DELAY = 300 # Delay after node is powered-on before cluster start
 
 # Event Analyzer
 INCLUSION = "inclusion"
@@ -287,6 +292,25 @@ class ALERT_ATTRIBUTES:
     POSITION = "position"
     HEALTH_RECOMMENDATION = "health-recommendation"
 
+# TBD combine ACTUATOR_ATTRIBUTES and ALERT_ATTRIBUTES to a single class
+# or have common class and derive both from it
+# Actuator request-response attributes
+class ACTUATOR_ATTRIBUTES(ALERT_ATTRIBUTES):
+    UUID = "uuid"
+    REQUEST_PATH = "request_path"
+    RESPONSE_DEST = "response_dest"
+    TARGET_NODE_ID ="target_node_id"
+    ACTUATOR_REQUEST_TYPE =  "actuator_request_type"
+    STORAGE_ENCLOSURE =  "storage_enclosure"
+    ENCLOSURE_REQUEST =  "enclosure_request"
+    RESOURCE = "resource"
+    COMMAND = "command"
+
+# Timout = ACTUATOR_RESP_RETRY_COUNT * ACTUATOR_RESP_WAIT_TIME
+ACTUATOR_RESP_RETRY_COUNT = 30
+ACTUATOR_RESP_WAIT_TIME = 2
+ACTUATOR_MSG_WAIT_TIME = 2
+
 # Health event attribute constants
 class EVENT_ATTRIBUTES:
     EVENT_ID = "event_id"
@@ -318,3 +342,8 @@ class CLUSTER_STATUS(Enum):
     DEGRADED = "degraded"
     UNHEALTHY = "unhealthy"
     ONLINE = "online"
+
+class SERVER_POWER_STATUS(Enum, metaclass=EnumListMeta):
+    ON = "on"
+    OFF = "off"
+    UNKNOWN = "unknown"

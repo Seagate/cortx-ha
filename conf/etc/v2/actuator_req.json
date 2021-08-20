@@ -1,0 +1,33 @@
+{
+    "title": "SSPL-LL Actuator Request",
+    "description": "Seagate Storage Platform Library - Actuator Request",
+    "username": "sspl-ll",
+    "expires": 3600,
+    "signature": "None",
+    "time": "",
+    "message": {
+        "sspl_ll_debug": {
+            "debug_component": "sensor",
+            "debug_enabled": true
+        },
+        "sspl_ll_msg_header": {
+            "msg_version": "1.0.0",
+            "uuid": "16476007-a739-4785-b5c7-f3de189cdf9d",
+            "schema_version": "1.0.0",
+            "sspl_version": "2.0.0"
+        },
+        "request_path": {
+            "site_id": "",
+            "rack_id": "",
+            "node_id": ""
+        },
+        "response_dest": {},
+        "target_node_id": "",
+        "actuator_request_type": {
+            "storage_enclosure": {
+                "enclosure_request": "ENCL: enclosure:fru:controller:shutdown",
+                "resource": "*"
+            }
+        }
+    }
+}
