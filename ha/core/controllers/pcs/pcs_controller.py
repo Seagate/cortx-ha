@@ -232,16 +232,3 @@ class PcsController(ElementController):
             return True
         raise HAInvalidNode(f"The node {node_id} is not present in the cluster.")
 
-    def _get_node_name(self, node_id: str) -> str:
-        """
-        Get node_name(pvtfqdn) from node_id
-        Args:
-            node_id (str): Node ID from cluster nodes.
-        Returns: str
-        """
-        nodeid_dict = self._confstore.get(f"{const.PVTFQDN_TO_NODEID_KEY}")
-        for key, nodeid in nodeid_dict.items():
-            if nodeid == node_id:
-                node_name = key.split('/')[-1]
-                return node_name
-        raise ClusterManagerError(f"Failed to get node_name for nodeid: {node_id} from conf_store")
