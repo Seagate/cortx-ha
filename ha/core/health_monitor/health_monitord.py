@@ -108,7 +108,7 @@ class HealthMonitorService:
             return CONSUMER_STATUS.SUCCESS
         except Exception as e:
             Log.error(f"Failed to process {message} error: {e} {traceback.format_exc()}")
-            raise HealthMonitorError(f"Failed to process {message} error: {e} {traceback.format_exc()}")
+            return CONSUMER_STATUS.FAILED
 
     def run(self):
         """
