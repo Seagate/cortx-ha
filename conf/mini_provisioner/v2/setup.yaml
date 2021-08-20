@@ -63,5 +63,3 @@ ha:
         cmd: /opt/seagate/cortx/ha/bin/ha_setup restore
         args: --location $URL
 
-support_bundle:
-    - cortx support_bundle create
