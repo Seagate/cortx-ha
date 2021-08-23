@@ -872,7 +872,7 @@ class ResetCmd(Cmd):
 
             self._remove_logs(older_logs)
         except Exception as e:
-            Log.error(f"Cluster reset command failed. Error: {e}")
+            sys.stderr.write(f"Cluster reset command failed. {traceback.format_exc()}, Error: {e}\n")
             raise HaResetException("Cluster reset failed")
 
     def _remove_logs(self, logs: list):
