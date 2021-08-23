@@ -190,7 +190,6 @@ COMPONENT = "component"
 MODULE = "module"
 RESOURCE_TYPE = "resource_type"
 STONITH_AUTH_TYPE = 'PASSWORD'
-logger_utility_iec_cmd="logger -i -p local3.err"
 
 class STATUSES(Enum):
     IN_PROGRESS = "InProgress"
