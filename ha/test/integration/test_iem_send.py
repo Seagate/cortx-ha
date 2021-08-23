@@ -25,11 +25,6 @@ import json
 import traceback
 
 from cortx.utils.message_bus import MessageConsumer
-from cortx.utils.message_bus import MessageBusAdmin
-from cortx.utils.message_bus.error import MessageBusError
-from cortx.utils.message_bus import MessageProducer
-
-
 
 if __name__ == '__main__':
     consumer = MessageConsumer(consumer_id="1",

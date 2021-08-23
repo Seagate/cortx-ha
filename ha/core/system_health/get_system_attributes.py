@@ -23,8 +23,6 @@ from ha.core.system_health.system_health import SystemHealth, SystemHealthManage
 from ha.core.config.config_manager import ConfigManager
 from ha.core.error import ClusterManagerError
 
-from cortx.utils.log import Log
-
 class NodeParams:
     @staticmethod
     def get_node_map(node_name: str) -> dict:
