@@ -54,11 +54,14 @@ class KVGenerator:
     # collct kvs and if all 3 values for a component are avilable, generate healthEvent
     def _update_health(self, key: str, val: str) -> None:
         """
-           Get the required uid, last_updated abd helath status value.
-           Cleans up the key. Ex: node.compute.hw.cpu.health.status will
-           be node.compute.hw.cpu. If health status value is appropriate,
-           calls the API to create health event with above and additional
-           conf index and conf store object parameters
+        Get the required uid, last_updated and helath status value.
+        Cleans up the key. Ex: node.compute.hw.cpu.health.status will
+        be node.compute.hw.cpu. If health status value is appropriate,
+        calls the API to create health event with above and additional
+        conf index and conf store object parameters
+        Args:
+            key (str): keys parsed and received from node health
+            val (str): value for above key
         """
         if re.search(self._filter_list[0].replace(':',''), key):
             self._uid = val
@@ -73,22 +76,24 @@ class KVGenerator:
             self._health_event.create_health_event(self._key, self._uid, self._last_modified, self._status, self._conf_index, self._conf_store)
             self._uid = self._last_modified = self._status = self._key = None
 
-    def _get_required_compute_kv(self, key=None):
+    def _get_required_compute_kv(self, key: str = None) -> None:
         """
-           The node health json structure is:
-           {
-              node: {
-                        compute: []
-                    },
-                    {
-                        storage: []
-                    }
-           }
-           This routine will help to get the all required key values from
-           confstore. Prefix: 'node_health' key: node>compute[0]
-           uid, last_updated_status and health status will be updated for
-           each compute as well as sub component of compute
-           Ex: node.compute.hw.cpu.uid CPU-0
+        The node health json structure is:
+        {
+           node: {
+                     compute: []
+                 },
+                 {
+                     storage: []
+                 }
+        }
+        This routine will help to get the all required key values from
+        confstore. Prefix: 'node_health' key: node>compute[0]
+        uid, last_updated_status and health status will be updated for
+        each compute as well as sub component of compute
+        Ex: node.compute.hw.cpu.uid CPU-0
+        Args:
+            key(str): node health key
         """
         for compute_res in self.compute_resource_list:
             if isinstance(self.compute_health_list[compute_res], dict):
@@ -98,20 +103,22 @@ class KVGenerator:
 
     def _get_required_storage_kv(self, key: str = None) -> None:
         """
-           The node health json structure is:
-           {
-              node: {
-                        compute: []
-                    },
-                    {
-                        storage: []
-                    }
-           }
-           This routine will help to get the all required key values from
-           confstore. Prefix: 'node_health' key: node>storage[0]
-           uid, last_updated_status and health status will be updated for
-           storage as well as each sub component of storage
-           Ex: node.storage.fw.logical_volume.last_updated 1626950494
+        The node health json structure is:
+        {
+           node: {
+                     compute: []
+                 },
+                 {
+                     storage: []
+                 }
+        }
+        This routine will help to get the all required key values from
+        confstore. Prefix: 'node_health' key: node>storage[0]
+        uid, last_updated_status and health status will be updated for
+        storage as well as each sub component of storage
+        Ex: node.storage.fw.logical_volume.last_updated 1626950494
+        Args:
+            key(str): node health key
         """
         for storage_res in self.storage_resource_list:
             if isinstance(self.storage_health_list[storage_res], dict):
@@ -121,21 +128,24 @@ class KVGenerator:
 
     def _parse_health_comp_dict(self, component, key: str) -> None:
         """
-           The node health json structure is:
-           {
-              node: {
-                        compute: [
-                            "hw": {
-                                "cpu": [ {"uid": CPU-0, ...}, {}, ...]
-                                }
-                            "platform_sensor": {[], [], []}
-                        ]
-                    },
-                    {
-                        storage: []
-                    }
-           }
-           This routine further handles the inside hierarchy of compute and storage.
+        The node health json structure is:
+        {
+           node: {
+                     compute: [
+                         "hw": {
+                            "cpu": [ {"uid": CPU-0, ...}, {}, ...]
+                             }
+                         "platform_sensor": {[], [], []}
+                     ]
+                 },
+                 {
+                     storage: []
+                 }
+        }
+        This routine further handles the inside hierarchy of compute and storage.
+        Args:
+            key(str): node health key
+            component(list or dict): node health component
         """
         if isinstance(component, list) and component:
             for res_comp in component:
@@ -157,8 +167,12 @@ class KVGenerator:
     # parse json and generate health events
     def generate_health(self, json_file_nm: str, conf_index, conf_store) -> None:
         """
-           Load the json strctured node health data received from Discovery module
-           to confstore and then retrives the required data using index and key
+        Load the json strctured node health data received from Discovery module
+        to confstore and then retrives the required data using index and key
+        Args:
+            json_file_nm(str): node health json file to be parsed
+            conf_index(str): index for common conf store
+            conf_store(obj): conf store object
         """
         self._conf_index = conf_index
         self._conf_store = conf_store
