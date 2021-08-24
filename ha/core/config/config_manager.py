@@ -126,3 +126,17 @@ class ConfigManager:
         Get if system is running on VM or actual h/w.
         """
         return Conf.get(const.HA_GLOBAL_INDEX, f"CLUSTER_MANAGER{_DELIM}env")
+
+    @staticmethod
+    def get_node_id(node_name: str) -> str:
+        """
+        Get node_id from node_name
+        Args:
+            node_name (str): Node name from cluster nodes.
+        Returns: str
+            node_id (str): Node ID from cluster nodes.
+        """
+        confstore = ConfigManager.get_confstore()
+        key_val  = confstore.get(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_name}")
+        _, node_id = key_val.popitem()
+        return node_id

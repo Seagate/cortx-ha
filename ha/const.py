@@ -63,8 +63,10 @@ IEM_SCHEMA="{}/iem_ha.json".format(CONFIG_DIR)
 SOURCE_LOGROTATE_CONF_FILE = "{}/conf/logrotate/cortx_ha_log.conf".format(SOURCE_PATH)
 LOGROTATE_CONF_DIR="/etc/logrotate.d"
 
-# IEM DESCRIPTION string: To be removed
+# IEM DESCRIPTION string: To be removed once EOS-21148 is complete
 IEM_DESCRIPTION="WS0080010001,Node, The cluster has lost $host server. System is running in degraded mode. For more information refer the Troubleshooting guide. Extra Info: host=$host; status=$status;"
+HA_COMPONENT="HA"
+HA_SOURCE="S"
 
 # Mini-provisioning
 CLUSTER_CONFSTORE_NODES_KEY="nodes"

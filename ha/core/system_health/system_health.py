@@ -37,6 +37,7 @@ from ha.core.cluster.const import SYSTEM_HEALTH_OUTPUT_V2, GET_SYS_HEALTH_ARGS
 from ha.core.system_health.const import CLUSTER_ELEMENTS, HEALTH_STATUSES
 from ha.core.system_health.model.health_status import StatusOutput, ComponentStatus
 from ha.core.system_health.system_health_hierarchy import HealthHierarchy
+from ha.core.config.config_manager import ConfigManager
 
 class SystemHealth(Subscriber):
     """
@@ -254,6 +255,20 @@ class SystemHealth(Subscriber):
         """
         get cluster status method. This method is for returning a status of a cluster.
         """
+
+    def get_node_map(self, node_name: str):
+        """
+        Return the node details ex cluster id , rack id etc
+        """
+        node_id = ConfigManager.get_node_id(node_name)
+
+        key = self._prepare_key(const.COMPONENTS.NODE_MAP.value, node_id=node_id)
+        node_map_val = self.healthmanager.get_key(key)
+        if node_map_val is None:
+            raise HaSystemHealthException("Failed to fetch node_map value")
+
+        node_map_dict = ast.literal_eval(node_map_val)
+        return node_map_dict
 
     def _update(self, healthevent: HealthEvent, healthvalue: str, next_component: str=None):
         """

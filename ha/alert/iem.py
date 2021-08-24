@@ -27,10 +27,11 @@ from cortx.utils.log import Log
 from ha.const import IEM_SCHEMA
 from ha.alert.const import ALERTS
 from ha.core.system_health.const import NODE_MAP_ATTRIBUTES
+from ha.core.system_health.system_health import SystemHealth
 from cortx.utils.iem_framework import EventMessage
 from cortx.utils.iem_framework.error import EventMessageError
-from ha.core.system_health.get_system_attributes import NodeParams
 from ha.const import PVTFQDN_TO_NODEID_KEY
+from ha.const import HA_COMPONENT, HA_SOURCE
 from ha.core.config.config_manager import ConfigManager
 
 class IemGenerator:
@@ -41,8 +42,16 @@ class IemGenerator:
         """
         Init IEM generator
         """
+        self._system_health = SystemHealth(ConfigManager.get_confstore())
         with open(IEM_SCHEMA, 'r') as iem_schema_file:
             self.iem_alert_data = json.load(iem_schema_file)
+
+        # TODO This can be moved to mini provisioning
+        try:
+            EventMessage.init(HA_COMPONENT, HA_SOURCE)
+        except EventMessageError as iemerror:
+            Log.error(f"Event Message Initialization Error : {iemerror}")
+
 
     def _get_node_id(self, node: str) -> str:
         '''
@@ -60,8 +69,6 @@ class IemGenerator:
            and event_type<lost/member for a node scenario>
 
            severity : severity of the event.
-           source : source (Hardware or Software) of the event
-           component : component who is generating an IEM
            event_id: unique identification of the event (like node lost or node now became member)
            module: sub-component of the module who generated an IEM
 
@@ -72,21 +79,14 @@ class IemGenerator:
         '''
         module_type = self.iem_alert_data.get(module)
         severity = module_type.get('severity').get(event_type)
-        source = module_type.get('source')
-        component = module_type.get('component')
         module = module_type.get('module')
         event_id = module_type.get('event').get(event_type).get('ID')
         desc = module_type.get('event').get(event_type).get('desc')
         description = re.sub("\$host", node, desc)
         description = re.sub("\$status", event_type, description)
-        Log.info(f'Sending an IEM for: {component}-{module} to IEM framework. Description:  {description}')
+        Log.info(f'Sending an IEM for: {HA_COMPONENT}-{module} to IEM framework. Description:  {description}')
 
-        try:
-            EventMessage.init(component, source)
-        except EventMessageError as iemerror:
-            Log.error(f"Event Message Initialization Error : {iemerror}")
-
-        node_params = NodeParams.get_node_map(node)
+        node_params = self._system_health.get_node_map(node)
 
 
         # TODO To be deleted once NODE_MAP_ATTRIBUTES.HOST_ID is avilable in this branch
