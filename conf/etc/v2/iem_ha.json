@@ -5,8 +5,8 @@
             "member": "I"
         },
         "source": "S",
-        "component": "008",
-        "module": "001",
+        "component": "HA",
+        "module": "Node",
         "event": {
             "lost":{
                 "ID": "0001",

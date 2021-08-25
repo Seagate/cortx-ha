@@ -16,15 +16,33 @@
 # cortx-questions@seagate.com.
 
 
-from ha.const import _DELIM
+"""
+Receiver script for IEMs created and sent by HA
+"""
 
-# pacemaker alerts constants
-class ALERTS:
-    REQUIRED_COMPONENT = "ha"
-    REQUIRED_EVENTS = ["node" , "resource"]
-    ALERT_FILTER_TYPE = f"alert{_DELIM}filter_type"
-    PK_ALERT_EVENT_COMPONENTS = f"alert{_DELIM}components"
-    PK_ALERT_EVENT_COMPONENT_MODULES = f"alert{_DELIM}modules"
-    PK_ALERT_EVENT_OPERATIONS = f"alert{_DELIM}operations"
+import sys
+import json
+import traceback
 
+from cortx.utils.message_bus import MessageConsumer
+
+if __name__ == '__main__':
+    consumer = MessageConsumer(consumer_id="1",
+                                consumer_group='HA',
+                                message_types=["IEM"],
+                                auto_ack=False, offset='earliest')
+
+    while True:
+        try:
+            print("In receiver")
+            message = consumer.receive(timeout=0)
+
+            msg = json.loads(message.decode('utf-8'))
+            print(f"Got a request: \n {msg} \n")
+            consumer.ack()
+
+        except Exception as e:
+            print(e)
+            print(traceback.format_exe())
+            sys.exit(0)
 
