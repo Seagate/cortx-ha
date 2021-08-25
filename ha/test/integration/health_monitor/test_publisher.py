@@ -43,7 +43,7 @@ if __name__ == '__main__':
         print("Consuming the action event")
         message_consumer = MessageBus.get_consumer(consumer_id="1",
                             consumer_group='test_publisher',
-                            message_types=[message_type])
+                            message_type=message_type)
         message = message_consumer.receive()
         print(message)
         message_consumer.ack()
