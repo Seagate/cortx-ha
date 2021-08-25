@@ -14,6 +14,7 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
+import json
 from ha import const
 
 class HealthEvent:
@@ -60,3 +61,20 @@ class HealthEvent:
             resource_id = event["resource_id"],
             specific_info = event["specific_info"]
         )
+
+    def __str__(self):
+        return json.dumps({
+            "event_id": self.event_id,
+            "event_type": self.event_type,
+            "severity": self.severity,
+            "site_id": self.site_id,
+            "rack_id": self.rack_id,
+            "cluster_id": self.cluster_id,
+            "storageset_id": self.storageset_id,
+            "node_id": self.node_id,
+            "host_id": self.host_id,
+            "resource_type": self.resource_type,
+            "timestamp": self.timestamp,
+            "resource_id": self.resource_id,
+            "specific_info": self.specific_info
+        })

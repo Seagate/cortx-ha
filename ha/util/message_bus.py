@@ -18,6 +18,7 @@
 import json
 from typing import Callable
 from threading import Thread
+from cortx.utils.log import Log
 from cortx.utils.message_bus import MessageBusAdmin
 from cortx.utils.message_bus.error import MessageBusError
 from cortx.utils.message_bus import MessageProducer
@@ -29,12 +30,10 @@ class MessageBusProducer:
     def __init__(self, producer_id: str, message_type: str, partitions: int):
         """
         Register message types with message bus.
-
         Args:
             producer_id (str): producer id.
             message_types (str): Message type.
             partitions (int, optional): No. of partitions. Defaults to 1.
-
         Raises:
             MessageBusError: Message bus error.
         """
@@ -43,7 +42,6 @@ class MessageBusProducer:
     def publish(self, message: any):
         """
         Produce message to message bus.
-
         Args:
             message (any): Message.
             If msg is dict it will be dumped as json.
@@ -71,7 +69,6 @@ class MessageBusConsumer:
                 callback: Callable, auto_ack: bool, offset: str):
         """
         Initalize consumer.
-
         Args:
             consumer_id (int): Consumer ID.
             consumer_group (str): Consumer Group.
@@ -99,7 +96,7 @@ class MessageBusConsumer:
         4. Caller received	message but failed to process and not want to retry		FAILED_STOP
         5. Caller received message and want to sop listen to message				SUCCESS_STOP
         6. If nothing is passed it will be case 2						            FAILED
-        7. If callback return any exception then it will be swallowed and retry again without ack.
+        7. Exception will be swallowed and ack.
         8. Closing main thread will close this thread as it is running as deamon.
 
         As self.consumer.receive(timeout=0) is block call t1.join() will not stop thread.
@@ -110,7 +107,12 @@ class MessageBusConsumer:
             try:
                 if not retry:
                     message = self.consumer.receive(timeout=0)
-                status = self.callback(message)
+                try:
+                    status = self.callback(message)
+                except Exception as e:
+                    Log.error(f"Caught exception from caller: {e}. retry again ...")
+                    retry = True
+                    continue
                 if status == CONSUMER_STATUS.SUCCESS:
                     self.consumer.ack()
                 elif status == CONSUMER_STATUS.FAILED_STOP:
@@ -124,12 +126,8 @@ class MessageBusConsumer:
                     continue
                 retry = False
             except Exception as e:
-                try:
-                    if message:
-                        retry = True
-                    raise MessageBusError(f"Caught exception. Error: {e}. Retry...")
-                except:
-                    pass
+                Log.error(f"Supressing exception from message bus {e}")
+                retry = False
 
     def start(self):
         self.consumer = MessageConsumer(consumer_id=str(self.consumer_id),
@@ -152,12 +150,11 @@ class MessageBus:
                 callback: Callable, auto_ack: bool = False, offset: str = "earliest") -> MessageBusConsumer:
         """
         Get consumer.
-
         Args:
             consumer_id (int): Consumer ID.
             consumer_group (str): Consumer Group.
             message_type (str): Message Type.
-            callback (Callable): function to get message.
+            callback (Callable): callback function to process message.
             auto_ack (bool, optional): Check auto ack. Defaults to False.
             offset (str, optional): Offset for messages. Defaults to "earliest".
         """
@@ -167,12 +164,10 @@ class MessageBus:
     def get_producer(producer_id: str, message_type: str, partitions: int = 1) -> MessageBusProducer:
         """
         Register message types with message bus. and get Producer.
-
         Args:
             producer_id (str): producer id.
             message_types (str): Message type.
             partitions (int, optional): No. of partitions. Defaults to 1.
-
         Raises:
             MessageBusError: Message bus error.
         """
@@ -183,7 +178,6 @@ class MessageBus:
     def register(message_type: str, partitions: int = 1):
         """
         Register message type to message bus.
-
         Args:
             message_type (str): Message type.
             partitions (int): Number of partition.
@@ -196,7 +190,6 @@ class MessageBus:
     def deregister(message_type: str):
         """
         Deregister message type to message bus.
-
         Args:
             message_type (str): Message type.
         """

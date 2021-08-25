@@ -28,6 +28,10 @@ rm -f ${BIN_DIR}/pcmk_alert
 rm -f /usr/local/bin/pcmk_alert
 rm -f /usr/bin/pcmk_alert
 
+rm -f ${BIN_DIR}/health_monitord
+rm -f /usr/local/bin/health_monitord
+rm -f /usr/bin/health_monitord
+
 rm -rf ${HA_INSTALL_DIR}
 
 exit 0

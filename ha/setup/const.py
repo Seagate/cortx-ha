@@ -15,14 +15,15 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-from enum import Enum
+import enum
+from ha.util.enum_list import EnumListMeta
 
-class TIMEOUT_ACTION(Enum):
+class TIMEOUT_ACTION(enum.Enum, metaclass=EnumListMeta):
     START = "start"
     STOP = "stop"
     MONITOR = "monitor"
 
-class RESOURCE(Enum):
+class RESOURCE(enum.Enum, metaclass=EnumListMeta):
     HAX = "hax"
     MOTR_CONFD = "motr-confd"
     MOTR_IOS = "motr-ios"
@@ -38,6 +39,7 @@ class RESOURCE(Enum):
     CSM_WEB = "csm-web"
     KIBANA = "kibana"
     EVENT_ANALYZER = "event_analyzer"
+    HEALTH_MONITOR = "health_monitor"
     SRV_COUNTER = "srv_counter"
     M_BUS_REST = "mbus_rest"
     UDS = "uds"
@@ -62,6 +64,7 @@ TIMEOUT_MAP = {
         RESOURCE.CSM_WEB.value: "90",
         RESOURCE.KIBANA.value: "90",
         RESOURCE.EVENT_ANALYZER.value: "90",
+        RESOURCE.HEALTH_MONITOR.value: "90",
         RESOURCE.SRV_COUNTER.value: "60",
         RESOURCE.M_BUS_REST.value: "90",
         RESOURCE.UDS.value: "90"
@@ -82,6 +85,7 @@ TIMEOUT_MAP = {
         RESOURCE.CSM_WEB.value: "90",
         RESOURCE.KIBANA.value: "90",
         RESOURCE.EVENT_ANALYZER.value: "90",
+        RESOURCE.HEALTH_MONITOR.value: "90",
         RESOURCE.SRV_COUNTER.value: "60",
         RESOURCE.M_BUS_REST.value: "90",
         RESOURCE.UDS.value: "90"
