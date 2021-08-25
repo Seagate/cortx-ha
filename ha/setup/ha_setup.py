@@ -983,7 +983,6 @@ class CleanupCmd(Cmd):
         Returns:
             None
         """
-        machine_id = self.get_machine_id()
         system_health_obj = SystemHealth(self._confstore)
         node_id = ConfigManager.get_node_id(node_name)
 
