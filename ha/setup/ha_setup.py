@@ -33,7 +33,6 @@ from ha.core.system_health.const import NODE_MAP_ATTRIBUTES
 from ha.core.system_health.const import CONFSTORE_KEY_ATTRIBUTES
 
 from ha.execute import SimpleCommand
-from ha.util.ha_utils import HaUtils
 from ha import const
 from ha.const import STATUSES
 from ha.setup.create_pacemaker_resources import create_all_resources, configure_stonith
@@ -78,7 +77,6 @@ class Cmd:
         self._execute = SimpleCommand()
         self._confstore = ConfigManager.get_confstore()
         self._cluster_manager = None
-        self._ha_utils = HaUtils()
 
     @property
     def args(self) -> str:
@@ -899,7 +897,6 @@ class CleanupCmd(Cmd):
         self._cluster_manager = CortxClusterManager(default_log_enable=False)
         self._post_install_cmd = PostInstallCmd(args=None)
 
-
     def process(self):
         """
         Process cleanup command.
@@ -910,7 +907,7 @@ class CleanupCmd(Cmd):
             nodes = self._confstore.get(const.CLUSTER_CONFSTORE_NODES_KEY)
             node_count: int = 0 if nodes is None else len(nodes)
             node_name = self.get_node_name()
-            first_in_lexicographical = self.is_first_in_lexicographical_nodes()
+            first_in_lexicographical = self.is_first_in_lexicographical_nodes(node_name)
             # Set cleanup key
             self._confstore.set(const.CLUSTER_CONFSTORE_CLEANUP_KEY + f"/{node_name}")
             # Standby
@@ -993,7 +990,7 @@ class CleanupCmd(Cmd):
         # remove it from system health
         machine_id = self.get_machine_id()
         system_health_obj = SystemHealth(self._confstore)
-        node_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}node_id")
+        node_id = ConfigManager.get_node_id(node_name)
         cluster_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}cluster_id")
         site_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}site_id")
         rack_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}rack_id")
@@ -1052,21 +1049,25 @@ class CleanupCmd(Cmd):
                                                                    cluster_id=cluster_id)
         self._confstore.update(system_health_cluster_key, None)
 
-    def is_first_in_lexicographical_nodes(self) -> bool:
+    def is_first_in_lexicographical_nodes(self, node_name:str) -> bool:
         """
         Return whether current node is first in lexicographical or not
+        Args:
+            node_name:
+
         Returns:
             True or False
+
         """
-        node_ids = self._ha_utils.get_online_nodes()
+        node_ids = ConfigManager.get_online_nodes()
         if not node_ids:
             return False
-        local_node_id, local_node_name = self._ha_utils.get_local_node()
+        local_node_id = ConfigManager.get_node_id(node_name)
         if local_node_id is None:
             return False
         # Generate and send IEM only through the highest online node in cluster.
         if node_ids[0].strip() == local_node_id.strip():
-            Log.info(f"Lexicographical node info - name: {local_node_name}, id: {local_node_id}")
+            Log.info(f"Lexicographical node id: {local_node_id}")
             return True
         return False
 
