@@ -355,7 +355,7 @@ class PcsHWNodeController(PcsNodeController):
         """
         try:
             poweron = op_kwargs.get("poweron") if op_kwargs.get("poweron") is not None else False
-            node_name = ConfigManager.get_node_name(node_id)
+            node_name = ConfigManager.get_node_name(node_id=node_id)
             self._is_node_in_cluster(node_id=node_name)
             power_status = self.fencing_agent.power_status(node_id=node_name)
             if power_status == const.SERVER_POWER_STATUS.OFF.value and poweron is False:
