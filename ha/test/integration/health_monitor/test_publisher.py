@@ -26,7 +26,7 @@ from ha.core.event_manager.event_manager import EventManager
 from ha.core.event_manager.subscribe_event import SubscribeEvent
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.event_manager.model.action_event import RecoveryActionEvent
-from ha.util.message_bus import MessageBus
+from ha.util.message_bus import MessageBus, CONSUMER_STATUS
 
 MSG = False
 
@@ -34,6 +34,7 @@ def receive(message):
     print(message)
     global MSG
     MSG = True
+    return CONSUMER_STATUS.SUCCESS_STOP
 
 if __name__ == '__main__':
     try:
