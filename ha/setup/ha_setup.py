@@ -983,20 +983,24 @@ class CleanupCmd(Cmd):
         Returns:
             None
         """
+        machine_id = self.get_machine_id()
+        system_health_obj = SystemHealth(self._confstore)
+        node_id = ConfigManager.get_node_id(node_name)
+
         # remove consul keys for current node
         self._confstore.delete(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
         # delete node_map key
         self._confstore.delete(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_name}")
-        # remove it from system health
-        machine_id = self.get_machine_id()
-        system_health_obj = SystemHealth(self._confstore)
-        node_id = ConfigManager.get_node_id(node_name)
-        cluster_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}cluster_id")
-        site_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}site_id")
-        rack_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}rack_id")
+
         # get node map id
         system_health_node_map_key = system_health_obj._prepare_key(const.COMPONENTS.NODE_MAP.value,
                                                                     node_id=node_id)
+        system_details = self._confstore.get(system_health_node_map_key)
+        cluster_id = system_details.get("cluster_id")
+        site_id = system_details.get("site_id")
+        rack_id = system_details.get("rack_id")
+
+        # remove it from system health
         self._confstore.delete(system_health_node_map_key)
         system_health_node_key = system_health_obj._prepare_key(const.COMPONENTS.NODE.value,
                                                                 cluster_id=cluster_id, site_id=site_id,
