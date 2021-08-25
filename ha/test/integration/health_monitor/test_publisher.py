@@ -18,6 +18,7 @@
 import os
 import sys
 import pathlib
+import time
 
 sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..', '..', '..'))
 
@@ -26,6 +27,13 @@ from ha.core.event_manager.subscribe_event import SubscribeEvent
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.event_manager.model.action_event import RecoveryActionEvent
 from ha.util.message_bus import MessageBus
+
+MSG = False
+
+def receive(message):
+    print(message)
+    global MSG
+    MSG = True
 
 if __name__ == '__main__':
     try:
@@ -43,10 +51,12 @@ if __name__ == '__main__':
         print("Consuming the action event")
         message_consumer = MessageBus.get_consumer(consumer_id="1",
                             consumer_group='test_publisher',
-                            message_type=message_type)
-        message = message_consumer.receive()
-        print(message)
-        message_consumer.ack()
+                            message_type=message_type, callback=receive)
+        message_consumer.start()
+        while not MSG:
+            time.sleep(2)
+            print("waiting for msg")
+        message_consumer.stop()
         unsubscribe = event_manager.unsubscribe('csm', [SubscribeEvent(resource_type, [state])])
         print(f"Unsubscribed {component}")
         print("Event Publisher test completed successfully")
