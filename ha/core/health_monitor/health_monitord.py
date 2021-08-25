@@ -37,7 +37,6 @@ from ha.util.message_bus import MessageBus
 from ha.util.message_bus import CONSUMER_STATUS
 from ha.core.config.config_manager import ConfigManager
 from ha.core.health_monitor.monitor_rules_manager import MonitorRulesManager
-from ha.core.health_monitor.error import HealthMonitorError
 
 class HealthMonitorService:
 
