@@ -30,7 +30,7 @@ import traceback
 
 from cortx.utils.log import Log
 from cortx.utils.conf_store.conf_store import Conf
-
+from cortx.utils.iem_framework import EventMessage
 from ha import const
 from ha.core.config.config_manager import ConfigManager
 from ha.core.system_health.system_health import SystemHealth
@@ -73,6 +73,8 @@ class EventAnalyzerService:
         watchers = Conf.get(const.HA_GLOBAL_INDEX, f"EVENT_ANALYZER{_DELIM}watcher")
         watcher_list: dict = {}
         for watcher in watchers:
+            # For now only one watcher is there. If others are introduced check can be
+            # implemented.
             Log.info(f"Initializing watcher {watcher}....")
             event_filter_class = Conf.get(const.HA_GLOBAL_INDEX, f"EVENT_ANALYZER{_DELIM}watcher{_DELIM}{watcher}{_DELIM}event_filter")
             event_filter_instance = EventAnalyzerService.get_class(event_filter_class)()
@@ -86,6 +88,8 @@ class EventAnalyzerService:
                 event_parser = event_parser_instance,
                 subscriber = system_health
             )
+            self._iem_watcher = watcher_list[watcher]
+            Log.error(f'$$$$$ {self._iem_watcher}')
         return watcher_list
 
     def run(self):
@@ -94,9 +98,15 @@ class EventAnalyzerService:
         """
         for watcher in self._watcher_list.keys():
             Log.info(f"Starting watcher {watcher} service for event analyzer.")
+            if self._watcher_list[watcher] == self._iem_watcher:
+                continue
             self._watcher_list[watcher].start()
         Log.info(f"Running the daemon for HA event analyzer with PID {os.getpid()}...")
         while True:
+            component = 'Manager'
+            EventMessage.subscribe(component)
+            iem_alert_message = EventMessage.receive()
+            self._iem_watcher.process_message(iem_alert_message)
             time.sleep(600)
 
 def main(argv):

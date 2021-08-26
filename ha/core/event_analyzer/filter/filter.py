@@ -124,7 +124,9 @@ class IEMFilter(Filter):
         # Get filter type and resource types list from the IEM rule file
         self.filter_type = Conf.get(const.ALERT_FILTER_INDEX, const.AlertEventConstants.IEM_FILTER_TYPE.value)
         self.components_list = Conf.get(const.ALERT_FILTER_INDEX, const.AlertEventConstants.IEM_COMPONENTS.value)
+        Log.error(self.components_list)
         self.modules_dict = Conf.get(const.ALERT_FILTER_INDEX, const.AlertEventConstants.IEM_MODULES.value)
+        Log.error(self.modules_dict)
         Log.info("IEM Filter is initialized ...")
 
     def filter_event(self, msg: str) -> bool:
@@ -135,19 +137,23 @@ class IEMFilter(Filter):
         """
         try:
             iem_required = False
-            message = json.loads(msg).get(ALERT_ATTRIBUTES.MESSAGE)
+            Log.error(f'$$$ {type(msg)}')
+            #message = json.loads(msg).get(ALERT_ATTRIBUTES.MESSAGE)
 
-            actuator_response_type = message.get(ALERT_ATTRIBUTES.ACTUATOR_RESPONSE_TYPE)
-            if actuator_response_type is not None:
-                return iem_required
+            #actuator_response_type = message.get(ALERT_ATTRIBUTES.ACTUATOR_RESPONSE_TYPE)
+            #if actuator_response_type is not None:
+            #    return iem_required
 
-            msg_type = IEMFilter.get_msg_type(message)
-            if msg_type.lower() != MESSAGETYPE.IEM.value.lower():
-                return iem_required
+            #msg_type = IEMFilter.get_msg_type(message)
+            #if msg_type.lower() != MESSAGETYPE.IEM.value.lower():
+            #    return iem_required
 
-            sensor_response_type = message.get(ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE)
-            component_type = sensor_response_type[ALERT_ATTRIBUTES.SPECIFIC_INFO][ALERT_ATTRIBUTES.COMPONENT]
-            module_type = sensor_response_type[ALERT_ATTRIBUTES.SPECIFIC_INFO][ALERT_ATTRIBUTES.MODULE]
+            #sensor_response_type = message.get(ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE)
+            #component_type = sensor_response_type[ALERT_ATTRIBUTES.SPECIFIC_INFO][ALERT_ATTRIBUTES.COMPONENT]
+            #module_type = sensor_response_type[ALERT_ATTRIBUTES.SPECIFIC_INFO][ALERT_ATTRIBUTES.MODULE]
+
+            component_type = msg.get('iem').get('source').get('component')
+            module_type = msg.get('iem').get('source').get('module')
 
             if self.filter_type == const.INCLUSION:
                 if component_type in self.components_list and module_type in self.modules_dict.get(component_type):
@@ -158,7 +164,8 @@ class IEMFilter(Filter):
                         component_type):
                     iem_required = True
 
-            event_id = message.get(ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE).get(ALERT_ATTRIBUTES.ALERT_ID)
+            # event_id = message.get(ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE).get(ALERT_ATTRIBUTES.ALERT_ID)
+            event_id = msg.get('iem').get('contents').get('event')
             Log.info(f"Successfully filtered event {event_id} ...")
             return iem_required
 

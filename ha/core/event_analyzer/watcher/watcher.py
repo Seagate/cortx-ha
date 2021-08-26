@@ -18,6 +18,7 @@
 import json
 import traceback
 from cortx.utils.log import Log
+from cortx.utils.iem_framework import EventMessage
 from ha.util.message_bus import MessageBus
 from ha.util.message_bus import CONSUMER_STATUS
 from ha.core.event_analyzer.filter.filter import Filter
@@ -51,10 +52,10 @@ class Watcher:
         self.parser = event_parser
         self.subscriber = subscriber
         self._validate()
-        self.consumer = MessageBus.get_consumer(consumer_id=str(self.consumer_id),
-                                consumer_group=self.consumer_group,
-                                message_type=self.message_type,
-                                callback=self.process_message)
+        #self.consumer = MessageBus.get_consumer(consumer_id=str(self.consumer_id),
+        #                        consumer_group=self.consumer_group,
+        #                        message_type=self.message_type,
+        #                        callback=self.process_message)
 
     def _validate(self) -> None:
         """
@@ -71,16 +72,17 @@ class Watcher:
         Args:
             message (str): Message received from message bus.
         """
-        try:
-            message = json.loads(message.decode('utf-8'))
-        except Exception as e:
-            Log.error(f"Invalid message {message}, sollow exception and ack it. Error: {e}")
-            return CONSUMER_STATUS.SUCCESS
+        #try:
+        #    message = json.loads(message.decode('utf-8'))
+        #except Exception as e:
+        #    Log.error(f"Invalid message {message}, sollow exception and ack it. Error: {e}")
+        #    return CONSUMER_STATUS.SUCCESS
         try:
             Log.debug(f"Captured message: {message}")
-            if self.filter.filter_event(json.dumps(message)):
+            Log.error(f"Captured message: {message}")
+            if self.filter.filter_event(message):
                 Log.info(f"Filtered Event detected: {message}")
-                event = self.parser.parse_event(json.dumps(message))
+                event = self.parser.parse_event(message)
                 try:
                     Log.info(f"Processing event {event} to subscriber...")
                     self.subscriber.process_event(event)
@@ -106,3 +108,4 @@ class Watcher:
         Start watcher to listen messages.
         """
         self.consumer.start()
+

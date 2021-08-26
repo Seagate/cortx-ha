@@ -111,28 +111,45 @@ class IEMParser(Parser):
             msg (str): Msg
         """
         try:
-            iem_alert = json.loads(msg).get(ALERT_ATTRIBUTES.MESSAGE)
+            #iem_alert = json.loads(msg).get(ALERT_ATTRIBUTES.MESSAGE)
 
             # Parse hostname and convert to node id
-            iem_description = iem_alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.INFO][ALERT_ATTRIBUTES.DESCRIPTION]
-            hostname = re.split("=", re.split(";", re.findall("host=.+", iem_description)[0])[0])[1]
-            key_val = self._confstore.get(f"{PVTFQDN_TO_NODEID_KEY}/{hostname}")
-            _, node_id = key_val.popitem()
+            #iem_description = iem_alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.INFO][ALERT_ATTRIBUTES.DESCRIPTION]
+            iem_description = msg.get('iem').get('contents').get('message')
+            # hostname = re.split("=", re.split(";", re.findall("host=.+", iem_description)[0])[0])[1]
+            hostname = msg.get('iem').get('location').get('host') # Check this
+            #key_val = self._confstore.get(f"{PVTFQDN_TO_NODEID_KEY}/{hostname}")
+            #_, node_id = key_val.popitem()
 
+            #event = {
+            #    EVENT_ATTRIBUTES.EVENT_ID : iem_alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.ALERT_ID],
+            #    EVENT_ATTRIBUTES.EVENT_TYPE : iem_alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.ALERT_TYPE],
+            #    EVENT_ATTRIBUTES.SEVERITY : iem_alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.SEVERITY],
+            #    EVENT_ATTRIBUTES.SITE_ID : iem_alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.INFO][ALERT_ATTRIBUTES.SITE_ID],
+            #    EVENT_ATTRIBUTES.RACK_ID : iem_alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.INFO][ALERT_ATTRIBUTES.RACK_ID],
+            #    EVENT_ATTRIBUTES.CLUSTER_ID : iem_alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.INFO][ALERT_ATTRIBUTES.CLUSTER_ID],
+            #    EVENT_ATTRIBUTES.STORAGESET_ID : "TBD",
+            #    EVENT_ATTRIBUTES.NODE_ID : node_id, # TODO: Temporary fix till IEM framework is available.
+            #    EVENT_ATTRIBUTES.HOST_ID : iem_alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.HOST_ID],
+            #    EVENT_ATTRIBUTES.RESOURCE_TYPE : iem_alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.SPECIFIC_INFO][ALERT_ATTRIBUTES.MODULE].lower(),
+            #    EVENT_ATTRIBUTES.TIMESTAMP : iem_alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.INFO][ALERT_ATTRIBUTES.EVENT_TIME],
+            #    EVENT_ATTRIBUTES.RESOURCE_ID : node_id,
+            #    EVENT_ATTRIBUTES.SPECIFIC_INFO : iem_alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.SPECIFIC_INFO]
+            #}
             event = {
-                EVENT_ATTRIBUTES.EVENT_ID : iem_alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.ALERT_ID],
-                EVENT_ATTRIBUTES.EVENT_TYPE : iem_alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.ALERT_TYPE],
-                EVENT_ATTRIBUTES.SEVERITY : iem_alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.SEVERITY],
-                EVENT_ATTRIBUTES.SITE_ID : iem_alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.INFO][ALERT_ATTRIBUTES.SITE_ID],
-                EVENT_ATTRIBUTES.RACK_ID : iem_alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.INFO][ALERT_ATTRIBUTES.RACK_ID],
-                EVENT_ATTRIBUTES.CLUSTER_ID : iem_alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.INFO][ALERT_ATTRIBUTES.CLUSTER_ID],
+                EVENT_ATTRIBUTES.EVENT_ID : msg.get('iem').get('contents').get('event'),
+                EVENT_ATTRIBUTES.EVENT_TYPE : "None", # Check,
+                EVENT_ATTRIBUTES.SEVERITY : msg.get('iem').get('info').get('severity'),
+                EVENT_ATTRIBUTES.SITE_ID : msg.get('iem').get('location').get('site_id'),
+                EVENT_ATTRIBUTES.RACK_ID : msg.get('iem').get('location').get('rack_id'),
+                EVENT_ATTRIBUTES.CLUSTER_ID : msg.get('iem').get('location').get('cluster_id'),
                 EVENT_ATTRIBUTES.STORAGESET_ID : "TBD",
-                EVENT_ATTRIBUTES.NODE_ID : node_id, # TODO: Temporary fix till IEM framework is available.
-                EVENT_ATTRIBUTES.HOST_ID : iem_alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.HOST_ID],
-                EVENT_ATTRIBUTES.RESOURCE_TYPE : iem_alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.SPECIFIC_INFO][ALERT_ATTRIBUTES.MODULE].lower(),
-                EVENT_ATTRIBUTES.TIMESTAMP : iem_alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.INFO][ALERT_ATTRIBUTES.EVENT_TIME],
-                EVENT_ATTRIBUTES.RESOURCE_ID : node_id,
-                EVENT_ATTRIBUTES.SPECIFIC_INFO : iem_alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.SPECIFIC_INFO]
+                EVENT_ATTRIBUTES.NODE_ID : msg.get('iem').get('location').get('node_id'),
+                EVENT_ATTRIBUTES.HOST_ID : msg.get('iem').get('location').get('host'),
+                EVENT_ATTRIBUTES.RESOURCE_TYPE : "None", #check this
+                EVENT_ATTRIBUTES.TIMESTAMP : msg.get('iem').get('info').get('event_time'),
+                EVENT_ATTRIBUTES.RESOURCE_ID : "None", #check this
+                EVENT_ATTRIBUTES.SPECIFIC_INFO : "None" # check this
             }
             # To be removed after HA starts populating IEM messages
             if event.get(EVENT_ATTRIBUTES.RESOURCE_TYPE) == CLUSTER_ELEMENTS.NODE.value and event.get(EVENT_ATTRIBUTES.SEVERITY) == EVENT_SEVERITIES.WARNING.value:
