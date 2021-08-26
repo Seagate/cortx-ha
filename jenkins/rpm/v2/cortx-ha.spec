@@ -59,6 +59,8 @@ ln -sf $HA_DIR/lib/event_analyzerd /usr/local/bin/event_analyzerd
 ln -sf $HA_DIR/lib/pcmk_alert $HA_DIR/bin/pcmk_alert
 ln -sf $HA_DIR/lib/pcmk_alert /usr/bin/pcmk_alert
 ln -sf $HA_DIR/lib/pcmk_alert /usr/local/bin/pcmk_alert
+ln -sf $HA_DIR/lib/health_monitord /usr/bin/health_monitord
+ln -sf $HA_DIR/lib/health_monitord /usr/local/bin/health_monitord
 exit 0
 
 %preun
@@ -80,6 +82,9 @@ rm -f $HA_DIR/bin/event_analyzerd 2> /dev/null;
 rm -f /usr/local/bin/pcmk_alert 2> /dev/null;
 rm -f /usr/bin/pcmk_alert 2> /dev/null;
 rm -f $HA_DIR/bin/pcmk_alert 2> /dev/null;
+rm -f /usr/local/bin/health_monitord 2> /dev/null;
+rm -f /usr/bin/health_monitord 2> /dev/null;
+rm -f $HA_DIR/bin/health_monitord 2> /dev/null;
 exit 0
 
 %clean
