@@ -986,19 +986,21 @@ class CleanupCmd(Cmd):
         system_health_obj = SystemHealth(self._confstore)
         node_id = ConfigManager.get_node_id(node_name)
 
-        # remove consul keys for current node
-        self._confstore.delete(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
-        # delete node_map key
-        self._confstore.delete(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_name}")
-
         # get node map id
         system_health_node_map_key = system_health_obj._prepare_key(const.COMPONENTS.NODE_MAP.value,
                                                                     node_id=node_id)
         system_details = self._confstore.get(system_health_node_map_key)
+        system_details_str = system_details.get(f"cortx/ha/v1{system_health_node_map_key}")
+        if system_details_str:
+            system_details = json.loads(system_details_str)
         cluster_id = system_details.get("cluster_id")
         site_id = system_details.get("site_id")
         rack_id = system_details.get("rack_id")
 
+        # remove consul keys for current node
+        self._confstore.delete(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
+        # delete node_map key
+        self._confstore.delete(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_name}")
         # remove it from system health
         self._confstore.delete(system_health_node_map_key)
         system_health_node_key = system_health_obj._prepare_key(const.COMPONENTS.NODE.value,
