@@ -295,7 +295,7 @@ class PcsVMNodeController(PcsNodeController):
             ([dict]): Return dictionary. {"status": "", "output": "", "error": ""}
                 status: Succeeded, Failed, InProgress
         """
-        return super().start(node_id, **op_kwargs)
+        return json.loads(super().start(node_id, **op_kwargs))
 
     @controller_error_handler
     def stop(self, node_id: str, timeout: int= -1, **op_kwargs) -> dict:
