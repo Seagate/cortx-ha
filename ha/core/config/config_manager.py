@@ -143,3 +143,17 @@ class ConfigManager:
                 node_name = key.split('/')[-1]
                 return node_name
         raise HAInvalidNode(f"node_id {node_id} is not valid.")
+
+    @staticmethod
+    def get_node_id(node_name: str) -> str:
+        """
+        Get node_id from node_name
+        Args:
+            node_name (str): Node name from cluster nodes.
+        Returns: str
+            node_id (str): Node ID from cluster nodes.
+        """
+        confstore = ConfigManager.get_confstore()
+        key_val  = confstore.get(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_name}")
+        _, node_id = key_val.popitem()
+        return node_id
