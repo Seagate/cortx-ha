@@ -15,12 +15,6 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-"""
- **************************************************************************************
- Description:       Generic resource agent for counting running instances of resources.
- **************************************************************************************
-"""
-
 import sys
 import traceback
 from cortx.utils.log import Log
@@ -101,6 +95,7 @@ class VipHealthMonitor(CortxServiceRA):
         nic: str = res_param["OCF_RESKEY_nic"]
         output, error, rc = self._execute.run_cmd(f"ip a s {nic}")
         if rc != 0:
+            Log.error(f"Failed to get ip address for {nic} with error {error}")
             return const.OCF_ERR_GENERIC
         status_str = output.split("\n")[0].split(" ")
         status = status_str[status_str.index("state") + 1]
@@ -141,7 +136,7 @@ def main(action: str ='') -> int:
             print(f"Usage {sys.argv[0]} [monitor] [start] [stop] [meta-data]")
             exit(0)
     except Exception as e:
-        Log.error(f"vip health check failed to perform {action}. Error: {traceback.format_exc()}")
+        Log.error(f"vip health check failed to perform {action}. Error: {traceback.format_exc()} {e}")
         return const.OCF_ERR_GENERIC
 
 if __name__ == '__main__':
