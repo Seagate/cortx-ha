@@ -100,6 +100,7 @@ class VipHealthMonitor(CortxServiceRA):
         status_str = output.split("\n")[0].split(" ")
         status = status_str[status_str.index("state") + 1]
         if status != "UP":
+            Log.error(f"VIP Health failed, {nic} is down")
             return const.OCF_ERR_GENERIC
         ip_list = []
         for line in output.split("\n"):
@@ -107,6 +108,7 @@ class VipHealthMonitor(CortxServiceRA):
                 ip = line.split()[1].split("/")[0]
                 ip_list.append(str(ip))
         if len(ip_list) < 1:
+            Log.error(f"VIP Health failed, {nic} is down")
             return const.OCF_ERR_GENERIC
         return const.OCF_SUCCESS
 
