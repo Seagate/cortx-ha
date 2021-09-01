@@ -1,5 +1,5 @@
 setuptools==36.0.1
-pyinstaller==3.5
+pyinstaller==3.6
 PyYAML==5.1.2
 argparse==1.4.0
 dataclasses==0.7
