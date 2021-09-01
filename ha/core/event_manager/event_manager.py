@@ -323,7 +323,7 @@ class EventManager:
         except Exception as e:
             raise SubscribeException(f"Failed to subscribe {component}. Error: {e}")
 
-    def unsubscribe(self, component: str, events: list, action: str = None) -> None:
+    def unsubscribe(self, component: SUBSCRIPTION_LIST, events: list, action: str = None) -> None:
         """
         Deregister the event for the specific component and the component \
         for the event using consul deletion
@@ -356,7 +356,7 @@ class EventManager:
         except Exception as e:
             raise UnSubscribeException(f"Failed to unsubscribe {component}. Error: {e}")
 
-    def get_events(self, component : str) -> list:
+    def get_events(self, component : SUBSCRIPTION_LIST) -> list:
         """
         It returns list of registered events by the requested component.
 
@@ -404,13 +404,14 @@ class EventManager:
             Log.error(f"Failed sending message for {event.resource_type}, Error: {e}")
             raise PublishException(f"Failed sending message for {event.resource_type}, Error: {e}")
 
-    def message_type(self, component: str) -> str:
+    def message_type(self, component: SUBSCRIPTION_LIST) -> str:
         """
         It returns message type name (queue name) mapped with component.
         Args:
             component (str): component name.
         """
-        component = component.value
+        if isinstance(component, SUBSCRIPTION_LIST):
+            component = component.value
         key = EVENT_MANAGER_KEYS.MESSAGE_TYPE_KEY.value.replace("<component_id>", component)
         value = None
         Log.debug(f"Fetching message type for {key}")

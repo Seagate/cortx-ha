@@ -20,7 +20,6 @@ from typing import Callable
 from threading import Thread
 from cortx.utils.log import Log
 from cortx.utils.message_bus import MessageBusAdmin
-from cortx.utils.message_bus.error import MessageBusError
 from cortx.utils.message_bus import MessageProducer
 from cortx.utils.message_bus import MessageConsumer
 
