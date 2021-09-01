@@ -205,8 +205,8 @@ class PcsClusterController(ClusterController, PcsController):
                     Log.info(f'res: {res}')
                     if res.get("status") == const.STATUSES.FAILED.value:
                         msg = res.get("error")
-                        Log.error(f"Node {node_id} : {msg}")
-                        failed_node_list.append(node_id)
+                        Log.error(f"Node {node_name} : {msg}")
+                        failed_node_list.append(node_name)
                 # Wait till all the resources get started in the sub group
                 time.sleep(const.BASE_WAIT_TIME * const.PCS_NODE_GROUP_SIZE)
         except Exception as e:

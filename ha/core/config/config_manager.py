@@ -154,6 +154,6 @@ class ConfigManager:
             node_id (str): Node ID from cluster nodes.
         """
         confstore = ConfigManager.get_confstore()
-        key_val  = confstore.get(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_name}")
+        key_val = confstore.get(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_name}")
         _, node_id = key_val.popitem()
         return node_id
