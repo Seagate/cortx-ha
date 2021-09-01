@@ -93,7 +93,6 @@ RESOURCE_TO_HEALTH_STATUS_MAPPING = {
     "DEGRADED" : HEALTH_EVENTS.DEGRADED.value,
     "UNRECOVERABLE" : HEALTH_EVENTS.UNRECOVERABLE.value,
     "NOT AVAILABLE": HEALTH_EVENTS.NOTAVAILABLE.value
-    #"DEGRADED" : HEALTH_EVENTS.FAULT.value
 }
 
 # Constants for getting health data from Discovery module
@@ -104,7 +103,7 @@ CMD_GET_MACHINE_ID = "cat /etc/machine-id"
 # Constants for storing and getting the node health data to confstore
 NODE_HEALTH_CONF_INDEX = 'node_health'
 NODE_DATA_KEY = 'node'
-NODE_COMPUTE_DATA_KEY = 'node>server[0]'
+NODE_SERVER_DATA_KEY = 'node>server[0]'
 NODE_STORAGE_DATA_KEY = 'node>storage[0]'
 
 HA_ALERT_COMPUTE_KEY = 'node.server'
@@ -122,7 +121,7 @@ HEALTH_STATUS_TO_EVENT_SEVERITY_MAPPING = {
     "NA" : EVENT_SEVERITIES.INFORMATIONAL.value,
     "N/A" : EVENT_SEVERITIES.INFORMATIONAL.value,
     "UNKNOWN" : EVENT_SEVERITIES.INFORMATIONAL.value,
-    "DEGRADED" : EVENT_SEVERITIES.ALERT.value,
+    "DEGRADED" : EVENT_SEVERITIES.WARNING.value,
     "UNRECOVERABLE": EVENT_SEVERITIES.CRITICAL.value,
     "NOT AVAILABLE": EVENT_SEVERITIES.WARNING.value
 }
