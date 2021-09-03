@@ -18,6 +18,11 @@ EVENT_ANALYZER:
             consumer_group: iem_analyzer
             event_filter: ha.core.event_analyzer.filter.filter.IEMFilter
             event_parser: ha.core.event_analyzer.parser.parser.IEMParser
+EVENT_MANAGER:
+    message_type: health_events
+    producer_id: system_health
+    consumer_group: health_monitor
+    consumer_id: 1
 SERVICE_INSTANCE_COUNTER:
 - instances: 1
   resource: motr-confd

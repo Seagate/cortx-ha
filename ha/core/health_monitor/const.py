@@ -15,25 +15,14 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-import sys
-import json
-from cortx.utils.message_bus import MessageConsumer
+import enum
+from ha.util.enum_list import EnumListMeta
 
-if __name__ == '__main__':
-    message_types = ["alerts", "health_events", "ha_event_test"] \
-        if len(sys.argv) == 1 else [sys.argv[1]]
-    consumer = MessageConsumer(consumer_id="1",
-                                consumer_group='iem_analyzer',
-                                message_types=message_types,
-                                auto_ack=False, offset='earliest')
+class HEALTH_MON_ACTIONS(enum.Enum, metaclass=EnumListMeta):
+    PUBLISH_ACT = "publish"
+    HA_ACT = "ha"
 
-    while True:
-        try:
-            print("In receiver")
-            message = consumer.receive(timeout=0)
-            msg = json.loads(message.decode('utf-8'))
-            print(msg)
-            consumer.ack()
-        except Exception as e:
-            print(e)
-            sys.exit(0)
+class HEALTH_MON_KEYS(enum.Enum, metaclass=EnumListMeta):
+    ACT_RULE = "action"
+
+HEALTH_MONITOR_LOG = "health_monitor"

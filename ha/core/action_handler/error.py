@@ -15,25 +15,15 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-import sys
-import json
-from cortx.utils.message_bus import MessageConsumer
+from ha.core.error import HA_ACTION_HANDLER_ERROR
+from ha.core.error import HAError
 
-if __name__ == '__main__':
-    message_types = ["alerts", "health_events", "ha_event_test"] \
-        if len(sys.argv) == 1 else [sys.argv[1]]
-    consumer = MessageConsumer(consumer_id="1",
-                                consumer_group='iem_analyzer',
-                                message_types=message_types,
-                                auto_ack=False, offset='earliest')
-
-    while True:
-        try:
-            print("In receiver")
-            message = consumer.receive(timeout=0)
-            msg = json.loads(message.decode('utf-8'))
-            print(msg)
-            consumer.ack()
-        except Exception as e:
-            print(e)
-            sys.exit(0)
+class HAActionHandlerError(HAError):
+    def __init__(self, desc=None):
+        """
+        Handle Action Handler error.
+        """
+        _desc = "HA Action Handler failure" if desc is None else desc
+        _message_id = HA_ACTION_HANDLER_ERROR
+        _rc = 1
+        super(HAActionHandlerError, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)

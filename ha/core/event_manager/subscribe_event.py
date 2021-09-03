@@ -15,25 +15,25 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-import sys
-import json
-from cortx.utils.message_bus import MessageConsumer
+from typing import List
+from ha.core.event_manager.resources import RESOURCE_STATUS
+from ha.core.event_manager.resources import RESOURCE_TYPES
 
-if __name__ == '__main__':
-    message_types = ["alerts", "health_events", "ha_event_test"] \
-        if len(sys.argv) == 1 else [sys.argv[1]]
-    consumer = MessageConsumer(consumer_id="1",
-                                consumer_group='iem_analyzer',
-                                message_types=message_types,
-                                auto_ack=False, offset='earliest')
+class SubscribeEvent:
+    def __init__(self, resource_type : RESOURCE_TYPES, states : List[RESOURCE_STATUS]):
+        """
+        Subscribe event object.
+        For HA state will be dict of {state: actions}
+        For Other Component states will be list.
 
-    while True:
-        try:
-            print("In receiver")
-            message = consumer.receive(timeout=0)
-            msg = json.loads(message.decode('utf-8'))
-            print(msg)
-            consumer.ack()
-        except Exception as e:
-            print(e)
-            sys.exit(0)
+        Args:
+            resource_type (str): Type of resource.
+            states (list): States
+        """
+        self.states = []
+        self.resource_type = resource_type.value \
+            if isinstance(resource_type, RESOURCE_TYPES) \
+                else resource_type
+        for state in states:
+            st = state.value if isinstance(state, RESOURCE_STATUS) else state
+            self.states.append(st)

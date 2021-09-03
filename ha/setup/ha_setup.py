@@ -368,7 +368,8 @@ class PostInstallCmd(Cmd):
             PostInstallCmd.copy_file(const.SOURCE_ALERT_FILTER_RULES_FILE, const.ALERT_FILTER_RULES_FILE)
             PostInstallCmd.copy_file(const.SOURCE_ALERT_EVENT_RULES_FILE, const.ALERT_EVENT_RULES_FILE)
             PostInstallCmd.copy_file(const.SOURCE_CLI_SCHEMA_FILE, const.CLI_SCHEMA_FILE)
-            PostInstallCmd.copy_file(const.SOURCE_SERVICE_FILE, const.SYSTEM_SERVICE_FILE)
+            PostInstallCmd.copy_file(const.SOURCE_EVENT_ANALYZER_SERVICE_FILE, const.SYSTEM_EVENT_ANALYZER_SERVICE_FILE)
+            PostInstallCmd.copy_file(const.SOURCE_HEALTH_MONITOR_SERVICE_FILE, const.SYSTEM_HEALTH_MONITOR_SERVICE_FILE)
             PostInstallCmd.copy_file(const.SOURCE_HEALTH_HIERARCHY_FILE, const.HEALTH_HIERARCHY_FILE)
             PostInstallCmd.copy_file(const.SOURCE_IEM_SCHEMA_PATH, const.IEM_SCHEMA)
             PostInstallCmd.copy_file(const.SOURCE_LOGROTATE_CONF_FILE, const.LOGROTATE_CONF_DIR)
@@ -511,6 +512,7 @@ class ConfigCmd(Cmd):
                     if node != node_name:
                         Log.info(f"Adding node {node} to Cluster {cluster_name}")
                         self._add_node(node, cluster_user, cluster_secret)
+                        self._configure_stonith(all_nodes_stonith_config, node, enable_stonith)
             else:
                 # Add node with SSH
                 self._add_node_remotely(node_name, cluster_user, cluster_secret)
@@ -523,9 +525,8 @@ class ConfigCmd(Cmd):
                 if node != node_name:
                     Log.info(f"Adding node {node} to Cluster {cluster_name}")
                     self._add_node(node, cluster_user, cluster_secret)
+                    self._configure_stonith(all_nodes_stonith_config, node, enable_stonith)
         self._execute.run_cmd(const.PCS_CLEANUP)
-        if enable_stonith:
-            self._execute.run_cmd(const.PCS_STONITH_ENABLE)
         # Create Alert if not exists
         self._alert_config.create_alert()
         Log.info("config command is successful")
@@ -863,7 +864,7 @@ class ResetCmd(Cmd):
 
             self._remove_logs(older_logs)
         except Exception as e:
-            Log.error(f"Cluster reset command failed. Error: {e}")
+            sys.stderr.write(f"Cluster reset command failed. {traceback.format_exc()}, Error: {e}\n")
             raise HaResetException("Cluster reset failed")
 
     def _remove_logs(self, logs: list):
@@ -923,6 +924,7 @@ class CleanupCmd(Cmd):
 
         except Exception as e:
             Log.error(f"Cluster cleanup command failed. Error: {e}")
+            sys.stderr.write(f"Cluster cleanup command failed. {traceback.format_exc()}, Error: {e}\n")
             raise HaCleanupException("Cluster cleanup failed")
         Log.info("cleanup command is successful")
 
