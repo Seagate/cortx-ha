@@ -1070,7 +1070,6 @@ class CleanupCmd(Cmd):
         local_node_id = ConfigManager.get_node_id(node_name)
         if local_node_id is None:
             return False
-        # Generate and send IEM only through the highest online node in cluster.
         if node_ids[0].strip() == local_node_id.strip():
             Log.info(f"Lexicographical node id: {local_node_id}")
             return True

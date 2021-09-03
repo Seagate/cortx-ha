@@ -148,6 +148,8 @@ class ConfigManager:
     def get_online_nodes():
         """
         Get list of online nodes ids.
+        Returns: list
+            node_ids (list): Online nodes from cluster
         """
         try:
             process = SimpleCommand()
