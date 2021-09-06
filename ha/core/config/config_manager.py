@@ -145,7 +145,7 @@ class ConfigManager:
         return node_id
 
     @staticmethod
-    def get_online_nodes():
+    def get_online_nodes() -> list:
         """
         Get list of online nodes ids.
         Returns: list
