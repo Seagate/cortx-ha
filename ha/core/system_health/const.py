@@ -129,6 +129,7 @@ HEALTH_STATUS_TO_EVENT_SEVERITY_MAPPING = {
 # Mapping resource_type received in health view schema to the one in alerts
 # Note: If the KV parsing output changes the strings in this mapping will need to be modified
 # [TBD] This mapping to be confirmed with SSPL
+# TODO to sync mapping of resources.py with following mapping
 RESOURCE_TYPE_MAPPING = {
     "storage.hw.controller" : "enclosure:hw:controller",
     "storage.hw.disk" : "enclosure:hw:disk ",

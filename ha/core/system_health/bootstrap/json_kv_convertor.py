@@ -198,6 +198,12 @@ class KVGenerator:
             self.server_health_list = Conf.get(NODE_HEALTH_CONF_INDEX, NODE_SERVER_DATA_KEY)
             self.storage_health_list = Conf.get(NODE_HEALTH_CONF_INDEX, NODE_STORAGE_DATA_KEY)
 
+            # TODO: Modify code to accept any level of runtime hierarchy changes
+            # Right now code expects a fixed level of hierarchy for the
+            # data points (last_modified, uid, status). Tomorrow if the level of
+            # hierarchy changes for any component (ex: maybe due to different hardware being used)
+            # it will not be able to update health for all the components.
+
             if self.server_health_list:
                 for server_component in self.server_health_list:
                     # This will form the server list as ['hw', 'sw', 'platform_sensor'] etc
