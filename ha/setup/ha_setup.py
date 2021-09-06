@@ -990,12 +990,12 @@ class CleanupCmd(Cmd):
         system_health_node_map_key = system_health_obj._prepare_key(const.COMPONENTS.NODE_MAP.value,
                                                                     node_id=node_id)
         system_details = self._confstore.get(system_health_node_map_key)
-        system_details_str = system_details.get(f"cortx/ha/v1{system_health_node_map_key}")
-        if system_details_str:
-            system_details = json.loads(system_details_str)
-        cluster_id = system_details.get("cluster_id")
-        site_id = system_details.get("site_id")
-        rack_id = system_details.get("rack_id")
+        _, value = system_details.popitem()
+        if value:
+            value = json.loads(value)
+        cluster_id = value.get("cluster_id")
+        site_id = value.get("site_id")
+        rack_id = value.get("rack_id")
 
         # remove consul keys for current node
         self._confstore.delete(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
@@ -1012,7 +1012,7 @@ class CleanupCmd(Cmd):
         if not cleanup_nodes:
             # No cleanup keys are present hence do nothing on that node
             return
-        if cleanup_nodes and len(cleanup_nodes.items()) == 1:
+        if cleanup_nodes and len(cleanup_nodes.items()) == 1 and node_name in cleanup_nodes.keys()[0]:
             # update system health hierarchy
             self.update_system_health_hierarchy(system_health_obj, site_id, rack_id, cluster_id)
         elif first_in_lexicographical:
@@ -1046,13 +1046,13 @@ class CleanupCmd(Cmd):
         system_health_rack_key = system_health_obj._prepare_key(const.COMPONENTS.RACK.value,
                                                                 rack_id=rack_id, site_id=site_id,
                                                                 cluster_id=cluster_id)
-        self._confstore.update(system_health_rack_key, None)
+        self._confstore.delete(system_health_rack_key)
         system_health_site_key = system_health_obj._prepare_key(const.COMPONENTS.SITE.value,
                                                                 site_id=site_id, cluster_id=cluster_id)
-        self._confstore.update(system_health_site_key, None)
+        self._confstore.delete(system_health_site_key)
         system_health_cluster_key = system_health_obj._prepare_key(const.COMPONENTS.CLUSTER.value,
                                                                    cluster_id=cluster_id)
-        self._confstore.update(system_health_cluster_key, None)
+        self._confstore.delete(system_health_cluster_key)
 
     def is_first_in_lexicographical_nodes(self, node_name:str) -> bool:
         """
