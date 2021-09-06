@@ -1012,7 +1012,7 @@ class CleanupCmd(Cmd):
         if not cleanup_nodes:
             # No cleanup keys are present hence do nothing on that node
             return
-        if cleanup_nodes and len(cleanup_nodes.items()) == 1 and node_name in cleanup_nodes.keys()[0]:
+        if cleanup_nodes and len(cleanup_nodes.items()) == 1 and node_name in list(cleanup_nodes.keys())[0]:
             # update system health hierarchy
             self.update_system_health_hierarchy(system_health_obj, site_id, rack_id, cluster_id)
         elif first_in_lexicographical:
