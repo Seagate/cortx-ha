@@ -18,6 +18,7 @@
 import json
 import time
 from cortx.utils.log import Log
+from cortx.utils.conf_store.conf_store import Conf
 
 from ha.core.controllers.pcs.cluster_status import PcsClusterStatus
 from ha.core.error import HAUnimplemented
@@ -157,6 +158,22 @@ class PcsClusterController(ClusterController, PcsController):
         return {"status": const.STATUSES.SUCCEEDED.value, "output": result, "error": ""}
 
     @controller_error_handler
+    def enable_stonith(self):
+        """
+        Enable stonith for HW
+        Returns:
+
+        """
+        # enable the stonith here
+        env_type = Conf.get(const.HA_GLOBAL_INDEX, f"CLUSTER_MANAGER{const._DELIM}env")
+        if env_type.lower() == const.INSTALLATION_TYPE.HW.value.lower():
+            Log.info("Enabling the stonith.")
+            self._execute.run_cmd(const.PCS_STONITH_ENABLE)
+            Log.info("Stonith enabled successfully.")
+        else:
+            Log.warn(f"Stonith is not enabled, detected {env_type} env")
+
+    @controller_error_handler
     def start(self, sync=False, timeout=120) -> dict:
         """
         Start cluster and all service.
@@ -200,6 +217,7 @@ class PcsClusterController(ClusterController, PcsController):
             raise ClusterManagerError(f"Failed to start all nodes {failed_node_list}")
         else:
             status += "All node started successfully, resource start in progress."
+            self.enable_stonith()
 
         if sync:
             timeout = timeout - const.BASE_WAIT_TIME*const.PCS_NODE_GROUP_SIZE*len(node_group)
