@@ -151,6 +151,7 @@ class ConfigManager:
         Returns: list
             node_ids (list): Online nodes from cluster
         """
+        # will be addressed in the ticket https://jts.seagate.com/browse/EOS-24729
         try:
             process = SimpleCommand()
             online_nodes_xml = process.run_cmd(const.GET_ONLINE_NODES_CMD)
