@@ -350,16 +350,23 @@ def mgmt_vip(cib_xml, push=False, **kwargs):
     """Create mgmt Virtual IP resource."""
     mgmt_vip_start = str(get_res_timeout(RESOURCE.MGMT_VIP.value, TIMEOUT_ACTION.START.value))
     mgmt_vip_stop = str(get_res_timeout(RESOURCE.MGMT_VIP.value, TIMEOUT_ACTION.STOP.value))
+    vip_health_start = str(get_res_timeout(RESOURCE.VIP_HEALTH_MONITOR.value, TIMEOUT_ACTION.START.value))
+    vip_health_stop = str(get_res_timeout(RESOURCE.VIP_HEALTH_MONITOR.value, TIMEOUT_ACTION.STOP.value))
     if "mgmt_info" not in kwargs.keys() or len(kwargs["mgmt_info"]) == 0:
         Log.warn("Management VIP is not detected in current configuration.")
     else:
         mgmt_info = kwargs["mgmt_info"]
-        output, err, rc = process.run_cmd(f"pcs -f {cib_xml} resource create {RESOURCE.MGMT_VIP.value} ocf:heartbeat:IPaddr2 \
+        output, err, rc0 = process.run_cmd(f"pcs -f {cib_xml} resource create {RESOURCE.VIP_HEALTH_MONITOR.value} ocf:seagate:vip_health_monitor \
+            vip={mgmt_info['mgmt_vip']} nic={mgmt_info['mgmt_iface']} \
+            op start timeout={vip_health_start}s interval=0s \
+            op monitor timeout=29s interval=30s \
+            op stop timeout={vip_health_stop}s interval=0s --group management_group", check_error=False)
+        output, err, rc1 = process.run_cmd(f"pcs -f {cib_xml} resource create {RESOURCE.MGMT_VIP.value} ocf:heartbeat:IPaddr2 \
             ip={mgmt_info['mgmt_vip']} cidr_netmask={mgmt_info['mgmt_netmask']} nic={mgmt_info['mgmt_iface']} iflabel=mgmt_vip \
             op start timeout={mgmt_vip_start}s interval=0s \
             op monitor timeout=29s interval=30s \
             op stop timeout={mgmt_vip_stop}s interval=0s --group management_group", check_error=False)
-        if rc != 0:
+        if rc0 != 0 or rc1 != 0:
             raise CreateResourceError(f"Mgmt vip creation failed, mgmt info: {mgmt_info}, Err: {err}")
     if push:
         cib_push(cib_xml)
