@@ -71,7 +71,7 @@ class KVGenerator:
         elif re.search(self._filter_list[2].replace(':',''), key):
             self._status = val
             # cleanup the key
-            # Previous key is node.server....health.status or node.storage....helath.status
+            # Previous key is node.server....health.status or node.storage....health.status
             # Remove node. and .health.status and form a new key as server... or storage...
             self._key = key.replace('node.', '').replace('.health.status','')
             self._health_event.create_health_event(self._key, self._uid, self._last_modified, self._status, self._conf_index, self._conf_store)
