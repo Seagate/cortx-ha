@@ -34,6 +34,7 @@ class NodeAlertMonitor(AlertMonitor):
         super(NodeAlertMonitor, self).__init__()
         self.process = SimpleCommand()
 
+    # we will move this to config manager in the code refactor : https://jts.seagate.com/browse/EOS-24729
     def _get_online_nodes(self):
         """
         Get list of online nodes ids.
