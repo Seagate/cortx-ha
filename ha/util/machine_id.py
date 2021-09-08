@@ -16,13 +16,17 @@
 # cortx-questions@seagate.com.
 
 
-import enum
 
-class EnumListMeta(enum.EnumMeta):
-    def __contains__(cls, item):
-        try:
-            cls(item)
-        except ValueError:
-            return False
-        else:
-            return True
+from ha.execute import SimpleCommand
+from cortx.utils.log import Log
+
+class MachineId():
+
+    @staticmethod
+    def get_machine_id():
+        execute = SimpleCommand()
+        command = "cat /etc/machine-id"
+        machine_id, err, rc = execute.run_cmd(command, check_error=True)
+        Log.info(f"Read machine-id. Output: {machine_id}, Err: {err}, RC: {rc}")
+        return machine_id.strip()
+

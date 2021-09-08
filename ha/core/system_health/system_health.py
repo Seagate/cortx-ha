@@ -18,15 +18,17 @@ import re
 import time
 import ast
 import json
+import uuid
 
 from cortx.utils.log import Log
+
 from ha import const
 from ha.util.message_bus import MessageBus
 from cortx.utils.conf_store.conf_store import Conf
 from ha.const import _DELIM
 from ha.core.config.config_manager import ConfigManager
 from ha.core.system_health.health_evaluators.element_health_evaluator import ElementHealthEvaluator
-from ha.core.system_health.const import NODE_MAP_ATTRIBUTES
+from ha.core.system_health.const import EVENT_SEVERITIES, NODE_MAP_ATTRIBUTES
 from ha.core.event_analyzer.subscriber import Subscriber
 from ha.core.system_health.system_health_metadata import SystemHealthComponents, SystemHealthHierarchy
 from ha.core.system_health.model.health_event import HealthEvent
@@ -39,6 +41,7 @@ from ha.core.cluster.const import SYSTEM_HEALTH_OUTPUT_V2, GET_SYS_HEALTH_ARGS
 from ha.core.system_health.const import CLUSTER_ELEMENTS, HEALTH_STATUSES
 from ha.core.system_health.model.health_status import StatusOutput, ComponentStatus
 from ha.core.system_health.system_health_hierarchy import HealthHierarchy
+from ha.core.event_manager.resources import RESOURCE_TYPES
 
 class SystemHealth(Subscriber):
     """
@@ -262,6 +265,38 @@ class SystemHealth(Subscriber):
         """
         get cluster status method. This method is for returning a status of a cluster.
         """
+        pass
+
+    def _is_update_required(self, current_health: str, updated_health: str, event: HealthEvent) -> bool:
+        """
+        Check if update is needed for system health.
+
+        Args:
+            current_health (dict): current health.
+            healthevent (HealthEvent): health event object.
+
+        Returns:
+            bool: return true if update is needed.
+        """
+        if not current_health:
+            return True
+        is_needed: bool = True
+        old_health = json.loads(current_health)
+        new_health = json.loads(updated_health)
+        old_status = old_health["events"][0]["status"]
+        new_status = new_health["events"][0]["status"]
+
+        # Common cases
+        if old_status == new_status:
+            is_needed = False
+
+        # specific cases
+        # 1. Do not overwrite node status to failed if offline already
+        if event.resource_type == RESOURCE_TYPES.NODE.value and \
+            old_status == HEALTH_STATUSES.OFFLINE.value and new_status == HEALTH_STATUSES.FAILED.value:
+            Log.info(f"Updating is not needed node is in {old_status} and received {new_status}")
+            is_needed = False
+        return is_needed
 
     def publish_event(self, healthevent: HealthEvent, healthvalue: str= ""):
         """
@@ -305,7 +340,6 @@ class SystemHealth(Subscriber):
         """
 
         # TODO: Check the user and see if allowed to update the system health.
-
         try:
             status = self.statusmapper.map_event(healthevent.event_type)
             component = SystemHealthComponents.get_component(healthevent.resource_type)
@@ -328,6 +362,7 @@ class SystemHealth(Subscriber):
                                         rack_id=healthevent.rack_id, storageset_id=healthevent.storageset_id,
                                         node_id=healthevent.node_id, server_id=healthevent.node_id,
                                         storage_id=healthevent.node_id)
+
             if current_health:
                 # Update the current health value itself.
                 updated_health = EntityHealth.read(current_health)
@@ -351,9 +386,44 @@ class SystemHealth(Subscriber):
                              'rack_id':healthevent.rack_id, 'storageset_id':healthevent.storageset_id}
 
             # Update in the store.
-            self._update(healthevent, updated_health, next_component=next_component)
-            Log.info(f"Updated health for component: {component}, Type: {component_type}, Id: {component_id}")
-
+            if self._is_update_required(current_health, updated_health, healthevent):
+                self._update(healthevent, updated_health, next_component=next_component)
+                Log.info(f"Updated health for component: {component}, Type: {component_type}, Id: {component_id}")
         except Exception as e:
             Log.error(f"Failed processing system health event with Error: {e}")
             raise HaSystemHealthException("Failed processing system health event")
+
+    def get_health_event_template(self, nodeid: str, event_type: str) -> dict:
+        """
+        Create health event
+        Args:
+            nodeid (str): nodeid
+            event_type (str): event type will be offline, online, failed
+
+        Returns:
+            dict: Return dictionary of health event
+        """
+        key = self._prepare_key(const.COMPONENTS.NODE_MAP.value, node_id=nodeid)
+        node_map_val = self.healthmanager.get_key(key)
+        if node_map_val is None:
+            raise HaSystemHealthException("Failed to fetch node_map value")
+        node_map_dict = ast.literal_eval(node_map_val)
+
+        timestamp = str(int(time.time()))
+        event_id = timestamp + str(uuid.uuid4().hex)
+        initial_event = {
+            const.EVENT_ATTRIBUTES.EVENT_ID : event_id,
+            const.EVENT_ATTRIBUTES.EVENT_TYPE : event_type,
+            const.EVENT_ATTRIBUTES.SEVERITY : EVENT_SEVERITIES.WARNING.value,
+            const.EVENT_ATTRIBUTES.SITE_ID : node_map_dict[NODE_MAP_ATTRIBUTES.SITE_ID.value],
+            const.EVENT_ATTRIBUTES.RACK_ID : node_map_dict[NODE_MAP_ATTRIBUTES.RACK_ID.value],
+            const.EVENT_ATTRIBUTES.CLUSTER_ID : node_map_dict[NODE_MAP_ATTRIBUTES.CLUSTER_ID.value],
+            const.EVENT_ATTRIBUTES.STORAGESET_ID : node_map_dict[NODE_MAP_ATTRIBUTES.STORAGESET_ID.value],
+            const.EVENT_ATTRIBUTES.NODE_ID : nodeid,
+            const.EVENT_ATTRIBUTES.HOST_ID : node_map_dict[NODE_MAP_ATTRIBUTES.HOST_ID.value],
+            const.EVENT_ATTRIBUTES.RESOURCE_TYPE : CLUSTER_ELEMENTS.NODE.value,
+            const.EVENT_ATTRIBUTES.TIMESTAMP : timestamp,
+            const.EVENT_ATTRIBUTES.RESOURCE_ID : nodeid,
+            const.EVENT_ATTRIBUTES.SPECIFIC_INFO : None
+        }
+        return initial_event

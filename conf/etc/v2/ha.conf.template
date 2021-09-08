@@ -23,6 +23,11 @@ EVENT_MANAGER:
     producer_id: system_health
     consumer_group: health_monitor
     consumer_id: 1
+ACTUATOR_MANAGER:
+    req_message_type: requests
+    resp_message_type: alerts
+    producer_id: 1
+    consumer_id: 1
 SERVICE_INSTANCE_COUNTER:
 - instances: 1
   resource: motr-confd
