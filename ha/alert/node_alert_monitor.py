@@ -34,6 +34,7 @@ class NodeAlertMonitor(AlertMonitor):
         super(NodeAlertMonitor, self).__init__()
         self.process = SimpleCommand()
 
+    # we will move this to config manager in the code refactor : https://jts.seagate.com/browse/EOS-24729
     def _get_online_nodes(self):
         """
         Get list of online nodes ids.
@@ -67,6 +68,7 @@ class NodeAlertMonitor(AlertMonitor):
         # Get online nodeids from corosync.
         nodes_ids = self._get_online_nodes()
         local_node_id, local_node_name = self._get_local_node()
+
         # Generate and send IEM only through the highest online node in cluster.
         if nodes_ids[-1].strip() == local_node_id.strip():
             self.iem.generate_iem(self.crm_env["CRM_alert_node"], self.alert_event_module, self.alert_event_type)

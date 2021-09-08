@@ -22,12 +22,15 @@
  ****************************************************************************
 """
 
+import xml.etree.ElementTree as ET
+
 from cortx.utils.log import Log
 from cortx.utils.conf_store.conf_store import Conf
 
 from ha import const
 from ha.util.consul_kv_store import ConsulKvStore
 from ha.const import _DELIM
+from ha.execute import SimpleCommand
 
 # TODO: redefine class as per config manager module design
 class ConfigManager:
@@ -126,3 +129,43 @@ class ConfigManager:
         Get if system is running on VM or actual h/w.
         """
         return Conf.get(const.HA_GLOBAL_INDEX, f"CLUSTER_MANAGER{_DELIM}env")
+
+    @staticmethod
+    def get_node_id(node_name: str) -> str:
+        """
+        Get node_id from node_name
+        Args:
+            node_name (str): Node name from cluster nodes.
+        Returns: str
+            node_id (str): Node ID from cluster nodes.
+        """
+        confstore = ConfigManager.get_confstore()
+        key_val = confstore.get(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_name}")
+        _, node_id = key_val.popitem()
+        return node_id
+
+    @staticmethod
+    def get_online_nodes() -> list:
+        """
+        Get list of online nodes ids.
+        Returns: list
+            node_ids (list): Online nodes from cluster
+        """
+        # will be addressed in the ticket https://jts.seagate.com/browse/EOS-24729
+        try:
+            process = SimpleCommand()
+            online_nodes_xml = process.run_cmd(const.GET_ONLINE_NODES_CMD)
+            # create element tree object
+            root = ET.fromstring(online_nodes_xml[0])
+            nodes_ids = []
+            # iterate news items
+            for item in root.findall('nodes'):
+                # iterate child elements of item
+                for child in item:
+                    if child.attrib['online'] == 'true':
+                        nodes_ids.append(child.attrib['id'])
+            Log.info(f"List of online node ids in cluster in sorted ascending order: {sorted(nodes_ids)}")
+            return sorted(nodes_ids)
+        except Exception as e:
+            Log.info(f"Found error in getting online node : {e}")
+            return []

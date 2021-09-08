@@ -902,10 +902,14 @@ class CleanupCmd(Cmd):
         Process cleanup command.
         """
         Log.info("Processing cleanup command")
+        node_name = None
         try:
             nodes = self._confstore.get(const.CLUSTER_CONFSTORE_NODES_KEY)
             node_count: int = 0 if nodes is None else len(nodes)
             node_name = self.get_node_name()
+            first_in_lexicographical = self.is_first_in_lexicographical_nodes(node_name)
+            # Set cleanup key
+            self._confstore.set(const.CLUSTER_CONFSTORE_CLEANUP_KEY + f"/{node_name}")
             # Standby
             standby_output: str = self._cluster_manager.node_controller.standby(node_name)
             if json.loads(standby_output).get("status") == STATUSES.FAILED.value:
@@ -922,7 +926,7 @@ class CleanupCmd(Cmd):
             else:
                 # Destroy
                 self._cluster_manager.cluster_controller.destroy_cluster()
-                self._confstore.delete(recurse=True)
+                self.remove_consul_keys(node_name, first_in_lexicographical)
 
             # Delete the config file
             self.remove_config_files()
@@ -931,6 +935,8 @@ class CleanupCmd(Cmd):
                 self._post_install_cmd.process()
 
         except Exception as e:
+            Log.error(f"Deleting node cleanup key from consul for node {node_name}")
+            self._confstore.delete(const.CLUSTER_CONFSTORE_CLEANUP_KEY + f"/{node_name}")
             Log.error(f"Cluster cleanup command failed. Error: {e}")
             raise HaCleanupException("Cluster cleanup failed")
         Log.info("cleanup command is successful")
@@ -966,6 +972,108 @@ class CleanupCmd(Cmd):
 
         for file in files:
             CleanupCmd.remove_file(file)
+
+    def remove_consul_keys(self, node_name:str, first_in_lexicographical:bool = False) -> None:
+        """
+        Remove consul keys for the node
+        Args:
+            node_name:
+            first_in_lexicographical:
+
+        Returns:
+            None
+        """
+        system_health_obj = SystemHealth(self._confstore)
+        node_id = ConfigManager.get_node_id(node_name)
+
+        # get node map id
+        system_health_node_map_key = system_health_obj._prepare_key(const.COMPONENTS.NODE_MAP.value,
+                                                                    node_id=node_id)
+        system_details = self._confstore.get(system_health_node_map_key)
+        _, value = system_details.popitem()
+        if value:
+            value = json.loads(value)
+        cluster_id = value.get("cluster_id")
+        site_id = value.get("site_id")
+        rack_id = value.get("rack_id")
+
+        # remove consul keys for current node
+        self._confstore.delete(f"{const.CLUSTER_CONFSTORE_NODES_KEY}/{node_name}")
+        # delete node_map key
+        self._confstore.delete(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_name}")
+        # remove it from system health
+        self._confstore.delete(system_health_node_map_key)
+        system_health_node_key = system_health_obj._prepare_key(const.COMPONENTS.NODE.value,
+                                                                cluster_id=cluster_id, site_id=site_id,
+                                                                rack_id=rack_id, node_id=node_id)
+        self._confstore.delete(system_health_node_key)
+        # check cleanup keys for system health hierarchy
+        cleanup_nodes = self._confstore.get(const.CLUSTER_CONFSTORE_CLEANUP_KEY)
+        if not cleanup_nodes:
+            # No cleanup keys are present hence do nothing on that node
+            return
+        if cleanup_nodes and len(cleanup_nodes.items()) == 1 and node_name in list(cleanup_nodes.keys())[0]:
+            # update system health hierarchy
+            self.update_system_health_hierarchy(system_health_obj, site_id, rack_id, cluster_id)
+        elif first_in_lexicographical:
+            # wait till there is only one key
+            while True:
+                cleanup_nodes = self._confstore.get(const.CLUSTER_CONFSTORE_CLEANUP_KEY)
+                if not cleanup_nodes:
+                    # No cleanup keys are present hence return
+                    return
+                if cleanup_nodes is not None and len(cleanup_nodes.items()) == 1:
+                    break
+            # update system health hierarchy
+            self.update_system_health_hierarchy(system_health_obj, site_id, rack_id, cluster_id)
+        # delete the cleanup key
+        self._confstore.delete(const.CLUSTER_CONFSTORE_CLEANUP_KEY + f"/{node_name}")
+
+    def update_system_health_hierarchy(self, system_health_obj, rack_id, site_id, cluster_id):
+        """
+        Update system health hierarchy
+        Args:
+            system_health_obj: SystemHealth object
+            rack_id: Rack ID
+            site_id: Site ID
+            cluster_id: Cluster ID
+
+        Returns:
+            None
+
+        """
+        # update system health hierarchy
+        system_health_rack_key = system_health_obj._prepare_key(const.COMPONENTS.RACK.value,
+                                                                rack_id=rack_id, site_id=site_id,
+                                                                cluster_id=cluster_id)
+        self._confstore.delete(system_health_rack_key)
+        system_health_site_key = system_health_obj._prepare_key(const.COMPONENTS.SITE.value,
+                                                                site_id=site_id, cluster_id=cluster_id)
+        self._confstore.delete(system_health_site_key)
+        system_health_cluster_key = system_health_obj._prepare_key(const.COMPONENTS.CLUSTER.value,
+                                                                   cluster_id=cluster_id)
+        self._confstore.delete(system_health_cluster_key)
+
+    def is_first_in_lexicographical_nodes(self, node_name:str) -> bool:
+        """
+        Return whether current node is first in lexicographical or not
+        Args:
+            node_name:
+
+        Returns:
+            True or False
+
+        """
+        node_ids = ConfigManager.get_online_nodes()
+        if not node_ids:
+            return False
+        local_node_id = ConfigManager.get_node_id(node_name)
+        if local_node_id is None:
+            return False
+        if node_ids[0].strip() == local_node_id.strip():
+            Log.info(f"Lexicographical node id: {local_node_id}")
+            return True
+        return False
 
 class BackupCmd(Cmd):
     """
