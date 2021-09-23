@@ -60,6 +60,9 @@ class EventAnalyzerService:
         system_health = SystemHealth(confstore)
         # Initalize watcher
         self._watcher_list: dict = self._initalize_watcher(system_health)
+        # Initialize manager component
+        EventMessage.init(MANAGER_COMPONENT, HA_SOURCE)
+        EventMessage.subscribe(MANAGER_COMPONENT)
 
     def _initalize_watcher(self, system_health: SystemHealth) -> dict:
         """
@@ -100,12 +103,9 @@ class EventAnalyzerService:
             self._watcher_list[watcher].start()
         Log.info(f"Running the daemon for HA event analyzer with PID {os.getpid()}...")
         while True:
-            EventMessage.init(MANAGER_COMPONENT, HA_SOURCE)
-            EventMessage.subscribe(MANAGER_COMPONENT)
             _message = EventMessage.receive()
             if self._iem_watcher and _message and _message.get("message_type") == IEM_MESSAGE_TYPE:
                 self._iem_watcher.process_message(_message)
-
             time.sleep(600)
 
 def main(argv):
