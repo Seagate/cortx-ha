@@ -111,6 +111,7 @@ class IEMParser(Parser):
             msg (str): Msg
         """
         try:
+
             iem_alert = json.loads(msg).get(ALERT_ATTRIBUTES.MESSAGE)
 
             # Parse hostname and convert to node id
@@ -134,9 +135,6 @@ class IEMParser(Parser):
                 EVENT_ATTRIBUTES.RESOURCE_ID : node_id,
                 EVENT_ATTRIBUTES.SPECIFIC_INFO : iem_alert[ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.SPECIFIC_INFO]
             }
-            # To be removed after HA starts populating IEM messages
-            if event.get(EVENT_ATTRIBUTES.RESOURCE_TYPE) == CLUSTER_ELEMENTS.NODE.value and event.get(EVENT_ATTRIBUTES.SEVERITY) == EVENT_SEVERITIES.WARNING.value:
-                event[EVENT_ATTRIBUTES.EVENT_TYPE] = HEALTH_EVENTS.FAILED.value
 
             Log.debug(f"Parsed {event} schema")
             health_event = HealthEvent.dict_to_object(event)

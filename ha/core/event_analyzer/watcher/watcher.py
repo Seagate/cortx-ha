@@ -51,10 +51,10 @@ class Watcher:
         self.parser = event_parser
         self.subscriber = subscriber
         self._validate()
-        self.consumer = MessageBus.get_consumer(consumer_id=str(self.consumer_id),
-                                consumer_group=self.consumer_group,
-                                message_type=self.message_type,
-                                callback=self.process_message)
+        self.consumer = MessageBus.get_consumer(consumer_id=self.consumer_id,
+                               consumer_group=self.consumer_group,
+                               message_type=self.message_type,
+                               callback=self.process_message)
 
     def _validate(self) -> None:
         """
@@ -78,6 +78,7 @@ class Watcher:
             return CONSUMER_STATUS.SUCCESS
         try:
             Log.debug(f"Captured message: {message}")
+
             if self.filter.filter_event(json.dumps(message)):
                 Log.info(f"Filtered Event detected: {message}")
                 event = self.parser.parse_event(json.dumps(message))

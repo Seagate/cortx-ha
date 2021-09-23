@@ -68,6 +68,10 @@ ACTUATOR_SCHEMA="{}/actuator_req.json".format(CONFIG_DIR)
 
 # IEM DESCRIPTION string: To be removed
 IEM_DESCRIPTION="WS0080010001,Node, The cluster has lost $host server. System is running in degraded mode. For more information refer the Troubleshooting guide. Extra Info: host=$host; status=$status;"
+HA_COMPONENT="HA"
+HA_SOURCE="S"
+MANAGER_COMPONENT="Manager"
+IEM_MESSAGE_TYPE="iem"
 
 # Mini-provisioning
 CLUSTER_CONFSTORE_NODES_KEY="nodes"

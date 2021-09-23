@@ -30,12 +30,13 @@ import traceback
 
 from cortx.utils.log import Log
 from cortx.utils.conf_store.conf_store import Conf
+from cortx.utils.iem_framework import EventMessage
 
 from ha import const
 from ha.core.config.config_manager import ConfigManager
 from ha.core.system_health.system_health import SystemHealth
 from ha.core.event_analyzer.watcher.watcher import Watcher
-from ha.const import _DELIM
+from ha.const import _DELIM, IEM_MESSAGE_TYPE, HA_SOURCE, MANAGER_COMPONENT
 
 class EventAnalyzerService:
 
@@ -86,6 +87,8 @@ class EventAnalyzerService:
                 event_parser = event_parser_instance,
                 subscriber = system_health
             )
+            if watcher == IEM_MESSAGE_TYPE:
+                self._iem_watcher = watcher_list[watcher]
         return watcher_list
 
     def run(self):
@@ -97,6 +100,12 @@ class EventAnalyzerService:
             self._watcher_list[watcher].start()
         Log.info(f"Running the daemon for HA event analyzer with PID {os.getpid()}...")
         while True:
+            EventMessage.init(MANAGER_COMPONENT, HA_SOURCE)
+            EventMessage.subscribe(MANAGER_COMPONENT)
+            _message = EventMessage.receive()
+            if self._iem_watcher and _message and _message.get("message_type") == IEM_MESSAGE_TYPE:
+                self._iem_watcher.process_message(_message)
+
             time.sleep(600)
 
 def main(argv):

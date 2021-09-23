@@ -26,9 +26,11 @@ from ha.const import ALERT_ATTRIBUTES
 from ha.core.event_analyzer.event_analyzer_exceptions import EventFilterException
 from ha.core.event_analyzer.event_analyzer_exceptions import InvalidFilterRules
 
+
 class MESSAGETYPE(Enum):
     ALERT = "ALERT"
     IEM = "IEM"
+
 
 class Filter(metaclass=abc.ABCMeta):
     """ Base class to filter alert """
@@ -37,7 +39,7 @@ class Filter(metaclass=abc.ABCMeta):
         """
         Load filter rules.
         """
-        #Loads alert filter rules in the configuration
+        # Loads alert filter rules in the configuration
         ConfigManager.load_filter_rules()
 
     @staticmethod
@@ -67,6 +69,7 @@ class Filter(metaclass=abc.ABCMeta):
         msg_type = msg.get(ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE)
         return msg_type[ALERT_ATTRIBUTES.INFO][ALERT_ATTRIBUTES.RESOURCE_TYPE]
 
+
 class AlertFilter(Filter):
     """ Filter unnecessary alert. """
 
@@ -78,7 +81,8 @@ class AlertFilter(Filter):
         AlertFilter.validate_filter(const.AlertEventConstants.ALERT_FILTER_TYPE.value)
         # Get filter type and resource types list from the alert rule file
         self.filter_type = Conf.get(const.ALERT_FILTER_INDEX, const.AlertEventConstants.ALERT_FILTER_TYPE.value)
-        self.resource_types_list = Conf.get(const.ALERT_FILTER_INDEX, const.AlertEventConstants.ALERT_RESOURCE_TYPE.value)
+        self.resource_types_list = Conf.get(const.ALERT_FILTER_INDEX,
+                                            const.AlertEventConstants.ALERT_RESOURCE_TYPE.value)
         Log.info("Alert Filter is initialized ...")
 
     def filter_event(self, msg: str) -> bool:
@@ -111,6 +115,7 @@ class AlertFilter(Filter):
 
         except Exception as e:
             raise EventFilterException(f"Failed to filter event. Message: {msg}, Error: {e}")
+
 
 class IEMFilter(Filter):
     """ Filter IEM consumed by watcher """
