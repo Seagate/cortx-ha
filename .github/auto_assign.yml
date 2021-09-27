@@ -7,8 +7,8 @@ addAssignees: true
 # A list of reviewers to be added to pull requests (GitHub user name)
 reviewers: 
   - azheregelya
-  - indrajitzagade
   - ajaysrivas
+  - s-arya
 
 # A list of keywords to be skipped the process that add reviewers if pull requests include it 
 skipKeywords:
