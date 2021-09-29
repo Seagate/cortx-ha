@@ -128,19 +128,6 @@ class Cmd:
             else:
                 raise SetupError(f"{file} is not dir and file, can not be deleted.")
 
-    @staticmethod
-    def copy_file(source: str, dest: str):
-        """
-        Move file source to destination.
-
-        Args:
-            source (str): [description]
-            dest (str): [description]
-        """
-        shutil.copy(source, dest)
-
-
-
 class PostInstallCmd(Cmd):
     """
     PostInstall Setup Cmd
@@ -157,9 +144,7 @@ class PostInstallCmd(Cmd):
         """
         Process post_install command.
         """
-
-        Log.info("Processing post_install command")
-        Log.info("post_install command is successful")
+        sys.stdout.write(f"All post install checks for HA are upto date.\n")
 
 class PrepareCmd(Cmd):
     """
@@ -177,8 +162,7 @@ class PrepareCmd(Cmd):
         """
         Process prepare command.
         """
-        Log.info("Processing prepare command")
-        Log.info("prepare command is successful")
+        sys.stdout.write(f"HA is prepared for performing mini provisioning.\n")
 
 class ConfigCmd(Cmd):
     """
@@ -204,7 +188,11 @@ class ConfigCmd(Cmd):
                          'consul_config' : {'endpoint' : consul_endpoint},
                          'prometheus_config' : {'endpoint' : None},
                          'event_topic' : 'hare'}
-        with open(const.HA_CONFIG_FILE, 'w') as conf_file:
+
+        if not os.path.isdir(const.CONFIG_DIR):
+            os.mkdir(const.CONFIG_DIR)
+
+        with open(const.HA_CONFIG_FILE, 'w+') as conf_file:
             yaml.dump(conf_file_dict, conf_file)
 
         # First populate the ha.conf and then do init. Because, in the init, this file will
@@ -215,12 +203,11 @@ class ConfigCmd(Cmd):
 
         Log.info(f'Performing event_manager subscription for hare component with event as: ')
         event_manager = EventManager.get_instance()
-        # TODO: For testing purpose, event list is hardcoded with below value
-        # Change accordingly.
-        event_list = SubscribeEvent("enclosure:hw:controller", ["online", "failed"])
+        event_list = SubscribeEvent("pod:io", ["online", "failed"])
         event_manager.subscribe("hare",[event_list])
         Log.info(f'subscription is successful')
         Log.info("config command is successful")
+        sys.stdout.write("config command is successful.\n")
 
 
 class InitCmd(Cmd):
@@ -239,8 +226,7 @@ class InitCmd(Cmd):
         """
         Process init command.
         """
-        Log.info("Processing init command")
-        Log.info("init command is successful")
+        sys.stdout.write('HA initialization is done.\n')
 
 class TestCmd(Cmd):
     """
@@ -258,9 +244,7 @@ class TestCmd(Cmd):
         """
         Process test command.
         """
-        Log.info("Processing test command")
-        Log.info("test command is successful")
-
+        sys.stdout.write('Yet to be implemented...\n')
 
 class ResetCmd(Cmd):
     """
@@ -278,31 +262,7 @@ class ResetCmd(Cmd):
         """
         Process reset command.
         """
-        Log.info("Processing reset command")
-        try:
-            # create new version of log file
-            services = ["cortx_ha_log.conf"]
-            for service in services:
-                self._execute.run_cmd(f"logrotate --force /etc/logrotate.d/{service}")
-
-            older_logs = []
-            log_dirs = [const.HA_LOG_DIR]
-            for log_dir in log_dirs:
-                log_list = [file for file in os.listdir(log_dir) if file.split(".")[-1] not in ["log", "xml"]]
-                for log_file in log_list:
-                    older_logs.append(os.path.join(log_dir, log_file))
-
-            self._remove_logs(older_logs)
-        except Exception as e:
-            sys.stderr.write(f"Cluster reset command failed. {traceback.format_exc()}, Error: {e}\n")
-            raise HaResetException("Cluster reset failed")
-
-    def _remove_logs(self, logs: list):
-        """
-        Remove logs.
-        """
-        for log in logs:
-            ResetCmd.remove_file(log)
+        sys.stdout.write('HA reset is yet to be implemented...\n')
 
 class CleanupCmd(Cmd):
     """
@@ -326,9 +286,9 @@ class CleanupCmd(Cmd):
             self.remove_config_files()
 
         except Exception as e:
-            Log.error(f"Cluster cleanup command failed. Error: {e}")
-            sys.stderr.write(f"Cluster cleanup command failed. {traceback.format_exc()}, Error: {e}\n")
-            raise HaCleanupException("Cluster cleanup failed")
+            Log.error(f"cleanup command failed. Error: {e}")
+            sys.stderr.write(f"cleanup command failed. {traceback.format_exc()}, Error: {e}\n")
+            raise HaCleanupException("cleanup failed")
         Log.info("cleanup command is successful")
 
 
@@ -357,7 +317,6 @@ def main(argv: list):
         command = Cmd.get_command(desc, argv[1:])
         command.process()
 
-        sys.stdout.write(f"Mini Provisioning {sys.argv[1]} configured successfully.\n")
     except Exception as err:
         Log.error("%s\n" % traceback.format_exc())
         sys.stderr.write(f"Setup command:{argv[1]} failed for cortx-ha. Error: {err}\n")
