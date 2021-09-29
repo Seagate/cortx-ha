@@ -26,15 +26,10 @@ import yaml
 from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
 
-from ha.execute import SimpleCommand
-from ha import const
 from ha.k8s_setup import const
 from ha.core.config.config_manager import ConfigManager
-from ha.core.error import HaPrerequisiteException
 from ha.core.error import HaConfigException
-from ha.core.error import HaInitException
 from ha.core.error import HaCleanupException
-from ha.core.error import HaResetException
 from ha.core.error import SetupError
 from ha.k8s_setup.const import _DELIM
 from ha.core.event_manager.event_manager import EventManager
@@ -58,7 +53,6 @@ class Cmd:
             self._url = args.config
             Conf.load(self._index, self._url)
             self._args = args.args
-        self._execute = SimpleCommand()
         self._confstore = ConfigManager.get_confstore()
         self._cluster_manager = None
 
