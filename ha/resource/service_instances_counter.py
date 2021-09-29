@@ -120,7 +120,8 @@ class ServiceInstancesCounter(CortxServiceRA):
         self._resources = Conf.get(const.HA_GLOBAL_INDEX, 'SERVICE_INSTANCE_COUNTER')
         Log.info(f"Resource configured: {self._resources}")
 
-    def metadata(self) -> int:
+    @staticmethod
+    def metadata() -> int:
         """
         Provide meta data for resource agent and parameter
         """
@@ -185,8 +186,7 @@ class ServiceInstancesCounter(CortxServiceRA):
             AttribUpdater.update_attr(a_resource['scope'], a_resource['resource'], a_resource['instances'], self._local_node)
         return const.OCF_SUCCESS
 
-
-def main(resource: ServiceInstancesCounter, action: str ='') -> int:
+def main(action: str ='') -> int:
     """
     Main function acts as switch case for ServiceInstancesCounter resource agent.
 
@@ -199,8 +199,10 @@ def main(resource: ServiceInstancesCounter, action: str ='') -> int:
     """
     try:
         if action == "meta-data":
-            return resource.metadata()
-        Log.debug(f"{resource} initialized for action {action}")
+            return ServiceInstancesCounter.metadata()
+        ConfigManager.init("resource_agent")
+        resource_agent = ServiceInstancesCounter()
+        Log.debug(f"{resource_agent} initialized for action {action}")
         if action == "monitor":
             return resource_agent.monitor()
         elif action == "start":
@@ -214,9 +216,6 @@ def main(resource: ServiceInstancesCounter, action: str ='') -> int:
         Log.error(f"service_instances_counter failed to perform {action}. Error: {e}")
         return const.OCF_ERR_GENERIC
 
-
 if __name__ == '__main__':
     action = sys.argv[1] if len(sys.argv) > 1 else ""
-    ConfigManager.init("resource_agent")
-    resource_agent = ServiceInstancesCounter()
-    sys.exit(main(resource_agent, action))
+    sys.exit(main(action))

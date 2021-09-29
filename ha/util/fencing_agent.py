@@ -15,14 +15,33 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
+# Note: This class is used to bind different type of controller together.
+# Other controller like node, cluster, storageset, service inheriting
+# from this class.
 
-import enum
 
-class EnumListMeta(enum.EnumMeta):
-    def __contains__(cls, item):
-        try:
-            cls(item)
-        except ValueError:
-            return False
-        else:
-            return True
+class FencingAgent:
+    """ Generic Fencing Agent class """
+    def __init__(self):
+        """
+        Initialize Fencing Agent class.
+        """
+        pass
+
+    def power_off(self, node_id: str):
+        """
+        Power OFF node with nodeid
+
+        Args:
+            node_id (str): Node ID from cluster nodes.
+        """
+        pass
+
+    def power_on(self, node_id: str):
+        """
+        Power ON node with nodeid
+
+        Args:
+            node_id (str): Node ID from cluster nodes.
+        """
+        pass

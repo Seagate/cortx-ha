@@ -34,6 +34,7 @@ class RESOURCE(enum.Enum, metaclass=EnumListMeta):
     S3AUTH = "s3auth"
     HAPROXY = "haproxy"
     SSPL_LL = "sspl-ll"
+    VIP_HEALTH_MONITOR = "vip_health"
     MGMT_VIP = "mgmt-vip"
     CSM_AGENT = "csm-agent"
     CSM_WEB = "csm-web"
@@ -59,6 +60,7 @@ TIMEOUT_MAP = {
         RESOURCE.S3AUTH.value: "90",
         RESOURCE.HAPROXY.value: "90",
         RESOURCE.SSPL_LL.value: "90",
+        RESOURCE.VIP_HEALTH_MONITOR.value: "3",
         RESOURCE.MGMT_VIP.value: "60",
         RESOURCE.CSM_AGENT.value: "90",
         RESOURCE.CSM_WEB.value: "90",
@@ -80,6 +82,7 @@ TIMEOUT_MAP = {
         RESOURCE.S3AUTH.value: "90",
         RESOURCE.HAPROXY.value: "90",
         RESOURCE.SSPL_LL.value: "90",
+        RESOURCE.VIP_HEALTH_MONITOR.value: "3",
         RESOURCE.MGMT_VIP.value: "60",
         RESOURCE.CSM_AGENT.value: "90",
         RESOURCE.CSM_WEB.value: "90",
