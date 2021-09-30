@@ -26,6 +26,7 @@ import yaml
 from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
 
+from ha.execute import SimpleCommand
 from ha.k8s_setup import const
 from ha.core.config.config_manager import ConfigManager
 from ha.core.error import HaConfigException
@@ -41,9 +42,6 @@ class Cmd:
     Setup Command. This class provides methods for parsing arguments.
     """
     _index = "cortx"
-    DEV_CHECK = False
-    LOCAL_CHECK = False
-    PRE_FACTORY_CHECK = False
 
     def __init__(self, args: dict):
         """
@@ -53,8 +51,7 @@ class Cmd:
             self._url = args.config
             Conf.load(self._index, self._url)
             self._args = args.args
-        self._confstore = ConfigManager.get_confstore()
-        self._cluster_manager = None
+        self._execute = SimpleCommand()
 
     @property
     def args(self) -> str:
@@ -73,7 +70,8 @@ class Cmd:
             f"usage: {prog} [-h] <cmd> <--config url> <args>...\n"
             f"where:\n"
             f"cmd   post_install, prepare, config, init, test, reset, cleanup\n"
-            f"--config   Config URL")
+            f"--config   Config URL.\n"
+            f"--service   Service name.\n")
 
     @staticmethod
     def get_command(desc: str, argv: dict):
@@ -88,9 +86,6 @@ class Cmd:
         for name, cmd in cmds:
             cmd.add_args(subparsers, cmd, name)
         args = parser.parse_args(argv)
-        Cmd.DEV_CHECK = args.dev
-        Cmd.LOCAL_CHECK = args.local
-        Cmd.PRE_FACTORY_CHECK = args.pre_factory
         return args.command(args)
 
     @staticmethod
@@ -99,10 +94,8 @@ class Cmd:
         Add Command args for parsing.
         """
         setup_arg_parser = parser.add_parser(cls.name, help='setup %s' % name)
-        setup_arg_parser.add_argument('--config', help='Config URL')
-        setup_arg_parser.add_argument('--dev', action='store_true', help='Dev check')
-        setup_arg_parser.add_argument('--local', action='store_true', help='Local check')
-        setup_arg_parser.add_argument('--pre-factory', action='store_true', help='Pre-factory check')
+        setup_arg_parser.add_argument('--config', help='Config URL', required=True)
+        setup_arg_parser.add_argument('--service', help='service name', required=True)
         setup_arg_parser.add_argument('args', nargs='*', default=[], help='args')
         setup_arg_parser.set_defaults(command=cls)
 
@@ -174,17 +167,22 @@ class ConfigCmd(Cmd):
         """
         Process config command.
         """
-        # Log.info("Processing config command")
         consul_endpoint = Conf.get(self._index, f'cortx{_DELIM}external{_DELIM}consul{_DELIM}endpoints[0]')
+
         # TODO: Uncomment whenever prometheus config will be available
         # Conf.get('cortx', 'cortx.external.prometheus.endpoints[0]')
+
+        # command can be used to get scrape interval of prometheus
+        # kubectl describe configmap -n cortx | grep scrape_interval | awk \'{print $2}\'
+
         conf_file_dict = {'LOG' : {'path' : const.HA_LOG_DIR, 'level' : const.HA_LOG_LEVEL},
                          'consul_config' : {'endpoint' : consul_endpoint},
-                         'prometheus_config' : {'endpoint' : None},
+                         'prometheus_config' : {'endpoint' : None, 'poll_time': None},
                          'event_topic' : 'hare'}
 
         if not os.path.isdir(const.CONFIG_DIR):
             os.mkdir(const.CONFIG_DIR)
+
 
         with open(const.HA_CONFIG_FILE, 'w+') as conf_file:
             yaml.dump(conf_file_dict, conf_file)
@@ -192,12 +190,13 @@ class ConfigCmd(Cmd):
         # First populate the ha.conf and then do init. Because, in the init, this file will
         # be stored in the confstore as key values
         ConfigManager.init("ha_setup")
+        self._confstore = ConfigManager.get_confstore()
         Log.info(f'Populating the ha config file with consul_endpoint: {consul_endpoint}, \
                    prometheus_endpoint:')
 
         Log.info(f'Performing event_manager subscription for hare component with event as: ')
         event_manager = EventManager.get_instance()
-        event_list = SubscribeEvent("pod:io", ["online", "failed"])
+        event_list = SubscribeEvent("k8s:pod", ["online", "failed"])
         event_manager.subscribe("hare",[event_list])
         Log.info(f'subscription is successful')
         Log.info("config command is successful")
@@ -297,6 +296,9 @@ class CleanupCmd(Cmd):
 
 def main(argv: list):
     try:
+        if len(sys.argv) == 1:
+            Cmd.usage("ha_setup")
+            sys.exit(1)
         if sys.argv[1] == "cleanup":
             if not os.path.exists(const.HA_CONFIG_FILE):
                 a_str = f'Cleanup can not be proceed as \
