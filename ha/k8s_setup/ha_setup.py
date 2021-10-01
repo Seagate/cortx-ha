@@ -55,6 +55,7 @@ class Cmd:
                 sys.exit(1)
             Conf.load(self._index, self._url)
             self._args = args.args
+        self._confstore = None
         self._execute = SimpleCommand()
 
     @property
@@ -292,12 +293,16 @@ class CleanupCmd(Cmd):
         try:
             # Delete the config file
             self.remove_config_files()
-
+            if self._confstore is None:
+                self._confstore = ConfigManager.get_confstore()
+                self._confstore.delete(recurse=True)
+            Log.info("consul keys are deleted")
+            Log.info("cleanup command is successful")
+            sys.stdout.write("cleanup command is successful.\n")
         except Exception as e:
             Log.error(f"cleanup command failed. Error: {e}")
             sys.stderr.write(f"cleanup command failed. {traceback.format_exc()}, Error: {e}\n")
             raise HaCleanupException("cleanup failed")
-        Log.info("cleanup command is successful")
 
 
     def remove_config_files(self):
@@ -308,6 +313,7 @@ class CleanupCmd(Cmd):
 
         for file in files:
             CleanupCmd.remove_file(file)
+        Log.info("All the config files are removed")
 
 def main(argv: list):
     try:
