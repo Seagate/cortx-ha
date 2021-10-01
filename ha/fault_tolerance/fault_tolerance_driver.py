@@ -31,7 +31,7 @@ class FaultToleranceDriver:
         while True:
             # Get alert condition from ALertGenerator. Analyze changes
             # with the help of event manager and notify if required
-            print(f'Ready to analyze faults in the system')
+            print('Ready to analyze faults in the system')
 
             # TODO: Configure POLL_INTARVEL instead of harcoding
             time.sleep(10)

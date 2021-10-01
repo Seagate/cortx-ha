@@ -29,7 +29,6 @@ from cortx.utils.log import Log
 from ha.execute import SimpleCommand
 from ha.k8s_setup import const
 from ha.core.config.config_manager import ConfigManager
-from ha.core.error import HaConfigException
 from ha.core.error import HaCleanupException
 from ha.core.error import SetupError
 from ha.k8s_setup.const import _DELIM
@@ -51,7 +50,7 @@ class Cmd:
             self._url = args.config
             self._service = args.services
             if self._service != 'fault_tolerance':
-                sys.stderr.write(f'Invalid service name.\n')
+                sys.stderr.write('Invalid service name.\n')
                 sys.exit(1)
             Conf.load(self._index, self._url)
             self._args = args.args
@@ -136,7 +135,7 @@ class PostInstallCmd(Cmd):
         """
         Process post_install command.
         """
-        sys.stdout.write(f"All post install checks for HA are upto date.\n")
+        sys.stdout.write("All post install checks for HA are upto date.\n")
 
 class PrepareCmd(Cmd):
     """
@@ -154,7 +153,7 @@ class PrepareCmd(Cmd):
         """
         Process prepare command.
         """
-        sys.stdout.write(f"HA is prepared for performing mini provisioning.\n")
+        sys.stdout.write("HA is prepared for performing mini provisioning.\n")
 
 class ConfigCmd(Cmd):
     """
@@ -202,7 +201,7 @@ class ConfigCmd(Cmd):
             Log.info(f'Populating the ha config file with consul_endpoint: {consul_endpoint}, \
                       prometheus_endpoint:')
 
-            Log.info(f'Performing event_manager subscription')
+            Log.info('Performing event_manager subscription')
             event_manager = EventManager.get_instance()
             event_manager.subscribe(const.EVENT_COMPONENT, [SubscribeEvent(const.POD_EVENT, ["online", "failed"])])
             Log.info(f'event_manager subscription for {const.EVENT_COMPONENT}\
