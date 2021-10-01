@@ -21,3 +21,6 @@ HA_CONFIG_FILE="{}/ha.conf".format(CONFIG_DIR)
 #Confstore delimiter
 _DELIM=">"
 
+# Event_manager keys
+POD_EVENT="k8s:pod"
+EVENT_COMPONENT="hare"

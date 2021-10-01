@@ -49,6 +49,10 @@ class Cmd:
         """
         if args is not None:
             self._url = args.config
+            self._service = args.services
+            if self._service != 'fault_tolerance':
+                sys.stderr.write(f'Invalid service name.\n')
+                sys.exit(1)
             Conf.load(self._index, self._url)
             self._args = args.args
         self._execute = SimpleCommand()
@@ -71,7 +75,7 @@ class Cmd:
             f"where:\n"
             f"cmd   post_install, prepare, config, init, test, reset, cleanup\n"
             f"--config   Config URL.\n"
-            f"--service   Service name.\n")
+            f"--services   Service name.\n")
 
     @staticmethod
     def get_command(desc: str, argv: dict):
@@ -95,7 +99,7 @@ class Cmd:
         """
         setup_arg_parser = parser.add_parser(cls.name, help='setup %s' % name)
         setup_arg_parser.add_argument('--config', help='Config URL', required=True)
-        setup_arg_parser.add_argument('--service', help='service name', required=True)
+        setup_arg_parser.add_argument('--services', help='service name', required=True)
         setup_arg_parser.add_argument('args', nargs='*', default=[], help='args')
         setup_arg_parser.set_defaults(command=cls)
 
@@ -167,41 +171,52 @@ class ConfigCmd(Cmd):
         """
         Process config command.
         """
-        consul_endpoint = Conf.get(self._index, f'cortx{_DELIM}external{_DELIM}consul{_DELIM}endpoints[0]')
+        try:
+            consul_endpoint = Conf.get(self._index, f'cortx{_DELIM}external{_DELIM}consul{_DELIM}endpoints[0]')
+            if not consul_endpoint:
+                sys.stderr.write(f'Failed to get consul config. consul_config: {consul_endpoint}. \n')
+                sys.exit(1)
+            # TODO: Uncomment whenever prometheus config will be available
+            # Conf.get(self._index, f'cortx{_DELIM}external{_DELIM}prometheus{_DELIM}endpoints[0]')
 
-        # TODO: Uncomment whenever prometheus config will be available
-        # Conf.get('cortx', 'cortx.external.prometheus.endpoints[0]')
+            # command can be used to get scrape interval of prometheus
+            # kubectl describe configmap -n cortx | grep scrape_interval | awk \'{print $2}\'
 
-        # command can be used to get scrape interval of prometheus
-        # kubectl describe configmap -n cortx | grep scrape_interval | awk \'{print $2}\'
-
-        conf_file_dict = {'LOG' : {'path' : const.HA_LOG_DIR, 'level' : const.HA_LOG_LEVEL},
+            conf_file_dict = {'LOG' : {'path' : const.HA_LOG_DIR, 'level' : const.HA_LOG_LEVEL},
                          'consul_config' : {'endpoint' : consul_endpoint},
                          'prometheus_config' : {'endpoint' : None, 'poll_time': None},
                          'event_topic' : 'hare'}
 
-        if not os.path.isdir(const.CONFIG_DIR):
-            os.mkdir(const.CONFIG_DIR)
+            if not os.path.isdir(const.CONFIG_DIR):
+                os.mkdir(const.CONFIG_DIR)
 
+            # Open config file and dump yaml data from conf_file_dict
+            with open(const.HA_CONFIG_FILE, 'w+') as conf_file:
+                yaml.dump(conf_file_dict, conf_file, default_flow_style=False)
 
-        with open(const.HA_CONFIG_FILE, 'w+') as conf_file:
-            yaml.dump(conf_file_dict, conf_file)
+            # First populate the ha.conf and then do init. Because, in the init, this file will
+            # be stored in the confstore as key values
+            ConfigManager.init("ha_setup")
+            self._confstore = ConfigManager.get_confstore()
+            Log.info(f'Populating the ha config file with consul_endpoint: {consul_endpoint}, \
+                      prometheus_endpoint:')
 
-        # First populate the ha.conf and then do init. Because, in the init, this file will
-        # be stored in the confstore as key values
-        ConfigManager.init("ha_setup")
-        self._confstore = ConfigManager.get_confstore()
-        Log.info(f'Populating the ha config file with consul_endpoint: {consul_endpoint}, \
-                   prometheus_endpoint:')
+            Log.info(f'Performing event_manager subscription')
+            event_manager = EventManager.get_instance()
+            event_manager.subscribe(const.EVENT_COMPONENT, [SubscribeEvent(const.POD_EVENT, ["online", "failed"])])
+            Log.info(f'event_manager subscription for {const.EVENT_COMPONENT}\
+                       is successful for the event {const.POD_EVENT}')
 
-        Log.info(f'Performing event_manager subscription for hare component with event as: ')
-        event_manager = EventManager.get_instance()
-        event_list = SubscribeEvent("k8s:pod", ["online", "failed"])
-        event_manager.subscribe("hare",[event_list])
-        Log.info(f'subscription is successful')
-        Log.info("config command is successful")
-        sys.stdout.write("config command is successful.\n")
-
+            Log.info("config command is successful")
+            sys.stdout.write("config command is successful.\n")
+        except TypeError as type_err:
+            sys.stderr.write(f'HA config command failed: Type mismatch: {type_err}.\n')
+        except yaml.YAMLError as exc:
+            sys.stderr.write(f'Ha config failed. Invalid yaml configuration: {exc}.\n')
+        except OSError as os_err:
+            sys.stderr.write(f'HA Config failed. OS_error: {os_err}.\n')
+        except Exception as c_err:
+            sys.stderr.write(f'HA config command failed: {c_err}.\n')
 
 class InitCmd(Cmd):
     """
