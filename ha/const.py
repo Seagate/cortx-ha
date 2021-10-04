@@ -23,6 +23,10 @@ HA_CLUSTER_SOFTWARE="corosync"
 HACLUSTER_KEY = "cortx"
 SERVER_NODE_KEY = "server_node"
 RA_LOG_DIR="/var/log/seagate/cortx/ha"
+RA_LOG_FILES = [f"{RA_LOG_DIR}/alert_monitor.log", f"{RA_LOG_DIR}/cluster_manager.log",
+                f"{RA_LOG_DIR}/event_analyzerd.log", f"{RA_LOG_DIR}/event_manager.log",
+                f"{RA_LOG_DIR}/health_monitor.log"]
+
 PACEMAKER_LOG="/var/log/pacemaker.log"
 AUTH_DIR="/var/lib/pcsd"
 PCSD_LOG="/var/log/pcsd/pcsd.log"

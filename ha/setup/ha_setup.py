@@ -401,6 +401,12 @@ class PostInstallCmd(Cmd):
             self._execute.run_cmd(f"setfacl -R -m g:{const.USER_GROUP_ROOT}:rwx {const.RA_LOG_DIR}")
             self._execute.run_cmd(f"setfacl -R -m g:{const.USER_GROUP_HACLIENT}:r-x {const.CONFIG_DIR}")
             self._execute.run_cmd(f"setfacl -R -m g:{const.USER_GROUP_ROOT}:rwx {const.CONFIG_DIR}")
+            for file_path in const.RA_LOG_FILES:
+                if file_path and not os.path.exists(file_path):
+                    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+                    open(file_path, 'x')
+                self._execute.run_cmd(f"setfacl -R -m g:{const.USER_GROUP_HACLIENT}:rwx {file_path}")
+
         except Exception as e:
             Log.error(f"Failed prerequisite with Error: {e}")
             raise HaPrerequisiteException("post_install command failed")
