@@ -3,7 +3,7 @@ HA_INSTALL_DIR=/opt/seagate/cortx/ha
 BIN_DIR=${HA_INSTALL_DIR}/bin
 mkdir -p ${BIN_DIR} ${RES_AGENT}
 
-SITE_PACKAGES=$(python3 -c 'import sysconfig; print(sysconfig.get_paths()["purelib"])')
+SITE_PACKAGES=`python3 -c 'import sysconfig; print(sysconfig.get_paths()["purelib"])'`
 HA_SETUP=${SITE_PACKAGES}/ha/setup/ha_setup.py
 CLI_EXEC=${SITE_PACKAGES}/ha/cli/cortxha.py
 DYNAMIC_RA=${SITE_PACKAGES}/ha/resource/dynamic_fid_service_ra.py

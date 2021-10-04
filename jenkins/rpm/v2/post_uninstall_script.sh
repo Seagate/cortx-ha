@@ -1,4 +1,4 @@
-[ "$1" -eq 1 ] && exit 0
+[ $1 -eq 1 ] && exit 0
 
 RES_AGENT="/usr/lib/ocf/resource.d/seagate"
 HA_INSTALL_DIR=/opt/seagate/cortx/ha

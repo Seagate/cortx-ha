@@ -1,6 +1,6 @@
 #!/bin/bash
 
-[ $1 -eq 1 ] && exit 0
+[ "$1" -eq 1 ] && exit 0
 
 HA_INSTALL_DIR=/opt/seagate/cortx/ha
 BIN_DIR=${HA_INSTALL_DIR}/bin

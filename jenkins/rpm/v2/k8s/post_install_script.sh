@@ -5,7 +5,7 @@ HA_INSTALL_DIR=/opt/seagate/cortx/ha
 BIN_DIR=${HA_INSTALL_DIR}/bin
 mkdir -p ${BIN_DIR} ${RES_AGENT}
 
-SITE_PACKAGES=`python3 -c 'import sysconfig; print(sysconfig.get_paths()["purelib"])'`
+SITE_PACKAGES=$(python3 -c 'import sysconfig; print(sysconfig.get_paths()["purelib"])')
 HA_SETUP=${SITE_PACKAGES}/ha/k8s_setup/ha_setup.py
 CLI_EXEC=${SITE_PACKAGES}/ha/cli/cortxha.py
 EVENT_ANALYZER=${SITE_PACKAGES}/ha/core/event_analyzer/event_analyzerd.py
