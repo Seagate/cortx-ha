@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import argparse
-from subprocess import Popen, PIPE
 import subprocess
 
 my_parser = argparse.ArgumentParser(prog="ha_start",
