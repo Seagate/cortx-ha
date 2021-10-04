@@ -17,6 +17,9 @@
 
 import time
 
+from cortx.utils.conf_store import Conf
+from ha import const
+
 
 class FaultToleranceDriver:
     """
@@ -25,7 +28,7 @@ class FaultToleranceDriver:
     notified to event manager
     """
     def __init__(self):
-        pass
+        self._poll_time = 10
 
     def poll(self):
         while True:
@@ -33,8 +36,8 @@ class FaultToleranceDriver:
             # with the help of event manager and notify if required
             print('Ready to analyze faults in the system')
 
-            # TODO: Configure POLL_INTARVEL instead of harcoding
-            time.sleep(10)
+            self._poll_time = Conf.get(const.HA_GLOBAL_INDEX, f"prometheus_config{_DELIM}poll_time")
+            time.sleep(self._poll_time)
 
 if __name__ == '__main__':
     fault_tolerance = FaultToleranceDriver()
