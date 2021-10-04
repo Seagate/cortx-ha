@@ -46,6 +46,7 @@ ln -sf $HA_DIR/lib/cortxha $HA_DIR/bin/cortx
 ln -sf $HA_DIR/lib/cortxha /usr/bin/cortx
 ln -sf $HA_DIR/lib/cortxha /usr/bin/cortxha
 ln -sf $HA_DIR/lib/ha_setup $HA_DIR/bin/ha_setup
+ln -sf $HA_DIR/lib/ha_start $HA_DIR/bin/ha_start
 ln -sf $HA_DIR/lib/ha_setup /usr/bin/ha_setup
 ln -sf $HA_DIR/lib/ha_setup /usr/local/bin/ha_setup
 ln -sf $HA_DIR/lib/event_analyzerd $HA_DIR/bin/event_analyzerd

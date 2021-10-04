@@ -294,7 +294,7 @@ class CleanupCmd(Cmd):
             self.remove_config_files()
             if self._confstore is None:
                 self._confstore = ConfigManager.get_confstore()
-                self._confstore.delete(recurse=True)
+            self._confstore.delete(recurse=True)
             Log.info("consul keys are deleted")
             Log.info("cleanup command is successful")
             sys.stdout.write("cleanup command is successful.\n")

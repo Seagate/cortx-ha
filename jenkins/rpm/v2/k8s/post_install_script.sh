@@ -1,17 +1,19 @@
 #!/bin/bash
 
-RES_AGENT="/usr/lib/ocf/resource.d/seagate"
 HA_INSTALL_DIR=/opt/seagate/cortx/ha
 BIN_DIR=${HA_INSTALL_DIR}/bin
 mkdir -p ${BIN_DIR} ${RES_AGENT}
 
 SITE_PACKAGES=$(python3 -c 'import sysconfig; print(sysconfig.get_paths()["purelib"])')
 HA_SETUP=${SITE_PACKAGES}/ha/k8s_setup/ha_setup.py
+HA_ENTRYPOINT=${SITE_PACKAGES}/ha/k8s_setup/ha_start.py
 CLI_EXEC=${SITE_PACKAGES}/ha/cli/cortxha.py
 EVENT_ANALYZER=${SITE_PACKAGES}/ha/core/event_analyzer/event_analyzerd.py
 
 chmod +x "${HA_SETUP}"
+chmod +x "${HA_ENTRYPOINT}"
 ln -sf "${HA_SETUP}" ${BIN_DIR}/ha_setup
+ln -sf "${HA_ENTRYPOINT}" ${BIN_DIR}/ha_start
 ln -sf "${HA_SETUP}" /usr/bin/ha_setup
 ln -sf "${HA_SETUP}" /usr/local/bin/ha_setup
 
