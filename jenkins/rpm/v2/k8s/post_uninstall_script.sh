@@ -1,3 +1,5 @@
+#!/bin/bash
+
 [ $1 -eq 1 ] && exit 0
 
 HA_INSTALL_DIR=/opt/seagate/cortx/ha

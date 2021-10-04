@@ -19,6 +19,7 @@ import time
 
 from cortx.utils.conf_store import Conf
 from ha import const
+from ha.k8s_setup.const import _DELIM
 
 
 class FaultToleranceDriver:
