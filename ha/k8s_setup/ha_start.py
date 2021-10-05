@@ -15,7 +15,7 @@ my_parser.add_argument('-c', help='config file', required=False, action='store')
 args = my_parser.parse_args()
 
 try:
-    driver_process= subprocess.Popen(['python3', '/usr/lib/python3.6/site-packages/ha/fault_tolerance/fault_tolerance_driver.py'], shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    driver_process= subprocess.Popen(['/usr/bin/python3', '/usr/lib/python3.6/site-packages/ha/fault_tolerance/fault_tolerance_driver.py'], shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 except Exception as proc_err:
     sys.stderr.write(f'Driver execution stopped because of some reason: {proc_err}')
 
