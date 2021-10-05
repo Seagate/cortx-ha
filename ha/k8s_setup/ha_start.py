@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
-import subprocess
+from subprocess import Popen, PIPE
 import sys
 
 
@@ -15,7 +15,7 @@ my_parser.add_argument('-c', help='config file', required=False, action='store')
 args = my_parser.parse_args()
 
 try:
-    driver_process= subprocess.Popen(['/usr/bin/python3', '/usr/lib/python3.6/site-packages/ha/fault_tolerance/fault_tolerance_driver.py'], shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    driver_process= Popen(['/usr/bin/python3', '/usr/lib/python3.6/site-packages/ha/fault_tolerance/fault_tolerance_driver.py'], shell=False, stdout=PIPE, stderr=PIPE)
 except Exception as proc_err:
     sys.stderr.write(f'Driver execution stopped because of some reason: {proc_err}')
 
