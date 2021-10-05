@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE # nosec
 import sys
 
 
