@@ -2,16 +2,18 @@
 
 HA_INSTALL_DIR=/opt/seagate/cortx/ha
 BIN_DIR=${HA_INSTALL_DIR}/bin
-mkdir -p ${BIN_DIR} ${RES_AGENT}
+mkdir -p "${BIN_DIR}"
 
 SITE_PACKAGES=$(python3 -c 'import sysconfig; print(sysconfig.get_paths()["purelib"])')
 HA_SETUP=${SITE_PACKAGES}/ha/k8s_setup/ha_setup.py
 HA_ENTRYPOINT=${SITE_PACKAGES}/ha/k8s_setup/ha_start.py
+FAULT_TOLERANCE_DRIVER=${SITE_PACKAGES}/ha/fault_tolerance/fault_tolerance_driver.py
 CLI_EXEC=${SITE_PACKAGES}/ha/cli/cortxha.py
 EVENT_ANALYZER=${SITE_PACKAGES}/ha/core/event_analyzer/event_analyzerd.py
 
 chmod +x "${HA_SETUP}"
 chmod +x "${HA_ENTRYPOINT}"
+chmod +x "${FAULT_TOLERANCE_DRIVER}"
 ln -sf "${HA_SETUP}" ${BIN_DIR}/ha_setup
 ln -sf "${HA_ENTRYPOINT}" ${BIN_DIR}/ha_start
 ln -sf "${HA_SETUP}" /usr/bin/ha_setup
