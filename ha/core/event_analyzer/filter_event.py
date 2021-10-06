@@ -48,5 +48,5 @@ class FiletrEvent:
             recovery_action_event = RecoveryActionEvent(event)
             return recovery_action_event
         else:
-            Log.info(f"Event is dropped as it doesn't meet criteria")
+            Log.info("Event is dropped as it doesn't meet criteria")
             return None
