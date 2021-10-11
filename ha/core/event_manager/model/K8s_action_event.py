@@ -18,7 +18,7 @@
 import json
 from ha.alert.K8s_alert import K8SAlert
 
-
+# TODO: This will be modified / removed post M0
 class RecoveryActionEvent:
     """
     Action Event. This class implements an action event object,
@@ -38,7 +38,7 @@ class RecoveryActionEvent:
         self.rack_id = "1"
         self.storageset_id = "1"
         self.node_id = k8s_event.node_name
-        self.resource_id = k8s_event.pod_name
+        self.resource_id = k8s_event.resource_type
         self.timestamp = k8s_event.timestamp
         self.event_specific_info = None
         self.namespace = k8s_event.namespace
