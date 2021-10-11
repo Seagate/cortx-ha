@@ -13,18 +13,10 @@
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
-import enum
+
 import json
-from ha.util.enum_list import EnumListMeta
+from ha.const import K8S_ALERT_RESOURCE_TYPE, K8S_ALERT_STATUS
 
-class K8S_ALERT_STATUS(enum.Enum, metaclass=EnumListMeta):
-    STATUS_FAILED = "failed"
-    STATUS_CREATED = "created"
-    STATUS_RESTARTED = "restarted"
-
-class K8S_ALERT_RESOURCE_TYPE(enum.Enum, metaclass=EnumListMeta):
-    RESOURCE_TYPE_POD = "pod"
-    RESOURCE_TYPE_NODE = "node"
 
 class K8SAlert:
     """

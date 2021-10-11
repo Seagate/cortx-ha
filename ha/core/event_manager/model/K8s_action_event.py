@@ -30,10 +30,7 @@ class RecoveryActionEvent:
         Init method.
         """
         self.version = "v1"
-        self.namespace = k8s_event.namespace
-        self.pod_name = k8s_event.pod_name
-        self.status = k8s_event.status
-        self.event_type = "failed"
+        self.event_type = k8s_event.status
         self.event_id = "id1"
         self.resource_type = k8s_event.resource_type
         self.cluster_id = "1"
@@ -44,13 +41,13 @@ class RecoveryActionEvent:
         self.resource_id = k8s_event.pod_name
         self.timestamp = k8s_event.timestamp
         self.event_specific_info = None
+        self.namespace = k8s_event.namespace
+        self.pod_name = k8s_event.pod_name
+        self.status = k8s_event.status
 
     def __str__(self):
         return json.dumps({
             "version": self.version,
-            "namespace": self.namespace,
-            "pod_name": self.pod_name,
-            "status": self.status,
             "event_type": self.event_type,
             "event_id": self.event_id,
             "resource_type": self.resource_type,
@@ -61,5 +58,8 @@ class RecoveryActionEvent:
             "node_id": self.node_id,
             "resource_id": self.resource_id,
             "timestamp": self.timestamp,
-            "event_specific_info": self.event_specific_info
+            "event_specific_info": self.event_specific_info,
+            "namespace": self.namespace,
+            "pod_name": self.pod_name,
+            "status": self.status
         })

@@ -24,6 +24,7 @@ from ha.alert.K8s_alert import K8SAlert
 from ha.core.event_manager.event_manager import EventManager
 from ha.core.event_manager.subscribe_event import SubscribeEvent
 from ha.util.message_bus import MessageBus, CONSUMER_STATUS
+from ha.const import K8S_ALERT_RESOURCE_TYPE, K8S_ALERT_STATUS
 
 sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..', '..'))
 
@@ -40,11 +41,11 @@ if __name__ == '__main__':
         print("********Event Publisher********")
         event_manager = EventManager.get_instance()
         component = "csm"
-        resource_type = "k8s:pod"
-        state = "failed"
+        resource_type = K8S_ALERT_RESOURCE_TYPE.RESOURCE_TYPE_POD.value
+        state = K8S_ALERT_STATUS.STATUS_FAILED.value
         message_type = event_manager.subscribe('csm', [SubscribeEvent(resource_type, [state])])
         print(f"Subscribed {component}, message type is {message_type}")
-        k8s_event = K8SAlert("cortx", "node2", "cortx-data123", "failed", "k8s:pod", "16215909572")
+        k8s_event = K8SAlert("cortx", "node2", "cortx-data123", K8S_ALERT_STATUS.STATUS_FAILED.value, K8S_ALERT_RESOURCE_TYPE.RESOURCE_TYPE_POD.value, "16215909572")
         filetr_event = FiletrEvent()
         recovery_action_event = filetr_event.process_event(k8s_event)
         if recovery_action_event is not None:
