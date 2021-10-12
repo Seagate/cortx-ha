@@ -43,7 +43,6 @@ class RecoveryActionEvent:
         self.event_specific_info = None
         self.namespace = k8s_event.namespace
         self.pod_name = k8s_event.pod_name
-        self.status = k8s_event.status
 
     def __str__(self):
         return json.dumps({
@@ -60,6 +59,5 @@ class RecoveryActionEvent:
             "timestamp": self.timestamp,
             "event_specific_info": self.event_specific_info,
             "namespace": self.namespace,
-            "pod_name": self.pod_name,
-            "status": self.status
+            "pod_name": self.pod_name
         })
