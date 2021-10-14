@@ -19,18 +19,18 @@ from ha import const
 from ha.const import _DELIM
 from cortx.utils.log import Log
 from cortx.utils.conf_store.conf_store import Conf
-from ha.alert.K8s_alert import K8SAlert
-from ha.core.event_manager.model.K8s_action_event import RecoveryActionEvent
+from ha.core.event_manager.model.action_event import RecoveryActionEvent
+from ha.core.system_health.model.health_event import HealthEvent
 
 
 class FiletrEvent:
     """
-    Filter the Alert comming from K8S Alert class
+    Filter the Alert
     """
 
-    def process_event(self, event: K8SAlert) -> object:
+    def process_event(self, event: HealthEvent) -> object:
         """
-        Get event from Alertgenerator class.
+        Get event from HealthEvent class.
         Drop a event if it is not belongs to namspace=cortx & pod name starts with cortx-data
         Args:
             event (Event): Event object.

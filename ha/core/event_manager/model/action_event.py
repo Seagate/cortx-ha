@@ -18,8 +18,7 @@
 import json
 
 from ha.core.system_health.model.health_event import HealthEvent
-from ha.core.event_manager.const import ACTION_EVENT_VERSION
-
+from ha.const import DATASTORE_VERSION
 
 class RecoveryActionEvent:
     """
@@ -31,7 +30,7 @@ class RecoveryActionEvent:
         """
         Init method.
         """
-        self.version = ACTION_EVENT_VERSION
+        self.version = DATASTORE_VERSION
         self.event_type = healthevent.event_type
         self.event_id = healthevent.event_id
         self.resource_type = healthevent.resource_type
@@ -43,6 +42,8 @@ class RecoveryActionEvent:
         self.resource_id = healthevent.resource_id
         self.timestamp = healthevent.timestamp
         self.event_specific_info = healthevent.specific_info
+        self.namespace = healthevent.namespace
+        self.pod_name = healthevent.pod_name
 
     def __str__(self):
         return json.dumps({
@@ -57,5 +58,7 @@ class RecoveryActionEvent:
             "node_id": self.node_id,
             "resource_id": self.resource_id,
             "timestamp": self.timestamp,
-            "event_specific_info": self.event_specific_info
+            "event_specific_info": self.event_specific_info,
+            "namespace": self.namespace,
+            "pod_name": self.pod_name
         })

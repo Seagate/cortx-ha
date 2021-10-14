@@ -16,6 +16,7 @@
 
 import json
 from ha import const
+from ha.alert.K8s_alert import K8SAlert
 
 class HealthEvent:
     """
@@ -25,24 +26,25 @@ class HealthEvent:
 
     VERSION = const.DATASTORE_VERSION
 
-    def __init__(self, event_id: str, event_type: str, severity: str, site_id: int, rack_id: int, cluster_id: str, storageset_id: int,
-                 node_id: int, host_id: str, resource_type: str, timestamp: str, resource_id: str, specific_info: dict=None):
+    def __init__(self, k8s_event: K8SAlert):
         """
         Init method.
         """
-        self.event_id = event_id
-        self.event_type = event_type
-        self.severity = severity
-        self.site_id = site_id
-        self.rack_id = rack_id
-        self.cluster_id = cluster_id
-        self.storageset_id = storageset_id
-        self.node_id = node_id
-        self.host_id = host_id
-        self.resource_type = resource_type
-        self.timestamp = timestamp
-        self.resource_id = resource_id
-        self.specific_info = specific_info
+        self.event_id = "event_1"
+        self.event_type = k8s_event.status
+        self.severity = "fault"
+        self.site_id = "1"
+        self.rack_id = "1"
+        self.cluster_id = "1"
+        self.storageset_id = "1"
+        self.node_id = k8s_event.node_name
+        self.host_id = "1"
+        self.resource_type = k8s_event.resource_type
+        self.timestamp = k8s_event.timestamp
+        self.resource_id = k8s_event.resource_type
+        self.specific_info = None
+        self.namespace = k8s_event.namespace
+        self.pod_name = k8s_event.pod_name
 
     @staticmethod
     def dict_to_object(event):
@@ -59,7 +61,9 @@ class HealthEvent:
             resource_type = event["resource_type"],
             timestamp = event["timestamp"],
             resource_id = event["resource_id"],
-            specific_info = event["specific_info"]
+            specific_info = event["specific_info"],
+            namespace = event["namespace"],
+            pod_name = event["pod_name"]
         )
 
     def __str__(self):
@@ -76,5 +80,7 @@ class HealthEvent:
             "resource_type": self.resource_type,
             "timestamp": self.timestamp,
             "resource_id": self.resource_id,
-            "specific_info": self.specific_info
+            "specific_info": self.specific_info,
+            "namespace": self.namespace,
+            "pod_name": self.pod_name
         })

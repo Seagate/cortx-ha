@@ -352,7 +352,7 @@ class SERVER_POWER_STATUS(Enum, metaclass=EnumListMeta):
 
 class K8S_ALERT_STATUS(Enum, metaclass=EnumListMeta):
     STATUS_FAILED = "failed"
-    STATUS_CREATED = "created"
+    STATUS_ONLINE = "online"
 
 class K8S_ALERT_RESOURCE_TYPE(Enum, metaclass=EnumListMeta):
     RESOURCE_TYPE_POD = "pod"

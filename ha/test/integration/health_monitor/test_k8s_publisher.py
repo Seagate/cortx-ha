@@ -21,6 +21,7 @@ import time
 
 from ha.core.event_analyzer.filter_event import FiletrEvent
 from ha.alert.K8s_alert import K8SAlert
+from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.event_manager.event_manager import EventManager
 from ha.core.event_manager.subscribe_event import SubscribeEvent
 from ha.util.message_bus import MessageBus, CONSUMER_STATUS
@@ -46,8 +47,9 @@ if __name__ == '__main__':
         message_type = event_manager.subscribe('csm', [SubscribeEvent(resource_type, [state])])
         print(f"Subscribed {component}, message type is {message_type}")
         k8s_event = K8SAlert("cortx", "node2", "cortx-data123", K8S_ALERT_STATUS.STATUS_FAILED.value, K8S_ALERT_RESOURCE_TYPE.RESOURCE_TYPE_POD.value, "16215909572")
+        health_event = HealthEvent(k8s_event)
         filetr_event = FiletrEvent()
-        recovery_action_event = filetr_event.process_event(k8s_event)
+        recovery_action_event = filetr_event.process_event(health_event)
         if recovery_action_event is not None:
             event_manager.publish(recovery_action_event)
         else:
