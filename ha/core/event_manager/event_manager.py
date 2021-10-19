@@ -389,6 +389,7 @@ class EventManager:
             event (RecoveryActionEvent): Action event.
         """
         try:
+            #TODO: Use Transactional producer in future.
             component_list = []
             # Run through list of components subscribed for this event and send event to each of them
             component_list_key = EVENT_MANAGER_KEYS.EVENT_KEY.value.replace(
