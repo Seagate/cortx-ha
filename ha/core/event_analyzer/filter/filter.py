@@ -22,7 +22,7 @@ from cortx.utils.conf_store.conf_store import Conf
 from cortx.utils.log import Log
 from ha import const
 from ha.core.config.config_manager import ConfigManager
-from ha.const import ALERT_ATTRIBUTES
+from ha.const import _DELIM, ALERT_ATTRIBUTES
 from ha.core.event_analyzer.event_analyzer_exceptions import EventFilterException
 from ha.core.event_analyzer.event_analyzer_exceptions import InvalidFilterRules
 
@@ -164,3 +164,36 @@ class IEMFilter(Filter):
 
         except Exception as e:
             raise EventFilterException(f"Failed to filter IEM event. Message: {msg}, Error: {e}")
+
+class K8SFilter(Filter):
+    """ Filter unnecessary alert. """
+
+    def __init__(self):
+        """
+        Init method
+        """
+        super(K8SFilter, self).__init__()
+
+    def filter_event(self, msg: str) -> bool:
+        """
+        Filter event.
+        Args:
+            msg (str): Msg
+        """
+        try:
+            K8S_alert_required = False
+            message = json.loads(msg)
+
+            event_namespace = message.get("namespace")
+            event_pod_name = message.get("pod_name")
+
+            namespace = Conf.get(const.HA_GLOBAL_INDEX, f"K8S:POD{_DELIM}namespace")
+            pod_name = Conf.get(const.HA_GLOBAL_INDEX, f"K8S:POD{_DELIM}pods")
+            if event_namespace == namespace and event_pod_name.startswith(pod_name):
+                K8S_alert_required = True
+                return K8S_alert_required
+            else:
+                return K8S_alert_required
+
+        except Exception as e:
+            raise EventFilterException(f"Failed to filter K8S event. Message: {msg}, Error: {e}")
