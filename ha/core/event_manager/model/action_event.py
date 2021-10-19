@@ -20,6 +20,7 @@ import json
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.event_manager.const import ACTION_EVENT_VERSION
 
+
 class RecoveryActionEvent:
     """
     Action Event. This class implements an action event object,

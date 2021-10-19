@@ -55,9 +55,9 @@ if __name__ == '__main__':
 
         timestamp = str(int(time.time()))
         event_id = timestamp + str(uuid.uuid4().hex)
-
+        event_type = k8s_event.status
         if k8s_filter.filter_event(json.dumps(k8s_event.__dict__)):
-            health_event = HealthEvent(event_id, "failed", EVENT_SEVERITIES.CRITICAL.value, "1", "1", "1", "1",
+            health_event = HealthEvent(event_id, event_type, EVENT_SEVERITIES.CRITICAL.value, "1", "1", "1", "1",
                             "srvnode_1", "srvnode_1", "pod", "16215909572", "cortx-data-pod", {"namespace": "cortx"})
             recovery_action_event = RecoveryActionEvent(health_event)
             event_manager.publish(recovery_action_event)
