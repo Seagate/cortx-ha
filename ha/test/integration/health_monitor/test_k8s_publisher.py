@@ -19,6 +19,7 @@ import os
 import sys
 import pathlib
 import time
+import uuid
 
 from ha.alert.K8s_alert import K8SAlert
 from ha.core.event_manager.model.action_event import RecoveryActionEvent
@@ -27,6 +28,7 @@ from ha.core.event_manager.event_manager import EventManager
 from ha.core.event_manager.subscribe_event import SubscribeEvent
 from ha.util.message_bus import MessageBus, CONSUMER_STATUS
 from ha.const import K8S_ALERT_RESOURCE_TYPE, K8S_ALERT_STATUS
+from ha.core.system_health.const import EVENT_SEVERITIES
 from ha.core.event_analyzer.filter.filter import K8SFilter
 
 sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..', '..'))
@@ -50,8 +52,13 @@ if __name__ == '__main__':
         message_type = event_manager.subscribe('hare', [SubscribeEvent(resource_type, [state])])
         print(f"Subscribed {component}, message type is {message_type}")
         k8s_event = K8SAlert("cortx", "node2", "cortx-data123", K8S_ALERT_STATUS.STATUS_FAILED.value, K8S_ALERT_RESOURCE_TYPE.RESOURCE_TYPE_POD.value, "16215909572")
+
+        timestamp = str(int(time.time()))
+        event_id = timestamp + str(uuid.uuid4().hex)
+
         if k8s_filter.filter_event(json.dumps(k8s_event.__dict__)):
-            health_event = HealthEvent(k8s_event)
+            health_event = HealthEvent(event_id, "failed", EVENT_SEVERITIES.CRITICAL.value, "1", "1", "1", "1",
+                            "srvnode_1", "srvnode_1", "pod", "16215909572", "cortx-data-pod", {"namespace": "cortx"})
             recovery_action_event = RecoveryActionEvent(health_event)
             event_manager.publish(recovery_action_event)
         else:
