@@ -3,7 +3,7 @@ pyinstaller==3.5
 aiohttp==3.6.1
 paramiko==2.7.1
 toml==0.10.0
-PyYAML==5.1.2
+PyYAML==5.4
 configparser==4.0.2
 argparse==1.4.0
 dict2xml==1.6.1
