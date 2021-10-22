@@ -20,7 +20,7 @@ from ha.monitor.k8s.object_monitor import ObjectMonitor
 
 if __name__ == "__main__":
     object_threads = []
-    # Read I/O pod selector label from ha.conf . Will be received from provisioner confstore 
+    # Read I/O pod selector label from ha.conf . Will be received from provisioner confstore
     # provisioner needs to be informed to add it in confstore  (to be added there )
     pod_label = 'test-replicated'
 
