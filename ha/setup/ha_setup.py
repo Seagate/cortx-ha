@@ -398,7 +398,7 @@ class PostInstallCmd(Cmd):
             else:
                 Log.info("hacluster is a part of the haclient group")
             # For setting the acl, calling setfacl with -d option will set the
-            # passed acl as default for all new files and directories that would 
+            # passed acl as default for all new files and directories that would
             # be created inside the parent directory, and then call setfacl with
             # -R option to recursively set the same acls for existing files and
             # directories.
