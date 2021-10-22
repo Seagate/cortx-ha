@@ -26,11 +26,11 @@ class ObjectMap:
     }
 
     @staticmethod
-    def get_subscriber_func(object):
-        if object in ObjectMap._function_map:
-            return ObjectMap._function_map[object]
+    def get_subscriber_func(obj):
+        if obj in ObjectMap._function_map:
+            return ObjectMap._function_map[obj]
 
-        raise NotSupportedObjectError(f"object = {object}")
+        raise NotSupportedObjectError(f"object = {obj}")
 
     @staticmethod
     def get_all_objects():

@@ -109,7 +109,7 @@ class PodEventParser(ObjectParser):
             for a_condition in an_event[K8SEventsConst.RAW_OBJECT][K8SEventsConst.STATUS][K8SEventsConst.CONDITIONS]:
                 if a_condition[K8SEventsConst.TYPE] == K8SEventsConst.READY:
                     ready_status = a_condition[K8SEventsConst.STATUS]
-        except Exception as e:
+        except Exception:
             pass
 
         if ready_status is None:
