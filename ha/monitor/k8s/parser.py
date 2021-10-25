@@ -52,7 +52,6 @@ class NodeEventParser(ObjectParser):
                     ready_status = a_condition[K8SEventsConst.STATUS]
         except Exception:
             print("Exception received")
-            pass
 
         if ready_status is None:
             # Log
@@ -112,7 +111,6 @@ class PodEventParser(ObjectParser):
                     ready_status = a_condition[K8SEventsConst.STATUS]
         except Exception:
             print("Exception received")
-            pass
 
         if ready_status is None:
             # Log
