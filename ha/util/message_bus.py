@@ -184,8 +184,12 @@ class MessageBus:
             partitions (int): Number of partition.
         """
         admin = MessageBusAdmin(admin_id=MessageBus.ADMIN_ID)
-        if message_type not in admin.list_message_types():
-            admin.register_message_type(message_types=[message_type], partitions=partitions)
+        try:
+            if message_type not in admin.list_message_types():
+                admin.register_message_type(message_types=[message_type], partitions=partitions)
+        except Exception as e:
+            if "TOPIC_ALREADY_EXISTS" not in str(e):
+                raise(e)
 
     @staticmethod
     def deregister(message_type: str):
