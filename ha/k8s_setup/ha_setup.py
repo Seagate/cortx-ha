@@ -49,9 +49,9 @@ class Cmd:
         if args is not None:
             self._url = args.config
             self._service = args.services
-            if self._service != 'fault_tolerance':
-                sys.stderr.write('Invalid service name.\n')
-                sys.exit(1)
+            #if self._service != 'fault_tolerance':
+            #    sys.stderr.write('Invalid service name.\n')
+            #    sys.exit(1)
             Conf.load(self._index, self._url)
             self._args = args.args
         self._confstore = None
@@ -176,11 +176,6 @@ class ConfigCmd(Cmd):
             if not consul_endpoint:
                 sys.stderr.write(f'Failed to get consul config. consul_config: {consul_endpoint}. \n')
                 sys.exit(1)
-            # TODO: Uncomment whenever prometheus config will be available
-            # Conf.get(self._index, f'cortx{_DELIM}external{_DELIM}prometheus{_DELIM}endpoints[0]')
-
-            # command can be used to get scrape interval of prometheus
-            # kubectl describe configmap -n cortx | grep scrape_interval | awk \'{print $2}\'
 
             # Dummy value fetched for now. This will be replaced by the key/path for the pod label onces that is avilable in confstore
             # Ref ticket EOS-25694
@@ -190,13 +185,12 @@ class ConfigCmd(Cmd):
 
             conf_file_dict = {'LOG' : {'path' : const.HA_LOG_DIR, 'level' : const.HA_LOG_LEVEL},
                          'consul_config' : {'endpoint' : consul_endpoint},
-                         'prometheus_config' : {'endpoint' : None, 'poll_time': None},
                          'event_topic' : 'hare',
                          'data_pod_label' : data_pod_label,
-                         'MONITOR' : {'message_type' : 'k8s_event', 'producer_id' : 'k8s_monitor'}}
+                         'MONITOR' : {'message_type' : 'k8s_event', 'producer_id' : 'k8s_monitor'},
                          'EVENT_MANAGER' : {'message_type' : 'health_events', 'producer_id' : 'system_health',
-                                            'consumer_group' : 'health_monitor', 'consumer_id' : '1'}
-                         }
+                                            'consumer_group' : 'health_monitor', 'consumer_id' : '1'},
+                         'event_topic' : 'hare'}
 
             if not os.path.isdir(const.CONFIG_DIR):
                 os.mkdir(const.CONFIG_DIR)
