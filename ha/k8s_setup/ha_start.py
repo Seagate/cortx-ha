@@ -15,7 +15,10 @@ my_parser.add_argument('-c', help='config file', required=False, action='store')
 args = my_parser.parse_args()
 
 try:
-    driver_process= Popen(['/usr/bin/python3', '/usr/lib/python3.6/site-packages/ha/fault_tolerance/fault_tolerance_driver.py'], shell=False, stdout=PIPE, stderr=PIPE) # nosec
+    if args.s == 'fault_tolerance':
+        driver_process= Popen(['/usr/bin/python3', '/usr/lib/python3.6/site-packages/ha/fault_tolerance/fault_tolerance_driver.py'], shell=False, stdout=PIPE, stderr=PIPE) # nosec
+    elif args.s == 'health_monitor':
+        driver_process= Popen(['/usr/bin/python3', '/usr/lib/python3.6/site-packages/ha/core/health_monitor/health_monitord.py'], shell=False, stdout=PIPE, stderr=PIPE) # nosec
 except Exception as proc_err:
     sys.stderr.write(f'Driver execution stopped because of some reason: {proc_err}')
 
