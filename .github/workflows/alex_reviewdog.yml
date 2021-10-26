@@ -31,7 +31,7 @@ jobs:
   # Let's start the alex to scan
   alex:
     name: Alex report
-    #if: ${{ github.event.label.name == 'cla-signed' || github.event.action == 'synchronize' }}
+    if: ${{ github.event.label.name == 'cla-signed' || github.event.action == 'synchronize' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
