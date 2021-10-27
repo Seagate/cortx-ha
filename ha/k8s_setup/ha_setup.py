@@ -49,9 +49,6 @@ class Cmd:
         if args is not None:
             self._url = args.config
             self._service = args.services
-            #if self._service != 'fault_tolerance':
-            #    sys.stderr.write('Invalid service name.\n')
-            #    sys.exit(1)
             Conf.load(self._index, self._url)
             self._args = args.args
         self._confstore = None
