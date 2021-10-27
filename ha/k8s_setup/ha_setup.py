@@ -185,7 +185,8 @@ class ConfigCmd(Cmd):
             conf_file_dict = {'LOG' : {'path' : const.HA_LOG_DIR, 'level' : const.HA_LOG_LEVEL},
                          'consul_config' : {'endpoint' : consul_endpoint},
                          'prometheus_config' : {'endpoint' : None, 'poll_time': None},
-                         'event_topic' : 'hare'}
+                         'event_topic' : 'hare',
+                         'MONITOR' : {'message_type' : 'k8s_event', 'producer_id' : 'k8s_monitor'}}
 
             if not os.path.isdir(const.CONFIG_DIR):
                 os.mkdir(const.CONFIG_DIR)
