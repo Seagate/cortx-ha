@@ -182,10 +182,16 @@ class ConfigCmd(Cmd):
             # command can be used to get scrape interval of prometheus
             # kubectl describe configmap -n cortx | grep scrape_interval | awk \'{print $2}\'
 
+            # Dummy value fetched for now. This will be replaced by the key/path for the pod label onces that is avilable in confstore
+            data_pod_label = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}product_release')
+            # TBD delete once data_pod_label is avilable from confstore
+            data_pod_label = 'cortx-data'
+
             conf_file_dict = {'LOG' : {'path' : const.HA_LOG_DIR, 'level' : const.HA_LOG_LEVEL},
                          'consul_config' : {'endpoint' : consul_endpoint},
                          'prometheus_config' : {'endpoint' : None, 'poll_time': None},
                          'event_topic' : 'hare',
+                         'data_pod_label' : data_pod_label,
                          'MONITOR' : {'message_type' : 'k8s_event', 'producer_id' : 'k8s_monitor'}}
 
             if not os.path.isdir(const.CONFIG_DIR):

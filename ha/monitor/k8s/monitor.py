@@ -18,11 +18,18 @@
 
 from ha.monitor.k8s.object_monitor import ObjectMonitor
 
+from cortx.utils.conf_store import Conf
+from ha import const
+from ha.const import _DELIM
+from ha.core.config.config_manager import ConfigManager
+
 if __name__ == "__main__":
     object_threads = []
     # Read I/O pod selector label from ha.conf . Will be received from provisioner confstore
     # provisioner needs to be informed to add it in confstore  (to be added there )
-    pod_label = 'dummy'
+    ConfigManager.init("k8s_monitor")
+    pod_label = Conf.get(const.HA_GLOBAL_INDEX, "data_pod_label")
+
 
     kwargs = {'pretty': True}
     # Change to multiprocessing
