@@ -20,7 +20,6 @@ from ha.monitor.k8s.object_monitor import ObjectMonitor
 
 from cortx.utils.conf_store import Conf
 from ha import const
-from ha.const import _DELIM
 from ha.core.config.config_manager import ConfigManager
 
 if __name__ == "__main__":
