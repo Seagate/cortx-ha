@@ -27,7 +27,6 @@ from ha import const
 from ha.const import _DELIM
 
 from cortx.utils.log import Log
-from cortx.utils.conf_store import Conf
 
 class ObjectParser:
     def __init__(self):
