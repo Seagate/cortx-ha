@@ -244,7 +244,7 @@ class EventManager:
             else:
                 # If component key is not there, means event with that key will not be there,
                 # hence safely raise exception here so that _delete_event_key will not be called
-                raise UnSubscribeException(f"Can not unsubscribe the component: {component} as it was not registered earlier")
+                raise InvalidComponent(f"Can not unsubscribe the component: {component} as it was not registered earlier")
 
     def _delete_event_key(self, component: str, resource_type: str, states: list = None):
         '''
@@ -353,6 +353,8 @@ class EventManager:
                     if not self._confstore.key_exists(key):
                         self._monitor_rule.remove_rule(event.resource_type, state, self._default_action)
             Log.info(f"Successfully UnSubscribed component {component}")
+        except InvalidComponent:
+            raise
         except Exception as e:
             raise UnSubscribeException(f"Failed to unsubscribe {component}. Error: {e}")
 
