@@ -183,6 +183,7 @@ class ConfigCmd(Cmd):
             # kubectl describe configmap -n cortx | grep scrape_interval | awk \'{print $2}\'
 
             # Dummy value fetched for now. This will be replaced by the key/path for the pod label onces that is avilable in confstore
+            # Ref ticket EOS-25694
             data_pod_label = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}product_release')
             # TBD delete once data_pod_label is avilable from confstore
             data_pod_label = 'cortx-data'
