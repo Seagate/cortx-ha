@@ -207,17 +207,10 @@ class ConfigCmd(Cmd):
 
             conf_file_dict = {'LOG' : {'path' : const.HA_LOG_DIR, 'level' : const.HA_LOG_LEVEL},
                          'consul_config' : {'endpoint' : consul_endpoint},
+                         'prometheus_config' : {'endpoint' : None, 'poll_time': None},
                          'event_topic' : 'hare',
-                         'data_pod_label' : data_pod_label,
-                         'MONITOR' : {'message_type' : 'cluster_event', 'producer_id' : 'cluster_monitor'},
                          'EVENT_MANAGER' : {'message_type' : 'health_events', 'producer_id' : 'system_health',
-                                            'consumer_group' : 'health_monitor', 'consumer_id' : '1'},
-                         'FAULT_TOLERANCE' : {'message_type' : 'cluster_event', 'consumer_group' : 'event_listener',
-                                              'consumer_id' : '1'},
-                         'NODE': {'resource_type': 'node'},
-                         'SYSTEM_HEALTH' : {'num_entity_health_events' : 2,
-                                            'sys_health_bootstrap_timeout' : timeout,
-                                            'total_num_pods' : num_pods }
+                                            'consumer_group' : 'health_monitor', 'consumer_id' : '1'}
                          }
 
             if not os.path.isdir(const.CONFIG_DIR):
