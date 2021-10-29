@@ -194,6 +194,9 @@ class ConfigCmd(Cmd):
                          'event_topic' : 'hare',
                          'data_pod_label' : data_pod_label,
                          'MONITOR' : {'message_type' : 'k8s_event', 'producer_id' : 'k8s_monitor'}}
+                         'EVENT_MANAGER' : {'message_type' : 'health_events', 'producer_id' : 'system_health',
+                                            'consumer_group' : 'health_monitor', 'consumer_id' : '1'}
+                         }
 
             if not os.path.isdir(const.CONFIG_DIR):
                 os.mkdir(const.CONFIG_DIR)
