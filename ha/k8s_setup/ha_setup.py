@@ -201,7 +201,7 @@ class ConfigCmd(Cmd):
             ConfigManager.init("ha_setup")
             self._confstore = ConfigManager.get_confstore()
             Log.info(f'Populating the ha config file with consul_endpoint: {consul_endpoint}, \
-                      prometheus_endpoint:')
+                       data_pod_label: {data_pod_label}')
 
             Log.info('Performing event_manager subscription')
             event_manager = EventManager.get_instance()
