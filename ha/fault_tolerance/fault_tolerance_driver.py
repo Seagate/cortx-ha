@@ -14,42 +14,52 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
+"""
+   Set of periodically executable routines which accepts fault events from
+   message bus and takes further action on it
+"""
+
 
 import time
 
 from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
+from cortx.utils.message_bus import MessageConsumer
 
-from ha import const
 from ha.core.config.config_manager import ConfigManager
+from ha import const
 from ha.k8s_setup.const import _DELIM
 
-
-class FaultToleranceDriver:
+class FaultTolerant:
     """
-    Driver class which will poll contineously with a specific
-    time gap and analyzes the alert condition and it gets
-    notified to event manager
+    Module responsible for consuming messages from message bus,
+    further analyzes that event and publishes it if required
     """
     def __init__(self, poll_time=10):
+        """Init method"""
+        self._poll_time = poll_time
         ConfigManager.init('fault_tolerance_driver')
-        self._poll_time = Conf.get(const.HA_GLOBAL_INDEX, f"prometheus_config{_DELIM}poll_time")
-        if self._poll_time is None:
-            self._poll_time = poll_time
+        self._message_type = Conf.get(const.HA_GLOBAL_INDEX, f'MONITOR{_DELIM}message_type')
+        self._consumer = MessageConsumer(consumer_id='1', consumer_group='consumer-group', \
+                                   message_types=[self._message_type], auto_ack=True, \
+                                   offset='latest')
         Log.info(f'poll time: {self._poll_time}')
 
     def poll(self):
+        """Contineously polls for message bus for k8s_event message type"""
         try:
             while True:
-                # Get alert condition from ALertGenerator. Analyze changes
-                # with the help of event manager and notify if required
-                print('Ready to analyze faults in the system')
+                # Get alert from message. Analyze changes
+                # with the help of event analyzer filter and publish to message bus
+                # if required
                 Log.info('Ready to analyze faults in the system')
-
+                message = self._consumer.receive(timeout=0)
+                Log.debug(f'Received the message from message bus: {message}')
+                Log.error(f'Received the message from message bus: {message}')
                 time.sleep(self._poll_time)
         except Exception as exe:
             raise(f'Oops, some issue in the fault tolerance_driver: {exe}')
 
 if __name__ == '__main__':
-    fault_tolerance = FaultToleranceDriver()
+    fault_tolerance = FaultTolerant()
     fault_tolerance.poll()
