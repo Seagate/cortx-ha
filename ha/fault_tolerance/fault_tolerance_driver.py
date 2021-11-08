@@ -29,6 +29,8 @@ from cortx.utils.message_bus import MessageConsumer
 from ha.core.config.config_manager import ConfigManager
 from ha import const
 from ha.k8s_setup.const import _DELIM
+from ha.core.event_analyzer.filter.filter import K8SFilter
+
 
 class FaultTolerant:
     """
@@ -55,6 +57,7 @@ class FaultTolerant:
                 Log.info('Ready to analyze faults in the system')
                 message = self._consumer.receive(timeout=0)
                 Log.debug(f'Received the message from message bus: {message}')
+                K8SFilter.filter_event(json.dumps(message.__dict__))
                 Log.error(f'Received the message from message bus: {message}')
                 time.sleep(self._poll_time)
         except Exception as exe:
