@@ -192,19 +192,6 @@ class ConfigCmd(Cmd):
                 sys.stderr.write(f'Failed to get consul config. consul_config: {consul_endpoint}. \n')
                 sys.exit(1)
 
-            # Dummy value fetched for now. This will be replaced by the key/path for the pod label once that is available in confstore
-            # Ref ticket EOS-25694
-            data_pod_label = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}product_release')
-            # TBD delete once data_pod_label is avilable from confstore
-            data_pod_label = ['cortx-data', 'cortx-server']
-
-            # Time till when system health can be collected in bootstrap mode
-            timeout = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}product_release')
-            timeout = '10' # in seconds ;  temporary value till the same is avilabe in cluster.conf
-            # Total number of pods for which health is to be maintained
-            num_pods = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}product_release')
-            num_pods = '10' #temporary value till the same is avilabe in cluster.conf
-
             # Dummy value fetched for now. This will be replaced by the key/path for the pod label onces that is avilable in confstore
             # Ref ticket EOS-25694
             data_pod_label = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}product_release')
@@ -213,10 +200,9 @@ class ConfigCmd(Cmd):
 
             conf_file_dict = {'LOG' : {'path' : const.HA_LOG_DIR, 'level' : const.HA_LOG_LEVEL},
                          'consul_config' : {'endpoint' : consul_endpoint},
-                         'prometheus_config' : {'endpoint' : None, 'poll_time': None},
                          'event_topic' : 'hare',
                          'data_pod_label' : data_pod_label,
-                         'MONITOR' : {'message_type' : 'k8s_event', 'producer_id' : 'k8s_monitor'}}
+                         'MONITOR' : {'message_type' : 'k8s_event', 'producer_id' : 'k8s_monitor'},
                          'EVENT_MANAGER' : {'message_type' : 'health_events', 'producer_id' : 'system_health',
                                             'consumer_group' : 'health_monitor', 'consumer_id' : '1'}
                          }
