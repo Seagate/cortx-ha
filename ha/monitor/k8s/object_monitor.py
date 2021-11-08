@@ -54,7 +54,7 @@ class ObjectMonitor(Thread):
     def run(self):
 
         # Setup Credentials
-        config.load_kube_config()
+        config.load_incluster_config()
 
         # Initialize client
         k8s_client = client.CoreV1Api()
