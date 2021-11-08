@@ -16,7 +16,8 @@ args = my_parser.parse_args()
 
 service_entry_mapping = {
                         'health_monitor': '/usr/lib/python3.6/site-packages/ha/core/health_monitor/health_monitord.py',
-                        'fault_tolerance': '/usr/lib/python3.6/site-packages/ha/fault_tolerance/fault_tolerance_driver.py'
+                        'fault_tolerance': '/usr/lib/python3.6/site-packages/ha/fault_tolerance/fault_tolerance_driver.py',
+                        'k8s_monitor': '/usr/lib/python3.6/site-packages/ha/monitor/k8s/monitor.py'
                         }
 
 def usage(prog: str):
@@ -26,7 +27,7 @@ def usage(prog: str):
         sys.stderr.write(
             f"usage: {prog} [-h] <--config url> <--services service to start>...\n"
             f"where:\n"
-            f"--services fault_tolerance, k8s_monitor\n"
+            f"--services health_monitor, fault_tolerance, k8s_monitor\n"
             f"--config   Config URL\n")
 
 try:
@@ -35,6 +36,5 @@ try:
         usage('ha_start')
         sys.exit(22)
     driver_process = Popen(['/usr/bin/python3', service_entry_mapping[args.services]], shell=False, stdout=PIPE, stderr=PIPE) # nosec
-
 except Exception as proc_err:
     sys.stderr.write(f'Driver execution stopped because of some reason: {proc_err}')
