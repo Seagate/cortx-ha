@@ -187,7 +187,7 @@ class ClusterResourceFilter(Filter):
             message = json.dumps(ast.literal_eval(msg))
             message = json.loads(message)
 
-            Log.info(f'Received alert from fault tolerant')
+            Log.info('Received alert from fault tolerant')
             # event_namespace = message.get("namespace")
             event_resource_type = message.get("_resource_type")
 
