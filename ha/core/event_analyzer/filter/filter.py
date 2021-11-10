@@ -173,7 +173,8 @@ class ClusterResourceFilter(Filter):
         """
         Init method
         """
-        super(ClusterResourceFilter, self).__init__()
+        super(K8SFilter, self).__init__()
+        ConfigManager.init("event_analyzer")
 
     def filter_event(self, msg: str) -> bool:
         """
@@ -182,18 +183,25 @@ class ClusterResourceFilter(Filter):
             msg (str): Msg
         """
         try:
-            resource_alert_required = False
+            K8S_alert_required = False
             message = json.dumps(ast.literal_eval(msg))
             message = json.loads(message)
 
-            Log.debug('Received alert from fault tolerance')
+            Log.info(f'Received alert from fault tolerant')
+            # event_namespace = message.get("namespace")
             event_resource_type = message.get("_resource_type")
 
-            required_resource_type = Conf.get(const.HA_GLOBAL_INDEX, f"NODE{_DELIM}resource_type")
+            # namespace = Conf.get(const.HA_GLOBAL_INDEX, f"K8S:POD{_DELIM}namespace")
+            required_resource_type = Conf.get(const.HA_GLOBAL_INDEX, f"K8S:POD{_DELIM}resource_type")
+            # pod_name = Conf.get(const.HA_GLOBAL_INDEX, f"K8S:POD{_DELIM}pods")
+            # if event_namespace == namespace and event_pod_name.startswith(pod_name):
             if event_resource_type == required_resource_type:
-                resource_alert_required = True
-                Log.info(f'This alert needs an attention: resource_type: {event_resource_type}')
-            return resource_alert_required
+                K8S_alert_required = True
+                Log.info(f'This alert needs attention: resource_type: {event_resource_type}')
+                return K8S_alert_required
+            else:
+                return K8S_alert_required
+
         except Exception as e:
             raise EventFilterException(f"Failed to filter cluster resource event. Message: {msg}, Error: {e}")
 

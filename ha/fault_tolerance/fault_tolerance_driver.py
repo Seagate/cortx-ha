@@ -20,6 +20,7 @@
 """
 
 
+import json
 import time
 
 from cortx.utils.conf_store import Conf
@@ -40,6 +41,7 @@ class FaultTolerant:
     def __init__(self, poll_time=10):
         """Init method"""
         self._poll_time = poll_time
+        self._k8s_filter = K8SFilter()
         ConfigManager.init('fault_tolerance_driver')
         self._message_type = Conf.get(const.HA_GLOBAL_INDEX, f'MONITOR{_DELIM}message_type')
         self._consumer = MessageConsumer(consumer_id='1', consumer_group='consumer-group', \
@@ -50,16 +52,15 @@ class FaultTolerant:
     def poll(self):
         """Contineously polls for message bus for k8s_event message type"""
         try:
-            self._consumer.start()
+            result = False
             while True:
                 # Get alert from message. Analyze changes
                 # with the help of event analyzer filter and publish to message bus
                 # if required
                 Log.info('Ready to analyze faults in the system')
                 message = self._consumer.receive(timeout=0)
-                Log.debug(f'Received the message from message bus: {message}')
-                K8SFilter.filter_event(json.dumps(message.__dict__))
-                Log.error(f'Received the message from message bus: {message}')
+                Log.info(f'Received the message from message bus: {message}')
+                result = self._k8s_filter.filter_event(message.decode('utf-8'))
                 time.sleep(self._poll_time)
         except Exception as exe:
             raise(f'Oops, some issue in the fault tolerance_driver: {exe}')
