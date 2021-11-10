@@ -20,7 +20,6 @@
 """
 
 
-import json
 import time
 
 from cortx.utils.conf_store import Conf
@@ -61,6 +60,7 @@ class FaultTolerant:
                 message = self._consumer.receive(timeout=0)
                 Log.info(f'Received the message from message bus: {message}')
                 result = self._k8s_filter.filter_event(message.decode('utf-8'))
+                Log.info(f'Alert required: {result}')
                 time.sleep(self._poll_time)
         except Exception as exe:
             raise(f'Oops, some issue in the fault tolerance_driver: {exe}')
