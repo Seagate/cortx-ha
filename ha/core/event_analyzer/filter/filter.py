@@ -16,6 +16,7 @@
 # cortx-questions@seagate.com.
 
 import abc
+import ast
 import json
 from enum import Enum
 from cortx.utils.conf_store.conf_store import Conf
@@ -173,6 +174,7 @@ class K8SFilter(Filter):
         Init method
         """
         super(K8SFilter, self).__init__()
+        ConfigManager.init("event_analyzer")
 
     def filter_event(self, msg: str) -> bool:
         """
@@ -182,15 +184,20 @@ class K8SFilter(Filter):
         """
         try:
             K8S_alert_required = False
-            message = json.loads(msg)
+            message = json.dumps(ast.literal_eval(msg))
+            message = json.loads(message)
 
-            event_namespace = message.get("namespace")
-            event_pod_name = message.get("pod_name")
+            Log.info(f'Received alert from fault tolerant')
+            # event_namespace = message.get("namespace")
+            event_resource_type = message.get("_resource_type")
 
-            namespace = Conf.get(const.HA_GLOBAL_INDEX, f"K8S:POD{_DELIM}namespace")
-            pod_name = Conf.get(const.HA_GLOBAL_INDEX, f"K8S:POD{_DELIM}pods")
-            if event_namespace == namespace and event_pod_name.startswith(pod_name):
+            # namespace = Conf.get(const.HA_GLOBAL_INDEX, f"K8S:POD{_DELIM}namespace")
+            required_resource_type = Conf.get(const.HA_GLOBAL_INDEX, f"K8S:POD{_DELIM}resource_type")
+            # pod_name = Conf.get(const.HA_GLOBAL_INDEX, f"K8S:POD{_DELIM}pods")
+            # if event_namespace == namespace and event_pod_name.startswith(pod_name):
+            if event_resource_type == required_resource_type:
                 K8S_alert_required = True
+                Log.info(f'This alert needs attention: resource_type: {event_resource_type}')
                 return K8S_alert_required
             else:
                 return K8S_alert_required

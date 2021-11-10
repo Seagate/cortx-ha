@@ -186,7 +186,8 @@ class ConfigCmd(Cmd):
                          'data_pod_label' : data_pod_label,
                          'MONITOR' : {'message_type' : 'k8s_event', 'producer_id' : 'k8s_monitor'},
                          'EVENT_MANAGER' : {'message_type' : 'health_events', 'producer_id' : 'system_health',
-                                            'consumer_group' : 'health_monitor', 'consumer_id' : '1'}
+                                            'consumer_group' : 'health_monitor', 'consumer_id' : '1'},
+                         'K8S:POD': {'namespace': 'cortx', 'resource_type': 'k8s:pod'}
                          }
 
             if not os.path.isdir(const.CONFIG_DIR):
