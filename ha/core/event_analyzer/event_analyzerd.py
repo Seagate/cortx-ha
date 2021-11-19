@@ -35,8 +35,8 @@ from ha import const
 from ha.core.config.config_manager import ConfigManager
 from ha.core.system_health.system_health import SystemHealth
 from ha.core.event_analyzer.watcher.watcher import Watcher
-from ha.core.event_analyzer.filter.filter import ClusterResourceFilter
-from ha.core.event_analyzer.parser.parser import ClusterResourceParser
+from ha.core.event_analyzer.filter.filter import K8SFilter
+from ha.core.event_analyzer.parser.parser import K8SAlertParser
 from ha.const import _DELIM
 
 class EventAnalyzerService:
@@ -109,10 +109,11 @@ class EventAnalyzer:
         ConfigManager.init('event_analyzer')
         self._confstore = ConfigManager.get_confstore()
         system_health = SystemHealth(self._confstore)
-        self._cluster_resource_filter = ClusterResourceFilter()
-        self._cluster_resource_parser = ClusterResourceParser()
-        if self._cluster_resource_filter.filter_event(msg):
-            health_event = self._cluster_resource_parser.parse_event(msg)
+        self._k8sfilter = K8SFilter()
+        self._k8s_alert_parser = K8SAlertParser()
+        if self._k8sfilter.filter_event(msg):
+            Log.error(f'## Inside IF')
+            health_event = self._k8s_alert_parser.parse_event(msg)
             system_health.process_event(health_event)
 
 def main(argv):

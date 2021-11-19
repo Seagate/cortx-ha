@@ -216,6 +216,7 @@ class ConfigCmd(Cmd):
                          'FAULT_TOLERANCE' : {'message_type' : 'cluster_event', 'consumer_group' : 'event_listener',
                                               'consumer_id' : '1'},
                          'NODE': {'resource_type': 'node'}
+                         'SYSTEM_HEALTH' : {'num_entity_health_events' : 2}
                          }
 
             if not os.path.isdir(const.CONFIG_DIR):
