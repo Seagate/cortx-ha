@@ -27,10 +27,16 @@ class StatusMapper:
         "fault_resolved": "online",
         "missing": "offline",
         "insertion": "online",
+        "online": "online",
         "failed": "failed",
         "unknown": "unknown",
         "threshold_breached:low": "degraded",
         "threshold_breached:high": "degraded"
+    }
+
+    EVENT_TO_SEVERITY_MAPPING = {
+        "online": "informational",
+        "failed": "error"
     }
 
     def __init__(self):

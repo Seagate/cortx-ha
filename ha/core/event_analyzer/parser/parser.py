@@ -20,10 +20,13 @@ import json
 import re
 
 from cortx.utils.log import Log
+from cortx.utils.conf_store import Conf
 
+from ha.const import _DELIM
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.event_analyzer.event_analyzer_exceptions import EventParserException
 from ha.core.system_health.const import CLUSTER_ELEMENTS, HEALTH_EVENTS, EVENT_SEVERITIES
+from ha.core.system_health.status_mapper import StatusMapper
 from ha.core.config.config_manager import ConfigManager
 from ha.const import PVTFQDN_TO_NODEID_KEY, ALERT_ATTRIBUTES, EVENT_ATTRIBUTES
 
@@ -139,6 +142,59 @@ class IEMParser(Parser):
                 event[EVENT_ATTRIBUTES.EVENT_TYPE] = HEALTH_EVENTS.FAILED.value
 
             Log.debug(f"Parsed {event} schema")
+            health_event = HealthEvent.dict_to_object(event)
+            Log.info(f"Event {event[EVENT_ATTRIBUTES.EVENT_ID]} is parsed and converted to object.")
+            return health_event
+
+        except Exception as e:
+            raise EventParserException(f"Failed to parse IEM. Message: {msg}, Error: {e}")
+
+
+class K8SAlertParser(Parser):
+    """
+    Subscriber for event analyzer to pass msg.
+    """
+
+    def __init__(self):
+        """
+        Init method.
+        """
+        super(K8SAlertParser, self).__init__()
+        Log.info("K8SAlert Parser is initialized ...")
+
+    def parse_event(self, msg: str) -> HealthEvent:
+        """
+        Parse event.
+        Args:
+            msg (str): Msg
+        """
+        try:
+            k8s_alert = json.loads(msg)
+            # cluster_id = self._confstore.get(f"node{_DELIM}cluster_id")
+
+            pod_id = k8s_alert["resource_name"]
+            node_id = k8s_alert["node"]
+            resource_type = k8s_alert["resource_type"]
+            timestamp = k8s_alert["timestamp"]
+
+            event = {
+                EVENT_ATTRIBUTES.EVENT_ID : "1", # TODO: how?
+                EVENT_ATTRIBUTES.EVENT_TYPE : k8s_alert["event_type"],
+                EVENT_ATTRIBUTES.SEVERITY : StatusMapper.EVENT_TO_SEVERITY_MAPPING[k8s_alert["event_type"]],
+                EVENT_ATTRIBUTES.SITE_ID : "1", # TODO: how?
+                EVENT_ATTRIBUTES.RACK_ID : "1", # TODO: how?
+                EVENT_ATTRIBUTES.CLUSTER_ID : "12345", # Modify this to get it from cluster.conf
+                EVENT_ATTRIBUTES.STORAGESET_ID : pod_id, # Check pod_name or resource_name
+                EVENT_ATTRIBUTES.NODE_ID : pod_id,
+                EVENT_ATTRIBUTES.HOST_ID : pod_id, # Check whether pod_name or resource_name
+                EVENT_ATTRIBUTES.RESOURCE_TYPE : "node", # How?
+                EVENT_ATTRIBUTES.TIMESTAMP : timestamp,
+                EVENT_ATTRIBUTES.RESOURCE_ID : pod_id, # TODO: check
+                EVENT_ATTRIBUTES.SPECIFIC_INFO : "specific_info"
+            }
+
+            Log.debug(f"Parsed {event} schema")
+            Log.error(f"Parsed {event} schema")
             health_event = HealthEvent.dict_to_object(event)
             Log.info(f"Event {event[EVENT_ATTRIBUTES.EVENT_ID]} is parsed and converted to object.")
             return health_event
