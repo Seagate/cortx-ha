@@ -116,6 +116,18 @@ class Cmd:
             else:
                 raise SetupError(f"{file} is not dir and file, can not be deleted.")
 
+    @staticmethod
+    def copy_file(src: str, dest: str):
+        """
+        copy a file from source to destination.
+
+        Args:
+            src (str): source file path
+            dest (str): destination path
+        """
+        shutil.copy(src, dest)
+
+
 class PostInstallCmd(Cmd):
     """
     PostInstall Setup Cmd
@@ -198,6 +210,7 @@ class ConfigCmd(Cmd):
                          'FAULT_TOLERANCE' : {'message_type' : 'cluster_event', 'consumer_group' : 'event_listener',
                                               'consumer_id' : '1'},
                          'NODE': {'resource_type': 'node'}
+                         'SYSTEM_HEALTH' : {'num_entity_health_events' : 2}
                          }
 
             if not os.path.isdir(const.CONFIG_DIR):
@@ -207,6 +220,7 @@ class ConfigCmd(Cmd):
             with open(const.HA_CONFIG_FILE, 'w+') as conf_file:
                 yaml.dump(conf_file_dict, conf_file, default_flow_style=False)
 
+            Cmd.copy_file(const.SOURCE_HEALTH_HIERARCHY_FILE, const.HEALTH_HIERARCHY_FILE)
             # First populate the ha.conf and then do init. Because, in the init, this file will
             # be stored in the confstore as key values
             ConfigManager.init("ha_setup")
