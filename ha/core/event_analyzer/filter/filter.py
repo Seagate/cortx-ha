@@ -198,3 +198,4 @@ class ClusterResourceFilter(Filter):
 
         except Exception as e:
             raise EventFilterException(f"Failed to filter cluster resource event. Message: {msg}, Error: {e}")
+
