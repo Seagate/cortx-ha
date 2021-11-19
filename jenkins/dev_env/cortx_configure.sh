@@ -102,8 +102,8 @@ chmod +x  ${DIR}/${SERVICE}
 cp -rf ${DUMMY_SERVICE} /usr/lib/systemd/system/${SERVICE}.service
 sed -i -e "s|<service>|${SERVICE}|g" /usr/lib/systemd/system/${SERVICE}.service
 
-# sspl-ll
-SERVICE="sspl-ll"
+# sspl
+SERVICE="sspl"
 cp -rf ${DUMMY_SCRIPT} ${DIR}/${SERVICE}
 chmod +x  ${DIR}/${SERVICE}
 cp -rf ${DUMMY_SERVICE} /usr/lib/systemd/system/${SERVICE}.service

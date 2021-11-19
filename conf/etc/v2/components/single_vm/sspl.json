@@ -1,10 +1,10 @@
 {
-    "sspl-ll": {
+    "sspl": {
         "parameters": { },
         "group": "monitor_group",
         "provider": {
             "name": "systemd",
-            "service": "sspl-ll",
+            "service": "sspl",
             "intervals": [
                 "0s",
                 "30s",

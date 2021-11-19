@@ -59,7 +59,7 @@ class TestClusterLayout(unittest.TestCase):
                       "mgmt-vip.json",
                       "motr.json",
                       "s3servers.json",
-                      "sspl-ll.json",
+                      "sspl.json",
                       ]
         file_list = [prefix + s for s in components]
         node_list = ["srvnode-1", "srvnode-2", "srvnode-3"]

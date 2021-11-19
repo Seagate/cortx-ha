@@ -41,7 +41,7 @@ io_stack
     s3backcons
     s3backprod
 monitor
-    sspl-ll
+    sspl
 management
     mgmt-vip
     kibana
@@ -336,10 +336,10 @@ def haproxy(cib_xml, push=False, **kwargs):
 
 def sspl(cib_xml, push=False, **kwargs):
     """Create sspl clone resource in pacemaker."""
-    # Using sspl-ll service file according to the content of SSPL repo
-    sspl_start = str(get_res_timeout(RESOURCE.SSPL_LL.value, TIMEOUT_ACTION.START.value, "sspl-ll"))
-    sspl_stop = str(get_res_timeout(RESOURCE.SSPL_LL.value, TIMEOUT_ACTION.STOP.value, "sspl-ll"))
-    process.run_cmd(f"pcs -f {cib_xml} resource create {RESOURCE.SSPL_LL.value} systemd:sspl-ll \
+    # Using sspl service file according to the content of SSPL repo
+    sspl_start = str(get_res_timeout(RESOURCE.SSPL.value, TIMEOUT_ACTION.START.value, "sspl"))
+    sspl_stop = str(get_res_timeout(RESOURCE.SSPL.value, TIMEOUT_ACTION.STOP.value, "sspl"))
+    process.run_cmd(f"pcs -f {cib_xml} resource create {RESOURCE.SSPL.value} systemd:sspl \
         op start timeout={sspl_start}s interval=0s \
         op monitor timeout=29s interval=30s \
         op stop timeout={sspl_stop}s interval=0s --group monitor_group")

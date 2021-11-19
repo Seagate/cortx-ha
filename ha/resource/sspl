@@ -116,12 +116,12 @@ stateful_check_state() {
 }
 
 start_sspl_service() {
-        systemctl start sspl-ll
+        systemctl start sspl
         echo "START (master): $?"
 
         #check status
         for retry in {1..5}; do
-            status=$(systemctl is-active sspl-ll)
+            status=$(systemctl is-active sspl)
             case $status in
                 active )
                     return 0
@@ -152,8 +152,8 @@ stateful_start() {
 }
 
 stateful_demote() {
-    sspl_pid=`/sbin/pidof -s /usr/bin/sspl_ll_d`
-    sspl_state=`systemctl is-active sspl-ll`
+    sspl_pid=`/sbin/pidof -s /usr/bin/sspld`
+    sspl_state=`systemctl is-active sspl`
     log "DEMOTE: pid=$sspl_pid curr_state=$sspl_state"
     [ $sspl_state == 'active' -a $sspl_pid != '' ] ||
         return $(stateful_monitor)
@@ -171,8 +171,8 @@ stateful_demote() {
 
 stateful_promote() {
     sleep 8
-    sspl_pid=`/sbin/pidof -s /usr/bin/sspl_ll_d`
-    sspl_state=`systemctl is-active sspl-ll`
+    sspl_pid=`/sbin/pidof -s /usr/bin/sspld`
+    sspl_state=`systemctl is-active sspl`
     log "PROMOTE: pid=$sspl_pid curr_state=$sspl_state"
     [ $sspl_state == 'active' -a $sspl_pid != '' ] ||
         return $(stateful_monitor)
@@ -193,14 +193,14 @@ stateful_promote() {
 
 stateful_stop() {
     log "STOP..."
-    systemctl stop sspl-ll
+    systemctl stop sspl
     log "STOP: $?"
     rm -rf "${OCF_RESKEY_state}"
     return $OCF_SUCCESS
 }
 
 stateful_monitor() {
-    sspl_state=`systemctl is-active sspl-ll`
+    sspl_state=`systemctl is-active sspl`
     stateful_check_state "master"
     if [ $? -eq 0 ]; then
         log "MONITOR (master): $sspl_state"

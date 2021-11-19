@@ -411,8 +411,8 @@ class PcsHWNodeController(PcsNodeController):
                     return stop_status
 
             if storageoff:
-                # Stop services on node except sspl-ll
-                self._controllers[const.SERVICE_CONTROLLER].stop(node_id=node_name, excludeResourceList=[RESOURCE.SSPL_LL.value])
+                # Stop services on node except sspl
+                self._controllers[const.SERVICE_CONTROLLER].stop(node_id=node_name, excludeResourceList=[RESOURCE.SSPL.value])
 
                 # Stop the storage enclosure on the node
                 actuator_mgr = ActuatorManager()

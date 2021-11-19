@@ -140,7 +140,7 @@ precheck() {
 systemd_disable() {
     log "${FUNCNAME[0]}: Disable sspl systemd unit"
     echo 'Disable sspl systemd unit...'
-    cmd='sudo systemctl stop sspl-ll && sudo systemctl disable sspl-ll'
+    cmd='sudo systemctl stop sspl && sudo systemctl disable sspl'
     run_on_both $cmd
 }
 
