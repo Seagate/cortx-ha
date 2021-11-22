@@ -112,7 +112,6 @@ class EventAnalyzer:
         self._k8sfilter = K8SFilter()
         self._k8s_alert_parser = K8SAlertParser()
         if self._k8sfilter.filter_event(msg):
-            Log.error(f'## Inside IF')
             health_event = self._k8s_alert_parser.parse_event(msg)
             system_health.process_event(health_event)
 
