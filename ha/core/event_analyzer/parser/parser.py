@@ -26,6 +26,7 @@ from cortx.utils.log import Log
 from cortx.utils.conf_store import Conf
 
 from ha.const import _DELIM
+from ha import const
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.event_analyzer.event_analyzer_exceptions import EventParserException
 from ha.core.system_health.const import CLUSTER_ELEMENTS, HEALTH_EVENTS, EVENT_SEVERITIES
@@ -163,6 +164,7 @@ class K8SAlertParser(Parser):
         Init method.
         """
         super(K8SAlertParser, self).__init__()
+        ConfigManager.init("event_analyzer")
         Log.info("K8SAlert Parser is initialized ...")
 
     def parse_event(self, msg: str) -> HealthEvent:
@@ -173,7 +175,7 @@ class K8SAlertParser(Parser):
         """
         try:
             k8s_alert = json.loads(msg)
-            # cluster_id = self._confstore.get(f"node{_DELIM}cluster_id")
+            cluster_id = Conf.get(const.HA_GLOBAL_INDEX, f"node{_DELIM}cluster_id")
 
             pod_id = k8s_alert["resource_name"]
             node_id = k8s_alert["node"]
@@ -186,7 +188,7 @@ class K8SAlertParser(Parser):
                 EVENT_ATTRIBUTES.SEVERITY : StatusMapper.EVENT_TO_SEVERITY_MAPPING[k8s_alert["event_type"]],
                 EVENT_ATTRIBUTES.SITE_ID : "1", # TODO: how?
                 EVENT_ATTRIBUTES.RACK_ID : "1", # TODO: how?
-                EVENT_ATTRIBUTES.CLUSTER_ID : "12345", # Modify this to get it from cluster.conf
+                EVENT_ATTRIBUTES.CLUSTER_ID : cluster_id, # Modify this to get it from cluster.conf
                 EVENT_ATTRIBUTES.STORAGESET_ID : pod_id, # Check pod_name or resource_name
                 EVENT_ATTRIBUTES.NODE_ID : pod_id,
                 EVENT_ATTRIBUTES.HOST_ID : pod_id, # Check whether pod_name or resource_name
