@@ -26,5 +26,5 @@ HEALTH_HIERARCHY_FILE = "{}/system_health_hierarchy.json".format(CONFIG_DIR)
 _DELIM=">"
 
 # Event_manager keys
-POD_EVENT="node"
+POD_EVENT="cluster:node"
 EVENT_COMPONENT="hare"
