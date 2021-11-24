@@ -195,7 +195,7 @@ class ConfigCmd(Cmd):
             # Dummy value fetched for now. This will be replaced by the key/path for the pod label once that is available in confstore
             # Ref ticket EOS-25694
             data_pod_label = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}product_release')
-            cluster_id = Conf.get(self._index, f'node{_DELIM}{machine_id}{_DELIM}cluster_id')
+            # cluster_id = Conf.get(self._index, f'node{_DELIM}{machine_id}{_DELIM}cluster_id')
             # TBD delete once data_pod_label is avilable from confstore
             data_pod_label = ['cortx-data', 'cortx-server']
 
@@ -216,7 +216,7 @@ class ConfigCmd(Cmd):
                                             'consumer_group' : 'health_monitor', 'consumer_id' : '1'},
                          'FAULT_TOLERANCE' : {'message_type' : 'cluster_event', 'consumer_group' : 'event_listener',
                                               'consumer_id' : '1'},
-                         'NODE': {'resource_type': 'node'}
+                         'NODE': {'resource_type': 'node'},
                          'SYSTEM_HEALTH' : {'num_entity_health_events' : 2}
                          }
 
@@ -232,11 +232,6 @@ class ConfigCmd(Cmd):
             # be stored in the confstore as key values
             ConfigManager.init("ha_setup")
 
-            # Inside cluster.conf, cluster_id will be present under
-            # "node".<actual POD machind id>."cluster_id". So,
-            # in the similar way, confstore will have this key when
-            # the cluster.conf load will taked place.
-            # So, to get the cluster_id field from Confstore, we need machine_id
             machine_id = self.get_machine_id()
             cluster_id = Conf.get(self._index, f'node{_DELIM}{machine_id}{_DELIM}cluster_id')
             # site_id = Conf.get(self._index, f'node{_DELIM}{machine_id}{_DELIM}site_id')
@@ -244,9 +239,9 @@ class ConfigCmd(Cmd):
             # rack_id = Conf.get(self._index, f'node{_DELIM}{machine_id}{_DELIM}rack_id')
             rack_id = '1'
             conf_file_dict.update({'COMMON_CONFIG': {'cluster_id': cluster_id, 'rack_id': rack_id, 'site_id': site_id}})
-            # TODO: Verify whether these newly added config is avilable in the confstore or not
             with open(const.HA_CONFIG_FILE, 'w+') as conf_file:
                 yaml.dump(conf_file_dict, conf_file, default_flow_style=False)
+
             self._confstore = ConfigManager.get_confstore()
 
             Log.info(f'Populating the ha config file with consul_endpoint: {consul_endpoint}, \

@@ -154,7 +154,7 @@ class IEMParser(Parser):
             raise EventParserException(f"Failed to parse IEM. Message: {msg}, Error: {e}")
 
 
-class K8SAlertParser(Parser):
+class ClusterResourceParser(Parser):
     """
     Subscriber for event analyzer to pass msg.
     """
@@ -163,9 +163,9 @@ class K8SAlertParser(Parser):
         """
         Init method.
         """
-        super(K8SAlertParser, self).__init__()
+        super(ClusterResourceParser, self).__init__()
         ConfigManager.init("event_analyzer")
-        Log.info("K8SAlert Parser is initialized ...")
+        Log.info("ClusterResource Parser is initialized ...")
 
     def parse_event(self, msg: str) -> HealthEvent:
         """
@@ -174,27 +174,30 @@ class K8SAlertParser(Parser):
             msg (str): Msg
         """
         try:
-            k8s_alert = json.loads(msg)
-            cluster_id = Conf.get(const.HA_GLOBAL_INDEX, f"node{_DELIM}cluster_id")
-
-            pod_id = k8s_alert["resource_name"]
-            node_id = k8s_alert["node"]
-            resource_type = k8s_alert["resource_type"]
-            timestamp = k8s_alert["timestamp"]
+            cluster_resource_alert = json.loads(msg)
+            cluster_id = Conf.get(const.HA_GLOBAL_INDEX, f"COMMON_CONFIG{_DELIM}cluster_id")
+            site_id = Conf.get(const.HA_GLOBAL_INDEX, f"COMMON_CONFIG{_DELIM}site_id")
+            rack_id = Conf.get(const.HA_GLOBAL_INDEX, f"COMMON_CONFIG{_DELIM}rack_id")
+            timestamp = str(int(time.time()))
+            event_id = timestamp + str(uuid.uuid4().hex)
+            pod_id = cluster_resource_alert["_resource_name"]
+            resource_type = cluster_resource_alert["_resource_type"]
+            event_type = cluster_resource_alert["_event_type"]
+            timestamp = cluster_resource_alert["_timestamp"]
 
             event = {
-                EVENT_ATTRIBUTES.EVENT_ID : "1", # TODO: how?
-                EVENT_ATTRIBUTES.EVENT_TYPE : k8s_alert["event_type"],
-                EVENT_ATTRIBUTES.SEVERITY : StatusMapper.EVENT_TO_SEVERITY_MAPPING[k8s_alert["event_type"]],
-                EVENT_ATTRIBUTES.SITE_ID : "1", # TODO: how?
-                EVENT_ATTRIBUTES.RACK_ID : "1", # TODO: how?
-                EVENT_ATTRIBUTES.CLUSTER_ID : cluster_id, # Modify this to get it from cluster.conf
-                EVENT_ATTRIBUTES.STORAGESET_ID : pod_id, # Check pod_name or resource_name
+                EVENT_ATTRIBUTES.EVENT_ID : event_id,
+                EVENT_ATTRIBUTES.EVENT_TYPE : event_type,
+                EVENT_ATTRIBUTES.SEVERITY : StatusMapper.EVENT_TO_SEVERITY_MAPPING[event_type],
+                EVENT_ATTRIBUTES.SITE_ID : site_id, # TODO: Should be fetched from confstore
+                EVENT_ATTRIBUTES.RACK_ID : rack_id, # TODO: Should be fetched from confstore
+                EVENT_ATTRIBUTES.CLUSTER_ID : cluster_id, # TODO: Should be fetched from confstore
+                EVENT_ATTRIBUTES.STORAGESET_ID : pod_id,
                 EVENT_ATTRIBUTES.NODE_ID : pod_id,
-                EVENT_ATTRIBUTES.HOST_ID : pod_id, # Check whether pod_name or resource_name
-                EVENT_ATTRIBUTES.RESOURCE_TYPE : "node", # How?
+                EVENT_ATTRIBUTES.HOST_ID : pod_id,
+                EVENT_ATTRIBUTES.RESOURCE_TYPE : "node",
                 EVENT_ATTRIBUTES.TIMESTAMP : timestamp,
-                EVENT_ATTRIBUTES.RESOURCE_ID : pod_id, # TODO: check
+                EVENT_ATTRIBUTES.RESOURCE_ID : pod_id,
                 EVENT_ATTRIBUTES.SPECIFIC_INFO : "specific_info"
             }
 
@@ -205,4 +208,4 @@ class K8SAlertParser(Parser):
             return health_event
 
         except Exception as e:
-            raise EventParserException(f"Failed to parse IEM. Message: {msg}, Error: {e}")
+            raise EventParserException(f"Failed to parse cluster resource alert. Message: {msg}, Error: {e}")
