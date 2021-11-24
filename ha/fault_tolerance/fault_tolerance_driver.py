@@ -24,15 +24,15 @@ import time
 
 from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
-from cortx.utils.message_bus import MessageConsumer
+from ha.util.message_bus import MessageBus, CONSUMER_STATUS, MessageBusConsumer
 
 from ha.core.config.config_manager import ConfigManager
 from ha import const
 from ha.k8s_setup.const import _DELIM
-from ha.core.event_analyzer.filter.filter import K8SFilter
+from ha.core.event_analyzer.filter.filter import ClusterResourceFilter
 
 
-class FaultTolerant:
+class FaultTolerance:
     """
     Module responsible for consuming messages from message bus,
     further analyzes that event and publishes it if required
@@ -40,31 +40,49 @@ class FaultTolerant:
     def __init__(self, poll_time=10):
         """Init method"""
         self._poll_time = poll_time
-        self._k8s_filter = K8SFilter()
-        ConfigManager.init('fault_tolerance_driver')
-        self._message_type = Conf.get(const.HA_GLOBAL_INDEX, f'MONITOR{_DELIM}message_type')
-        self._consumer = MessageConsumer(consumer_id='1', consumer_group='consumer-group', \
-                                   message_types=[self._message_type], auto_ack=True, \
-                                   offset='latest')
+        self._cluster_resource_filter = ClusterResourceFilter()
+        ConfigManager.init('fault_tolerance')
         Log.info(f'poll time: {self._poll_time}')
+        self._consumer = self._get_consumer()
+
+    def _get_consumer(self) -> MessageBusConsumer:
+        """
+           Returns an object of MessageBusConsumer class which will listen on
+           cluster_event message type and callback will be executed
+        """
+        self._consumer_id = Conf.get(const.HA_GLOBAL_INDEX, f'FAULT_TOLERANCE{_DELIM}consumer_id')
+        self._consumer_group = Conf.get(const.HA_GLOBAL_INDEX, f'FAULT_TOLERANCE{_DELIM}consumer_group')
+        self._message_type = Conf.get(const.HA_GLOBAL_INDEX, f'FAULT_TOLERANCE{_DELIM}message_type')
+        return MessageBus.get_consumer(consumer_id=self._consumer_id, \
+                                consumer_group=self._consumer_group, \
+                                message_type=self._message_type, \
+                                callback=self.process_message)
+
+    def process_message(self, message: str):
+        """Callback method for MessageConsumer"""
+        Log.debug(f'Received the message from message bus: {message}')
+        result = False
+        # EventAnalyzer class instantiation is expected.
+        # This is not required. This will be called from EventAnalyzer class.
+        # But as its not available yet and to check newly added filter functionality,
+        # temporarily added this
+        result = self._cluster_resource_filter.filter_event(message.decode('utf-8'))
+        Log.info(f'Alert required: {result}')
+        return CONSUMER_STATUS.SUCCESS
 
     def poll(self):
         """Contineously polls for message bus for k8s_event message type"""
         try:
-            result = False
+            self._consumer.start()
             while True:
                 # Get alert from message. Analyze changes
                 # with the help of event analyzer filter and publish to message bus
                 # if required
                 Log.info('Ready to analyze faults in the system')
-                message = self._consumer.receive(timeout=0)
-                Log.info(f'Received the message from message bus: {message}')
-                result = self._k8s_filter.filter_event(message.decode('utf-8'))
-                Log.info(f'Alert required: {result}')
                 time.sleep(self._poll_time)
         except Exception as exe:
             raise(f'Oops, some issue in the fault tolerance_driver: {exe}')
 
 if __name__ == '__main__':
-    fault_tolerance = FaultTolerant()
+    fault_tolerance = FaultTolerance()
     fault_tolerance.poll()
