@@ -174,7 +174,6 @@ class ClusterResourceFilter(Filter):
         Init method
         """
         super(ClusterResourceFilter, self).__init__()
-        ConfigManager.init("event_analyzer")
 
     def filter_event(self, msg: str) -> bool:
         """
@@ -195,7 +194,6 @@ class ClusterResourceFilter(Filter):
                 resource_alert_required = True
                 Log.info(f'This alert needs an attention: resource_type: {event_resource_type}')
             return resource_alert_required
-
         except Exception as e:
             raise EventFilterException(f"Failed to filter cluster resource event. Message: {msg}, Error: {e}")
 
