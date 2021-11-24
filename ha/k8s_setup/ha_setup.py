@@ -89,6 +89,12 @@ class Cmd:
         args = parser.parse_args(argv)
         return args.command(args)
 
+    def get_machine_id(self):
+        command = "cat /etc/machine-id"
+        machine_id, err, rc = self._execute.run_cmd(command, check_error=True)
+        Log.info(f"Read machine-id. Output: {machine_id}, Err: {err}, RC: {rc}")
+        return machine_id.strip()
+
     @staticmethod
     def add_args(parser: str, cls: str, name: str):
         """
@@ -189,7 +195,7 @@ class ConfigCmd(Cmd):
             # Dummy value fetched for now. This will be replaced by the key/path for the pod label onces that is avilable in confstore
             # Ref ticket EOS-25694
             data_pod_label = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}product_release')
-            cluster_id = Conf.get(self._index, f'node{_DELIM}{machine_id}{_DELIM}cluster_id')
+            # cluster_id = Conf.get(self._index, f'node{_DELIM}{machine_id}{_DELIM}cluster_id')
             # TBD delete once data_pod_label is avilable from confstore
             data_pod_label = 'cortx-data'
 
@@ -202,7 +208,7 @@ class ConfigCmd(Cmd):
                                             'consumer_group' : 'health_monitor', 'consumer_id' : '1'},
                          'FAULT_TOLERANCE' : {'message_type' : 'cluster_event', 'consumer_group' : 'event_listener',
                                               'consumer_id' : '1'},
-                         'NODE': {'resource_type': 'node'}
+                         'NODE': {'resource_type': 'node'},
                          'SYSTEM_HEALTH' : {'num_entity_health_events' : 2}
                          }
 
@@ -217,6 +223,17 @@ class ConfigCmd(Cmd):
             # First populate the ha.conf and then do init. Because, in the init, this file will
             # be stored in the confstore as key values
             ConfigManager.init("ha_setup")
+
+            machine_id = self.get_machine_id()
+            cluster_id = Conf.get(self._index, f'node{_DELIM}{machine_id}{_DELIM}cluster_id')
+            # site_id = Conf.get(self._index, f'node{_DELIM}{machine_id}{_DELIM}site_id')
+            site_id = '1'
+            # rack_id = Conf.get(self._index, f'node{_DELIM}{machine_id}{_DELIM}rack_id')
+            rack_id = '1'
+            conf_file_dict.update({'COMMON_CONFIG': {'cluster_id': cluster_id, 'rack_id': rack_id, 'site_id': site_id}})
+            with open(const.HA_CONFIG_FILE, 'w+') as conf_file:
+                yaml.dump(conf_file_dict, conf_file, default_flow_style=False)
+
             self._confstore = ConfigManager.get_confstore()
             Log.info(f'Populating the ha config file with consul_endpoint: {consul_endpoint}, \
                        data_pod_label: {data_pod_label}')
