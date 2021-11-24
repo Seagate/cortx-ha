@@ -37,7 +37,7 @@ class ObjectParser:
 class NodeEventParser(ObjectParser):
     def __init__(self):
         super().__init__()
-        self._type = 'node'
+        self._type = 'host'
 
     def parse(self, an_event, cached_state):
         alert = K8sAlert()
@@ -96,7 +96,7 @@ class NodeEventParser(ObjectParser):
 class PodEventParser(ObjectParser):
     def __init__(self):
         super().__init__()
-        self._type = 'pod'
+        self._type = 'node'
 
     def parse(self, an_event, cached_state):
         alert = K8sAlert()
