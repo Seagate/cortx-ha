@@ -37,12 +37,12 @@ class FaultTolerance:
     Module responsible for consuming messages from message bus,
     further analyzes that event and publishes it if required
     """
-    def __init__(self, poll_time=10):
+    def __init__(self, wait_time=10):
         """Init method"""
-        self._poll_time = poll_time
+        self._wait_time = wait_time
         self._cluster_resource_filter = ClusterResourceFilter()
         ConfigManager.init('fault_tolerance')
-        Log.info(f'poll time: {self._poll_time}')
+        Log.info(f'wait time: {self._wait_time}')
         self._consumer = self._get_consumer()
 
     def _get_consumer(self) -> MessageBusConsumer:
@@ -79,7 +79,7 @@ class FaultTolerance:
                 # with the help of event analyzer filter and publish to message bus
                 # if required
                 Log.info('Ready to analyze faults in the system')
-                time.sleep(self._poll_time)
+                time.sleep(self._wait_time)
         except Exception as exe:
             raise(f'Oops, some issue in the fault tolerance_driver: {exe}')
 

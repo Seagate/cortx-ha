@@ -207,7 +207,7 @@ class ConfigCmd(Cmd):
                                             'consumer_group' : 'health_monitor', 'consumer_id' : '1'},
                          'FAULT_TOLERANCE' : {'message_type' : 'cluster_event', 'consumer_group' : 'event_listener',
                                               'consumer_id' : '1'},
-                         'CLUSTER:NODE': {'namespace': 'cortx', 'resource_type': 'cluster:node'}
+                         'NODE': {'resource_type': 'node'}
                          }
 
             if not os.path.isdir(const.CONFIG_DIR):
