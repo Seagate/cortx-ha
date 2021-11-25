@@ -61,7 +61,7 @@ class FaultTolerance:
         try:
             EventAnalyzer(message.decode('utf-8'))
         except Exception as err:
-            Log.error('Failed to analyze the event')
+            Log.error(f'Failed to analyze the event: {err}')
             return CONSUMER_STATUS.FAILED
         return CONSUMER_STATUS.SUCCESS
 
