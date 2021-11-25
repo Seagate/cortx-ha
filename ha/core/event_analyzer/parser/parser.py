@@ -16,6 +16,7 @@
 # cortx-questions@seagate.com.
 
 import abc
+import ast
 import json
 import re
 import time
@@ -173,13 +174,14 @@ class ClusterResourceParser(Parser):
             msg (str): Msg
         """
         try:
-            cluster_resource_alert = json.loads(msg)
+            message = json.dumps(ast.literal_eval(msg))
+            cluster_resource_alert = json.loads(message)
             cluster_id = Conf.get(const.HA_GLOBAL_INDEX, f"COMMON_CONFIG{_DELIM}cluster_id")
             site_id = Conf.get(const.HA_GLOBAL_INDEX, f"COMMON_CONFIG{_DELIM}site_id")
             rack_id = Conf.get(const.HA_GLOBAL_INDEX, f"COMMON_CONFIG{_DELIM}rack_id")
             timestamp = str(int(time.time()))
             event_id = timestamp + str(uuid.uuid4().hex)
-            pod_id = cluster_resource_alert["_resource_name"]
+            node_id = cluster_resource_alert["_resource_name"]
             resource_type = cluster_resource_alert["_resource_type"]
             event_type = cluster_resource_alert["_event_type"]
             timestamp = cluster_resource_alert["_timestamp"]
@@ -191,17 +193,16 @@ class ClusterResourceParser(Parser):
                 EVENT_ATTRIBUTES.SITE_ID : site_id, # TODO: Should be fetched from confstore
                 EVENT_ATTRIBUTES.RACK_ID : rack_id, # TODO: Should be fetched from confstore
                 EVENT_ATTRIBUTES.CLUSTER_ID : cluster_id, # TODO: Should be fetched from confstore
-                EVENT_ATTRIBUTES.STORAGESET_ID : pod_id,
-                EVENT_ATTRIBUTES.NODE_ID : pod_id,
-                EVENT_ATTRIBUTES.HOST_ID : pod_id,
-                EVENT_ATTRIBUTES.RESOURCE_TYPE : "node",
+                EVENT_ATTRIBUTES.STORAGESET_ID : node_id,
+                EVENT_ATTRIBUTES.NODE_ID : node_id,
+                EVENT_ATTRIBUTES.HOST_ID : node_id,
+                EVENT_ATTRIBUTES.RESOURCE_TYPE : resource_type,
                 EVENT_ATTRIBUTES.TIMESTAMP : timestamp,
-                EVENT_ATTRIBUTES.RESOURCE_ID : pod_id,
+                EVENT_ATTRIBUTES.RESOURCE_ID : node_id,
                 EVENT_ATTRIBUTES.SPECIFIC_INFO : "specific_info"
             }
 
             Log.debug(f"Parsed {event} schema")
-            Log.error(f"Parsed {event} schema")
             health_event = HealthEvent.dict_to_object(event)
             Log.info(f"Event {event[EVENT_ATTRIBUTES.EVENT_ID]} is parsed and converted to object.")
             return health_event
