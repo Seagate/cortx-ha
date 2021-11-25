@@ -192,7 +192,7 @@ class ClusterResourceFilter(Filter):
             event_resource_type = message.get("_resource_type")
 
             # namespace = Conf.get(const.HA_GLOBAL_INDEX, f"K8S:POD{_DELIM}namespace")
-            required_resource_type = Conf.get(const.HA_GLOBAL_INDEX, f"CLUSTER:NODE{_DELIM}resource_type")
+            required_resource_type = Conf.get(const.HA_GLOBAL_INDEX, f"NODE{_DELIM}resource_type")
             # pod_name = Conf.get(const.HA_GLOBAL_INDEX, f"K8S:POD{_DELIM}pods")
             # if event_namespace == namespace and event_pod_name.startswith(pod_name):
             if event_resource_type == required_resource_type:

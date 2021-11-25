@@ -35,7 +35,7 @@ class K8sAlert:
 
     @resource_type.setter
     def resource_type(self, res_type):
-        self._resource_type = f"cluster:{res_type}"
+        self._resource_type = f"{res_type}"
 
     @property
     def resource_name(self):
