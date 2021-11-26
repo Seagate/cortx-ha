@@ -235,9 +235,9 @@ class ConfigCmd(Cmd):
             # rack_id = Conf.get(self._index, f'node{_DELIM}{machine_id}{_DELIM}rack_id')
             rack_id = '1'
             conf_file_dict.update({'COMMON_CONFIG': {'cluster_id': cluster_id, 'rack_id': rack_id, 'site_id': site_id}})
+            # TODO: Verify whether these newly added config is avilable in the confstore or not
             with open(const.HA_CONFIG_FILE, 'w+') as conf_file:
                 yaml.dump(conf_file_dict, conf_file, default_flow_style=False)
-
             self._confstore = ConfigManager.get_confstore()
             Log.info(f'Populating the ha config file with consul_endpoint: {consul_endpoint}, \
                        data_pod_label: {data_pod_label}')
