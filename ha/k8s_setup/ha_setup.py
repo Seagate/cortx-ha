@@ -195,7 +195,6 @@ class ConfigCmd(Cmd):
             # Dummy value fetched for now. This will be replaced by the key/path for the pod label onces that is avilable in confstore
             # Ref ticket EOS-25694
             data_pod_label = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}product_release')
-            # cluster_id = Conf.get(self._index, f'node{_DELIM}{machine_id}{_DELIM}cluster_id')
             # TBD delete once data_pod_label is avilable from confstore
             data_pod_label = 'cortx-data'
 
@@ -224,6 +223,11 @@ class ConfigCmd(Cmd):
             # be stored in the confstore as key values
             ConfigManager.init("ha_setup")
 
+            # Inside cluster.conf, cluster_id will be present under
+            # "node".<actual POD machind id>."cluster_id". So,
+            # in the similar way, confstore will have this key when
+            # the cluster.conf load will taked place.
+            # So, to get the cluster_id field from Confstore, we need machine_id
             machine_id = self.get_machine_id()
             cluster_id = Conf.get(self._index, f'node{_DELIM}{machine_id}{_DELIM}cluster_id')
             # site_id = Conf.get(self._index, f'node{_DELIM}{machine_id}{_DELIM}site_id')
