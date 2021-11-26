@@ -73,7 +73,6 @@ class FaultTolerance:
             while True:
                 # Get alert condition from ALertGenerator. Analyze changes
                 # with the help of event analyzer and notify if required
-                Log.info('Ready to analyze faults in the system')
                 time.sleep(self._wait_time)
         except Exception as exe:
             raise(f'Oops, some issue in the fault tolerance_driver: {exe}')
