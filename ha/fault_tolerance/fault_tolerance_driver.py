@@ -58,7 +58,7 @@ class FaultTolerance:
 
     def process_message(self, message: str):
         """Callback method for MessageConsumer"""
-        Log.info(f'Received the message from message bus: {message}')
+        Log.debug(f'Received the message from message bus: {message}')
         try:
             EventAnalyzer(message.decode('utf-8'))
         except Exception as err:
