@@ -40,6 +40,7 @@ class FaultTolerance:
     def __init__(self, wait_time=10):
         """Init method"""
         self._wait_time = wait_time
+        ConfigManager.init("fault_tolerance")
         self._consumer = self._get_consumer()
 
     def _get_consumer(self) -> MessageBusConsumer:
