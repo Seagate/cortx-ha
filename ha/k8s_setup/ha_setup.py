@@ -196,7 +196,7 @@ class ConfigCmd(Cmd):
             # Ref ticket EOS-25694
             data_pod_label = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}product_release')
             # TBD delete once data_pod_label is avilable from confstore
-            data_pod_label = 'cortx-data'
+            data_pod_label = ['cortx-data', 'cortx-server']
 
             # Dummy value fetched for now. This will be replaced by the key/path for the service ID/machine ID once that is available in confstore
             # Ref ticket EOS-???
