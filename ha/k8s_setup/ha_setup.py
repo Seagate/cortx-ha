@@ -178,7 +178,7 @@ class ConfigCmd(Cmd):
             # Ref ticket EOS-25694
             data_pod_label = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}product_release')
             # TBD delete once data_pod_label is avilable from confstore
-            data_pod_label = 'cortx-data'
+            data_pod_label = ['cortx-data', 'cortx-server']
 
             conf_file_dict = {'LOG' : {'path' : const.HA_LOG_DIR, 'level' : const.HA_LOG_LEVEL},
                          'consul_config' : {'endpoint' : consul_endpoint},
