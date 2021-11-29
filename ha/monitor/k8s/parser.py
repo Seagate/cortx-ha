@@ -47,23 +47,10 @@ class NodeEventParser(ObjectParser):
         alert.resource_type = self._type
         alert.timestamp = str(int(time.time()))
 
-        # Get value of machine id key (path of the machine id in k8s event)
-        machine_id_key = Conf.get(const.HA_GLOBAL_INDEX, f"MONITOR{_DELIM}machine_id_key")
-
-        # loop over keys and check if exist then get the value.
-        # this code is flexible can be used for any key in event for example
-        # if value at the place event[raw_object][metadat][name] then input key will be 'metadata/name'
-        # note if the key is fixed cannot chnage then can use constant here also insted of parsing
-        machine_id_keys = machine_id_key.split('/')
-        machine_id = an_event[K8SEventsConst.RAW_OBJECT]
-        for key in machine_id_keys:
-            if key != None and isinstance(machine_id, dict) and key in machine_id:
-                machine_id = machine_id[key]
-        if  machine_id is not None and not isinstance(machine_id, dict):
-            alert.resource_name = machine_id
-
         if K8SEventsConst.TYPE in an_event:
             alert.event_type = an_event[K8SEventsConst.TYPE]
+        if K8SEventsConst.NAME in an_event[K8SEventsConst.RAW_OBJECT][K8SEventsConst.METADATA]:
+            alert.resource_name = an_event[K8SEventsConst.RAW_OBJECT][K8SEventsConst.METADATA][K8SEventsConst.NAME]
 
         ready_status = None
         try:
@@ -119,10 +106,23 @@ class PodEventParser(ObjectParser):
         alert.resource_type = self._type
         alert.timestamp = str(int(time.time()))
 
+        # Get value of machine id key (path of the machine id in k8s event)
+        machine_id_key = Conf.get(const.HA_GLOBAL_INDEX, f"MONITOR{_DELIM}machine_id_key")
+
+        # loop over keys and check if exist then get the value.
+        # this code is flexible can be used for any key in event for example
+        # if value at the place event[raw_object][metadat][name] then input key will be 'metadata/name'
+        # note if the key is fixed cannot chnage then can use constant here also insted of parsing
+        machine_id_keys = machine_id_key.split('/')
+        machine_id = an_event[K8SEventsConst.RAW_OBJECT]
+        for key in machine_id_keys:
+            if key != None and isinstance(machine_id, dict) and key in machine_id:
+                machine_id = machine_id[key]
+        if  machine_id is not None and not isinstance(machine_id, dict):
+            alert.resource_name = machine_id
+
         if K8SEventsConst.TYPE in an_event:
             alert.event_type = an_event[K8SEventsConst.TYPE]
-        if K8SEventsConst.NAME in an_event[K8SEventsConst.RAW_OBJECT][K8SEventsConst.METADATA]:
-            alert.resource_name = an_event[K8SEventsConst.RAW_OBJECT][K8SEventsConst.METADATA][K8SEventsConst.NAME]
         if K8SEventsConst.NODE_NAME in an_event[K8SEventsConst.RAW_OBJECT][K8SEventsConst.SPEC]:
             alert.node = an_event[K8SEventsConst.RAW_OBJECT][K8SEventsConst.SPEC][K8SEventsConst.NODE_NAME]
 
