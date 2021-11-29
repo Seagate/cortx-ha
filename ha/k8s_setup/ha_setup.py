@@ -184,9 +184,12 @@ class ConfigCmd(Cmd):
                          'consul_config' : {'endpoint' : consul_endpoint},
                          'event_topic' : 'hare',
                          'data_pod_label' : data_pod_label,
-                         'MONITOR' : {'message_type' : 'k8s_event', 'producer_id' : 'k8s_monitor'},
+                         'MONITOR' : {'message_type' : 'cluster_event', 'producer_id' : 'cluster_monitor'},
                          'EVENT_MANAGER' : {'message_type' : 'health_events', 'producer_id' : 'system_health',
-                                            'consumer_group' : 'health_monitor', 'consumer_id' : '1'}
+                                            'consumer_group' : 'health_monitor', 'consumer_id' : '1'},
+                         'FAULT_TOLERANCE' : {'message_type' : 'cluster_event', 'consumer_group' : 'event_listener',
+                                              'consumer_id' : '1'},
+                         'NODE': {'resource_type': 'node'}
                          }
 
             if not os.path.isdir(const.CONFIG_DIR):
@@ -201,7 +204,7 @@ class ConfigCmd(Cmd):
             ConfigManager.init("ha_setup")
             self._confstore = ConfigManager.get_confstore()
             Log.info(f'Populating the ha config file with consul_endpoint: {consul_endpoint}, \
-                      prometheus_endpoint:')
+                       data_pod_label: {data_pod_label}')
 
             Log.info('Performing event_manager subscription')
             event_manager = EventManager.get_instance()
