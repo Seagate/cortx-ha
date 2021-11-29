@@ -180,11 +180,17 @@ class ConfigCmd(Cmd):
             # TBD delete once data_pod_label is avilable from confstore
             data_pod_label = 'cortx-data'
 
+            # Dummy value fetched for now. This will be replaced by the key/path for the service ID/machine ID onces that is avilable in confstore
+            # Ref ticket EOS-???
+            machine_id_key = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}product_release')
+            # TBD delete once resource_id_key is avilable from confstore
+            machine_id_key = 'status/podIP'
+
             conf_file_dict = {'LOG' : {'path' : const.HA_LOG_DIR, 'level' : const.HA_LOG_LEVEL},
                          'consul_config' : {'endpoint' : consul_endpoint},
                          'event_topic' : 'hare',
                          'data_pod_label' : data_pod_label,
-                         'MONITOR' : {'message_type' : 'cluster_event', 'producer_id' : 'cluster_monitor'},
+                         'MONITOR' : {'message_type' : 'cluster_event', 'producer_id' : 'cluster_monitor', 'machine_id_key' : machine_id_key},
                          'EVENT_MANAGER' : {'message_type' : 'health_events', 'producer_id' : 'system_health',
                                             'consumer_group' : 'health_monitor', 'consumer_id' : '1'},
                          'FAULT_TOLERANCE' : {'message_type' : 'cluster_event', 'consumer_group' : 'event_listener',
