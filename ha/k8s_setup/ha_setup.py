@@ -183,8 +183,10 @@ class ConfigCmd(Cmd):
             # Dummy value fetched for now. This will be replaced by the key/path for the service ID/machine ID onces that is avilable in confstore
             # Ref ticket EOS-???
             machine_id_key = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}product_release')
-            # TBD delete once resource_id_key is avilable from confstore
-            machine_id_key = 'status/podIP'
+            # TBD delete once machine_id_key is avilable from confstore
+            # Note: machine id key is not available in pod event hence using pod name
+            #       but once it is available machine id key we will using it
+            machine_id_key = 'metadata/name'
 
             conf_file_dict = {'LOG' : {'path' : const.HA_LOG_DIR, 'level' : const.HA_LOG_LEVEL},
                          'consul_config' : {'endpoint' : consul_endpoint},
