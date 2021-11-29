@@ -33,7 +33,8 @@ if __name__ == "__main__":
     kwargs = {'pretty': True}
     # Change to multiprocessing
     node_thread = ObjectMonitor('node', **kwargs)
-    kwargs['label_selector'] = f'app in ({pod_label_str})'
+    # TODO : Change 'name' field to 'app' in label_selector if required.
+    kwargs['label_selector'] = f'name in ({pod_label_str})'
     pod_thread = ObjectMonitor('pod', **kwargs)
 
     pod_thread.start()
