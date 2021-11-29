@@ -79,9 +79,4 @@ class ObjectMonitor(Thread):
 
             # Write to message bus
             Log.info(f"Sending alert on message bus {alert.to_dict()}")
-            if 'pod' in alert.resource_type:
-                print("***************** POD EVENT **********")
-                print("Resource type: " + str(alert.resource_type))
-                print("An event received: " + str(an_event))
-            print("Sending An alert received: " + str(alert.to_dict()))
-            # self._producer.publish(str(alert.to_dict()))
+            self._producer.publish(str(alert.to_dict()))
