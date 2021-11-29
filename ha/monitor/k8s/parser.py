@@ -49,14 +49,17 @@ class NodeEventParser(ObjectParser):
 
         # Get value of machine id key (path of the machine id in k8s event)
         machine_id_key = Conf.get(const.HA_GLOBAL_INDEX, f"MONITOR{_DELIM}machine_id_key")
-        print("Configured machine ID Key: " + machine_id_key)
+
         # loop over keys and check if exist then get the value.
+        # this code is flexible can be used for any key in event for example
+        # if value at the place event[raw_object][metadat][name] then input key will be 'metadata/name'
+        # note if the key is fixed cannot chnage then can use constant here also insted of parsing
         machine_id_keys = machine_id_key.split('/')
         machine_id = an_event[K8SEventsConst.RAW_OBJECT]
         for key in machine_id_keys:
-            if key != None and type(machine_id) is dict and key in machine_id:
+            if key != None and isinstance(machine_id, dict) and key in machine_id:
                 machine_id = machine_id[key]
-        if  machine_id is not None and type(machine_id) is not dict:
+        if  machine_id is not None and not isinstance(machine_id, dict):
             alert.resource_name = machine_id
 
         if K8SEventsConst.TYPE in an_event:
