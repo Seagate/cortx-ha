@@ -99,6 +99,10 @@ class NodeEventParser(ObjectParser):
 class PodEventParser(ObjectParser):
     def __init__(self):
         super().__init__()
+
+        # Note: The below type is not a Kubernetes 'node'.
+        #       in cortx cluster the pod is called or considered as a node.
+        #       hence while sending alert to cortx, below type is set to 'node'.
         self._type = 'node'
 
     def parse(self, an_event, cached_state):
