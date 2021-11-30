@@ -106,12 +106,20 @@ class PodEventParser(ObjectParser):
         alert.resource_type = self._type
         alert.timestamp = str(int(time.time()))
 
+        # Imp Note: Below logic is required only if we are getting the absolute path where the machine-id exists in the event.
+        #           i.e. metadata/podInfo/machineId so it will be parsed like [raw_object][metadata][podInfo][machineId]
+        #           because k8s event we receive is multi-level nested dict and  the key can occur at multiple places
+        #           for different reasons as other many keys getting repeated so choosing required key will be difficult.
+        #           OR if once the key is added while creating pod and the fixed exact location in the event is found then,
+        #           the changes added in /k8s_setup/ha_setup.py for this key and the below logic for parsing this key
+        #           is also not required can add constant and directly fetch the value.
+
         # Get value of machine id key (path of the machine id in k8s event)
         machine_id_key = Conf.get(const.HA_GLOBAL_INDEX, f"MONITOR{_DELIM}machine_id_key")
 
         # loop over keys and check if exist then get the value.
         # this code is flexible can be used for any key in event for example
-        # if value at the place event[raw_object][metadat][name] then input key will be 'metadata/name'
+        # if value at the place event[raw_object][metadata][name] then input key will be 'metadata/name'
         # note if the key is fixed cannot chnage then can use constant here also insted of parsing
         machine_id_keys = machine_id_key.split('/')
         machine_id = an_event[K8SEventsConst.RAW_OBJECT]
