@@ -26,10 +26,10 @@ from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
 from ha.util.message_bus import MessageBus, CONSUMER_STATUS, MessageBusConsumer
 
-from ha.core.config.config_manager import ConfigManager
 from ha import const
+from ha.core.config.config_manager import ConfigManager
+from ha.core.event_analyzer.event_analyzerd import EventAnalyzer
 from ha.k8s_setup.const import _DELIM
-from ha.core.event_analyzer.filter.filter import ClusterResourceFilter
 
 
 class FaultTolerance:
@@ -40,9 +40,7 @@ class FaultTolerance:
     def __init__(self, wait_time=10):
         """Init method"""
         self._wait_time = wait_time
-        self._cluster_resource_filter = ClusterResourceFilter()
-        ConfigManager.init('fault_tolerance')
-        Log.info(f'wait time: {self._wait_time}')
+        ConfigManager.init("fault_tolerance")
         self._consumer = self._get_consumer()
 
     def _get_consumer(self) -> MessageBusConsumer:
@@ -61,13 +59,11 @@ class FaultTolerance:
     def process_message(self, message: str):
         """Callback method for MessageConsumer"""
         Log.debug(f'Received the message from message bus: {message}')
-        result = False
-        # EventAnalyzer class instantiation is expected.
-        # This is not required. This will be called from EventAnalyzer class.
-        # But as its not available yet and to check newly added filter functionality,
-        # temporarily added this
-        result = self._cluster_resource_filter.filter_event(message.decode('utf-8'))
-        Log.info(f'Alert required: {result}')
+        try:
+            EventAnalyzer(message.decode('utf-8'))
+        except Exception as err:
+            Log.error(f'Failed to analyze the event: {err}')
+            return CONSUMER_STATUS.FAILED
         return CONSUMER_STATUS.SUCCESS
 
     def poll(self):
@@ -75,10 +71,8 @@ class FaultTolerance:
         try:
             self._consumer.start()
             while True:
-                # Get alert from message. Analyze changes
-                # with the help of event analyzer filter and publish to message bus
-                # if required
-                Log.info('Ready to analyze faults in the system')
+                # Get alert condition from ALertGenerator. Analyze changes
+                # with the help of event analyzer and notify if required
                 time.sleep(self._wait_time)
         except Exception as exe:
             raise(f'Oops, some issue in the fault tolerance_driver: {exe}')

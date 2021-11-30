@@ -304,7 +304,6 @@ class SystemHealth(Subscriber):
         """
         healthevent.event_type = json.loads(healthvalue).get("events")[0]["status"]
         node_id = healthevent.node_id
-        healthevent.node_id = ConfigManager.get_node_name(str(node_id))
         self.producer.publish(str(healthevent))
         healthevent.node_id = node_id
 
