@@ -192,17 +192,25 @@ class ConfigCmd(Cmd):
                 sys.stderr.write(f'Failed to get consul config. consul_config: {consul_endpoint}. \n')
                 sys.exit(1)
 
-            # Dummy value fetched for now. This will be replaced by the key/path for the pod label onces that is avilable in confstore
+            # Dummy value fetched for now. This will be replaced by the key/path for the pod label once that is available in confstore
             # Ref ticket EOS-25694
             data_pod_label = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}product_release')
             # TBD delete once data_pod_label is avilable from confstore
             data_pod_label = ['cortx-data', 'cortx-server']
 
+            # Dummy value fetched for now. This will be replaced by the key/path for the service ID/machine ID once that is available in confstore
+            # Ref ticket EOS-???
+            machine_id_key = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}product_release')
+            # TBD delete once machine_id_key is avilable from confstore
+            # Note: machine id key is not available in pod event hence using pod name
+            #       but once it is available machine id key we will using it
+            machine_id_key = 'metadata/name'
+
             conf_file_dict = {'LOG' : {'path' : const.HA_LOG_DIR, 'level' : const.HA_LOG_LEVEL},
                          'consul_config' : {'endpoint' : consul_endpoint},
                          'event_topic' : 'hare',
                          'data_pod_label' : data_pod_label,
-                         'MONITOR' : {'message_type' : 'cluster_event', 'producer_id' : 'cluster_monitor'},
+                         'MONITOR' : {'message_type' : 'cluster_event', 'producer_id' : 'cluster_monitor', 'machine_id_key' : machine_id_key},
                          'EVENT_MANAGER' : {'message_type' : 'health_events', 'producer_id' : 'system_health',
                                             'consumer_group' : 'health_monitor', 'consumer_id' : '1'},
                          'FAULT_TOLERANCE' : {'message_type' : 'cluster_event', 'consumer_group' : 'event_listener',
