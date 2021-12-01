@@ -116,7 +116,7 @@ class PodEventParser(ObjectParser):
         #           for different reasons as other many keys getting repeated so choosing required key will be difficult.
         #           OR if once the key is added while creating pod and the fixed exact location in the event is found then,
         #           the changes added in /k8s_setup/ha_setup.py for this key and the below logic for parsing this key
-        #           is also not required can add constant and directly fetch the value.
+        #           is also not required can add constants and directly fetch the value.
 
         # Get value of machine id key (path of the machine id in k8s event)
         machine_id_key = Conf.get(const.HA_GLOBAL_INDEX, f"MONITOR{_DELIM}machine_id_key")
