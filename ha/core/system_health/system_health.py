@@ -307,9 +307,9 @@ class SystemHealth(Subscriber):
         self.producer.publish(str(healthevent))
         healthevent.node_id = node_id
 
-    # Placeholder function to detect if status of all pods is collected before "sys_health_bootstrap_timeout"
-    # Function , logic to be deleted
-    # if the requried data for the same is not going to be avilable from cluster.conf 
+    # Placeholder function to detect if status of all pods is collected
+    # before "sys_health_bootstrap_timeout". Function , logic to be deleted
+    # if the requried data for the same is not going to be avilable from cluster.conf
     def _check_num_pods(self):
         """
         Check if intial health status collected for all pods that are configured
@@ -342,28 +342,29 @@ class SystemHealth(Subscriber):
 
             curr_time = str(int(time.time()))
             # Currently this timecout is started form the time first event is received till timout
-            # Confirm that this fine.. or should be started from bootstrap time.ideally both will be almost identical. 
-            self.healthmanager.set_key( "inital_time", curr_time)
+            # Confirm that this fine.. or should be started from bootstrap time.
+            # ideally both will be almost identical.
+            self.healthmanager.set_key("inital_time", curr_time)
             timeout = Conf.get(const.HA_GLOBAL_INDEX, "sys_health_bootstrap_timeout")
-            self.healthmanager.set_key( "sys_health_bootstrap_timeout", timeout)
+            self.healthmanager.set_key("sys_health_bootstrap_timeout", timeout)
             init_health_in_progress = True
         else:
             # check if data for all pods already collected (optional check ;
             # can be removed if total_num_pods will not be avilable in confstore)
             if self._check_num_pods():
-                self.healthmanager.set_key( "init_system_health", "0")
+                self.healthmanager.set_key("init_system_health", "0")
                 init_health_in_progress = False
                 return init_health_in_progress
 
             # check if within timeout period
             curr_time = int(time.time())
-            init_time = int(self.healthmanager.get_key( "inital_time"))
-            timeout = int(self.healthmanager.get_key( "sys_health_bootstrap_timeout"))
+            init_time = int(self.healthmanager.get_key("inital_time"))
+            timeout = int(self.healthmanager.get_key("sys_health_bootstrap_timeout"))
 
             if curr_time - init_time <= timeout:
-                init_health_in_progress =  True
+                init_health_in_progress = True
             else:
-                self.healthmanager.set_key( "init_system_health", "0")
+                self.healthmanager.set_key("init_system_health", "0")
                 init_health_in_progress = False
 
         return init_health_in_progress
@@ -376,7 +377,7 @@ class SystemHealth(Subscriber):
         comp_type = healthevent.resource_type.split(':')[-1]
         comp_id = healthevent.resource_id
 
-        bootstrp_in_progress =  self._bootstrap_in_progress()
+        bootstrp_in_progress = self._bootstrap_in_progress()
 
         key = self._prepare_key(component, cluster_id=self.node_map['cluster_id'], site_id=self.node_map['site_id'],
                                 rack_id=self.node_map['rack_id'], storageset_id=self.node_map['storageset_id'],
