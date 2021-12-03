@@ -307,6 +307,67 @@ class SystemHealth(Subscriber):
         self.producer.publish(str(healthevent))
         healthevent.node_id = node_id
 
+    # Placeholder function to detect if status of all pods is collected before "sys_health_bootstrap_timeout"
+    # Function , logic to be deleted
+    # if the requried data for the same is not going to be avilable from cluster.conf 
+    def _check_num_pods(self):
+        """
+        Check if intial health status collected for all pods that are configured
+        """
+
+        #total_pods = Conf.get(const.HA_GLOBAL_INDEX, "total_num_pods")
+        # if number of pods definde  in confstore = number of pods for which status collected
+        # return true since intialization is done for all pods
+        # To be implemented
+        return False
+
+    def _bootstrap_in_progress(self):
+        """
+        Check if we are in intial bootstrap time
+
+        Return:  True: if bootstrp happening and initial health status being collected for all pods
+                else return  False
+
+        """
+        init_health_in_progress = False
+        init_health = self.healthmanager.get_key("init_system_health")
+
+        if (init_health != None) and (init_health == 0):
+            init_health_in_progress = False
+            return init_health_in_progress
+
+        if init_health == None:
+            # Create key and set value to 1
+            self.healthmanager.set_key("init_system_health", "1")
+
+            curr_time = str(int(time.time()))
+            # Currently this timecout is started form the time first event is received till timout
+            # Confirm that this fine.. or should be started from bootstrap time.ideally both will be almost identical. 
+            self.healthmanager.set_key( "inital_time", curr_time)
+            timeout = Conf.get(const.HA_GLOBAL_INDEX, "sys_health_bootstrap_timeout")
+            self.healthmanager.set_key( "sys_health_bootstrap_timeout", timeout)
+            init_health_in_progress = True
+        else:
+            # check if data for all pods already collected (optional check ;
+            # can be removed if total_num_pods will not be avilable in confstore)
+            if self._check_num_pods():
+                self.healthmanager.set_key( "init_system_health", "0")
+                init_health_in_progress = False
+                return init_health_in_progress
+
+            # check if within timeout period
+            curr_time = int(time.time())
+            init_time = int(self.healthmanager.get_key( "inital_time"))
+            timeout = int(self.healthmanager.get_key( "sys_health_bootstrap_timeout"))
+
+            if curr_time - init_time <= timeout:
+                init_health_in_progress =  True
+            else:
+                self.healthmanager.set_key( "init_system_health", "0")
+                init_health_in_progress = False
+
+        return init_health_in_progress
+
     def _update(self, healthevent: HealthEvent, healthvalue: str, next_component: str=None):
         """
         update method. This is an internal method for updating the system health.
@@ -314,12 +375,16 @@ class SystemHealth(Subscriber):
         component = SystemHealthComponents.get_component(healthevent.resource_type)
         comp_type = healthevent.resource_type.split(':')[-1]
         comp_id = healthevent.resource_id
+
+        bootstrp_in_progress =  self._bootstrap_in_progress()
+
         key = self._prepare_key(component, cluster_id=self.node_map['cluster_id'], site_id=self.node_map['site_id'],
                                 rack_id=self.node_map['rack_id'], storageset_id=self.node_map['storageset_id'],
                                 node_id=self.node_id, server_id=self.node_id, storage_id=self.node_id,
                                 comp_type=comp_type, comp_id=comp_id)
         self.healthmanager.set_key(key, healthvalue)
-        self.publish_event(healthevent, healthvalue)
+        if not bootstrp_in_progress:
+            self.publish_event(healthevent, healthvalue)
 
         # Check the next component to be updated, if none then return.
         if next_component is None:
