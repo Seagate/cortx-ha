@@ -25,7 +25,7 @@ from cortx.utils.log import Log
 from ha import const
 from ha.util.message_bus import MessageBus
 from cortx.utils.conf_store.conf_store import Conf
-from ha.const import _DELIM
+from ha.const import _DELIM, HA_MAX_RETRY
 from ha.core.config.config_manager import ConfigManager
 from ha.core.system_health.health_evaluators.element_health_evaluator import ElementHealthEvaluator
 from ha.core.system_health.const import EVENT_SEVERITIES, NODE_MAP_ATTRIBUTES
@@ -384,60 +384,66 @@ class SystemHealth(Subscriber):
         """
         Process Event method. This method could be called for updating the health status.
         """
+        for retry in range(HA_MAX_RETRY):
+            # TODO: Check the user and see if allowed to update the system health.
+            try:
+                status = self.statusmapper.map_event(healthevent.event_type)
+                component = SystemHealthComponents.get_component(healthevent.resource_type)
 
-        # TODO: Check the user and see if allowed to update the system health.
-        try:
-            status = self.statusmapper.map_event(healthevent.event_type)
-            component = SystemHealthComponents.get_component(healthevent.resource_type)
+                # Get the health update hierarchy
+                self.update_hierarchy = SystemHealthHierarchy.get_hierarchy(component)
+                if (len(self.update_hierarchy) - 1) > self.update_hierarchy.index(component):
+                    next_component = self.update_hierarchy[self.update_hierarchy.index(component) + 1]
+                else:
+                    next_component = None
 
-            # Get the health update hierarchy
-            self.update_hierarchy = SystemHealthHierarchy.get_hierarchy(component)
-            if (len(self.update_hierarchy) - 1) > self.update_hierarchy.index(component):
-                next_component = self.update_hierarchy[self.update_hierarchy.index(component) + 1]
-            else:
-                next_component = None
+                # Get the component type and id received in the event.
+                component_type = healthevent.resource_type.split(':')[-1]
+                component_id = healthevent.resource_id
+                Log.info(f"SystemHealth: Processing {component}:{component_type}:{component_id} with status {status}")
 
-            # Get the component type and id received in the event.
-            component_type = healthevent.resource_type.split(':')[-1]
-            component_id = healthevent.resource_id
-            Log.info(f"SystemHealth: Processing {component}:{component_type}:{component_id} with status {status}")
+                # Read the currently stored health value
+                current_health = self.get_status_raw(component, component_id, comp_type=component_type,
+                                            cluster_id=healthevent.cluster_id, site_id=healthevent.site_id,
+                                            rack_id=healthevent.rack_id, storageset_id=healthevent.storageset_id,
+                                            node_id=healthevent.node_id, server_id=healthevent.node_id,
+                                            storage_id=healthevent.node_id)
 
-            # Read the currently stored health value
-            current_health = self.get_status_raw(component, component_id, comp_type=component_type,
-                                        cluster_id=healthevent.cluster_id, site_id=healthevent.site_id,
-                                        rack_id=healthevent.rack_id, storageset_id=healthevent.storageset_id,
-                                        node_id=healthevent.node_id, server_id=healthevent.node_id,
-                                        storage_id=healthevent.node_id)
+                if current_health:
+                    # Update the current health value itself.
+                    updated_health = EntityHealth.read(current_health)
+                else:
+                    # Health value not present in the store currently, create now.
+                    updated_health = EntityHealth()
 
-            if current_health:
-                # Update the current health value itself.
-                updated_health = EntityHealth.read(current_health)
-            else:
-                # Health value not present in the store currently, create now.
-                updated_health = EntityHealth()
+                # Create a new event and action
+                current_timestamp = str(int(time.time()))
+                entity_event = EntityEvent(healthevent.timestamp, current_timestamp, status, healthevent.specific_info)
+                entity_action = EntityAction(current_timestamp, const.ACTION_STATUS.PENDING.value)
+                # Add the new event and action to the health value
+                updated_health.add_event(entity_event)
+                updated_health.set_action(entity_action)
+                # Convert the health value as appropriate for writing to the store.
+                updated_health = EntityHealth.write(updated_health)
 
-            # Create a new event and action
-            current_timestamp = str(int(time.time()))
-            entity_event = EntityEvent(healthevent.timestamp, current_timestamp, status, healthevent.specific_info)
-            entity_action = EntityAction(current_timestamp, const.ACTION_STATUS.PENDING.value)
-            # Add the new event and action to the health value
-            updated_health.add_event(entity_event)
-            updated_health.set_action(entity_action)
-            # Convert the health value as appropriate for writing to the store.
-            updated_health = EntityHealth.write(updated_health)
+                # Update the node map
+                self.node_id = healthevent.node_id
+                self.node_map = {'cluster_id':healthevent.cluster_id, 'site_id':healthevent.site_id,
+                                'rack_id':healthevent.rack_id, 'storageset_id':healthevent.storageset_id}
 
-            # Update the node map
-            self.node_id = healthevent.node_id
-            self.node_map = {'cluster_id':healthevent.cluster_id, 'site_id':healthevent.site_id,
-                             'rack_id':healthevent.rack_id, 'storageset_id':healthevent.storageset_id}
+                # Update in the store.
+                if self._is_update_required(current_health, updated_health, healthevent):
+                    self._update(healthevent, updated_health, next_component=next_component)
+                    Log.info(f"Updated health for component: {component}, Type: {component_type}, Id: {component_id}")
+                # Process event completed successfully hence no retry
+                break
+            except Exception as e:
+                Log.error(f"Failed processing system health event with Error: {e}")
+                if retry + 1 == HA_MAX_RETRY:
+                    raise HaSystemHealthException("Failed processing system health event")
+                Log.debug("Retrying after 50 miliseconds...")
+                time.sleep(0.05)
 
-            # Update in the store.
-            if self._is_update_required(current_health, updated_health, healthevent):
-                self._update(healthevent, updated_health, next_component=next_component)
-                Log.info(f"Updated health for component: {component}, Type: {component_type}, Id: {component_id}")
-        except Exception as e:
-            Log.error(f"Failed processing system health event with Error: {e}")
-            raise HaSystemHealthException("Failed processing system health event")
 
     def get_health_event_template(self, nodeid: str, event_type: str) -> dict:
         """
