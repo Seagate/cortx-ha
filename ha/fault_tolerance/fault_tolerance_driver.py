@@ -68,26 +68,14 @@ class FaultTolerance:
         Log.debug(f'Received the message from message bus: {message}')
         try:
             EventAnalyzer(message.decode('utf-8'))
-            return CONSUMER_STATUS.SUCCESS
-        except ConsulException as e:
-            Log.error(f"consule exception {e} {traceback.format_exc()} for {message}. Ack Message.")
-            return CONSUMER_STATUS.SUCCESS
-        except ConfError as e:
-            Log.error(f"config exception {e} {traceback.format_exc()} for {message}. Ack Message.")
-            return CONSUMER_STATUS.SUCCESS
-        except EventFilterException as e:
-            Log.error(f"Filter exception {e} {traceback.format_exc()} for {message}. Ack Message.")
-            return CONSUMER_STATUS.SUCCESS
-        except EventParserException as e:
-            Log.error(f"Parser exception {e} {traceback.format_exc()} for {message}.  Ack Message.")
-            return CONSUMER_STATUS.SUCCESS
-        except SubscriberException as e:
-            Log.error(f"Subscriber exception {e} {traceback.format_exc()} for {message}, retry without ack.")
-            return CONSUMER_STATUS.FAILED
-        except Exception as e:
-            Log.error(f"Unknown Exception caught {e} {traceback.format_exc()}")
-            Log.error(f"Forcefully ack as success. msg: {message}")
-            return CONSUMER_STATUS.SUCCESS
+        except Exception as err:
+            Log.error(f'Failed to analyze the event: {err}')
+            # Note: If we return failure ONSUMER_STATUS.FAILED then
+            # EventAnalyzer will retry again but with the same input.
+            # As per the current implementation retry makes no sence
+            # it will fail again, which creates endless loop.
+            # hence lets ignore exception and return success.
+        return CONSUMER_STATUS.SUCCESS
 
     def poll(self):
         """Contineously polls for message bus for k8s_event message type"""
