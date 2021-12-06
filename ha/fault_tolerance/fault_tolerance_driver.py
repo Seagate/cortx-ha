@@ -63,12 +63,17 @@ class FaultTolerance:
             EventAnalyzer(message.decode('utf-8'))
         except Exception as err:
             Log.error(f'Failed to analyze the event: {err}')
-            return CONSUMER_STATUS.FAILED
+            # Note: If we return failure ONSUMER_STATUS.FAILED then
+            # EventAnalyzer will retry again but with the same input.
+            # As per the current implementation retry makes no sence
+            # it will fail again, which creates endless loop.
+            # hence lets ignore exception and return success.
         return CONSUMER_STATUS.SUCCESS
 
     def poll(self):
         """Contineously polls for message bus for k8s_event message type"""
         try:
+            Log.info(f'Starting poll for fault tolerance alterts with consumer id: {self._consumer_id}.')
             self._consumer.start()
             while True:
                 # Get alert condition from ALertGenerator. Analyze changes

@@ -65,6 +65,7 @@ SOURCE_LOGROTATE_CONF_FILE = "{}/conf/logrotate/cortx_ha_log.conf".format(SOURCE
 LOGROTATE_CONF_DIR="/etc/logrotate.d"
 SOURCE_ACTUATOR_SCHEMA="{}/actuator_req.json".format(SOURCE_CONFIG_PATH)
 ACTUATOR_SCHEMA="{}/actuator_req.json".format(CONFIG_DIR)
+HA_MAX_RETRY = 3
 
 # IEM DESCRIPTION string: To be removed
 IEM_DESCRIPTION="WS0080010001,Node, The cluster has lost $host server. System is running in degraded mode. For more information refer the Troubleshooting guide. Extra Info: host=$host; status=$status;"
