@@ -341,11 +341,11 @@ class SystemHealth(Subscriber):
             self.healthmanager.set_key("init_system_health", "1")
 
             curr_time = str(int(time.time()))
-            # Currently this timecout is started form the time first event is received till timout
+            # Currently this timeout is started form the time first event is received till timout
             # Confirm that this fine.. or should be started from bootstrap time.
             # ideally both will be almost identical.
             self.healthmanager.set_key("inital_time", curr_time)
-            timeout = Conf.get(const.HA_GLOBAL_INDEX, "sys_health_bootstrap_timeout")
+            timeout = Conf.get(const.HA_GLOBAL_INDEX,  f"SYSTEM_HEALTH{_DELIM}sys_health_bootstrap_timeout")
             self.healthmanager.set_key("sys_health_bootstrap_timeout", timeout)
             init_health_in_progress = True
         else:
