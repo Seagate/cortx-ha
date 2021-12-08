@@ -307,20 +307,6 @@ class SystemHealth(Subscriber):
         self.producer.publish(str(healthevent))
         healthevent.node_id = node_id
 
-    # Placeholder function to detect if status of all pods is collected
-    # before "sys_health_bootstrap_timeout". Function , logic to be deleted
-    # if the requried data for the same is not going to be avilable from cluster.conf
-    def _check_num_pods(self):
-        """
-        Check if intial health status collected for all pods that are configured
-        """
-
-        #total_pods = Conf.get(const.HA_GLOBAL_INDEX, "total_num_pods")
-        # if number of pods definde  in confstore = number of pods for which status collected
-        # return true since intialization is done for all pods
-        # To be implemented
-        return False
-
     def _bootstrap_in_progress(self):
         """
         Check if we are in intial bootstrap time
@@ -349,12 +335,9 @@ class SystemHealth(Subscriber):
             self.healthmanager.set_key("sys_health_bootstrap_timeout", timeout)
             init_health_in_progress = True
         else:
-            # check if data for all pods already collected (optional check ;
-            # can be removed if total_num_pods will not be avilable in confstore)
-            if self._check_num_pods():
-                self.healthmanager.set_key("init_system_health", "0")
-                init_health_in_progress = False
-                return init_health_in_progress
+            # TBD Following logic can be added after EOS-26597 is resolved.
+            # Once total number of pods and service types of the pods are avilable in the config,
+            # use the same to expediate bootstrap process i.e. to exit bootstrap mode before timeout
 
             # check if within timeout period
             curr_time = int(time.time())
