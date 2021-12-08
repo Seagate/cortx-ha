@@ -22,6 +22,7 @@ from cortx.utils.log import Log
 from cortx.utils.message_bus import MessageBusAdmin
 from cortx.utils.message_bus import MessageProducer
 from cortx.utils.message_bus import MessageConsumer
+from ha.util.msg_bus.message_bus import MessageBusComm
 
 class MessageBusProducer:
     PRODUCER_METHOD = "sync"
@@ -142,6 +143,112 @@ class MessageBusConsumer:
         self.stop_tread = True
         self.consumer_thread.join()
 
+class MessageBusTransactionalProducer:
+    PRODUCER = "PRODUCER"
+
+    def __init__(self, CLIENT_ID: str):
+        """
+        Initalize producer.
+        Args:
+            message_types (str): Message type.
+        """
+        self.comm_type = MessageBusTransactionalProducer.PRODUCER
+        self.transactional_producer = MessageBusComm(comm_type=self.comm_type, CLIENT_ID=CLIENT_ID)
+
+    def transactional_publish(self, message: any, **kwargs):
+        """
+        Produce message to message bus exactly once.
+        Args:
+            message (any): Message.
+            If msg is dict it will be dumped as json.
+            If msg is string then it will be send directly.
+            If message is list, it should have all string element, all items will be published.
+            **kwargs([dict]): Variable number of arguments,
+                e.g. "TOPIC" to register message_type.
+        """
+        if isinstance(message, dict):
+            self.transactional_producer.send([json.dumps(message)], **kwargs)
+        elif isinstance(message, str):
+            self.transactional_producer.send([message], **kwargs)
+        elif isinstance(message, list):
+            self.transactional_producer.send(message, **kwargs)
+        else:
+            raise Exception(f"Invalid type of message {message}")
+
+class MessageBusTransactionalConsumer:
+    CONSUMER = "CONSUMER"
+
+    def __init__(self, consumer_name: str, group_id: str, message_type: str, callback: Callable):
+        """
+        Initalize consumer.
+        Args:
+            consumer_name (str): should be unique at consumer level
+            group_id (str): unique at group level
+            message_type (list): Message Type.
+            callback (Callable): callback function to process message.
+        """
+        self.consumer_name = consumer_name
+        self.group_id = group_id
+        self.message_type = message_type
+        self.callback = callback
+        self.comm_type = MessageBusTransactionalConsumer.CONSUMER
+        self.stop_thread = False
+
+    def run(self):
+        """
+        Overloaded of Thread.
+        Note: Please properly handle failure cases to avoid stuck in loop
+
+        1. Caller received and processed message		                            SUCCESS
+        2. Caller received but not able to process need retry			            FAILED
+        3. Caller received but message is irrelevant to caller					    SUCCESS
+        4. Caller received	message but failed to process and not want to retry		FAILED_STOP
+        5. Caller received message and want to sop listen to message				SUCCESS_STOP
+        6. If nothing is passed it will be case 2						            FAILED
+        7. Exception will be swallowed and ack.
+        8. Closing main thread will close this thread as it is running as deamon.
+
+        As self.consumer.receive(timeout) is block call t1.join() will not stop thread.
+        Stop thread by completing work as per above cases.
+        """
+        retry = False
+        while not self.stop_thread:
+            try:
+                if not retry:
+                    message = self.consumer.recv(TOPIC=[self.message_type])
+                try:
+                    status = self.callback(message)
+                except Exception as e:
+                    Log.error(f"Caught exception from caller: {e}. retry again ...")
+                    retry = True
+                    continue
+                if status == CONSUMER_STATUS.SUCCESS:
+                    self.consumer.commit()
+                elif status == CONSUMER_STATUS.FAILED_STOP:
+                    # TODO: check if can be handled internally, currently message will get ack by message bus api
+                    break
+                elif status == CONSUMER_STATUS.SUCCESS_STOP:
+                    self.consumer.commit()
+                    break
+                else:
+                    retry = True
+                    continue
+                retry = False
+            except Exception as e:
+                Log.error(f"Supressing exception from message bus {e}")
+                retry = False
+
+    def start(self):
+        self.consumer = MessageBusComm(comm_type=self.comm_type, group_id=self.group_id,
+                                       consumer_name=self.consumer_name)
+        self.consumer_thread = Thread(target=self.run)
+        self.consumer_thread.setDaemon(True)
+        self.consumer_thread.start()
+
+    def stop(self):
+        self.stop_tread = True
+        self.consumer_thread.join()
+
 class MessageBus:
     ADMIN_ID = "ha_admin"
 
@@ -174,6 +281,32 @@ class MessageBus:
         """
         MessageBus.register(message_type, partitions)
         return MessageBusProducer(producer_id, message_type, partitions)
+
+    @staticmethod
+    def get_transactional_producer(producer_id: str, message_type: str, partitions: int = 1) -> MessageBusTransactionalProducer:
+        """
+        Register message types with message bus. and get transactional Producer.
+        Args:
+            producer_id (str): producer id.
+            message_types (str): Message type.
+            partitions (int, optional): No. of partitions. Defaults to 1.
+        """
+        MessageBus.register(message_type, partitions)
+        return MessageBusTransactionalProducer(CLIENT_ID=producer_id)
+
+    @staticmethod
+    def get_transactional_consumer(consumer_id: int, consumer_group: str, message_type: str,
+                callback: Callable) -> MessageBusTransactionalConsumer:
+        """
+        Get consumer.
+        Args:
+            consumer_name (str): should be unique at consumer level
+            group_id (str): unique at group level
+            message_type (list): Message Type.
+            callback (Callable): callback function to process message.
+        """
+        return MessageBusTransactionalConsumer(consumer_name=consumer_id, group_id=consumer_group,
+                                               message_type=message_type, callback=callback,)
 
     @staticmethod
     def register(message_type: str, partitions: int = 1):
