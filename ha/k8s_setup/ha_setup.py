@@ -205,6 +205,12 @@ class ConfigCmd(Cmd):
             # Note: machine id key is not available in pod event hence using pod name
             #       but once it is available machine id key we will using it
             machine_id_key = 'metadata/name'
+            # Time till when system health can be collected in bootstrap mode
+            timeout = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}product_release')
+            timeout = '10' # in seconds ;  temporary value till the same is avilabe in cluster.conf
+            # Total number of pods for which health is to be maintained
+            num_pods = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}product_release')
+            num_pods = '10' #temporary value till the same is avilabe in cluster.conf
 
             conf_file_dict = {'LOG' : {'path' : const.HA_LOG_DIR, 'level' : const.HA_LOG_LEVEL},
                          'consul_config' : {'endpoint' : consul_endpoint},
@@ -216,7 +222,9 @@ class ConfigCmd(Cmd):
                          'FAULT_TOLERANCE' : {'message_type' : 'cluster_event', 'consumer_group' : 'event_listener',
                                               'consumer_id' : '1'},
                          'NODE': {'resource_type': 'node'},
-                         'SYSTEM_HEALTH' : {'num_entity_health_events' : 2}
+                         'SYSTEM_HEALTH' : {'num_entity_health_events' : 2,
+                                            'sys_health_bootstrap_timeout' : timeout,
+                                            'total_num_pods' : num_pods }
                          }
 
             if not os.path.isdir(const.CONFIG_DIR):
@@ -247,6 +255,7 @@ class ConfigCmd(Cmd):
             with open(const.HA_CONFIG_FILE, 'w+') as conf_file:
                 yaml.dump(conf_file_dict, conf_file, default_flow_style=False)
             self._confstore = ConfigManager.get_confstore()
+
             Log.info(f'Populating the ha config file with consul_endpoint: {consul_endpoint}, \
                        data_pod_label: {data_pod_label}')
 
