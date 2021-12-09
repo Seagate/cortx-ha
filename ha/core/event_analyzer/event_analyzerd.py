@@ -37,6 +37,7 @@ from ha.core.system_health.system_health import SystemHealth
 from ha.core.event_analyzer.watcher.watcher import Watcher
 from ha.core.event_analyzer.filter.filter import ClusterResourceFilter
 from ha.core.event_analyzer.parser.parser import ClusterResourceParser
+from ha.core.event_analyzer.event_analyzer_exceptions import SubscriberException
 from ha.const import _DELIM
 
 class EventAnalyzerService:
@@ -113,7 +114,11 @@ class EventAnalyzer:
         self._cluster_resource_parser = ClusterResourceParser()
         if self._cluster_resource_filter.filter_event(msg):
             health_event = self._cluster_resource_parser.parse_event(msg)
-            system_health.process_event(health_event)
+            try:
+                system_health.process_event(health_event)
+            except Exception as e:
+                Log.error(f"Failed to publish event. Error: {e}")
+                raise SubscriberException(f"Failed to process event {str(health_event)}. Error: {e}")
 
 def main(argv):
     """
