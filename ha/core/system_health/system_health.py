@@ -337,6 +337,7 @@ class SystemHealth(Subscriber):
         """
         Process Event method. This method could be called for updating the health status.
         """
+
         # TODO: Check the user and see if allowed to update the system health.
         try:
             status = self.statusmapper.map_event(healthevent.event_type)
@@ -381,13 +382,12 @@ class SystemHealth(Subscriber):
             # Update the node map
             self.node_id = healthevent.node_id
             self.node_map = {'cluster_id':healthevent.cluster_id, 'site_id':healthevent.site_id,
-                            'rack_id':healthevent.rack_id, 'storageset_id':healthevent.storageset_id}
+                             'rack_id':healthevent.rack_id, 'storageset_id':healthevent.storageset_id}
 
             # Update in the store.
             if self._is_update_required(current_health, updated_health, healthevent):
                 self._update(healthevent, updated_health, next_component=next_component)
                 Log.info(f"Updated health for component: {component}, Type: {component_type}, Id: {component_id}")
-            # Process event completed successfully hence no retry
         except Exception as e:
             Log.error(f"Failed processing system health event with Error: {e}")
             raise HaSystemHealthException("Failed processing system health event")
