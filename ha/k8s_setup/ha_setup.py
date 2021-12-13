@@ -198,13 +198,6 @@ class ConfigCmd(Cmd):
             # TBD delete once data_pod_label is avilable from confstore
             data_pod_label = ['cortx-data', 'cortx-server']
 
-            # Dummy value fetched for now. This will be replaced by the key/path for the service ID/machine ID once that is available in confstore
-            # Ref ticket EOS-???
-            machine_id_key = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}product_release')
-            # TBD delete once machine_id_key is avilable from confstore
-            # Note: machine id key is not available in pod event hence using pod name
-            #       but once it is available machine id key we will using it
-            machine_id_key = 'metadata/name'
             # Time till when system health can be collected in bootstrap mode
             timeout = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}product_release')
             timeout = '10' # in seconds ;  temporary value till the same is avilabe in cluster.conf
@@ -216,7 +209,7 @@ class ConfigCmd(Cmd):
                          'consul_config' : {'endpoint' : consul_endpoint},
                          'event_topic' : 'hare',
                          'data_pod_label' : data_pod_label,
-                         'MONITOR' : {'message_type' : 'cluster_event', 'producer_id' : 'cluster_monitor', 'machine_id_key' : machine_id_key},
+                         'MONITOR' : {'message_type' : 'cluster_event', 'producer_id' : 'cluster_monitor'},
                          'EVENT_MANAGER' : {'message_type' : 'health_events', 'producer_id' : 'system_health',
                                             'consumer_group' : 'health_monitor', 'consumer_id' : '1'},
                          'FAULT_TOLERANCE' : {'message_type' : 'cluster_event', 'consumer_group' : 'event_listener',
