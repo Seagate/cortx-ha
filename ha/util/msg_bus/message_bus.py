@@ -51,7 +51,7 @@ class MessageBusComm:
         #TODO: Add one more field for taking configuration path as a parameter.
 
         self._comm_obj = None
-        self._message_bus_type = None
+        self._message_bus_type = 'kafka'
         self._comm_type = kwargs.get(const.COMM_TYPE, None)
         self._init_config(**kwargs)
 
@@ -60,7 +60,6 @@ class MessageBusComm:
             #TODO: Write a script to fetch kafka bootstarp cluster and write in
             #the config. Provide the script to Provisioner to copy it to desired location.
             ConfInit()
-            self._message_bus_type = Conf.get(const.CONFIG_INDEX, f"message_broker{_DELIM}type")
             if self._message_bus_type == const.KAFKA:
                 self._init_kafka_conf(**kwargs)
             else:
@@ -70,10 +69,10 @@ class MessageBusComm:
             raise InvalidConfigError(f"Invalid config. {ex}")
 
     def _init_kafka_conf(self, **kwargs):
-        kafka_cluster = Conf.get(const.CONFIG_INDEX, \
-            f"message_broker{_DELIM}cluster")
         bootstrap_servers = ""
         count = 1
+        message_server_endpoints = Conf.get('cortx_conf', f'cortx{_DELIM}external{_DELIM}kafka{_DELIM}endpoints')
+        kafka_cluster = MessageBusComm.get_server_list(message_server_endpoints)
         for values in kafka_cluster:
             if len(kafka_cluster) <= count:
                 bootstrap_servers = bootstrap_servers + f"{values[const.SERVER]}:{values[const.PORT]}"
@@ -112,6 +111,31 @@ class MessageBusComm:
         except Exception as ex:
             Log.error(f"Unable to initialize message bus. {ex}")
             raise ex
+
+    @staticmethod
+    def get_server_list(message_server_endpoints: list) -> tuple:
+        """
+        Args:
+            message_server_endpoints: list of endpoints
+        Returns:
+            list: ([message_server_list])
+        """
+        message_server_list = []
+        server_info = {}
+
+        for server in message_server_endpoints:
+            # Value of server can be <server_fqdn:port> or <server_fqdn>
+            if ':' in server:
+                endpoints = server.split('//')[1]
+                server_fqdn, port = endpoints.split(':')
+                server_info['server'] = server_fqdn
+                server_info['port'] = port
+            else:
+                server_info['server'] = server
+                server_info['port'] = '9092'  # 9092 is default kafka server port
+
+            message_server_list.append(server_info)
+        return message_server_list
 
     def send(self, message: list, **kwargs):
         try:

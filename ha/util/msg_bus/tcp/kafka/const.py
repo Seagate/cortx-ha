@@ -13,9 +13,8 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
-CONFIG_INDEX = 'message_bus'
-CONSUMER_CONFIG_INDEX = 'json:///etc/cortx/message_bus.conf'
-MESSAGE_BUS_CONF = 'json:///etc/cortx/message_bus.conf'
+CONFIG_INDEX = 'cortx_conf'
+MESSAGE_BUS_CONF = 'yaml:///etc/cortx/cluster.conf'
 SERVER = 'server'
 PORT = 'port'
 KAFKA = 'kafka'
