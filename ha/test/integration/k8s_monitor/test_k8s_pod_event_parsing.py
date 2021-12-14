@@ -18,28 +18,10 @@
 import os
 import pathlib
 import sys
-import time
 
 sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..', '..'))
 
-from ha import const
 from ha.monitor.k8s.object_monitor import ObjectMonitor
-from ha.core.config.config_manager import ConfigManager
-from cortx.utils.conf_store import Conf
-# from ha.core.event_manager.event_manager import EventManager
-# from ha.core.event_manager.subscribe_event import SubscribeEvent
-# from ha.core.system_health.model.health_event import HealthEvent
-# from ha.util.message_bus import MessageBus
-# from ha.core.action_handler.action_factory import ActionFactory
-# from ha.core.event_manager.resources import SUBSCRIPTION_LIST
-# from ha.core.event_manager.resources import RESOURCE_TYPES
-
-# MSG = False
-
-# def receive(message):
-#     print(message)
-#     global MSG
-#     MSG = True
 
 class MockProducer:
 
