@@ -18,6 +18,7 @@
 import os
 import pathlib
 import sys
+import time
 
 sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..', '..'))
 
@@ -27,10 +28,12 @@ class MockProducer:
 
     def __init__(self, producer_id: str, message_type: str, partitions: int):
        print(f"Producer id: {producer_id}, message_type: {message_type}, partition: {partitions}")
+       self.is_publish = False
 
     def publish(self, message: any):
         print("Test call: mocking publish event.")
         print(message)
+        self.is_publish = True
 
 
 if __name__ == "__main__":
@@ -45,9 +48,22 @@ if __name__ == "__main__":
         pod_thread = ObjectMonitor('pod', **kwargs)
 
         #  Setting mock producer to publish
-        pod_thread._producer = MockProducer("mock_producer", "mock_message", 1)
+        mock_producer = MockProducer("mock_producer", "mock_message", 1)
+        pod_thread._producer = mock_producer
 
+        # setting demon so on existing the main thread this thread will be exit
+        pod_thread.daemon = True
         pod_thread.start()
-        pod_thread.join()
+
+        # wait for 30 seconds and check if publish is done
+        # if done then exit.
+        for count in range(0, 30):
+            time.sleep(1)
+            if mock_producer.is_publish:
+                break
+
+        # we are exiting here so no needs to join the thread
+        sys.exit()
+
     except Exception as e:
         print(f"Failed to run K8s Event Parsing test, Error: {e}")
