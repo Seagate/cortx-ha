@@ -57,6 +57,8 @@ if __name__ == "__main__":
 
         # wait for 30 seconds and check if publish is done
         # if done then exit.
+        # Note: the test will exit in 30 seconds event if not event is received
+        # so make sure all data pods are online and event is generated
         for count in range(0, 30):
             time.sleep(1)
             if mock_producer.is_publish:
