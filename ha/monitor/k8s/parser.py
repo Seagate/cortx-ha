@@ -110,8 +110,9 @@ class PodEventParser(ObjectParser):
         alert.resource_type = self._type
         alert.timestamp = str(int(time.time()))
 
-        if K8SEventsConst.MACHINEID in an_event[K8SEventsConst.RAW_OBJECT][K8SEventsConst.METADATA][K8SEventsConst.LABELS]:
-            alert.resource_name = an_event[K8SEventsConst.RAW_OBJECT][K8SEventsConst.METADATA][K8SEventsConst.LABELS][K8SEventsConst.MACHINEID]
+        labels = an_event[K8SEventsConst.RAW_OBJECT][K8SEventsConst.METADATA][K8SEventsConst.LABELS]
+        if K8SEventsConst.MACHINEID in labels:
+            alert.resource_name = labels[K8SEventsConst.MACHINEID]
         if K8SEventsConst.TYPE in an_event:
             alert.event_type = an_event[K8SEventsConst.TYPE]
         if K8SEventsConst.NODE_NAME in an_event[K8SEventsConst.RAW_OBJECT][K8SEventsConst.SPEC]:
