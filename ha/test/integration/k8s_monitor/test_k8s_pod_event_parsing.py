@@ -35,17 +35,19 @@ class MockProducer:
 
 if __name__ == "__main__":
     print("******** Testing K8s Event Parsing ********")
+    try:
+        pod_labels =  ['cortx-data', 'cortx-server']
+        pod_label_str = ', '.join(pod_label for pod_label in pod_labels)
 
-    pod_labels =  ['cortx-data', 'cortx-server']
-    pod_label_str = ', '.join(pod_label for pod_label in pod_labels)
+        kwargs = {'pretty': True}
 
-    kwargs = {'pretty': True}
+        kwargs['label_selector'] = f'name in ({pod_label_str})'
+        pod_thread = ObjectMonitor('pod', **kwargs)
 
-    kwargs['label_selector'] = f'name in ({pod_label_str})'
-    pod_thread = ObjectMonitor('pod', **kwargs)
+        #  Setting mock producer to publish
+        pod_thread._producer = MockProducer("mock_producer", "mock_message", 1)
 
-    #  Setting mock producer to publish
-    pod_thread._producer = MockProducer("mock_producer", "mock_message", 1)
-
-    pod_thread.start()
-    pod_thread.join()
+        pod_thread.start()
+        pod_thread.join()
+    except Exception as e:
+        print(f"Failed to run K8s Event Parsing test, Error: {e}")
