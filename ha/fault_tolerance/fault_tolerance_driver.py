@@ -86,8 +86,8 @@ class FaultTolerance:
             return CONSUMER_STATUS.FAILED
         except Exception as e:
             Log.error(f"Unknown Exception caught {e} {traceback.format_exc()}")
-            Log.error(f"Forcefully ack failed msg: {message}")
-            return CONSUMER_STATUS.FAILED
+            Log.error(f"Forcefully ack as success. msg: {message}")
+            return CONSUMER_STATUS.SUCCESS
 
     def poll(self):
         """Contineously polls for message bus for k8s_event message type"""
