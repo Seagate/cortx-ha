@@ -117,7 +117,7 @@ class EventAnalyzer:
             try:
                 system_health.process_event(health_event)
             except Exception as e:
-                Log.error(f"Failed to publish event. Error: {e}")
+                Log.error(f"Failed to process event. Error: {e}")
                 raise SubscriberException(f"Failed to process event {str(health_event)}. Error: {e}")
 
 def main(argv):
