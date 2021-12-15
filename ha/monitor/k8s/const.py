@@ -21,6 +21,10 @@ class K8SEventsConst:
     RAW_OBJECT = 'raw_object'
     METADATA = 'metadata'
     NAME = 'name'
+    LABELS ='labels'
+    # cortx specific key for fetching machine id from event.
+    # k8s event: ['raw_object']['metadata']['labels']['cortx.io/machine-id']
+    MACHINEID = 'cortx.io/machine-id'
     SPEC = 'spec'
     NODE_NAME = 'nodeName'
     PHASE = 'phase'
