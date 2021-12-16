@@ -23,11 +23,8 @@ from ha.monitor.k8s.const import K8SEventsConst
 from ha.monitor.k8s.const import AlertStates
 from ha.monitor.k8s.const import EventStates
 from ha.monitor.k8s.alert import K8sAlert
-from ha import const
-from ha.const import _DELIM
 
 from cortx.utils.log import Log
-from cortx.utils.conf_store import Conf
 
 class ObjectParser:
     def __init__(self):
