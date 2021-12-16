@@ -27,6 +27,7 @@ class K8sAlert:
         self._pod = None
         self._node = None
         self._is_status = False
+        self._timestamp = None
 
     @property
     def resource_type(self):
@@ -34,7 +35,7 @@ class K8sAlert:
 
     @resource_type.setter
     def resource_type(self, res_type):
-        self._resource_type = f"k8s:{res_type}"
+        self._resource_type = f"{res_type}"
 
     @property
     def resource_name(self):
@@ -83,6 +84,14 @@ class K8sAlert:
     @is_status.setter
     def is_status(self, status):
         self._is_status = status
+
+    @property
+    def timestamp(self):
+        return self._timestamp
+
+    @timestamp.setter
+    def timestamp(self, time):
+        self._timestamp = time
 
     def to_dict(self):
         return vars(self)

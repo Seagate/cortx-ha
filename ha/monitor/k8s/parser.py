@@ -16,12 +16,15 @@
 # cortx-questions@seagate.com.
 
 
+import time
+
 from ha.monitor.k8s.error import NotSupportedObjectError
 from ha.monitor.k8s.const import K8SEventsConst
 from ha.monitor.k8s.const import AlertStates
 from ha.monitor.k8s.const import EventStates
 from ha.monitor.k8s.alert import K8sAlert
 
+from cortx.utils.log import Log
 
 class ObjectParser:
     def __init__(self):
@@ -34,11 +37,12 @@ class ObjectParser:
 class NodeEventParser(ObjectParser):
     def __init__(self):
         super().__init__()
-        self._type = 'node'
+        self._type = 'host'
 
     def parse(self, an_event, cached_state):
         alert = K8sAlert()
         alert.resource_type = self._type
+        alert.timestamp = str(int(time.time()))
 
         if K8SEventsConst.TYPE in an_event:
             alert.event_type = an_event[K8SEventsConst.TYPE]
@@ -50,11 +54,11 @@ class NodeEventParser(ObjectParser):
             for a_condition in an_event[K8SEventsConst.RAW_OBJECT][K8SEventsConst.STATUS][K8SEventsConst.CONDITIONS]:
                 if a_condition[K8SEventsConst.TYPE] == K8SEventsConst.READY:
                     ready_status = a_condition[K8SEventsConst.STATUS]
-        except Exception:
-            print("Exception received")
+        except Exception as e:
+            Log.warn(f"Exception received during parsing {e}")
 
         if ready_status is None:
-            # Log
+            Log.debug(f"ready_status is None for node resource {alert.resource_name}")
             cached_state[alert.resource_name] = ready_status
             return None
 
@@ -64,6 +68,7 @@ class NodeEventParser(ObjectParser):
                 alert.event_type = AlertStates.ONLINE
                 return alert
             else:
+                Log.debug(f"[EventStates ADDED] No change detected for node resource {alert.resource_name}")
                 return None
 
         if alert.event_type == EventStates.MODIFIED:
@@ -77,10 +82,10 @@ class NodeEventParser(ObjectParser):
                     alert.event_type = AlertStates.FAILED
                     return alert
                 else:
-                    # Log
+                    Log.debug(f"[EventStates MODIFIED] No change detected for node resource {alert.resource_name}")
                     return None
             else:
-                # Log
+                Log.debug(f"[EventStates MODIFIED] No cached state detected for node resource {alert.resource_name}")
                 return None
 
         # Handle DELETED event - Not required for Cortx
@@ -91,16 +96,22 @@ class NodeEventParser(ObjectParser):
 class PodEventParser(ObjectParser):
     def __init__(self):
         super().__init__()
-        self._type = 'pod'
+
+        # Note: The below type is not a Kubernetes 'node'.
+        #       in cortx cluster the pod is called or considered as a node.
+        #       hence while sending alert to cortx, below type is set to 'node'.
+        self._type = 'node'
 
     def parse(self, an_event, cached_state):
         alert = K8sAlert()
         alert.resource_type = self._type
+        alert.timestamp = str(int(time.time()))
 
+        labels = an_event[K8SEventsConst.RAW_OBJECT][K8SEventsConst.METADATA][K8SEventsConst.LABELS]
+        if K8SEventsConst.MACHINEID in labels:
+            alert.resource_name = labels[K8SEventsConst.MACHINEID]
         if K8SEventsConst.TYPE in an_event:
             alert.event_type = an_event[K8SEventsConst.TYPE]
-        if K8SEventsConst.NAME in an_event[K8SEventsConst.RAW_OBJECT][K8SEventsConst.METADATA]:
-            alert.resource_name = an_event[K8SEventsConst.RAW_OBJECT][K8SEventsConst.METADATA][K8SEventsConst.NAME]
         if K8SEventsConst.NODE_NAME in an_event[K8SEventsConst.RAW_OBJECT][K8SEventsConst.SPEC]:
             alert.node = an_event[K8SEventsConst.RAW_OBJECT][K8SEventsConst.SPEC][K8SEventsConst.NODE_NAME]
 
@@ -109,17 +120,18 @@ class PodEventParser(ObjectParser):
             for a_condition in an_event[K8SEventsConst.RAW_OBJECT][K8SEventsConst.STATUS][K8SEventsConst.CONDITIONS]:
                 if a_condition[K8SEventsConst.TYPE] == K8SEventsConst.READY:
                     ready_status = a_condition[K8SEventsConst.STATUS]
-        except Exception:
-            print("Exception received")
+        except Exception as e:
+            Log.warn(f"Exception received during parsing {e}")
 
         if ready_status is None:
-            # Log
+            Log.debug(f"ready_status is None for pod resource {alert.resource_name}")
             cached_state[alert.resource_name] = ready_status
             return None
 
         if an_event[K8SEventsConst.TYPE] == EventStates.ADDED:
             cached_state[alert.resource_name] = ready_status.lower()
             if ready_status.lower() != K8SEventsConst.true:
+                Log.debug(f"[EventStates ADDED] No change detected for pod resource {alert.resource_name}")
                 return None
             else:
                 alert.event_type = AlertStates.ONLINE
@@ -136,10 +148,10 @@ class PodEventParser(ObjectParser):
                     alert.event_type = AlertStates.FAILED
                     return alert
                 else:
-                    # Log
+                    Log.debug(f"[EventStates MODIFIED] No change detected for pod resource {alert.resource_name}")
                     return None
             else:
-                # Log
+                Log.debug(f"[EventStates MODIFIED] No cached state detected for pod resource {alert.resource_name}")
                 return None
 
         # Handle DELETED event - Not required for Cortx

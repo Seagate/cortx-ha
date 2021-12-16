@@ -6,3 +6,4 @@ dataclasses==0.7
 python-consul==1.1.0
 pathlib==1.0.1
 pytest==5.4.2
+kubernetes
