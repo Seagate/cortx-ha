@@ -18,10 +18,12 @@
 import json
 from typing import Callable
 from threading import Thread
+from cortx.utils.conf_store.conf_store import Conf
 from cortx.utils.log import Log
 from cortx.utils.message_bus import MessageBusAdmin
 from cortx.utils.message_bus import MessageProducer
 from cortx.utils.message_bus import MessageConsumer
+from cortx.utils.message_bus import MessageBus as utils_message_bus
 
 class MessageBusProducer:
     PRODUCER_METHOD = "sync"
@@ -144,6 +146,16 @@ class MessageBusConsumer:
 
 class MessageBus:
     ADMIN_ID = "ha_admin"
+    _DELIM = ">"
+    HA_GLOBAL_INDEX = "ha_conf"
+
+    @staticmethod
+    def init():
+        """
+        Initialize utils MessageBus Library with kafka endpoints
+        """
+        message_server_endpoints = Conf.get(MessageBus.HA_GLOBAL_INDEX, f"kafka_config{MessageBus._DELIM}endpoints")
+        utils_message_bus.init(message_server_endpoints)
 
     @staticmethod
     def get_consumer(consumer_id: int, consumer_group: str, message_type: str,
@@ -159,6 +171,7 @@ class MessageBus:
             offset (str, optional): Offset for messages. Defaults to "earliest".
             timeout (int, optional): Max wait time for thread to wait for a message. Default: timeout is 0 and so call is blocking
         """
+        MessageBus.init()
         return MessageBusConsumer(consumer_id, consumer_group, message_type, callback, auto_ack, offset, timeout)
 
     @staticmethod
@@ -172,6 +185,7 @@ class MessageBus:
         Raises:
             MessageBusError: Message bus error.
         """
+        MessageBus.init()
         MessageBus.register(message_type, partitions)
         return MessageBusProducer(producer_id, message_type, partitions)
 
@@ -183,6 +197,7 @@ class MessageBus:
             message_type (str): Message type.
             partitions (int): Number of partition.
         """
+        MessageBus.init()
         admin = MessageBusAdmin(admin_id=MessageBus.ADMIN_ID)
         if message_type not in admin.list_message_types():
             admin.register_message_type(message_types=[message_type], partitions=partitions)
@@ -194,6 +209,7 @@ class MessageBus:
         Args:
             message_type (str): Message type.
         """
+        MessageBus.init()
         admin = MessageBusAdmin(admin_id=MessageBus.ADMIN_ID)
         if message_type in admin.list_message_types():
             admin.deregister_message_type(message_types=[message_type])

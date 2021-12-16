@@ -174,6 +174,10 @@ class ConfigCmd(Cmd):
                 sys.stderr.write(f'Failed to get consul config. consul_config: {consul_endpoint}. \n')
                 sys.exit(1)
 
+            kafka_endpoint = Conf.get(self._index, f'cortx{_DELIM}external{_DELIM}kafka{_DELIM}endpoints')
+            if not kafka_endpoint:
+                sys.stderr.write(f'Failed to get kafka config. kafka_config: {kafka_endpoint}. \n')
+                sys.exit(1)
             # Dummy value fetched for now. This will be replaced by the key/path for the pod label onces that is avilable in confstore
             # Ref ticket EOS-25694
             data_pod_label = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}product_release')
@@ -182,6 +186,7 @@ class ConfigCmd(Cmd):
 
             conf_file_dict = {'LOG' : {'path' : const.HA_LOG_DIR, 'level' : const.HA_LOG_LEVEL},
                          'consul_config' : {'endpoint' : consul_endpoint},
+                         'kafka_config' : {'endpoints': kafka_endpoint},
                          'event_topic' : 'hare',
                          'data_pod_label' : data_pod_label,
                          'MONITOR' : {'message_type' : 'k8s_event', 'producer_id' : 'k8s_monitor'},
