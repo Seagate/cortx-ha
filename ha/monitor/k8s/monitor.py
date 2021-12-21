@@ -27,13 +27,14 @@ if __name__ == "__main__":
     # Read I/O pod selector label from ha.conf . Will be received from provisioner confstore
     # provisioner needs to be informed to add it in confstore  (to be added there )
     ConfigManager.init("k8s_monitor")
-    pod_label = Conf.get(const.HA_GLOBAL_INDEX, "data_pod_label")
-
+    pod_labels = Conf.get(const.HA_GLOBAL_INDEX, "data_pod_label")
+    pod_label_str = ', '.join(pod_label for pod_label in pod_labels)
 
     kwargs = {'pretty': True}
     # Change to multiprocessing
     node_thread = ObjectMonitor('node', **kwargs)
-    kwargs['label_selector'] = f'app={pod_label}'
+    # TODO : Change 'name' field to 'app' in label_selector if required.
+    kwargs['label_selector'] = f'name in ({pod_label_str})'
     pod_thread = ObjectMonitor('pod', **kwargs)
 
     pod_thread.start()

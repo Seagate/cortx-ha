@@ -304,9 +304,51 @@ class SystemHealth(Subscriber):
         """
         healthevent.event_type = json.loads(healthvalue).get("events")[0]["status"]
         node_id = healthevent.node_id
-        healthevent.node_id = ConfigManager.get_node_name(str(node_id))
         self.producer.publish(str(healthevent))
         healthevent.node_id = node_id
+
+    def _bootstrap_in_progress(self):
+        """
+        Check if we are in intial bootstrap time
+
+        Return:  True: if bootstrp happening and initial health status being collected for all pods
+                else return  False
+
+        """
+        init_health_in_progress = False
+        init_health = self.healthmanager.get_key("init_system_health")
+
+        if (init_health != None) and (init_health == 0):
+            init_health_in_progress = False
+            return init_health_in_progress
+
+        if init_health == None:
+            # Create key and set value to 1
+            self.healthmanager.set_key("init_system_health", "1")
+
+            curr_time = str(int(time.time()))
+            # Timeout counting starts form the time first event is received by system health
+            self.healthmanager.set_key("inital_time", curr_time)
+            timeout = Conf.get(const.HA_GLOBAL_INDEX,  f"SYSTEM_HEALTH{_DELIM}sys_health_bootstrap_timeout")
+            self.healthmanager.set_key("sys_health_bootstrap_timeout", timeout)
+            init_health_in_progress = True
+        else:
+            # TBD Following logic can be added after EOS-26597 is resolved.
+            # Once total number of pods and service types of the pods are avilable in the config,
+            # use the same to expediate bootstrap process i.e. to exit bootstrap mode before timeout
+
+            # check if within timeout period
+            curr_time = int(time.time())
+            init_time = int(self.healthmanager.get_key("inital_time"))
+            timeout = int(self.healthmanager.get_key("sys_health_bootstrap_timeout"))
+
+            if curr_time - init_time <= timeout:
+                init_health_in_progress = True
+            else:
+                self.healthmanager.set_key("init_system_health", "0")
+                init_health_in_progress = False
+
+        return init_health_in_progress
 
     def _update(self, healthevent: HealthEvent, healthvalue: str, next_component: str=None):
         """
@@ -315,12 +357,16 @@ class SystemHealth(Subscriber):
         component = SystemHealthComponents.get_component(healthevent.resource_type)
         comp_type = healthevent.resource_type.split(':')[-1]
         comp_id = healthevent.resource_id
+
+        bootstrp_in_progress = self._bootstrap_in_progress()
+
         key = self._prepare_key(component, cluster_id=self.node_map['cluster_id'], site_id=self.node_map['site_id'],
                                 rack_id=self.node_map['rack_id'], storageset_id=self.node_map['storageset_id'],
                                 node_id=self.node_id, server_id=self.node_id, storage_id=self.node_id,
                                 comp_type=comp_type, comp_id=comp_id)
         self.healthmanager.set_key(key, healthvalue)
-        self.publish_event(healthevent, healthvalue)
+        if not bootstrp_in_progress:
+            self.publish_event(healthevent, healthvalue)
 
         # Check the next component to be updated, if none then return.
         if next_component is None:

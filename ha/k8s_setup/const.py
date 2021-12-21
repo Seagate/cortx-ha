@@ -17,10 +17,14 @@ HA_LOG_DIR="/var/log/seagate/cortx/ha"
 HA_LOG_LEVEL="INFO"
 CONFIG_DIR="/etc/cortx/ha"
 HA_CONFIG_FILE="{}/ha.conf".format(CONFIG_DIR)
+SOURCE_PATH="/opt/seagate/cortx/ha"
+SOURCE_CONFIG_PATH="{}/conf/etc".format(SOURCE_PATH)
+SOURCE_HEALTH_HIERARCHY_FILE = "{}/system_health_hierarchy.json".format(SOURCE_CONFIG_PATH)
+HEALTH_HIERARCHY_FILE = "{}/system_health_hierarchy.json".format(CONFIG_DIR)
 
 #Confstore delimiter
 _DELIM=">"
 
 # Event_manager keys
-POD_EVENT="k8s:pod"
+POD_EVENT="node"
 EVENT_COMPONENT="hare"

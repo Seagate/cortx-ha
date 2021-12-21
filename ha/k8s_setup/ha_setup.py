@@ -89,6 +89,12 @@ class Cmd:
         args = parser.parse_args(argv)
         return args.command(args)
 
+    def get_machine_id(self):
+        command = "cat /etc/machine-id"
+        machine_id, err, rc = self._execute.run_cmd(command, check_error=True)
+        Log.info(f"Read machine-id. Output: {machine_id}, Err: {err}, RC: {rc}")
+        return machine_id.strip()
+
     @staticmethod
     def add_args(parser: str, cls: str, name: str):
         """
@@ -115,6 +121,18 @@ class Cmd:
                 shutil.rmtree(file)
             else:
                 raise SetupError(f"{file} is not dir and file, can not be deleted.")
+
+    @staticmethod
+    def copy_file(src: str, dest: str):
+        """
+        copy a file from source to destination.
+
+        Args:
+            src (str): source file path
+            dest (str): destination path
+        """
+        shutil.copy(src, dest)
+
 
 class PostInstallCmd(Cmd):
     """
@@ -182,16 +200,29 @@ class ConfigCmd(Cmd):
             # Ref ticket EOS-25694
             data_pod_label = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}product_release')
             # TBD delete once data_pod_label is avilable from confstore
-            data_pod_label = 'cortx-data'
+            data_pod_label = ['cortx-data', 'cortx-server']
+
+            # Time till when system health can be collected in bootstrap mode
+            timeout = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}product_release')
+            timeout = '10' # in seconds ;  temporary value till the same is avilabe in cluster.conf
+            # Total number of pods for which health is to be maintained
+            num_pods = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}product_release')
+            num_pods = '10' #temporary value till the same is avilabe in cluster.conf
 
             conf_file_dict = {'LOG' : {'path' : const.HA_LOG_DIR, 'level' : const.HA_LOG_LEVEL},
                          'consul_config' : {'endpoint' : consul_endpoint},
                          'kafka_config' : {'endpoints': kafka_endpoint},
                          'event_topic' : 'hare',
                          'data_pod_label' : data_pod_label,
-                         'MONITOR' : {'message_type' : 'k8s_event', 'producer_id' : 'k8s_monitor'},
+                         'MONITOR' : {'message_type' : 'cluster_event', 'producer_id' : 'cluster_monitor'},
                          'EVENT_MANAGER' : {'message_type' : 'health_events', 'producer_id' : 'system_health',
-                                            'consumer_group' : 'health_monitor', 'consumer_id' : '1'}
+                                            'consumer_group' : 'health_monitor', 'consumer_id' : '1'},
+                         'FAULT_TOLERANCE' : {'message_type' : 'cluster_event', 'consumer_group' : 'event_listener',
+                                              'consumer_id' : '1'},
+                         'NODE': {'resource_type': 'node'},
+                         'SYSTEM_HEALTH' : {'num_entity_health_events' : 2,
+                                            'sys_health_bootstrap_timeout' : timeout,
+                                            'total_num_pods' : num_pods }
                          }
 
             if not os.path.isdir(const.CONFIG_DIR):
@@ -201,12 +232,30 @@ class ConfigCmd(Cmd):
             with open(const.HA_CONFIG_FILE, 'w+') as conf_file:
                 yaml.dump(conf_file_dict, conf_file, default_flow_style=False)
 
+            Cmd.copy_file(const.SOURCE_HEALTH_HIERARCHY_FILE, const.HEALTH_HIERARCHY_FILE)
             # First populate the ha.conf and then do init. Because, in the init, this file will
             # be stored in the confstore as key values
             ConfigManager.init("ha_setup")
+
+            # Inside cluster.conf, cluster_id will be present under
+            # "node".<actual POD machind id>."cluster_id". So,
+            # in the similar way, confstore will have this key when
+            # the cluster.conf load will taked place.
+            # So, to get the cluster_id field from Confstore, we need machine_id
+            machine_id = self.get_machine_id()
+            cluster_id = Conf.get(self._index, f'node{_DELIM}{machine_id}{_DELIM}cluster_id')
+            # site_id = Conf.get(self._index, f'node{_DELIM}{machine_id}{_DELIM}site_id')
+            site_id = '1'
+            # rack_id = Conf.get(self._index, f'node{_DELIM}{machine_id}{_DELIM}rack_id')
+            rack_id = '1'
+            conf_file_dict.update({'COMMON_CONFIG': {'cluster_id': cluster_id, 'rack_id': rack_id, 'site_id': site_id}})
+            # TODO: Verify whether these newly added config is avilable in the confstore or not
+            with open(const.HA_CONFIG_FILE, 'w+') as conf_file:
+                yaml.dump(conf_file_dict, conf_file, default_flow_style=False)
             self._confstore = ConfigManager.get_confstore()
+
             Log.info(f'Populating the ha config file with consul_endpoint: {consul_endpoint}, \
-                      prometheus_endpoint:')
+                       data_pod_label: {data_pod_label}')
 
             Log.info('Performing event_manager subscription')
             event_manager = EventManager.get_instance()
