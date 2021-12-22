@@ -24,6 +24,7 @@ from cortx.utils.message_bus import MessageBusAdmin
 from cortx.utils.message_bus import MessageProducer
 from cortx.utils.message_bus import MessageConsumer
 from cortx.utils.message_bus import MessageBus as utils_message_bus
+from ha import const
 
 class MessageBusProducer:
     PRODUCER_METHOD = "sync"
@@ -146,15 +147,13 @@ class MessageBusConsumer:
 
 class MessageBus:
     ADMIN_ID = "ha_admin"
-    _DELIM = ">"
-    HA_GLOBAL_INDEX = "ha_conf"
 
     @staticmethod
     def init():
         """
         Initialize utils MessageBus Library with kafka endpoints
         """
-        message_server_endpoints = Conf.get(MessageBus.HA_GLOBAL_INDEX, f"kafka_config{MessageBus._DELIM}endpoints")
+        message_server_endpoints = Conf.get(const.HA_GLOBAL_INDEX, f"kafka_config{const._DELIM}endpoints")
         utils_message_bus.init(message_server_endpoints)
 
     @staticmethod
