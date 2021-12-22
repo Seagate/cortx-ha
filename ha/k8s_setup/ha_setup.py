@@ -189,13 +189,20 @@ class ConfigCmd(Cmd):
         """
         try:
             consul_endpoints = Conf.get(self._index, f'cortx{_DELIM}external{_DELIM}consul{_DELIM}endpoints')
+            #========================================================#
+            # consul Service endpoints from cluster.conf             #
+            #____________________ cluster.conf ______________________#
+            # endpoints:                                             #
+            # - tcp://consul-server.default.svc.cluster.local:8301   #
+            # - http://consul-server.default.svc.cluster.local:8500  #
+            #========================================================#
             # search for supported consul endpoint url from list of configured consule endpoints
-            consul_endpoint = list(filter(lambda x: urlparse(x).scheme == const.consule_scheme, consul_endpoints))
-            if not consul_endpoint or len(consul_endpoint[0]) == 0:
-                sys.stderr.write(f'Failed to get consul config. consul_config: {consul_endpoint}. \n')
+            filtered_consul_endpoints = list(filter(lambda x: urlparse(x).scheme == const.consul_scheme, consul_endpoints))
+            if not filtered_consul_endpoints or len(filtered_consul_endpoints[0]) == 0:
+                sys.stderr.write(f'Failed to get consul config. consul_config: {filtered_consul_endpoints}. \n')
                 sys.exit(1)
             # take first endpoint as it will be always 1
-            consul_endpoint = consul_endpoint[0]
+            consul_endpoint = filtered_consul_endpoints[0]
             # Dummy value fetched for now. This will be replaced by the key/path for the pod label once that is available in confstore
             # Ref ticket EOS-25694
             data_pod_label = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}product_release')
