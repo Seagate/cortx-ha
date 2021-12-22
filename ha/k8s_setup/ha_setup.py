@@ -22,6 +22,7 @@ import traceback
 import os
 import shutil
 import yaml
+from urllib.parse import urlparse
 
 from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
@@ -187,7 +188,9 @@ class ConfigCmd(Cmd):
         Process config command.
         """
         try:
-            consul_endpoint = Conf.get(self._index, f'cortx{_DELIM}external{_DELIM}consul{_DELIM}endpoints[0]')
+            consul_endpoints = Conf.get(self._index, f'cortx{_DELIM}external{_DELIM}consul{_DELIM}endpoints')
+            # search for supported consul endpoint url from list of configured consule endpoints
+            consul_endpoint = list(filter(lambda x: urlparse(x).scheme == const.consule_scheme, consul_endpoints))
             if not consul_endpoint:
                 sys.stderr.write(f'Failed to get consul config. consul_config: {consul_endpoint}. \n')
                 sys.exit(1)
