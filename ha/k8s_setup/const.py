@@ -26,7 +26,7 @@ HEALTH_HIERARCHY_FILE = "{}/system_health_hierarchy.json".format(CONFIG_DIR)
 _DELIM=">"
 
 # consule endpoint scheme: http
-consule_scheme = 'http'
+consul_scheme = 'http'
 
 # Event_manager keys
 POD_EVENT="node"
