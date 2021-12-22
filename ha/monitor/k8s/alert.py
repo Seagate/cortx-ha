@@ -66,8 +66,8 @@ class K8sAlert:
         return self._generation_id
 
     @generation_id.setter
-    def generation_id(self, id):
-        self._generation_id = id
+    def generation_id(self, name):
+        self._generation_id = name
 
     @property
     def node(self):
