@@ -196,12 +196,12 @@ class ConfigCmd(Cmd):
             # - tcp://consul-server.default.svc.cluster.local:8301   #
             # - http://consul-server.default.svc.cluster.local:8500  #
             #========================================================#
-            # search for supported consul endpoint url from list of configured consule endpoints
+            # search for supported consul endpoint url from list of configured consul endpoints
             filtered_consul_endpoints = list(filter(lambda x: urlparse(x).scheme == const.consul_scheme, consul_endpoints))
-            if not filtered_consul_endpoints or len(filtered_consul_endpoints[0]) == 0:
+            if not filtered_consul_endpoints:
                 sys.stderr.write(f'Failed to get consul config. consul_config: {filtered_consul_endpoints}. \n')
                 sys.exit(1)
-            # take first endpoint as it will be always 1
+            # discussed and confirmed to select the first hhtp endpoint
             consul_endpoint = filtered_consul_endpoints[0]
             # Dummy value fetched for now. This will be replaced by the key/path for the pod label once that is available in confstore
             # Ref ticket EOS-25694
