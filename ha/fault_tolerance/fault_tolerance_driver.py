@@ -21,6 +21,7 @@
 
 
 import time
+import traceback
 
 from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
@@ -31,6 +32,11 @@ from ha.core.config.config_manager import ConfigManager
 from ha.core.event_analyzer.event_analyzerd import EventAnalyzer
 from ha.k8s_setup.const import _DELIM
 
+from consul.base import ConsulException
+from cortx.utils.conf_store.error import ConfError
+from ha.core.event_analyzer.event_analyzer_exceptions import EventFilterException
+from ha.core.event_analyzer.event_analyzer_exceptions import EventParserException
+from ha.core.event_analyzer.event_analyzer_exceptions import SubscriberException
 
 class FaultTolerance:
     """
@@ -61,14 +67,31 @@ class FaultTolerance:
         Log.debug(f'Received the message from message bus: {message}')
         try:
             EventAnalyzer(message.decode('utf-8'))
-        except Exception as err:
-            Log.error(f'Failed to analyze the event: {err}')
+            return CONSUMER_STATUS.SUCCESS
+        except ConsulException as e:
+            Log.error(f"consule exception {e} {traceback.format_exc()} for {message}. Ack Message.")
+            return CONSUMER_STATUS.SUCCESS
+        except ConfError as e:
+            Log.error(f"config exception {e} {traceback.format_exc()} for {message}. Ack Message.")
+            return CONSUMER_STATUS.SUCCESS
+        except EventFilterException as e:
+            Log.error(f"Filter exception {e} {traceback.format_exc()} for {message}. Ack Message.")
+            return CONSUMER_STATUS.SUCCESS
+        except EventParserException as e:
+            Log.error(f"Parser exception {e} {traceback.format_exc()} for {message}.  Ack Message.")
+            return CONSUMER_STATUS.SUCCESS
+        except SubscriberException as e:
+            Log.error(f"Subscriber exception {e} {traceback.format_exc()} for {message}, retry without ack.")
             return CONSUMER_STATUS.FAILED
-        return CONSUMER_STATUS.SUCCESS
+        except Exception as e:
+            Log.error(f"Unknown Exception caught {e} {traceback.format_exc()}")
+            Log.error(f"Forcefully ack as success. msg: {message}")
+            return CONSUMER_STATUS.SUCCESS
 
     def poll(self):
         """Contineously polls for message bus for k8s_event message type"""
         try:
+            Log.info(f'Starting poll for fault tolerance alterts with consumer id: {self._consumer_id}.')
             self._consumer.start()
             while True:
                 # Get alert condition from ALertGenerator. Analyze changes
