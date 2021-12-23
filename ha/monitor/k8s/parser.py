@@ -37,7 +37,7 @@ class ObjectParser:
 class NodeEventParser(ObjectParser):
     def __init__(self):
         super().__init__()
-        self._type = 'node'
+        self._type = 'host'
 
     def parse(self, an_event, cached_state):
         alert = K8sAlert()
@@ -96,17 +96,22 @@ class NodeEventParser(ObjectParser):
 class PodEventParser(ObjectParser):
     def __init__(self):
         super().__init__()
-        self._type = 'pod'
+
+        # Note: The below type is not a Kubernetes 'node'.
+        #       in cortx cluster the pod is called or considered as a node.
+        #       hence while sending alert to cortx, below type is set to 'node'.
+        self._type = 'node'
 
     def parse(self, an_event, cached_state):
         alert = K8sAlert()
         alert.resource_type = self._type
         alert.timestamp = str(int(time.time()))
 
+        labels = an_event[K8SEventsConst.RAW_OBJECT][K8SEventsConst.METADATA][K8SEventsConst.LABELS]
+        if K8SEventsConst.MACHINEID in labels:
+            alert.resource_name = labels[K8SEventsConst.MACHINEID]
         if K8SEventsConst.TYPE in an_event:
             alert.event_type = an_event[K8SEventsConst.TYPE]
-        if K8SEventsConst.NAME in an_event[K8SEventsConst.RAW_OBJECT][K8SEventsConst.METADATA]:
-            alert.resource_name = an_event[K8SEventsConst.RAW_OBJECT][K8SEventsConst.METADATA][K8SEventsConst.NAME]
         if K8SEventsConst.NODE_NAME in an_event[K8SEventsConst.RAW_OBJECT][K8SEventsConst.SPEC]:
             alert.node = an_event[K8SEventsConst.RAW_OBJECT][K8SEventsConst.SPEC][K8SEventsConst.NODE_NAME]
 
