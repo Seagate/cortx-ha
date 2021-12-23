@@ -196,7 +196,7 @@ class ConfigCmd(Cmd):
             # - tcp://consul-server.default.svc.cluster.local:8301   #
             # - http://consul-server.default.svc.cluster.local:8500  #
             #========================================================#
-            # search for supported consul endpoint url from list of configured consule endpoints
+            # search for supported consul endpoint url from list of configured consul endpoints
             filtered_consul_endpoints = list(filter(lambda x: urlparse(x).scheme == const.consul_scheme, consul_endpoints))
             if not filtered_consul_endpoints or len(filtered_consul_endpoints[0]) == 0:
                 sys.stderr.write(f'Failed to get consul config. consul_config: {filtered_consul_endpoints}. \n')
