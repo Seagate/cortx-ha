@@ -17,7 +17,7 @@
 
 
 from ha.monitor.k8s.object_monitor import ObjectMonitor
-
+from ha.monitor.k8s.const import K8SClientConst
 from cortx.utils.conf_store import Conf
 from ha import const
 from ha.core.config.config_manager import ConfigManager
@@ -30,11 +30,12 @@ if __name__ == "__main__":
     pod_labels = Conf.get(const.HA_GLOBAL_INDEX, "data_pod_label")
     pod_label_str = ', '.join(pod_label for pod_label in pod_labels)
 
-    kwargs = {'pretty': True}
+    # event output in pretty format
+    kwargs = {K8SClientConst.KEY_PRETTY : True}
     # Change to multiprocessing
     node_thread = ObjectMonitor('node', **kwargs)
     # TODO : Change 'name' field to 'app' in label_selector if required.
-    kwargs['label_selector'] = f'name in ({pod_label_str})'
+    kwargs[K8SClientConst.KEY_LABEL_SELECTOR] = f'name in ({pod_label_str})'
     pod_thread = ObjectMonitor('pod', **kwargs)
 
     pod_thread.start()

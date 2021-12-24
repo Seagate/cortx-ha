@@ -45,3 +45,7 @@ class AlertStates:
     ONLINE = 'online'
     OFFLINE = 'offline'
     FAILED = 'failed'
+
+class K8SClientConst:
+    KEY_PRETTY = 'pretty'
+    KEY_LABEL_SELECTOR = 'label_selector'

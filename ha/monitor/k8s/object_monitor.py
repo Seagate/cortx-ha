@@ -17,6 +17,7 @@
 
 
 from threading import Thread
+import signal
 
 from kubernetes import config, client, watch
 
@@ -24,7 +25,7 @@ from ha.monitor.k8s.objects import ObjectMap
 from ha.monitor.k8s.parser import EventParser
 from ha.monitor.k8s.const import EventStates
 from ha.monitor.k8s.const import K8SEventsConst
-
+from ha.monitor.k8s.const import K8SClientConst
 from cortx.utils.log import Log
 from ha.core.config.config_manager import ConfigManager
 from ha.util.message_bus import MessageBus
@@ -35,11 +36,15 @@ from ha.const import _DELIM
 class ObjectMonitor(Thread):
     def __init__(self, k_object, **kwargs):
         super().__init__()
+        # set sigterm handler
+        signal.signal(signal.SIGTERM, self.set_sigterm)
         self._object = k_object
         self.name = f"Monitor-{k_object}-Thread"
         self._args = kwargs
         self._starting_up = True
         self._object_state = {}
+        self._sigterm_received = False
+        self._stop_event_processing = False
         # Initialize logging for the object
         log_file = f"{k_object}_monitor"
         ConfigManager.init(log_file)
@@ -50,6 +55,21 @@ class ObjectMonitor(Thread):
         message_type = Conf.get(const.HA_GLOBAL_INDEX, f"MONITOR{_DELIM}message_type")
         producer_id = Conf.get(const.HA_GLOBAL_INDEX, f"MONITOR{_DELIM}producer_id")
         return MessageBus.get_producer(producer_id, message_type)
+
+    @setattr
+    def set_sigterm(self, signum, frame):
+        Log.info(f"Received signal{signum}")
+        Log.debug(f"Received signal: {signum} during execution of frame: {frame}")
+        self._sigterm_received = True
+
+    def check_for_event(self):
+        if self._sigterm_received:
+            Log.info("Handling sigterm")
+            self.handle_sigterm()
+
+    def handle_sigterm(self):
+        Log.info(f"Stopping {self.name}")
+        self._stop_event_processing = True
 
     def run(self):
 
@@ -67,6 +87,14 @@ class ObjectMonitor(Thread):
 
         # Start watching events corresponding to self._object
         for an_event in k8s_watch.stream(object_function, **self._args):
+
+            # Check for the events i.e. stop call or SIGTERM signal
+            self.check_for_event()
+            # Check for events like SIGTERM
+            if self._stop_event_processing:
+                k8s_watch.stop()
+                break
+
             Log.debug(f"Received event {an_event}")
             alert = EventParser.parse(self._object, an_event, self._object_state)
             if alert is None:
