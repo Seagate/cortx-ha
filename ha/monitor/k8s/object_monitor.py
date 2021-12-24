@@ -17,7 +17,6 @@
 
 
 from threading import Thread
-import signal
 
 from kubernetes import config, client, watch
 
@@ -25,7 +24,6 @@ from ha.monitor.k8s.objects import ObjectMap
 from ha.monitor.k8s.parser import EventParser
 from ha.monitor.k8s.const import EventStates
 from ha.monitor.k8s.const import K8SEventsConst
-from ha.monitor.k8s.const import K8SClientConst
 from cortx.utils.log import Log
 from ha.core.config.config_manager import ConfigManager
 from ha.util.message_bus import MessageBus
@@ -36,8 +34,6 @@ from ha.const import _DELIM
 class ObjectMonitor(Thread):
     def __init__(self, k_object, **kwargs):
         super().__init__()
-        # set sigterm handler
-        signal.signal(signal.SIGTERM, self.set_sigterm)
         self._object = k_object
         self.name = f"Monitor-{k_object}-Thread"
         self._args = kwargs
@@ -56,7 +52,6 @@ class ObjectMonitor(Thread):
         producer_id = Conf.get(const.HA_GLOBAL_INDEX, f"MONITOR{_DELIM}producer_id")
         return MessageBus.get_producer(producer_id, message_type)
 
-    @setattr
     def set_sigterm(self, signum, frame):
         Log.info(f"Received signal{signum}")
         Log.debug(f"Received signal: {signum} during execution of frame: {frame}")

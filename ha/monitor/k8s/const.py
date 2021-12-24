@@ -47,5 +47,7 @@ class AlertStates:
     FAILED = 'failed'
 
 class K8SClientConst:
-    KEY_PRETTY = 'pretty'
-    KEY_LABEL_SELECTOR = 'label_selector'
+    PRETTY = 'pretty'
+    LABEL_SELECTOR = 'label_selector'
+    NODE = 'node'
+    POD = 'pod'
