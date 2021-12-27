@@ -22,7 +22,6 @@ Handler for handling events received from k8s monitor service
 from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
 from ha.util.message_bus import MessageBus, CONSUMER_STATUS, MessageBusConsumer
-from ha.core.config.config_manager import ConfigManager
 from ha import const
 from ha.core.event_analyzer.event_analyzerd import EventAnalyzer
 from ha.k8s_setup.const import _DELIM

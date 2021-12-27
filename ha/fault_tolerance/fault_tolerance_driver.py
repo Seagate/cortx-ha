@@ -25,12 +25,9 @@ import traceback
 
 from cortx.utils.log import Log
 
-from cortx.utils.conf_store import Conf
-from ha import const
 from ha.core.config.config_manager import ConfigManager
 from ha.fault_tolerance.fault_monitor import NodeFaultMonitor
 from ha.fault_tolerance.cluster_stop_monitor import ClusterStopMonitor
-from ha.k8s_setup.const import _DELIM
 
 class FaultTolerance:
     """

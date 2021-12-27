@@ -20,12 +20,8 @@ Handler for handling cluster stop events received from CSM
 
 import json
 import ast
-import re
-import time
-import uuid
 
 from cortx.utils.conf_store import Conf
-from ha.core.config.config_manager import ConfigManager
 from cortx.utils.log import Log
 from ha.util.message_bus import MessageBus, CONSUMER_STATUS, MessageBusConsumer
 
