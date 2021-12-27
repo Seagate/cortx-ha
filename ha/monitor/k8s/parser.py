@@ -43,15 +43,16 @@ class NodeEventParser(ObjectParser):
         alert = K8sAlert()
         alert.resource_type = self._type
         alert.timestamp = str(int(time.time()))
+        raw_object = an_event[K8SEventsConst.RAW_OBJECT]
 
         if K8SEventsConst.TYPE in an_event:
             alert.event_type = an_event[K8SEventsConst.TYPE]
-        if K8SEventsConst.NAME in an_event[K8SEventsConst.RAW_OBJECT][K8SEventsConst.METADATA]:
-            alert.resource_name = an_event[K8SEventsConst.RAW_OBJECT][K8SEventsConst.METADATA][K8SEventsConst.NAME]
+        if K8SEventsConst.NAME in raw_object[K8SEventsConst.METADATA]:
+            alert.resource_name = raw_object[K8SEventsConst.METADATA][K8SEventsConst.NAME]
 
         ready_status = None
         try:
-            for a_condition in an_event[K8SEventsConst.RAW_OBJECT][K8SEventsConst.STATUS][K8SEventsConst.CONDITIONS]:
+            for a_condition in raw_object[K8SEventsConst.STATUS][K8SEventsConst.CONDITIONS]:
                 if a_condition[K8SEventsConst.TYPE] == K8SEventsConst.READY:
                     ready_status = a_condition[K8SEventsConst.STATUS]
         except Exception as e:
@@ -106,18 +107,21 @@ class PodEventParser(ObjectParser):
         alert = K8sAlert()
         alert.resource_type = self._type
         alert.timestamp = str(int(time.time()))
+        raw_object = an_event[K8SEventsConst.RAW_OBJECT]
 
-        labels = an_event[K8SEventsConst.RAW_OBJECT][K8SEventsConst.METADATA][K8SEventsConst.LABELS]
+        labels = raw_object[K8SEventsConst.METADATA][K8SEventsConst.LABELS]
         if K8SEventsConst.MACHINEID in labels:
             alert.resource_name = labels[K8SEventsConst.MACHINEID]
         if K8SEventsConst.TYPE in an_event:
             alert.event_type = an_event[K8SEventsConst.TYPE]
-        if K8SEventsConst.NODE_NAME in an_event[K8SEventsConst.RAW_OBJECT][K8SEventsConst.SPEC]:
-            alert.node = an_event[K8SEventsConst.RAW_OBJECT][K8SEventsConst.SPEC][K8SEventsConst.NODE_NAME]
+        if K8SEventsConst.NODE_NAME in raw_object[K8SEventsConst.SPEC]:
+            alert.node = raw_object[K8SEventsConst.SPEC][K8SEventsConst.NODE_NAME]
+        if K8SEventsConst.NAME in raw_object[K8SEventsConst.METADATA]:
+            alert.generation_id = raw_object[K8SEventsConst.METADATA][K8SEventsConst.NAME]
 
         ready_status = None
         try:
-            for a_condition in an_event[K8SEventsConst.RAW_OBJECT][K8SEventsConst.STATUS][K8SEventsConst.CONDITIONS]:
+            for a_condition in raw_object[K8SEventsConst.STATUS][K8SEventsConst.CONDITIONS]:
                 if a_condition[K8SEventsConst.TYPE] == K8SEventsConst.READY:
                     ready_status = a_condition[K8SEventsConst.STATUS]
         except Exception as e:
