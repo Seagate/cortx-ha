@@ -153,8 +153,6 @@ class MessageBus:
         """
         Initialize utils MessageBus Library with kafka endpoints
         """
-        Conf.init()
-        Conf.load(const.HA_GLOBAL_INDEX, f"yaml://{const.HA_CONFIG_FILE}", skip_reload=True)
         message_server_endpoints = Conf.get(const.HA_GLOBAL_INDEX, f"kafka_config{const._DELIM}endpoints")
         utils_message_bus.init(message_server_endpoints)
 
