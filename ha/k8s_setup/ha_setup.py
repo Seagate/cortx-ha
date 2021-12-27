@@ -231,6 +231,8 @@ class ConfigCmd(Cmd):
                                             'consumer_group' : 'health_monitor', 'consumer_id' : '1'},
                          'FAULT_TOLERANCE' : {'message_type' : 'cluster_event', 'consumer_group' : 'event_listener',
                                               'consumer_id' : '1'},
+                         'CLUSTER_STOP_MON' : {'message_type' : 'cluster_stop', 'consumer_group' : 'cluster_mon',
+                                              'consumer_id' : '2'},
                          'NODE': {'resource_type': 'node'},
                          'SYSTEM_HEALTH' : {'num_entity_health_events' : 2,
                                             'sys_health_bootstrap_timeout' : timeout,
