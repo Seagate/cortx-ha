@@ -94,7 +94,7 @@ class NodeFaultMonitor(FaultMonitor):
             return CONSUMER_STATUS.SUCCESS
         except SubscriberException as e:
             Log.error(f"Subscriber exception {e} {traceback.format_exc()} for {message}, retry without ack.")
-            return CONSUMER_STATUS.FAILED
+            return CONSUMER_STATUS.SUCCESS
         except Exception as e:
             Log.error(f"Unknown Exception caught {e} {traceback.format_exc()}")
             Log.error(f"Forcefully ack as success. msg: {message}")
