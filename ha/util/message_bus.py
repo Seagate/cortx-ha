@@ -153,6 +153,8 @@ class MessageBus:
         """
         Initialize utils MessageBus Library with kafka endpoints
         """
+        Conf.init()
+        Conf.load(const.HA_GLOBAL_INDEX, f"yaml://{const.HA_CONFIG_FILE}", skip_reload=True)
         message_server_endpoints = Conf.get(const.HA_GLOBAL_INDEX, f"kafka_config{const._DELIM}endpoints")
         utils_message_bus.init(message_server_endpoints)
 
@@ -170,7 +172,6 @@ class MessageBus:
             offset (str, optional): Offset for messages. Defaults to "earliest".
             timeout (int, optional): Max wait time for thread to wait for a message. Default: timeout is 0 and so call is blocking
         """
-        MessageBus.init()
         return MessageBusConsumer(consumer_id, consumer_group, message_type, callback, auto_ack, offset, timeout)
 
     @staticmethod
@@ -184,7 +185,6 @@ class MessageBus:
         Raises:
             MessageBusError: Message bus error.
         """
-        MessageBus.init()
         MessageBus.register(message_type, partitions)
         return MessageBusProducer(producer_id, message_type, partitions)
 
@@ -196,7 +196,6 @@ class MessageBus:
             message_type (str): Message type.
             partitions (int): Number of partition.
         """
-        MessageBus.init()
         admin = MessageBusAdmin(admin_id=MessageBus.ADMIN_ID)
         if message_type not in admin.list_message_types():
             admin.register_message_type(message_types=[message_type], partitions=partitions)
@@ -208,7 +207,6 @@ class MessageBus:
         Args:
             message_type (str): Message type.
         """
-        MessageBus.init()
         admin = MessageBusAdmin(admin_id=MessageBus.ADMIN_ID)
         if message_type in admin.list_message_types():
             admin.deregister_message_type(message_types=[message_type])
