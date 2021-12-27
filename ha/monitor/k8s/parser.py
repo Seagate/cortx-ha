@@ -56,7 +56,7 @@ class NodeEventParser(ObjectParser):
                 if a_condition[K8SEventsConst.TYPE] == K8SEventsConst.READY:
                     ready_status = a_condition[K8SEventsConst.STATUS]
         except Exception as e:
-            Log.warn(f"Exception received during parsing {e}")
+            Log.debug(f"Exception received during parsing {e}")
 
         if ready_status is None:
             Log.debug(f"ready_status is None for node resource {alert.resource_name}")
@@ -125,7 +125,7 @@ class PodEventParser(ObjectParser):
                 if a_condition[K8SEventsConst.TYPE] == K8SEventsConst.READY:
                     ready_status = a_condition[K8SEventsConst.STATUS]
         except Exception as e:
-            Log.warn(f"Exception received during parsing {e}")
+            Log.debug(f"Exception received during parsing {e}")
 
         if ready_status is None:
             Log.debug(f"ready_status is None for pod resource {alert.resource_name}")
