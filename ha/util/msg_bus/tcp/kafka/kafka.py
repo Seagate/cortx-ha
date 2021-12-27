@@ -68,6 +68,14 @@ class KafkaProducerChannel():
         """
         Initiate the connection with Kafka broker and open the
         necessary communication channel.
+        - bootstrap.servers: A list of host/port pairs to use for establishing the initial connection to the Kafka cluster.
+        - request.required.acks: which means that the producer gets an acknowledgement after all in-sync replicas have received the data. 
+            This option provides the best durability, we guarantee that no messages will be lost as long as at least one in sync replica remains.
+        - max.in.flight.requests.per.connection: Without setting max.in.flight.requests.per.connection to 1 will potentially change the ordering of records
+        - transactional.id': unique ID
+        - enable.idempotence : When set to 'true', the producer will ensure that exactly one copy of each 
+            message is written in the stream. If 'false', producer retries due to broker failures, etc., 
+            may write duplicates of the retried message in the stream.
         """
         try:
             conf = {'bootstrap.servers': str(self._hosts),
@@ -77,6 +85,8 @@ class KafkaProducerChannel():
                     'transactional.id': uuid.uuid4(),
                     'enable.idempotence' : True}
             self._channel = Producer(conf)
+            # The initTransactions API registers a transactional.id with the coordinator. At this point, the coordinator
+            # closes any pending transactions with that transactional.id and bumps the epoch to fence out zombies.
             self._channel.init_transactions()
         except Exception as ex:
             Log.error(f"Unable to connect to message bus broker. {ex}")
@@ -96,6 +106,11 @@ class KafkaProducerChannel():
     def send(self, message):
         """
         Publish the message to kafka broker topic.
+        - begin_transaction : producer starts the transaction using beginTransaction() which verifies 
+            whether the transaction was initialized before and there are no active transactions.
+        - produce : This is the actual processing loop where the application consumes messages from Kafka, 
+            transforms the data, optionally updates the local store.
+        - commit_transaction : commitTransaction() or abortTransaction() completes the Transaction.
         """
         try:
             if self._channel is not None:
@@ -169,6 +184,14 @@ class KafkaConsumerChannel():
         """
         Initiate the connection with Kafka broker and open the
         necessary communication channel.
+        - bootstrap.servers: A list of host/port pairs to use for establishing the initial connection to the Kafka cluster.
+        - group_id : group_id
+        - group.instance.id : consumer_id
+        - isolation.level : READ_COMMITTED - ensures that the broker returns committed messages only in case of transactional messages.
+            READ_UNCOMMITTED - The broker can even return the messages which are part of the Transaction and not completed yet. 
+        - auto.offset.reset : earliest - wants to consume the historical messages present in a topic
+            latest - consumer application receives the messages that arrived to the topic after it subscribed to the topic.
+        - enable.auto.commit : True means that offsets are committed automatically.
         """
         try:
             conf = {'bootstrap.servers': str(self._hosts),
@@ -273,6 +296,10 @@ class KafkaConsumerComm():
         raise Exception('send not implemented for KafkaConsumer Comm')
 
     def acknowledge(self):
+        """
+        Consumer will receive the message and process it. Once the messages are processed, 
+        consumer will send an acknowledgement to the Kafka broke
+        """
         if self._inChannel is not None:
             self._inChannel.acknowledge()
             return OperationSuccessful("Commit operation successfull.")
@@ -290,6 +317,7 @@ class KafkaConsumerComm():
             try:
                 self._inChannel.channel().subscribe(kwargs.get(const.TOPIC))
                 while True:
+                    # poll - Fetch data for the topics or partitions specified using one of the subscribe APIs.
                     msg = self._inChannel.channel().poll(timeout=recv_message_timeout)
                     if msg is None:
                         continue

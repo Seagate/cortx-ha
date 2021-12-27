@@ -13,8 +13,8 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
-CONFIG_INDEX = 'cortx_conf'
-MESSAGE_BUS_CONF = 'yaml:///etc/cortx/cluster.conf'
+CONFIG_INDEX = 'ha_conf'
+MESSAGE_BUS_CONF = 'yaml:///etc/cortx/ha/ha.conf'
 SERVER = 'server'
 PORT = 'port'
 KAFKA = 'kafka'

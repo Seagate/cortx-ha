@@ -31,7 +31,7 @@ class ConfInit:
             ConfInit.__instance = self
             Conf.init()
             try:
-                Conf.load(const.CONFIG_INDEX, (const.MESSAGE_BUS_CONF))
+                Conf.load(const.CONFIG_INDEX, (const.MESSAGE_BUS_CONF), skip_reload=True)
             except Exception as e:
                 Log.warn(e)
 
@@ -71,7 +71,7 @@ class MessageBusComm:
     def _init_kafka_conf(self, **kwargs):
         bootstrap_servers = ""
         count = 1
-        message_server_endpoints = Conf.get('cortx_conf', f'cortx{_DELIM}external{_DELIM}kafka{_DELIM}endpoints')
+        message_server_endpoints = Conf.get(const.CONFIG_INDEX, f'cortx{_DELIM}external{_DELIM}kafka{_DELIM}endpoints')
         kafka_cluster = MessageBusComm.get_server_list(message_server_endpoints)
         for values in kafka_cluster:
             if len(kafka_cluster) <= count:
@@ -124,6 +124,7 @@ class MessageBusComm:
         server_info = {}
 
         for server in message_server_endpoints:
+            # Endpoint : tcp://kafka.default.svc.cluster.local:9092
             # Value of server can be <server_fqdn:port> or <server_fqdn>
             if ':' in server:
                 endpoints = server.split('//')[1]
@@ -156,6 +157,10 @@ class MessageBusComm:
             raise ex
 
     def commit(self):
+        """
+        Consumer will receive the message and process it. Once the messages are processed, 
+        consumer will send an acknowledgement to the Kafka broker
+        """
         try:
             ret = self._comm_obj.acknowledge()
             Log.debug("Commited to message bus")
