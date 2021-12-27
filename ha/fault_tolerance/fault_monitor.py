@@ -19,6 +19,7 @@ Handler for handling events received from k8s monitor service
 """
 
 
+import traceback
 from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
 from ha.util.message_bus import MessageBus, CONSUMER_STATUS, MessageBusConsumer

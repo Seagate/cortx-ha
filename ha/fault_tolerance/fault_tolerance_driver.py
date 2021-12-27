@@ -21,7 +21,6 @@
 
 
 import time
-import traceback
 
 from cortx.utils.log import Log
 
