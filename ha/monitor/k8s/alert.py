@@ -24,7 +24,7 @@ class K8sAlert:
         self._resource_name = None
         self._event_type = None
         self._k8s_container = None
-        self._pod = None
+        self._generation_id = None
         self._node = None
         self._is_status = False
         self._timestamp = None
@@ -62,12 +62,12 @@ class K8sAlert:
         self._k8s_container = name
 
     @property
-    def pod(self):
-        return self._pod
+    def generation_id(self):
+        return self._generation_id
 
-    @pod.setter
-    def pod(self, name):
-        self._pod = name
+    @generation_id.setter
+    def generation_id(self, name):
+        self._generation_id = name
 
     @property
     def node(self):
