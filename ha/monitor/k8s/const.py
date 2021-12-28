@@ -49,5 +49,9 @@ class AlertStates:
 class K8SClientConst:
     PRETTY = 'pretty'
     LABEL_SELECTOR = 'label_selector'
+    TIMEOUT_SECONDS = 'timeout_seconds'
     NODE = 'node'
     POD = 'pod'
+
+    VAL_WATCH_TIMEOUT_DEFAULT = 5
+    VAL_WATCH_TIMEOUT_NOWAIT = 0

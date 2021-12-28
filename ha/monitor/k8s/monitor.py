@@ -42,6 +42,14 @@ if __name__ == "__main__":
 
     # event output in pretty format
     kwargs = {K8SClientConst.PRETTY : True}
+
+    # Seting a timeout value, 'timout_seconds', for the stream.
+    # timeout value for connection to the server
+    # If do not set then we will not able to stop immediately,
+    # becuase synchronus function watch.stream() will not come back
+    # until catch any event on which it is waiting.
+    kwargs[K8SClientConst.TIMEOUT_SECONDS] = K8SClientConst.VAL_WATCH_TIMEOUT_DEFAULT
+
     # Change to multiprocessing
     node_thread = ObjectMonitor(K8SClientConst.NODE, **kwargs)
     # TODO : Change 'name' field to 'app' in label_selector if required.
