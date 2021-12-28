@@ -33,7 +33,6 @@ class FaultTolerance:
     Module responsible for consuming messages from message bus,
     further analyzes that event and publishes it if required
     """
-    #def __init__(self, wait_time=600):
     def __init__(self, wait_time=10):
         """Init method"""
         self._wait_time = wait_time
@@ -42,16 +41,19 @@ class FaultTolerance:
         self.cluster_stop_monitor = ClusterStopMonitor()
 
     def start(self):
+        """
+        start the threads
+        """
         self.node_fault_monitor.start()
         self.cluster_stop_monitor.start()
 
     def poll(self):
         Log.debug("FaultTolerance poll")
-
+        """
+        wait method for receiving events
+        """
         try:
             while True:
-                # Get alert condition from ALertGenerator. Analyze changes
-                # with the help of event analyzer and notify if required
                 time.sleep(self._wait_time)
         except Exception as exe:
             raise(f'Oops, some issue in the fault tolerance_driver: {exe}')

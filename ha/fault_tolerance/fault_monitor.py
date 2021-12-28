@@ -48,8 +48,10 @@ class FaultMonitor:
         """
         Start to listen messages.
         """
-        self._consumer.start()
-
+        if self._consumer is not None:
+            self._consumer.start()
+        else:
+            Log.warn(f"Consumer not found for message type  {self._message_type} ")
 
 class NodeFaultMonitor(FaultMonitor):
     """
