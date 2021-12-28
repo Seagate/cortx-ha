@@ -56,7 +56,6 @@ class ClusterStopMonitor:
 
     def process_message(self, message: str):
         """Callback method for MessageConsumer"""
-        #Log.debug(f'Received the message from message bus: {message}')
         Log.debug(f'Received the message from message bus: {message}')
         try:
             # parse the message and check if cluster stop received
