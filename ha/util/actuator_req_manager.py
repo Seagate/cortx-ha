@@ -44,7 +44,7 @@ class ActuatorManager:
         self._is_resp_received = False
         self._encl_shutdown_successful = False
         self.timeout_reached = False
-        # TODO : Initialize MessageBus.init() reference EOS-26999
+        # TBD : Call MessageBus.init() from here if this code needs to be used in HA. Reference EOS-26999
 
     def _generate_uuid(self):
         """

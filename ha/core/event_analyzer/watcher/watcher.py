@@ -51,7 +51,7 @@ class Watcher:
         self.parser = event_parser
         self.subscriber = subscriber
         self._validate()
-        # TODO : Initialize MessageBus.init() reference EOS-26999
+        # TBD : Call MessageBus.init() from here if this watcher needs to be used in HA. Reference EOS-26999
         self.consumer = MessageBus.get_consumer(consumer_id=str(self.consumer_id),
                                 consumer_group=self.consumer_group,
                                 message_type=self.message_type,
