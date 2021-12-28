@@ -151,7 +151,8 @@ class MessageBus:
     @staticmethod
     def init():
         """
-        Initialize utils MessageBus Library with kafka endpoints
+        Initialize utils MessageBus Library with kafka endpoints once per service. In future utils will throw error if 
+        init done multiple times. If any new service will come which uses MessageBus then init should be done there.
         """
         message_server_endpoints = Conf.get(const.HA_GLOBAL_INDEX, f"kafka_config{const._DELIM}endpoints")
         utils_message_bus.init(message_server_endpoints)
