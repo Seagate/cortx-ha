@@ -49,6 +49,7 @@ class ClusterStopMonitor:
         self._consumer_id = Conf.get(const.HA_GLOBAL_INDEX, f'CLUSTER_STOP_MON{_DELIM}consumer_id')
         self._consumer_group = Conf.get(const.HA_GLOBAL_INDEX, f'CLUSTER_STOP_MON{_DELIM}consumer_group')
         self._message_type = Conf.get(const.HA_GLOBAL_INDEX, f'CLUSTER_STOP_MON{_DELIM}message_type')
+        MessageBus.init()
         return MessageBus.get_consumer(consumer_id=self._consumer_id, \
                                 consumer_group=self._consumer_group, \
                                 message_type=self._message_type, \
