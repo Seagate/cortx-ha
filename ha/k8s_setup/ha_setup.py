@@ -22,6 +22,7 @@ import traceback
 import os
 import shutil
 import yaml
+from urllib.parse import urlparse
 
 from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
@@ -187,12 +188,27 @@ class ConfigCmd(Cmd):
         Process config command.
         """
         try:
-            consul_endpoint = Conf.get(self._index, f'cortx{_DELIM}external{_DELIM}consul{_DELIM}endpoints[0]')
-            if not consul_endpoint:
-                sys.stderr.write(f'Failed to get consul config. consul_config: {consul_endpoint}. \n')
+            consul_endpoints = Conf.get(self._index, f'cortx{_DELIM}external{_DELIM}consul{_DELIM}endpoints')
+            #========================================================#
+            # consul Service endpoints from cluster.conf             #
+            #____________________ cluster.conf ______________________#
+            # endpoints:                                             #
+            # - tcp://consul-server.default.svc.cluster.local:8301   #
+            # - http://consul-server.default.svc.cluster.local:8500  #
+            #========================================================#
+            # search for supported consul endpoint url from list of configured consul endpoints
+            filtered_consul_endpoints = list(filter(lambda x: isinstance(x, str) and urlparse(x).scheme == const.consul_scheme, consul_endpoints))
+            if not filtered_consul_endpoints:
+                sys.stderr.write(f'Failed to get consul config. consul_config: {filtered_consul_endpoints}. \n')
                 sys.exit(1)
+            # discussed and confirmed to select the first hhtp endpoint
+            consul_endpoint = filtered_consul_endpoints[0]
 
-            # Dummy value fetched for now. This will be replaced by the key/path for the pod label once that is available in confstore
+            kafka_endpoint = Conf.get(self._index, f'cortx{_DELIM}external{_DELIM}kafka{_DELIM}endpoints')
+            if not kafka_endpoint:
+                sys.stderr.write(f'Failed to get kafka config. kafka_config: {kafka_endpoint}. \n')
+                sys.exit(1)
+            # Dummy value fetched for now. This will be replaced by the key/path for the pod label onces that is avilable in confstore
             # Ref ticket EOS-25694
             data_pod_label = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}product_release')
             # TBD delete once data_pod_label is avilable from confstore
@@ -207,6 +223,7 @@ class ConfigCmd(Cmd):
 
             conf_file_dict = {'LOG' : {'path' : const.HA_LOG_DIR, 'level' : const.HA_LOG_LEVEL},
                          'consul_config' : {'endpoint' : consul_endpoint},
+                         'kafka_config' : {'endpoints': kafka_endpoint},
                          'event_topic' : 'hare',
                          'data_pod_label' : data_pod_label,
                          'MONITOR' : {'message_type' : 'cluster_event', 'producer_id' : 'cluster_monitor'},
@@ -214,6 +231,8 @@ class ConfigCmd(Cmd):
                                             'consumer_group' : 'health_monitor', 'consumer_id' : '1'},
                          'FAULT_TOLERANCE' : {'message_type' : 'cluster_event', 'consumer_group' : 'event_listener',
                                               'consumer_id' : '1'},
+                         'CLUSTER_STOP_MON' : {'message_type' : 'cluster_stop', 'consumer_group' : 'cluster_mon',
+                                              'consumer_id' : '2'},
                          'NODE': {'resource_type': 'node'},
                          'SYSTEM_HEALTH' : {'num_entity_health_events' : 2,
                                             'sys_health_bootstrap_timeout' : timeout,

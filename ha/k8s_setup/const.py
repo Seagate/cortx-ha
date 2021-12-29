@@ -25,6 +25,9 @@ HEALTH_HIERARCHY_FILE = "{}/system_health_hierarchy.json".format(CONFIG_DIR)
 #Confstore delimiter
 _DELIM=">"
 
+# consul endpoint scheme: http
+consul_scheme = 'http'
+
 # Event_manager keys
 POD_EVENT="node"
 EVENT_COMPONENT="hare"

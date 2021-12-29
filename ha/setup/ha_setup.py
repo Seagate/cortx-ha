@@ -397,10 +397,17 @@ class PostInstallCmd(Cmd):
                 raise HaPrerequisiteException("post_install command failed")
             else:
                 Log.info("hacluster is a part of the haclient group")
-            self._execute.run_cmd(f"setfacl -R -m g:{const.USER_GROUP_HACLIENT}:rwx {const.RA_LOG_DIR}")
-            self._execute.run_cmd(f"setfacl -R -m g:{const.USER_GROUP_ROOT}:rwx {const.RA_LOG_DIR}")
-            self._execute.run_cmd(f"setfacl -R -m g:{const.USER_GROUP_HACLIENT}:r-x {const.CONFIG_DIR}")
-            self._execute.run_cmd(f"setfacl -R -m g:{const.USER_GROUP_ROOT}:rwx {const.CONFIG_DIR}")
+            # For setting the acl, calling setfacl with -d option will set the
+            # passed acl as default for all new files and directories that would
+            # be created inside the parent directory, and then call setfacl with
+            # -R option to recursively set the same acls for existing files and
+            # directories.
+            self._execute.run_cmd(f"setfacl -d -R -m g:{const.USER_GROUP_HACLIENT}:rwx,g:{const.USER_GROUP_ROOT}:rwx {const.RA_LOG_DIR}")
+            self._execute.run_cmd(f"setfacl -R -m g:{const.USER_GROUP_HACLIENT}:rwx,g:{const.USER_GROUP_ROOT}:rwx {const.RA_LOG_DIR}")
+
+            self._execute.run_cmd(f"setfacl -d -R -m g:{const.USER_GROUP_HACLIENT}:r-x,g:{const.USER_GROUP_ROOT}:rwx {const.CONFIG_DIR}")
+            self._execute.run_cmd(f"setfacl -R -m g:{const.USER_GROUP_HACLIENT}:r-x,g:{const.USER_GROUP_ROOT}:rwx {const.CONFIG_DIR}")
+
         except Exception as e:
             Log.error(f"Failed prerequisite with Error: {e}")
             raise HaPrerequisiteException("post_install command failed")

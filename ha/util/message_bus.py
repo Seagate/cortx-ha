@@ -18,10 +18,13 @@
 import json
 from typing import Callable
 from threading import Thread
+from cortx.utils.conf_store.conf_store import Conf
 from cortx.utils.log import Log
 from cortx.utils.message_bus import MessageBusAdmin
 from cortx.utils.message_bus import MessageProducer
 from cortx.utils.message_bus import MessageConsumer
+from cortx.utils.message_bus import MessageBus as utils_message_bus
+from ha import const
 
 class MessageBusProducer:
     PRODUCER_METHOD = "sync"
@@ -146,6 +149,15 @@ class MessageBus:
     ADMIN_ID = "ha_admin"
 
     @staticmethod
+    def init():
+        """
+        Initialize utils MessageBus Library with kafka endpoints once per service. In future utils will throw error if
+        init done multiple times. If any new service will come which uses MessageBus then init should be done there.
+        """
+        message_server_endpoints = Conf.get(const.HA_GLOBAL_INDEX, f"kafka_config{const._DELIM}endpoints")
+        utils_message_bus.init(message_server_endpoints)
+
+    @staticmethod
     def get_consumer(consumer_id: int, consumer_group: str, message_type: str,
                 callback: Callable, auto_ack: bool = False, offset: str = "earliest", timeout: int = 0) -> MessageBusConsumer:
         """
@@ -184,8 +196,12 @@ class MessageBus:
             partitions (int): Number of partition.
         """
         admin = MessageBusAdmin(admin_id=MessageBus.ADMIN_ID)
-        if message_type not in admin.list_message_types():
-            admin.register_message_type(message_types=[message_type], partitions=partitions)
+        try:
+            if message_type not in admin.list_message_types():
+                admin.register_message_type(message_types=[message_type], partitions=partitions)
+        except Exception as e:
+            if "TOPIC_ALREADY_EXISTS" not in str(e):
+                raise(e)
 
     @staticmethod
     def deregister(message_type: str):
