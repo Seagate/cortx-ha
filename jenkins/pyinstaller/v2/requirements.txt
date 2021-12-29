@@ -1,6 +1,6 @@
 setuptools==36.0.1
 pyinstaller==3.5
-PyYAML==5.1.2
+PyYAML==5.4.1
 argparse==1.4.0
 dataclasses==0.7
 python-consul==1.1.0
