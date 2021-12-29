@@ -104,7 +104,11 @@ class EventAnalyzerService:
 
 # This will be instantiated from the fault_tolerance
 class EventAnalyzer:
-
+    """
+    Analyzes an event, filter gets applied. Further it parses
+    an alert to create health event object required for system
+    health processing
+    """
     def __init__(self, msg=None):
         '''init method'''
         ConfigManager.init('event_analyzer')
@@ -113,9 +117,15 @@ class EventAnalyzer:
         self._cluster_resource_filter = ClusterResourceFilter()
         self._cluster_resource_parser = ClusterResourceParser()
         if self._cluster_resource_filter.filter_event(msg):
-            health_event = self._cluster_resource_parser.parse_event(msg)
             try:
-                system_health.process_event(health_event)
+                health_event_list = self._cluster_resource_parser.parse_event(msg, self._confstore)
+                if health_event_list is not None and isinstance(health_event_list, list):
+                    for health_event in health_event_list:
+                        Log.error(f'#################################################')
+                        Log.error(f'Analyzer processing health event: {health_event}')
+                        Log.error(f'#################################################')
+                        system_health.process_event(health_event)
+                Log.debug(f"health event can not be processed further")
             except Exception as e:
                 Log.error(f"Failed to process event. Error: {e}")
                 raise SubscriberException(f"Failed to process event {str(health_event)}. Error: {e}")
