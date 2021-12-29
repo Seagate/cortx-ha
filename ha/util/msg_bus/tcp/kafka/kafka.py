@@ -44,7 +44,7 @@ class KafkaProducerChannel():
 
     def init(self):
         """
-        Initialize the object usinf configuration params passed.
+        Initialize the object using configuration params passed.
         Establish connection with Kafka broker.
         """
         self._channel = None
@@ -254,6 +254,13 @@ class KafkaProducerComm():
         self._outChannel.init()
 
     def send_message_list(self, message: list, **kwargs):
+        """
+        Publish messages on message bus.
+        Args:
+            message (list): List of messages
+        Raises:
+            ConnectionEstError: Raise error if failed to connect
+        """
         if self._outChannel is not None:
             self._outChannel.set_topic(kwargs.get(const.TOPIC))
             for msg in message:
@@ -318,6 +325,17 @@ class KafkaConsumerComm():
         raise Exception('stop not implemented for KafkaConsumer Comm')
 
     def recv(self, callback_fn=None, **kwargs):
+        """
+        Args:
+            callback_fn ([type], optional): [description]. Defaults to None.
+            **kwargs: Variable number of arguments, e.g. TOPIC to register message type.
+        Raises:
+            MessagebusError: Raise error if failed
+            MsgFetchError: Raise error if failed to fetch msg
+            ConnectionEstError: Raise error if failed to connect
+        Returns:
+            str: msg
+        """
         if self._inChannel is not None:
             recv_message_timeout = 2    # ref: /etc/cortx/utils/conf/cortx.conf
             try:
@@ -342,6 +360,11 @@ class KafkaConsumerComm():
             raise ConnectionEstError("Unable to connect to message bus broker.")
 
     def disconnect(self):
+        """
+        Close the broker connection
+        Raises:
+            ConnectionEstError: Raise error if failed to connect
+        """
         if self._inChannel is not None:
             self._inChannel.disconnect()
             return OperationSuccessful("Close operation successfull.")

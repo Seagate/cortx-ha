@@ -48,7 +48,6 @@ class MessageBusComm:
         4. consumer_name: This field signifies the name of the consumer inside
            a consumer group. For comm_type as CONSUMER this field is required.
         """
-        #TODO: Add one more field for taking configuration path as a parameter.
 
         self._comm_obj = None
         self._message_bus_type = 'kafka'
@@ -57,8 +56,6 @@ class MessageBusComm:
 
     def _init_config(self, **kwargs):
         try:
-            #TODO: Write a script to fetch kafka bootstarp cluster and write in
-            #the config. Provide the script to Provisioner to copy it to desired location.
             ConfInit()
             if self._message_bus_type == const.KAFKA:
                 self._init_kafka_conf(**kwargs)
@@ -69,6 +66,10 @@ class MessageBusComm:
             raise InvalidConfigError(f"Invalid config. {ex}")
 
     def _init_kafka_conf(self, **kwargs):
+        """
+        Get the kafka (server) endpoints & assign to _hosts in the form of :
+        {'server': kafka.default.svc.cluster.local, 'port': '9092'}
+        """
         bootstrap_servers = ""
         count = 1
         message_server_endpoints = Conf.get(const.CONFIG_INDEX, f'cortx{_DELIM}external{_DELIM}kafka{_DELIM}endpoints')
@@ -89,6 +90,9 @@ class MessageBusComm:
         self.init()
 
     def init(self):
+        """
+        Initialise communication channel on the basis of comm_type( PRODUCER or CONSUMER )
+        """
         try:
             if self._message_bus_type == const.KAFKA:
                 self._comm_obj = self._init_kafka_comm()
@@ -139,6 +143,11 @@ class MessageBusComm:
         return message_server_list
 
     def send(self, message: list, **kwargs):
+        """
+        Send message list to message bus.
+        Args:
+            **kwargs: Variable number of arguments, e.g. TOPIC to register message type.
+        """
         try:
             ret = self._comm_obj.send_message_list(message, **kwargs)
             Log.debug("Sent messages to message bus")
@@ -148,6 +157,13 @@ class MessageBusComm:
             raise ex
 
     def recv(self, **kwargs):
+        """
+        Recieve message from message bus.
+        Args:
+            **kwargs: Variable number of arguments, e.g. TOPIC to register message type.
+        Returns:
+            str: Message.
+        """
         try:
             msg = self._comm_obj.recv(**kwargs)
             Log.debug(f"Received message from message bus - {msg}")
@@ -159,7 +175,7 @@ class MessageBusComm:
     def commit(self):
         """
         Consumer will receive the message and process it. Once the messages are processed,
-        consumer will send an acknowledgement to the Kafka broker
+        consumer will send an acknowledgement to the Kafka broker.
         """
         try:
             ret = self._comm_obj.acknowledge()
@@ -170,6 +186,9 @@ class MessageBusComm:
             raise ex
 
     def close(self):
+        """
+        Close the consumer channel.
+        """
         try:
             ret = self._comm_obj.disconnect()
             Log.debug("Closing the consumer channel")
