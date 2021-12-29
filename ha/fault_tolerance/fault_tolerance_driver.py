@@ -21,6 +21,8 @@
 
 
 import time
+import signal
+import threading
 
 from cortx.utils.log import Log
 
@@ -34,11 +36,21 @@ class FaultTolerance:
     further analyzes that event and publishes it if required
     """
     def __init__(self, wait_time=10):
-        """Init method"""
+        """
+        Init method
+        Create monitor objects and Sets the callbacks to sigterm
+        """
+        signal.signal(signal.SIGTERM, self.set_sigterm)
         self._wait_time = wait_time
         ConfigManager.init("fault_tolerance")
         self.node_fault_monitor = NodeFaultMonitor()
         self.cluster_stop_monitor = ClusterStopMonitor()
+        self._stop = threading.Event()
+
+    def set_sigterm(self, signum, frame):
+        self.node_fault_monitor.stop()
+        self.cluster_stop_monitor.stop()
+        self._stop.set()
 
     def start(self):
         """
@@ -53,8 +65,9 @@ class FaultTolerance:
         wait method for receiving events
         """
         try:
-            while True:
-                time.sleep(self._wait_time)
+            while not self._stop.is_set():
+                # wait on stop event with timeout
+                self._stop.wait(timeout=self._wait_time)
         except Exception as exe:
             raise(f'Oops, some issue in the fault tolerance_driver: {exe}')
 

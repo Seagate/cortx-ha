@@ -38,7 +38,19 @@ class ClusterStopMonitor:
         """
         Start to listen messages.
         """
-        self._consumer.start()
+        if self._consumer is not None:
+            self._consumer.stop()
+        else:
+            Log.warn(f"Consumer not found for message type  {self._message_type}.")
+
+    def stop(self):
+        """
+        stop to listen messages.
+        """
+        if self._consumer is not None:
+            self._consumer.stop()
+        else:
+            Log.warn(f"Consumer not found for message type  {self._message_type}.")
 
     def _get_consumer(self) -> MessageBusConsumer:
         """

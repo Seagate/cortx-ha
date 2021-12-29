@@ -51,7 +51,16 @@ class FaultMonitor:
         if self._consumer is not None:
             self._consumer.start()
         else:
-            Log.warn(f"Consumer not found for message type  {self._message_type} ")
+            Log.warn(f"Consumer not found for message type  {self._message_type}.")
+
+    def stop(self):
+        """
+        stop to listen messages.
+        """
+        if self._consumer is not None:
+            self._consumer.stop()
+        else:
+            Log.warn(f"Consumer not found for message type  {self._message_type}.")
 
 class NodeFaultMonitor(FaultMonitor):
     """

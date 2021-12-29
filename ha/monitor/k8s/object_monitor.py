@@ -17,6 +17,7 @@
 
 
 from threading import Thread
+import threading
 
 from kubernetes import config, client, watch
 
@@ -26,34 +27,28 @@ from ha.monitor.k8s.const import EventStates, K8SClientConst
 from ha.monitor.k8s.const import K8SEventsConst
 from cortx.utils.log import Log
 from ha.core.config.config_manager import ConfigManager
-from ha.util.message_bus import MessageBus
-from cortx.utils.conf_store import Conf
-from ha import const
+# from ha.util.message_bus import MessageBus
+# from cortx.utils.conf_store import Conf
+# from ha import const
 from ha.const import _DELIM
 
 class ObjectMonitor(Thread):
-    def __init__(self, k_object, **kwargs):
+    def __init__(self, producer, k_object, **kwargs):
         super().__init__()
         self._object = k_object
         self.name = f"Monitor-{k_object}-Thread"
         self._args = kwargs
         self._starting_up = True
         self._object_state = {}
-        self._sigterm_received = False
+        self._sigterm_received = threading.Event()
         self._stop_event_processing = False
-        self._producer = self._get_producer()
+        self._producer = producer
         Log.info(f"Initialization done for {self._object} monitor")
 
     def _init_log(self):
         # Initialize logging for the object
         log_file = f"{self._object}_monitor"
         ConfigManager.init(log_file)
-
-    def _get_producer(self):
-        message_type = Conf.get(const.HA_GLOBAL_INDEX, f"MONITOR{_DELIM}message_type")
-        producer_id = Conf.get(const.HA_GLOBAL_INDEX, f"MONITOR{_DELIM}producer_id")
-        MessageBus.init()
-        return MessageBus.get_producer(producer_id, message_type)
 
     def set_sigterm(self, signum, frame):
         """
@@ -62,7 +57,7 @@ class ObjectMonitor(Thread):
         """
         Log.info(f"Received signal: {signum}")
         Log.debug(f"Received signal: {signum} during execution of frame: {frame}")
-        self._sigterm_received = True
+        self._sigterm_received.set()
 
     def check_for_signals(self, k8s_watch: watch.Watch):
         """
@@ -72,11 +67,11 @@ class ObjectMonitor(Thread):
         to handle while loopping  over synchronus watch.stream call
         """
         # SIGTERM signal
-        if self._sigterm_received:
+        if self._sigterm_received.is_set():
             Log.info("Handling SIGTERM signal.")
             self.handle_sigterm(k8s_watch)
             # clear the flag once handled
-            self._sigterm_received = False
+            self._sigterm_received.clear()
 
     def handle_sigterm(self, k8s_watch: watch.Watch):
         """
@@ -116,9 +111,8 @@ class ObjectMonitor(Thread):
         self._object_function = getattr(k8s_client, ObjectMap.get_subscriber_func(self._object))
         Log.info(f'Starting watch on {self._object} events: {self._object_function}')
 
-        # While True loop restrt the watch.Watch.stream() after specified timeout
-        # Note: if we don't specify timeout no need to restart the loop it will happen internally
-        while self.TIMEOUT_SECONDS in self._args:
+        # While True loop to restart the watch.Watch.stream() after specified timeout
+        while True:
             # Start watching events corresponding to self._object
             for an_event in k8s_watch.stream(self._object_function, **self._args):
 
@@ -143,7 +137,9 @@ class ObjectMonitor(Thread):
                 # Write to message bus
                 Log.info(f"Sending alert on message bus {alert.to_dict()}")
                 self._producer.publish(str(alert.to_dict()))
-            # If stop processing events is set then no need to retry just break the loop
-            if self._stop_event_processing:
+
+            # If stop processing events is set then no need to retry just break the loop and
+            # If we don't specify timeout no need to restart the loop it will happen internally
+            if self._stop_event_processing or self.TIMEOUT_SECONDS not in self._args:
                 break
         Log.info(f'{self.name} stopped.')
