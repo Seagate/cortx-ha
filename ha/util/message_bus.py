@@ -148,7 +148,7 @@ class MessageBusTransactionalProducer:
 
     def __init__(self, CLIENT_ID: str):
         """
-        Initalize producer.
+        Initalize producer. Based on comm_type it returns instance.
         Args:
             message_types (str): Message type.
         """
@@ -208,7 +208,7 @@ class MessageBusTransactionalConsumer:
         7. Exception will be swallowed and ack.
         8. Closing main thread will close this thread as it is running as deamon.
 
-        As self.consumer.receive(timeout) is block call t1.join() will not stop thread.
+        As self.consumer.recv(TOPIC=[self.message_type]) is block call t1.join() will not stop thread.
         Stop thread by completing work as per above cases.
         """
         retry = False

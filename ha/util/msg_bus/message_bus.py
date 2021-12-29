@@ -158,7 +158,7 @@ class MessageBusComm:
 
     def commit(self):
         """
-        Consumer will receive the message and process it. Once the messages are processed, 
+        Consumer will receive the message and process it. Once the messages are processed,
         consumer will send an acknowledgement to the Kafka broker
         """
         try:

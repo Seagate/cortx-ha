@@ -69,12 +69,12 @@ class KafkaProducerChannel():
         Initiate the connection with Kafka broker and open the
         necessary communication channel.
         - bootstrap.servers: A list of host/port pairs to use for establishing the initial connection to the Kafka cluster.
-        - request.required.acks: which means that the producer gets an acknowledgement after all in-sync replicas have received the data. 
+        - request.required.acks: which means that the producer gets an acknowledgement after all in-sync replicas have received the data.
             This option provides the best durability, we guarantee that no messages will be lost as long as at least one in sync replica remains.
         - max.in.flight.requests.per.connection: Without setting max.in.flight.requests.per.connection to 1 will potentially change the ordering of records
         - transactional.id': unique ID
-        - enable.idempotence : When set to 'true', the producer will ensure that exactly one copy of each 
-            message is written in the stream. If 'false', producer retries due to broker failures, etc., 
+        - enable.idempotence : When set to 'true', the producer will ensure that exactly one copy of each
+            message is written in the stream. If 'false', producer retries due to broker failures, etc.,
             may write duplicates of the retried message in the stream.
         """
         try:
@@ -106,9 +106,9 @@ class KafkaProducerChannel():
     def send(self, message):
         """
         Publish the message to kafka broker topic.
-        - begin_transaction : producer starts the transaction using beginTransaction() which verifies 
+        - begin_transaction : producer starts the transaction using beginTransaction() which verifies
             whether the transaction was initialized before and there are no active transactions.
-        - produce : This is the actual processing loop where the application consumes messages from Kafka, 
+        - produce : This is the actual processing loop where the application consumes messages from Kafka,
             transforms the data, optionally updates the local store.
         - commit_transaction : commitTransaction() or abortTransaction() completes the Transaction.
         """
@@ -188,7 +188,7 @@ class KafkaConsumerChannel():
         - group_id : group_id
         - group.instance.id : consumer_id
         - isolation.level : READ_COMMITTED - ensures that the broker returns committed messages only in case of transactional messages.
-            READ_UNCOMMITTED - The broker can even return the messages which are part of the Transaction and not completed yet. 
+            READ_UNCOMMITTED - The broker can even return the messages which are part of the Transaction and not completed yet.
         - auto.offset.reset : earliest - wants to consume the historical messages present in a topic
             latest - consumer application receives the messages that arrived to the topic after it subscribed to the topic.
         - enable.auto.commit : True means that offsets are committed automatically.
@@ -207,6 +207,9 @@ class KafkaConsumerChannel():
             raise ConnectionEstError(f"Unable to connect to message bus broker. {ex}")
 
     def disconnect(self):
+        """
+        Close consumer channel.
+        """
         try:
             self._channel.close()
         except Exception as ex:
@@ -233,6 +236,10 @@ class KafkaConsumerChannel():
         raise Exception('send_file not implemented for Kafka consumer Channel')
 
     def acknowledge(self, delivery_tag=None):
+        """
+        Consumer will receive the message and process it. Once the messages are processed,
+        consumer will send an acknowledgement to the Kafka broker.
+        """
         try:
             self._channel.commit()
         except Exception as ex:
@@ -255,7 +262,6 @@ class KafkaProducerComm():
         else:
             Log.error("Unable to connect to Kafka broker.")
             raise ConnectionEstError("Unable to connect to message bus broker.")
-
 
     def send(self, message, **kwargs):
         self._outChannel.send(message)
@@ -297,7 +303,7 @@ class KafkaConsumerComm():
 
     def acknowledge(self):
         """
-        Consumer will receive the message and process it. Once the messages are processed, 
+        Consumer will receive the message and process it. Once the messages are processed,
         consumer will send an acknowledgement to the Kafka broke
         """
         if self._inChannel is not None:
