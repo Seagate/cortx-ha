@@ -16,7 +16,7 @@
 # cortx-questions@seagate.com.
 
 
-from threading import Thread
+import os
 import threading
 
 from kubernetes import config, client, watch
@@ -32,7 +32,7 @@ from ha.core.config.config_manager import ConfigManager
 # from ha import const
 from ha.const import _DELIM
 
-class ObjectMonitor(Thread):
+class ObjectMonitor(threading.Thread):
     def __init__(self, producer, k_object, **kwargs):
         super().__init__()
         self._object = k_object
@@ -96,7 +96,7 @@ class ObjectMonitor(Thread):
 
         # Initialize log
         self._init_log()
-        Log.info(f"{self._object} monitor is started.")
+        Log.info(f"Starting the {self._object} Monitor with PID {os.getpid()}...")
 
         # Setup Credentials
         config.load_incluster_config()
@@ -142,4 +142,4 @@ class ObjectMonitor(Thread):
             # If we don't specify timeout no need to restart the loop it will happen internally
             if self._stop_event_processing or self.TIMEOUT_SECONDS not in self._args:
                 break
-        Log.info(f'{self.name} stopped.')
+        Log.info(f"Stopping the {self._object} Monitor with PID {os.getpid()}...")

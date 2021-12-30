@@ -17,7 +17,7 @@
 
 import json
 from typing import Callable
-from threading import Thread
+from threading import Thread, Event
 from cortx.utils.conf_store.conf_store import Conf
 from cortx.utils.log import Log
 from cortx.utils.message_bus import MessageBusAdmin
@@ -80,7 +80,7 @@ class MessageBusConsumer:
             offset (str, optional): Offset for messages. Defaults to "earliest".
         """
         self.callback = callback
-        self.stop_thread = False
+        self.stop_thread = Event()
         self.consumer_id = consumer_id
         self.consumer_group = consumer_group
         self.message_type = message_type
@@ -106,7 +106,7 @@ class MessageBusConsumer:
         Stop thread by completing work as per above cases.
         """
         retry = False
-        while not self.stop_thread:
+        while not self.stop_thread.is_set():
             try:
                 if not retry:
                     message = self.consumer.receive(timeout=0)
@@ -141,8 +141,10 @@ class MessageBusConsumer:
         self.consumer_thread.setDaemon(True)
         self.consumer_thread.start()
 
-    def stop(self):
-        self.stop_tread = True
+    def stop(self, delete=False):
+        self.stop_thread.set()
+        if delete:
+            self.consumer.delete()
         self.consumer_thread.join()
 
 class MessageBus:

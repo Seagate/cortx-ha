@@ -53,5 +53,8 @@ class K8SClientConst:
     NODE = 'node'
     POD = 'pod'
 
+    # Cluster manager base wait timeout (BASE_WAIT_TIME) is 5
+    # same has been used in other HA services so using same.
+    # this is inbetween timeout while watching on
     VAL_WATCH_TIMEOUT_DEFAULT = 5
     VAL_WATCH_TIMEOUT_NOWAIT = 0

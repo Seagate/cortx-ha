@@ -37,7 +37,6 @@ class ResourceMonitor:
         """
         # set sigterm handler
         signal.signal(signal.SIGTERM, self.set_sigterm)
-        self._stop = False
 
         # Read I/O pod selector label from ha.conf . Will be received from provisioner confstore
         # provisioner needs to be informed to add it in confstore  (to be added there )

@@ -17,7 +17,7 @@
 """
 Handler for handling cluster stop events received from CSM
 """
-
+import os
 import json
 import ast
 
@@ -26,9 +26,9 @@ from cortx.utils.log import Log
 from ha.util.message_bus import MessageBus, CONSUMER_STATUS, MessageBusConsumer
 
 from ha import const
-from ha.k8s_setup.const import _DELIM
 
 class ClusterStopMonitor:
+
 
     def __init__(self):
         """Init method"""
@@ -39,16 +39,18 @@ class ClusterStopMonitor:
         Start to listen messages.
         """
         if self._consumer is not None:
+            Log.info(f"Starting the daemon for Cluster Stop Monitor with PID {os.getpid()}...")
             self._consumer.stop()
         else:
             Log.warn(f"Consumer not found for message type  {self._message_type}.")
 
-    def stop(self):
+    def stop(self, flush=False):
         """
         stop to listen messages.
         """
         if self._consumer is not None:
-            self._consumer.stop()
+            Log.info(f"Stopping the daemon for Cluster Stop Monitor with PID {os.getpid()}...")
+            self._consumer.stop(delete=flush)
         else:
             Log.warn(f"Consumer not found for message type  {self._message_type}.")
 

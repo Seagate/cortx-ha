@@ -18,7 +18,7 @@
 Handler for handling events received from k8s monitor service
 """
 
-
+import os
 import traceback
 from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
@@ -49,16 +49,18 @@ class FaultMonitor:
         Start to listen messages.
         """
         if self._consumer is not None:
+            Log.info(f"Starting the daemon for Fault Tolerance Monitor with PID {os.getpid()}...")
             self._consumer.start()
         else:
             Log.warn(f"Consumer not found for message type  {self._message_type}.")
 
-    def stop(self):
+    def stop(self, flush=False):
         """
         stop to listen messages.
         """
         if self._consumer is not None:
-            self._consumer.stop()
+            Log.info(f"Stopping the daemon for Fault Tolerance Monitor with PID {os.getpid()}...")
+            self._consumer.stop(delete=flush)
         else:
             Log.warn(f"Consumer not found for message type  {self._message_type}.")
 

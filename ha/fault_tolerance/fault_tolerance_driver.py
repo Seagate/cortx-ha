@@ -25,7 +25,7 @@ import signal
 import threading
 
 from cortx.utils.log import Log
-
+from ha.const import CORTX_HA_WAIT_TIMEOUT
 from ha.core.config.config_manager import ConfigManager
 from ha.fault_tolerance.fault_monitor import NodeFaultMonitor
 from ha.fault_tolerance.cluster_stop_monitor import ClusterStopMonitor
@@ -48,8 +48,8 @@ class FaultTolerance:
         self._stop = threading.Event()
 
     def set_sigterm(self, signum, frame):
-        self.node_fault_monitor.stop()
-        self.cluster_stop_monitor.stop()
+        self.node_fault_monitor.stop(flush=True)
+        self.cluster_stop_monitor.stop(flush=True)
         self._stop.set()
 
     def start(self):
@@ -73,6 +73,6 @@ class FaultTolerance:
 
 if __name__ == '__main__':
 
-    fault_tolerance = FaultTolerance()
+    fault_tolerance = FaultTolerance(wait_time=CORTX_HA_WAIT_TIMEOUT)
     fault_tolerance.start()
     fault_tolerance.poll()
