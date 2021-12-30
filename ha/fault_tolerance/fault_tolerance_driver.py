@@ -60,10 +60,10 @@ class FaultTolerance:
         self.cluster_stop_monitor.start()
 
     def poll(self):
-        Log.debug("FaultTolerance poll")
         """
         wait method for receiving events
         """
+        Log.debug("FaultTolerance poll")
         try:
             while not self._stop.is_set():
                 # wait on stop event with timeout
