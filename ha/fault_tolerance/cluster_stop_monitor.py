@@ -23,6 +23,7 @@ import ast
 
 from cortx.utils.conf_store import Conf
 from ha.core.config.config_manager import ConfigManager
+
 from cortx.utils.log import Log
 from ha.util.message_bus import MessageBus, CONSUMER_STATUS, MessageBusConsumer
 
@@ -30,7 +31,6 @@ from ha import const
 from ha.k8s_setup.const import _DELIM
 
 class ClusterStopMonitor:
-
 
     def __init__(self):
         """Init method"""
@@ -105,4 +105,3 @@ class ClusterStopMonitor:
         else:
             Log.info(f'Updating key {const.CLUSTER_STOP_KEY} to {const.CLUSTER_STOP_VAL_ENABLE} in confstore.')
             confstore.update(const.CLUSTER_STOP_KEY, const.CLUSTER_STOP_VAL_ENABLE)
-

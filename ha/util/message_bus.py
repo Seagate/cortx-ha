@@ -17,6 +17,7 @@
 
 import json
 from typing import Callable
+
 from threading import Thread, Event
 from cortx.utils.conf_store.conf_store import Conf
 from cortx.utils.log import Log
