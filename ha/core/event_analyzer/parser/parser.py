@@ -159,12 +159,13 @@ class ClusterResourceParser(Parser):
     Subscriber for event analyzer to pass msg.
     """
 
-    def __init__(self):
+    def __init__(self, conf_store=None):
         """
         Init method.
         """
         super(ClusterResourceParser, self).__init__()
         ConfigManager.init("event_analyzer")
+        self._conf_store = conf_store
         self.cluster_id = Conf.get(const.HA_GLOBAL_INDEX, f"COMMON_CONFIG{_DELIM}cluster_id")
         self.site_id = Conf.get(const.HA_GLOBAL_INDEX, f"COMMON_CONFIG{_DELIM}site_id")
         self.rack_id = Conf.get(const.HA_GLOBAL_INDEX, f"COMMON_CONFIG{_DELIM}rack_id")
@@ -219,7 +220,7 @@ class ClusterResourceParser(Parser):
         return event
 
     @staticmethod
-    def _get_sys_health_key_val(conf_store, key_to_search: str) -> (dict,int):
+    def _get_sys_health_key_val(key_to_search: str, conf_store) -> (dict,int,str):
         """
         Fetches the value from confstore for the given key
         returns value in dictionary format assoscoiated with
@@ -253,7 +254,7 @@ class ClusterResourceParser(Parser):
         Log.debug(f"Event {health_event} is parsed and converted to object.")
         return health_event
 
-    def parse_event(self, msg: str, conf_store=None) -> list:
+    def parse_event(self, msg: str) -> list:
         """
         Parse event.
         Args:
@@ -263,12 +264,12 @@ class ClusterResourceParser(Parser):
             message = json.dumps(ast.literal_eval(msg))
             cluster_resource_alert = json.loads(message)
             health_event_list = []
-            if conf_store is not None:
+            if self._conf_store is not None:
                 key_to_search = self.prepare_key(cluster_resource_alert)
                 # Log.error(key_to_search)
-                if conf_store.key_exists(key_to_search):
+                if self._conf_store.key_exists(key_to_search):
                     sys_health_key_val, current_pod_restart_val, gen_id = \
-                       ClusterResourceParser._get_sys_health_key_val(conf_store, key_to_search)
+                       ClusterResourceParser._get_sys_health_key_val(key_to_search, self._conf_store)
                     # Log.error(f'{cluster_resource_alert["_generation_id"]} {gen_id}')
                     if cluster_resource_alert["_generation_id"] != gen_id:
                         if current_pod_restart_val is not None and current_pod_restart_val:
@@ -276,7 +277,7 @@ class ClusterResourceParser(Parser):
                             # value and assosciated pod_restart count is 1. That means,
                             # its a pod restart case and this alert is already handled
                             sys_health_key_val["events"][0]["specific_info"]["pod_restart"] = 0
-                            conf_store.update(key_to_search, json.dumps(sys_health_key_val))
+                            self._conf_store.update(key_to_search, json.dumps(sys_health_key_val))
                         else:
                             # generation id is different and pod_restart value assosciated with
                             # this pod is also zero. Means, pod restart happened and online event

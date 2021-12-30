@@ -115,10 +115,10 @@ class EventAnalyzer:
         self._confstore = ConfigManager.get_confstore()
         system_health = SystemHealth(self._confstore)
         self._cluster_resource_filter = ClusterResourceFilter()
-        self._cluster_resource_parser = ClusterResourceParser()
+        self._cluster_resource_parser = ClusterResourceParser(self._confstore)
         if self._cluster_resource_filter.filter_event(msg):
             try:
-                health_event_list = self._cluster_resource_parser.parse_event(msg, self._confstore)
+                health_event_list = self._cluster_resource_parser.parse_event(msg)
                 if health_event_list is not None and isinstance(health_event_list, list):
                     for health_event in health_event_list:
                         Log.error(f'#################################################')
