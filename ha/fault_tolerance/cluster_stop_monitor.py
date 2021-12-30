@@ -26,6 +26,7 @@ from cortx.utils.log import Log
 from ha.util.message_bus import MessageBus, CONSUMER_STATUS, MessageBusConsumer
 
 from ha import const
+from ha.k8s_setup.const import _DELIM
 
 class ClusterStopMonitor:
 
