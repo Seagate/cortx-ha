@@ -49,6 +49,7 @@ class ObjectMonitor(Thread):
     def _get_producer(self):
         message_type = Conf.get(const.HA_GLOBAL_INDEX, f"MONITOR{_DELIM}message_type")
         producer_id = Conf.get(const.HA_GLOBAL_INDEX, f"MONITOR{_DELIM}producer_id")
+        MessageBus.init()
         return MessageBus.get_producer(producer_id, message_type)
 
     def run(self):
