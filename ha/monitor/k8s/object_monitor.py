@@ -45,21 +45,16 @@ class ObjectMonitor(threading.Thread):
         self._producer = producer
         Log.info(f"Initialization done for {self._object} monitor")
 
-    def _init_log(self):
-        # Initialize logging for the object
-        log_file = f"{self._object}_monitor"
-        ConfigManager.init(log_file)
-
     def set_sigterm(self, signum, frame):
         """
         Callback function for signal.signal
         through which monitor will be notified for sigterm.
         """
-        Log.info(f"Received signal: {signum}")
-        Log.debug(f"Received signal: {signum} during execution of frame: {frame}")
+        Log.info(f"{self.name} Received signal: {signum}")
+        Log.debug(f"{self.name} Received signal: {signum} during execution of frame: {frame}")
         self._sigterm_received.set()
 
-    def check_for_signals(self, k8s_watch: watch.Watch):
+    def check_for_signals(self, k8s_watch: watch.Watch, k8s_watch_stream):
         """
         Check if any pending signal while watching on kubernetes.watch.stream synchronusly.
         Note: curretnly handling only SIGTERM signal
@@ -68,12 +63,12 @@ class ObjectMonitor(threading.Thread):
         """
         # SIGTERM signal
         if self._sigterm_received.is_set():
-            Log.info("Handling SIGTERM signal.")
-            self.handle_sigterm(k8s_watch)
+            Log.info(f"{self.name} Handling SIGTERM signal.")
+            self.handle_sigterm(k8s_watch, k8s_watch_stream)
             # clear the flag once handled
             self._sigterm_received.clear()
 
-    def handle_sigterm(self, k8s_watch: watch.Watch):
+    def handle_sigterm(self, k8s_watch: watch.Watch, k8s_watch_stream):
         """
         handling pending sigterm signal which must have came,
         while watching on kubernetes.watch.stream synchronusly.
@@ -82,11 +77,11 @@ class ObjectMonitor(threading.Thread):
         k8s_watch.stop()
         # flush out already fetched events and release the connection and other acquired resources
         # timeout_seconds needs to set no wait i.e. 0 as we have called stop only needs to flush stucked events
-        kwargs = self._args
-        kwargs[K8SClientConst.TIMEOUT_SECONDS] = K8SClientConst.VAL_WATCH_TIMEOUT_NOWAIT
-        for an_event in k8s_watch.stream(self._object_function, **kwargs):
+        # kwargs = self._args
+        # kwargs[K8SClientConst.TIMEOUT_SECONDS] = K8SClientConst.VAL_WATCH_TIMEOUT_NOWAIT
+        for an_event in k8s_watch_stream: # k8s_watch.stream(self._object_function, **kwargs):
             # Debug logging event type and metadata
-            Log.debug(f'flushing out the event type: {an_event[K8SEventsConst.TYPE]} \
+            Log.debug(f'{self.name} flushing out the event type: {an_event[K8SEventsConst.TYPE]} \
                 metadata: {an_event[K8SEventsConst.RAW_OBJECT][K8SEventsConst.METADATA]}')
         # Setting flag to stop event processing loop
         Log.info(f"Stopped watching for {self._object} events.")
@@ -94,9 +89,7 @@ class ObjectMonitor(threading.Thread):
 
     def run(self):
 
-        # Initialize log
-        self._init_log()
-        Log.info(f"Starting the {self._object} Monitor with PID {os.getpid()}...")
+        Log.info(f"Starting the {self.name} with PID {os.getpid()}...")
 
         # Setup Credentials
         config.load_incluster_config()
@@ -109,15 +102,17 @@ class ObjectMonitor(threading.Thread):
 
         # Get method pointer
         self._object_function = getattr(k8s_client, ObjectMap.get_subscriber_func(self._object))
-        Log.info(f'Starting watch on {self._object} events: {self._object_function}')
+        Log.info(f'Starting watch on {self._object} events: {self._object_function.__name__}')
 
         # While True loop to restart the watch.Watch.stream() after specified timeout
         while True:
+            # create a object of Watch.stream generator loop on it.
+            k8s_watch_stream =  k8s_watch.stream(self._object_function, **self._args)
             # Start watching events corresponding to self._object
-            for an_event in k8s_watch.stream(self._object_function, **self._args):
+            for an_event in k8s_watch_stream:
 
                 # Check for the signals (SIGTERM signal)
-                self.check_for_signals(k8s_watch)
+                self.check_for_signals(k8s_watch, k8s_watch_stream)
 
                 # Due to SIGTERM signal stopping further event processing
                 if self._stop_event_processing:
@@ -135,11 +130,11 @@ class ObjectMonitor(threading.Thread):
                         self._starting_up = False
 
                 # Write to message bus
-                Log.info(f"Sending alert on message bus {alert.to_dict()}")
+                Log.info(f"{self._object}_monitor Sending alert on message bus {alert.to_dict()}")
                 self._producer.publish(str(alert.to_dict()))
 
             # If stop processing events is set then no need to retry just break the loop and
             # If we don't specify timeout no need to restart the loop it will happen internally
-            if self._stop_event_processing or self.TIMEOUT_SECONDS not in self._args:
+            if self._stop_event_processing or K8SClientConst.TIMEOUT_SECONDS not in self._args:
                 break
-        Log.info(f"Stopping the {self._object} Monitor with PID {os.getpid()}...")
+        Log.info(f"Stopping the {self.name} with PID {os.getpid()}...")

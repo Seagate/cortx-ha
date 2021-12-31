@@ -84,6 +84,7 @@ class MessageBusConsumer:
         self.consumer_id = consumer_id
         self.consumer_group = consumer_group
         self.message_type = message_type
+        self.name = message_type+"-consumer-thread"
         self.auto_ack = auto_ack
         self.offset = offset
         self.timeout = timeout
@@ -109,7 +110,8 @@ class MessageBusConsumer:
         while not self.stop_thread.is_set():
             try:
                 if not retry:
-                    message = self.consumer.receive(timeout=0)
+                    # setting some default timeout as 0 will block the call for indefinite time
+                    message = self.consumer.receive(timeout=const.CORTX_HA_WAIT_TIMEOUT)
                 try:
                     status = self.callback(message)
                 except Exception as e:
@@ -137,15 +139,26 @@ class MessageBusConsumer:
                         consumer_group=self.consumer_group,
                         message_types=[self.message_type],
                         auto_ack=self.auto_ack, offset=self.offset)
-        self.consumer_thread = Thread(target=self.run)
+        self.consumer_thread = Thread(target=self.run, name=self.name)
         self.consumer_thread.setDaemon(True)
         self.consumer_thread.start()
 
-    def stop(self, delete=False):
+    def stop(self, flush=False):
         self.stop_thread.set()
-        if delete:
-            self.consumer.delete()
+        Log.info(f"waiting for {self.consumer_thread.name} to exit.")
         self.consumer_thread.join()
+        if flush:
+            Log.info(f"flush pending messages of type {self.message_type}.")
+            while True:
+                # needs to set minimum feasible timeout but,
+                # setting 0 will block the call for indefinite time,
+                # hence setting to 1.
+                message = self.consumer.receive(timeout=1)
+                if message is None:
+                    break
+                else:
+                    Log.info(f"flushing message: {message}.")
+                    self.consumer.ack()
 
 class MessageBus:
     ADMIN_ID = "ha_admin"

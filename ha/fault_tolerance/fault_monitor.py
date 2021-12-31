@@ -59,8 +59,9 @@ class FaultMonitor:
         stop to listen messages.
         """
         if self._consumer is not None:
-            Log.info(f"Stopping the daemon for Fault Tolerance Monitor with PID {os.getpid()}...")
-            self._consumer.stop(delete=flush)
+            Log.info(f"Stopping the daemon for the Fault Tolerance Monitor with PID {os.getpid()}...")
+            self._consumer.stop(flush=flush)
+            Log.info(f"The daemon for the Fault Tolerance Monitor is stopped successfully.")
         else:
             Log.warn(f"Consumer not found for message type  {self._message_type}.")
 

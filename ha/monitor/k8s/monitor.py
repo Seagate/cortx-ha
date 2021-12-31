@@ -40,7 +40,7 @@ class ResourceMonitor:
 
         # Read I/O pod selector label from ha.conf . Will be received from provisioner confstore
         # provisioner needs to be informed to add it in confstore  (to be added there )
-        ConfigManager.init("k8s_monitor")
+        ConfigManager.init("k8s_resource_monitor")
 
         # event output in pretty format
         kwargs = {K8SClientConst.PRETTY : True}
@@ -85,7 +85,6 @@ class ResourceMonitor:
         self.pod_monitor.start()
 
     def wait_for_exit(self):
-        Log.debug("FaultTolerance poll")
         """
         join and wait for all threads to exit
         """
