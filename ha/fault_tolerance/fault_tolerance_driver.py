@@ -48,6 +48,7 @@ class FaultTolerance:
         self._stop = threading.Event()
 
     def set_sigterm(self, signum, frame):
+        Log.info(f"Received SIGTERM {signum}")
         self.node_fault_monitor.stop(flush=True)
         self.cluster_stop_monitor.stop(flush=True)
         self._stop.set()
@@ -69,7 +70,7 @@ class FaultTolerance:
                 # wait on stop event with timeout
                 self._stop.wait(timeout=self._wait_time)
         except Exception as exe:
-            raise(f'Oops, some issue in the fault tolerance_driver: {exe}')
+            raise Exception(f'Oops, some issue in the fault tolerance_driver: {exe}')
 
 if __name__ == '__main__':
 
