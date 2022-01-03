@@ -48,7 +48,7 @@ class FaultMonitor:
         Start to listen messages.
         """
         if self._consumer is not None:
-            Log.info(f"Starting the daemon for Fault Tolerance Monitor...")
+            Log.info("Starting the daemon for Fault Tolerance Monitor...")
             self._consumer.start()
         else:
             Log.warn(f"Consumer not found for message type  {self._message_type}.")
@@ -58,9 +58,9 @@ class FaultMonitor:
         stop to listen messages.
         """
         if self._consumer is not None:
-            Log.info(f"Stopping the daemon for the Fault Tolerance Monitor...")
+            Log.info("Stopping the daemon for the Fault Tolerance Monitor...")
             self._consumer.stop(flush=flush)
-            Log.info(f"The daemon for the Fault Tolerance Monitor is stopped successfully.")
+            Log.info("The daemon for the Fault Tolerance Monitor is stopped successfully.")
         else:
             Log.warn(f"Consumer not found for message type  {self._message_type}.")
 

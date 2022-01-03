@@ -17,7 +17,7 @@
 """
 Handler for handling cluster stop events received from CSM
 """
-import os
+
 import json
 import ast
 
@@ -40,7 +40,7 @@ class ClusterStopMonitor:
         Start to listen messages.
         """
         if self._consumer is not None:
-            Log.info(f"Starting the daemon for Cluster Stop Monitor with PID {os.getpid()}...")
+            Log.info("Starting the daemon for Cluster Stop Monitor...")
             self._consumer.start()
         else:
             Log.warn(f"Consumer not found for message type  {self._message_type}.")
@@ -50,9 +50,9 @@ class ClusterStopMonitor:
         stop to listen messages.
         """
         if self._consumer is not None:
-            Log.info(f"Stopping the daemon for Cluster Stop Monitor with PID {os.getpid()}...")
+            Log.info("Stopping the daemon for Cluster Stop Monitor...")
             self._consumer.stop(flush=flush)
-            Log.info(f"The daemon for the Cluster Stop Monitor is stopped successfully.")
+            Log.info("The daemon for the Cluster Stop Monitor is stopped successfully.")
         else:
             Log.warn(f"Consumer not found for message type  {self._message_type}.")
 

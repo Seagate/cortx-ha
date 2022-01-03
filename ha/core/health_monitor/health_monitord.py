@@ -125,7 +125,7 @@ class HealthMonitorService:
         """
         Starts consumer daemon thread to receive the alters and perform action on it.
         """
-        Log.info(f"Starting the daemon for Health Monitor...")
+        Log.info("Starting the daemon for Health Monitor...")
         self._event_consumer.start()
         Log.info(f"The daemon for Health Monitor with PID {os.getpid()} started successfully.")
 
@@ -140,7 +140,7 @@ class HealthMonitorService:
         """
         Run health monitor server
         """
-        Log.info(f"Running the Health Monitor server...")
+        Log.info("Running the Health Monitor server...")
         while not self._stop.is_set():
             self._stop.wait(timeout=CORTX_HA_WAIT_TIMEOUT)
 
