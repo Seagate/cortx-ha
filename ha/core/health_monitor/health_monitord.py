@@ -116,7 +116,7 @@ class HealthMonitorService:
             return CONSUMER_STATUS.FAILED
 
     def set_sigterm(self, signum, frame):
-        Log.info(f"Received signal: {signum}")
+        Log.info(f"Received SIGTERM: {signum}")
         Log.debug(f"Received signal: {signum} during execution of frame: {frame}")
         self.stop(flush=True)
         self._stop.set()
@@ -125,15 +125,16 @@ class HealthMonitorService:
         """
         Starts consumer daemon thread to receive the alters and perform action on it.
         """
-        Log.info(f"Starting the daemon for Health Monitor with PID {os.getpid()}...")
+        Log.info(f"Starting the daemon for Health Monitor...")
         self._event_consumer.start()
+        Log.info(f"The daemon for Health Monitor with PID {os.getpid()} started successfully.")
 
     def stop(self, flush=False):
         """
         Stops consumer daemon thread.
         """
-        Log.info(f"Stopping the daemon for Health Monitor with PID {os.getpid()}...")
-        self._event_consumer.stop(delete=flush)
+        self._event_consumer.stop(flush=flush)
+        Log.info(f"The daemon for Health Monitor with PID {os.getpid()} stopped successfully.")
 
     def run(self):
         """
@@ -142,6 +143,7 @@ class HealthMonitorService:
         Log.info(f"Running the Health Monitor server...")
         while not self._stop.is_set():
             self._stop.wait(timeout=CORTX_HA_WAIT_TIMEOUT)
+
 
 def main(argv):
     """

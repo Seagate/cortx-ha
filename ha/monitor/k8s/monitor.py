@@ -15,16 +15,21 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-import signal
+"""
+   Monitoring and processing the Kubernetes events
+"""
 
-from ha.util.message_bus import MessageBus
-from ha.monitor.k8s.object_monitor import ObjectMonitor
-from ha.monitor.k8s.const import K8SClientConst
+import os
+import signal
+from cortx.utils.log import Log
 
 from cortx.utils.conf_store import Conf
 from ha.k8s_setup.const import _DELIM
 from ha import const
 from ha.core.config.config_manager import ConfigManager
+from ha.util.message_bus import MessageBus
+from ha.monitor.k8s.object_monitor import ObjectMonitor
+from ha.monitor.k8s.const import K8SClientConst
 
 class ResourceMonitor:
     """
@@ -70,10 +75,13 @@ class ResourceMonitor:
     def _get_producer(self):
         message_type = Conf.get(const.HA_GLOBAL_INDEX, f"MONITOR{_DELIM}message_type")
         producer_id = Conf.get(const.HA_GLOBAL_INDEX, f"MONITOR{_DELIM}producer_id")
+        Log.info("Initializing message bus.")
         MessageBus.init()
+        Log.info(f"Getting producer {producer_id} for message type: {message_type}")
         return MessageBus.get_producer(producer_id, message_type)
 
     def set_sigterm(self, signum, frame):
+        Log.info(f"Received SIGTERM {signum}.")
         self.node_monitor.set_sigterm(signum, frame)
         self.pod_monitor.set_sigterm(signum, frame)
 
@@ -81,8 +89,10 @@ class ResourceMonitor:
         """
         start the threads
         """
+        Log.info("Starting all threads of k8s Monitor...")
         self.node_monitor.start()
         self.pod_monitor.start()
+        Log.info(f"K8s Monitor with PID {os.getpid()} started successfully.")
 
     def wait_for_exit(self):
         """
@@ -90,12 +100,11 @@ class ResourceMonitor:
         """
         self.node_monitor.join()
         self.pod_monitor.join()
+        Log.info(f"K8s Monitor with PID {os.getpid()} stopped successfully.")
 
 
 if __name__ == "__main__":
     monitor = ResourceMonitor()
 
     monitor.start()
-
     monitor.wait_for_exit()
-    print("k8s monitor is exiting .")

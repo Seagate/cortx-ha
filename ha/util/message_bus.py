@@ -112,6 +112,10 @@ class MessageBusConsumer:
                 if not retry:
                     # setting some default timeout as 0 will block the call for indefinite time
                     message = self.consumer.receive(timeout=const.CORTX_HA_WAIT_TIMEOUT)
+                    # if no message is received and the timeout occurs then message will be set None
+                    # so lets continue wait again on message bus.
+                    if message is None:
+                        continue
                 try:
                     status = self.callback(message)
                 except Exception as e:

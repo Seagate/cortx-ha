@@ -15,10 +15,7 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-
-import os
 import threading
-
 from kubernetes import config, client, watch
 
 from ha.monitor.k8s.objects import ObjectMap
@@ -26,10 +23,6 @@ from ha.monitor.k8s.parser import EventParser
 from ha.monitor.k8s.const import EventStates, K8SClientConst
 from ha.monitor.k8s.const import K8SEventsConst
 from cortx.utils.log import Log
-from ha.core.config.config_manager import ConfigManager
-# from ha.util.message_bus import MessageBus
-# from cortx.utils.conf_store import Conf
-# from ha import const
 from ha.const import _DELIM
 
 class ObjectMonitor(threading.Thread):
@@ -76,9 +69,7 @@ class ObjectMonitor(threading.Thread):
         # set the stop flag so it will not pick the new events
         k8s_watch.stop()
         # flush out already fetched events and release the connection and other acquired resources
-        # timeout_seconds needs to set no wait i.e. 0 as we have called stop only needs to flush stucked events
-        # kwargs = self._args
-        # kwargs[K8SClientConst.TIMEOUT_SECONDS] = K8SClientConst.VAL_WATCH_TIMEOUT_NOWAIT
+        Log.info(f"Flusing remaining Kubernetes {self._object} events.")
         for an_event in k8s_watch_stream: # k8s_watch.stream(self._object_function, **kwargs):
             # Debug logging event type and metadata
             Log.debug(f'{self.name} flushing out the event type: {an_event[K8SEventsConst.TYPE]} \
@@ -89,7 +80,7 @@ class ObjectMonitor(threading.Thread):
 
     def run(self):
 
-        Log.info(f"Starting the {self.name} with PID {os.getpid()}...")
+        Log.info(f"Starting the {self.name}...")
 
         # Setup Credentials
         config.load_incluster_config()
@@ -137,4 +128,4 @@ class ObjectMonitor(threading.Thread):
             # If we don't specify timeout no need to restart the loop it will happen internally
             if self._stop_event_processing or K8SClientConst.TIMEOUT_SECONDS not in self._args:
                 break
-        Log.info(f"Stopping the {self.name} with PID {os.getpid()}...")
+        Log.info(f"Stopping the {self.name}...")

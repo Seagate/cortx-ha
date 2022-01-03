@@ -18,9 +18,7 @@
    Set of periodically executable routines which accepts fault events from
    message bus and takes further action on it
 """
-
-
-import time
+import os
 import signal
 import threading
 
@@ -57,8 +55,10 @@ class FaultTolerance:
         """
         start the threads
         """
+        Log.info("Starting all daemon threads of Fault Tolerance Monitor...")
         self.node_fault_monitor.start()
         self.cluster_stop_monitor.start()
+        Log.info(f"Fault Tolerance Monitor with PID {os.getpid()} started successfully.")
 
     def poll(self):
         """
@@ -69,6 +69,7 @@ class FaultTolerance:
             while not self._stop.is_set():
                 # wait on stop event with timeout
                 self._stop.wait(timeout=self._wait_time)
+            Log.info(f"Fault Tolerance Monitor with PID {os.getpid()} stopped successfully.")
         except Exception as exe:
             raise Exception(f'Oops, some issue in the fault tolerance_driver: {exe}')
 
