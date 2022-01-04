@@ -32,6 +32,7 @@ class ObjectMonitor(threading.Thread):
         Initialization of member objects, and Thread super calss
         """
         super().__init__()
+        self._publish_alert = True
         self._object = k_object
         self.name = f"Monitor-{k_object}-Thread"
         self._args = kwargs
@@ -41,6 +42,7 @@ class ObjectMonitor(threading.Thread):
         self._stop_event_processing = False
         self._producer = producer
         Log.info(f"Initialization done for {self._object} monitor")
+
 
     def set_sigterm(self, signum, frame):
         """
@@ -81,6 +83,29 @@ class ObjectMonitor(threading.Thread):
         # Setting flag to stop event processing loop
         Log.info(f"Stopped watching for {self._object} events.")
         self._stop_event_processing = True
+
+    def publish_enable(self):
+        # check if cluster_stop key is exist and if exist check if it is enable
+        # if enable then publish event should be stopped
+        if self._publish_alert:
+            if self._constore.key_exists(const.CLUSTER_STOP_KEY):
+                _, cluster_stop = (self._constore.get(const.CLUSTER_STOP_KEY)).popitem()
+                if cluster_stop == const.CLUSTER_STOP_VAL_ENABLE:
+                    Log.info(f"Stopping publish alert as cluster stop message is received.")
+                    self._publish_alert = False
+        return self._publish_alert
+
+    def publish_alert(self, alert):
+        if self.publish_enable():
+            # Write to message bus
+            Log.info(f"Sending alert on message bus {alert.to_dict()}")
+            self._producer.publish(str(alert.to_dict()))
+
+    # TODO: merge below function with SIGTERM implementation
+    def set_sigterm(self):
+        if self._constore.key_exists(const.CLUSTER_STOP_KEY):
+            Log.info(f"Deleting cluststor stop key from constore.")
+            self._constore.delete(key=const.CLUSTER_STOP_KEY, recurse=True)
 
     def run(self):
         """
@@ -128,7 +153,7 @@ class ObjectMonitor(threading.Thread):
 
                 # Write to message bus
                 Log.info(f"{self._object}_monitor Sending alert on message bus {alert.to_dict()}")
-                self._producer.publish(str(alert.to_dict()))
+                self.publish_alert(alert)
 
             # If stop processing events is set then no need to retry just break the loop
             # If we don't specify timeout no need to restart the loop it will happen internally
