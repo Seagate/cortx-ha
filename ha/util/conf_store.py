@@ -22,9 +22,7 @@ Wrappeprs for using the search APIs from conf store
 import json
 
 from ha.core.config.config_manager import ConfigManager
-from cortx.utils.conf_store import Conf
-from cortx.utils.cortx.const import Const
-from ha.k8s_setup.const import NODE_CONST, SERVICE_CONST, _DELIM, CLUSTER_CARDINALITY_KEY
+from ha.k8s_setup.const import CLUSTER_CARDINALITY_KEY, CLUSTER_CARDINALITY_NUM_NODES, CLUSTER_CARDINALITY_LIST_NODES
 from cortx.utils.log import Log
 
 class ConftStoreSearch:
@@ -60,8 +58,8 @@ class ConftStoreSearch:
             nodes_dict = json.loads(nodes_list)
 
             #Get  number of nodes and the node list
-            num_nodes = nodes_dict["num_nodes"]
-            nodes_list = nodes_dict["node_list"]
+            num_nodes = nodes_dict[CLUSTER_CARDINALITY_NUM_NODES]
+            nodes_list = nodes_dict[CLUSTER_CARDINALITY_LIST_NODES]
             return num_nodes, nodes_list
 
         else:
@@ -80,13 +78,14 @@ class ConftStoreSearch:
         watch_pods = list(set(watch_pods))
         num_pods = len(watch_pods)
 
-        Log.info(f"Cluster cardinality created: number of nodes {num_pods}, machine ids for nodes {watch_pods} ")
+        Log.info(f"Cluster cardinality: number of nodes {num_pods}, machine ids for nodes {watch_pods} ")
 
         # Update the same to consul
         # Note: if KV already present, it will not be modified.
         # Confirm if that is fine or if we need to replace the same with new KV
+        # In that case self._confstore.update should be used instead of self._confstore.set
         cluster_cardinality_key = CLUSTER_CARDINALITY_KEY
-        cluster_cardinality_value = {"num_nodes": num_pods, "node_list" : watch_pods }
+        cluster_cardinality_value = {CLUSTER_CARDINALITY_NUM_NODES: num_pods, CLUSTER_CARDINALITY_LIST_NODES : watch_pods }
         if not self._confstore.key_exists(cluster_cardinality_key):
             self._confstore.set(cluster_cardinality_key, json.dumps(cluster_cardinality_value))
         else:
