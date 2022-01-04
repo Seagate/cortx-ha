@@ -16,13 +16,14 @@
 # cortx-questions@seagate.com.
 
 import abc
+import ast
 import json
 from enum import Enum
 from cortx.utils.conf_store.conf_store import Conf
 from cortx.utils.log import Log
 from ha import const
 from ha.core.config.config_manager import ConfigManager
-from ha.const import ALERT_ATTRIBUTES
+from ha.const import _DELIM, ALERT_ATTRIBUTES
 from ha.core.event_analyzer.event_analyzer_exceptions import EventFilterException
 from ha.core.event_analyzer.event_analyzer_exceptions import InvalidFilterRules
 
@@ -164,3 +165,35 @@ class IEMFilter(Filter):
 
         except Exception as e:
             raise EventFilterException(f"Failed to filter IEM event. Message: {msg}, Error: {e}")
+
+class ClusterResourceFilter(Filter):
+    """ Filter unnecessary alert. """
+
+    def __init__(self):
+        """
+        Init method
+        """
+        super(ClusterResourceFilter, self).__init__()
+
+    def filter_event(self, msg: str) -> bool:
+        """
+        Filter event.
+        Args:
+            msg (str): Msg
+        """
+        try:
+            resource_alert_required = False
+            message = json.dumps(ast.literal_eval(msg))
+            message = json.loads(message)
+
+            Log.debug('Received alert from fault tolerance')
+            event_resource_type = message.get("_resource_type")
+
+            required_resource_type = Conf.get(const.HA_GLOBAL_INDEX, f"NODE{_DELIM}resource_type")
+            if event_resource_type == required_resource_type:
+                resource_alert_required = True
+                Log.info(f'This alert needs an attention: resource_type: {event_resource_type}')
+            return resource_alert_required
+        except Exception as e:
+            raise EventFilterException(f"Failed to filter cluster resource event. Message: {msg}, Error: {e}")
+

@@ -71,6 +71,7 @@ class EventManager:
         self._confstore = ConfigManager.get_confstore()
         self._monitor_rule = MonitorRulesManager()
         self._default_action = HEALTH_MON_ACTIONS.PUBLISH_ACT.value
+        MessageBus.init()
 
     @staticmethod
     def _validate_events(events: list) -> None:
@@ -389,6 +390,7 @@ class EventManager:
             event (RecoveryActionEvent): Action event.
         """
         try:
+            #TODO: Use Transactional producer in future.
             component_list = []
             # Run through list of components subscribed for this event and send event to each of them
             component_list_key = EVENT_MANAGER_KEYS.EVENT_KEY.value.replace(

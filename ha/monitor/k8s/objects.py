@@ -15,14 +15,23 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-import enum
-from ha.util.enum_list import EnumListMeta
 
-class HEALTH_MON_ACTIONS(enum.Enum, metaclass=EnumListMeta):
-    PUBLISH_ACT = "publish"
-    HA_ACT = "ha"
+from ha.monitor.k8s.error import NotSupportedObjectError
 
-class HEALTH_MON_KEYS(enum.Enum, metaclass=EnumListMeta):
-    ACT_RULE = "action"
 
-HEALTH_MONITOR_LOG = "health_monitor"
+class ObjectMap:
+    _function_map = {
+        'node': 'list_node',
+        'pod': 'list_pod_for_all_namespaces'
+    }
+
+    @staticmethod
+    def get_subscriber_func(obj):
+        if obj in ObjectMap._function_map:
+            return ObjectMap._function_map[obj]
+
+        raise NotSupportedObjectError(f"object = {obj}")
+
+    @staticmethod
+    def get_all_objects():
+        return ObjectMap._function_map.keys()

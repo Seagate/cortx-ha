@@ -80,6 +80,7 @@ class HealthMonitorService:
         consumer_id = Conf.get(HA_GLOBAL_INDEX, f"EVENT_MANAGER{_DELIM}consumer_id")
         consumer_group = Conf.get(HA_GLOBAL_INDEX, f"EVENT_MANAGER{_DELIM}consumer_group")
         message_type = Conf.get(HA_GLOBAL_INDEX, f"EVENT_MANAGER{_DELIM}message_type")
+        MessageBus.init()
         return MessageBus.get_consumer(consumer_id=consumer_id, consumer_group=consumer_group,
                                         message_type=message_type, callback=self.process_event)
 

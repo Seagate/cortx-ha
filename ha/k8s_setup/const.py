@@ -1,6 +1,4 @@
-#!/usr/bin/env python3
-
-# Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
 # This program is free software: you can redistribute it and/or modify it under the
 # terms of the GNU Affero General Public License as published by the Free Software
@@ -15,14 +13,21 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-import enum
-from ha.util.enum_list import EnumListMeta
+HA_LOG_DIR="/var/log/seagate/cortx/ha"
+HA_LOG_LEVEL="INFO"
+CONFIG_DIR="/etc/cortx/ha"
+HA_CONFIG_FILE="{}/ha.conf".format(CONFIG_DIR)
+SOURCE_PATH="/opt/seagate/cortx/ha"
+SOURCE_CONFIG_PATH="{}/conf/etc".format(SOURCE_PATH)
+SOURCE_HEALTH_HIERARCHY_FILE = "{}/system_health_hierarchy.json".format(SOURCE_CONFIG_PATH)
+HEALTH_HIERARCHY_FILE = "{}/system_health_hierarchy.json".format(CONFIG_DIR)
 
-class HEALTH_MON_ACTIONS(enum.Enum, metaclass=EnumListMeta):
-    PUBLISH_ACT = "publish"
-    HA_ACT = "ha"
+#Confstore delimiter
+_DELIM=">"
 
-class HEALTH_MON_KEYS(enum.Enum, metaclass=EnumListMeta):
-    ACT_RULE = "action"
+# consul endpoint scheme: http
+consul_scheme = 'http'
 
-HEALTH_MONITOR_LOG = "health_monitor"
+# Event_manager keys
+POD_EVENT="node"
+EVENT_COMPONENT="hare"
