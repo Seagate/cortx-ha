@@ -100,6 +100,8 @@ class ObjectMonitor(threading.Thread):
             # Write to message bus
             Log.info(f"Sending alert on message bus {alert.to_dict()}")
             self._producer.publish(str(alert.to_dict()))
+        else:
+            Log.debug(f"Skipping publish for alert: {str(alert.to_dict())}.")
 
     # TODO: merge below function with SIGTERM implementation
     def set_sigterm(self):
