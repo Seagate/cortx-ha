@@ -73,7 +73,7 @@ class HealthMonitorService:
         # set sigterm handler
         signal.signal(signal.SIGTERM, self.set_sigterm)
         Log.info("Health Monitor daemon initializations...")
-        self._stop = threading.Event()
+        # self._stop = threading.Event()
         self._confstore = ConfigManager.get_confstore()
         self._rule_manager = MonitorRulesManager()
         self._event_consumer = self._get_consumer()
@@ -118,8 +118,10 @@ class HealthMonitorService:
     def set_sigterm(self, signum, frame):
         Log.info(f"Received SIGTERM: {signum}")
         Log.debug(f"Received signal: {signum} during execution of frame: {frame}")
-        self.stop(flush=True)
-        self._stop.set()
+        Log.info(f"Stopping the Health Monitor...")
+        self._event_consumer.stop(flush=True)
+        # self.stop(flush=True)
+        # self._stop.set()
 
     def start(self):
         """
@@ -129,21 +131,27 @@ class HealthMonitorService:
         self._event_consumer.start()
         Log.info(f"The daemon for Health Monitor with PID {os.getpid()} started successfully.")
 
-    def stop(self, flush=False):
-        """
-        Stops consumer daemon thread.
-        """
-        self._event_consumer.stop(flush=flush)
-        Log.info(f"The daemon for Health Monitor with PID {os.getpid()} stopped successfully.")
+    # def stop(self, flush=False):
+    #     """
+    #     Stops consumer daemon thread.
+    #     """
+    #     Log.info(f"Stopping the daemon for Health Monitor...")
+    #     self._event_consumer.stop(flush=flush)
 
-    def run(self):
+    # def run(self):
+    #     """
+    #     Run health monitor server
+    #     """
+    #     Log.info("Running the Health Monitor server...")
+    #     # while not self._stop.is_set():
+    #     #     self._stop.wait(timeout=CORTX_HA_WAIT_TIMEOUT)
+    #     self._event_consumer.join()
+    def wait_for_exit(self):
         """
-        Run health monitor server
+        join and wait for consumer thread to exit
         """
-        Log.info("Running the Health Monitor server...")
-        while not self._stop.is_set():
-            self._stop.wait(timeout=CORTX_HA_WAIT_TIMEOUT)
-
+        self._event_consumer.join()
+        Log.info(f"The Health Monitor with PID {os.getpid()} stopped successfully.")
 
 def main(argv):
     """
@@ -153,7 +161,7 @@ def main(argv):
     try:
         health_monitor = HealthMonitorService.get_instance()
         health_monitor.start()
-        health_monitor.run()
+        health_monitor.wait_for_exit()
     except Exception as e:
         Log.error(f"Health Monitor service failed. Error: {e} {traceback.format_exc()}")
         sys.exit(1)

@@ -52,9 +52,13 @@ class ClusterStopMonitor:
         if self._consumer is not None:
             Log.info("Stopping the daemon for Cluster Stop Monitor...")
             self._consumer.stop(flush=flush)
-            Log.info("The daemon for the Cluster Stop Monitor is stopped successfully.")
         else:
             Log.warn(f"Consumer not found for message type  {self._message_type}.")
+
+    def join(self):
+        if self._consumer is not None:
+            self._consumer.join()
+            Log.info("The daemon for the Cluster Stop Monitor is stopped successfully.")
 
     def _get_consumer(self) -> MessageBusConsumer:
         """

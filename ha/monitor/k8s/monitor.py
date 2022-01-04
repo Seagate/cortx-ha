@@ -82,6 +82,8 @@ class ResourceMonitor:
 
     def set_sigterm(self, signum, frame):
         Log.info(f"Received SIGTERM {signum}.")
+        Log.debug(f"Received signal: {signum} during execution of frame: {frame}")
+        Log.info(f"Stopping the K8s Monitor...")
         self.node_monitor.set_sigterm(signum, frame)
         self.pod_monitor.set_sigterm(signum, frame)
 

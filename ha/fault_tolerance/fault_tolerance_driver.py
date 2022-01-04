@@ -43,13 +43,15 @@ class FaultTolerance:
         ConfigManager.init("fault_tolerance")
         self.node_fault_monitor = NodeFaultMonitor()
         self.cluster_stop_monitor = ClusterStopMonitor()
-        self._stop = threading.Event()
+        # self._stop = threading.Event()
 
     def set_sigterm(self, signum, frame):
         Log.info(f"Received SIGTERM {signum}")
+        Log.debug(f"Received signal: {signum} during execution of frame: {frame}")
+        Log.info(f"Stopping the Fault Tolerance Monitor...")
         self.node_fault_monitor.stop(flush=True)
         self.cluster_stop_monitor.stop(flush=True)
-        self._stop.set()
+        # self._stop.set()
 
     def start(self):
         """
@@ -60,21 +62,30 @@ class FaultTolerance:
         self.cluster_stop_monitor.start()
         Log.info(f"Fault Tolerance Monitor with PID {os.getpid()} started successfully.")
 
-    def poll(self):
+    # def poll(self):
+    #     """
+    #     wait method for receiving events
+    #     """
+    #     Log.debug("FaultTolerance poll")
+    #     try:
+    #         while not self._stop.is_set():
+    #             # wait on stop event with timeout
+    #             self._stop.wait(timeout=self._wait_time)
+
+    #         Log.info(f"Fault Tolerance Monitor with PID {os.getpid()} stopped successfully.")
+    #     except Exception as exe:
+    #         raise Exception(f'Oops, some issue in the fault tolerance_driver: {exe}')
+
+    def wait_for_exit(self):
         """
-        wait method for receiving events
+        join and wait for monitor threads to exit
         """
-        Log.debug("FaultTolerance poll")
-        try:
-            while not self._stop.is_set():
-                # wait on stop event with timeout
-                self._stop.wait(timeout=self._wait_time)
-            Log.info(f"Fault Tolerance Monitor with PID {os.getpid()} stopped successfully.")
-        except Exception as exe:
-            raise Exception(f'Oops, some issue in the fault tolerance_driver: {exe}')
+        self.node_fault_monitor.join()
+        self.cluster_stop_monitor.join()
+        Log.info(f"The Health Monitor with PID {os.getpid()} stopped successfully.")
 
 if __name__ == '__main__':
 
     fault_tolerance = FaultTolerance(wait_time=CORTX_HA_WAIT_TIMEOUT)
     fault_tolerance.start()
-    fault_tolerance.poll()
+    fault_tolerance.wait_for_exit()

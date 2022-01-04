@@ -80,7 +80,8 @@ class MessageBusConsumer:
             offset (str, optional): Offset for messages. Defaults to "earliest".
         """
         self.callback = callback
-        self.stop_thread = Event()
+        self._stop = Event()
+        self.flush_on_exit = False
         self.consumer_id = consumer_id
         self.consumer_group = consumer_group
         self.message_type = message_type
@@ -88,6 +89,7 @@ class MessageBusConsumer:
         self.auto_ack = auto_ack
         self.offset = offset
         self.timeout = timeout
+        self.consumer_thread = None
 
     def run(self):
         """
@@ -107,7 +109,7 @@ class MessageBusConsumer:
         Stop thread by completing work as per above cases.
         """
         retry = False
-        while not self.stop_thread.is_set():
+        while not self._stop.is_set():
             try:
                 if not retry:
                     # setting some default timeout as 0 will block the call for indefinite time
@@ -137,24 +139,9 @@ class MessageBusConsumer:
             except Exception as e:
                 Log.error(f"Supressing exception from message bus {e}")
                 retry = False
-
-    def start(self):
-        self.consumer = MessageConsumer(consumer_id=str(self.consumer_id),
-                        consumer_group=self.consumer_group,
-                        message_types=[self.message_type],
-                        auto_ack=self.auto_ack, offset=self.offset)
-        self.consumer_thread = Thread(target=self.run, name=self.name)
-        self.consumer_thread.setDaemon(True)
-        self.consumer_thread.start()
-
-    def stop(self, flush=False):
-        self.stop_thread.set()
-        Log.info(f"waiting for {self.consumer_thread.name} to exit.")
-        # wait to stop consumer thread
-        self.consumer_thread.join()
-        # Consumer thread is stopped now we can flush remaining messages in message bus
-        # so next time when consumer starts it will not read stale messages.
-        if flush:
+        if self.flush_on_exit:
+            # Need to flush remaining messages in message bus, so
+            # when next time consumer starts it will not read stale messages.
             Log.info(f"flush pending messages of type {self.message_type}.")
             while True:
                 # needs to set minimum feasible timeout but,
@@ -166,6 +153,25 @@ class MessageBusConsumer:
                 else:
                     Log.info(f"flushing message: {message}.")
                     self.consumer.ack()
+
+    def start(self):
+        self.consumer = MessageConsumer(consumer_id=str(self.consumer_id),
+                        consumer_group=self.consumer_group,
+                        message_types=[self.message_type],
+                        auto_ack=self.auto_ack, offset=self.offset)
+        self.consumer_thread = Thread(target=self.run, name=self.name)
+        self.consumer_thread.setDaemon(True)
+        self.consumer_thread.start()
+
+    def stop(self, flush=False):
+        self.flush_on_exit = flush
+        self._stop.set()
+
+    def join(self):
+        if self.consumer_thread is not None:
+            Log.info(f"waiting for {self.consumer_thread.name} to exit...")
+            # wait to stop consumer thread
+            self.consumer_thread.join()
 
 class MessageBus:
     ADMIN_ID = "ha_admin"
