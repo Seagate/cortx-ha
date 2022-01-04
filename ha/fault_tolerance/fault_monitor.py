@@ -51,7 +51,7 @@ class FaultMonitor:
             Log.info("Starting the daemon for Fault Tolerance Monitor...")
             self._consumer.start()
         else:
-            Log.warn(f"Consumer not found for message type  {self._message_type}.")
+            Log.warn(f"Consumer not found for message type {self._message_type}.")
 
     def stop(self, flush=False):
         """
