@@ -85,6 +85,14 @@ class TestSigtermHandling(unittest.TestCase):
                 service.kill()
             self.assertTrue(len(services) == 0, f"Not all HA services are not stopped within provided timeout:{wait_time} seconds.")
 
+        # Release/resouces aquired by Popen object (stdout/stderr)
+        for service in self.services:
+            try:
+                service.stderr.close()
+                service.stdout.close()
+            except Exception as ex:
+                print(f"Exception while closing service {service.args} stderr, stdout: {ex}")
+
     def setUp(self):
         pass
 
