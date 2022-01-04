@@ -22,7 +22,7 @@ import time
 import pathlib
 sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..', '..', '..'))
 from itertools import filterfalse
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE # nosec
 import unittest
 
 class TestSigtermHandling(unittest.TestCase):
@@ -64,7 +64,7 @@ class TestSigtermHandling(unittest.TestCase):
         # check how many services are running
         services[:] = filterfalse(lambda service : service.poll() != None, services)
         print(f"Running service: {[service.args for service in services]}")
-        self.assertTrue(len(services) == len(self.services), f"Not all HA services are running.")
+        self.assertTrue(len(services) == len(self.services), "Not all HA services are running.")
         timeout = wait_time
         # loop till timeout and check for services are running
         while timeout:
