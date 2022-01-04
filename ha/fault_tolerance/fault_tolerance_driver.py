@@ -48,7 +48,7 @@ class FaultTolerance:
     def set_sigterm(self, signum, frame):
         Log.info(f"Received SIGTERM {signum}")
         Log.debug(f"Received signal: {signum} during execution of frame: {frame}")
-        Log.info(f"Stopping the Fault Tolerance Monitor...")
+        Log.info("Stopping the Fault Tolerance Monitor...")
         self.node_fault_monitor.stop(flush=True)
         self.cluster_stop_monitor.stop(flush=True)
         # self._stop.set()

@@ -27,11 +27,10 @@ import sys
 import json
 import traceback
 import signal
-import threading
 from cortx.utils.log import Log
 from cortx.utils.conf_store.conf_store import Conf
 from ha.const import HA_GLOBAL_INDEX
-from ha.const import _DELIM, CORTX_HA_WAIT_TIMEOUT
+from ha.const import _DELIM
 from ha.core.action_handler.action_factory import ActionFactory
 from ha.core.health_monitor import const
 from ha.core.system_health.model.health_event import HealthEvent
@@ -73,7 +72,6 @@ class HealthMonitorService:
         # set sigterm handler
         signal.signal(signal.SIGTERM, self.set_sigterm)
         Log.info("Health Monitor daemon initializations...")
-        # self._stop = threading.Event()
         self._confstore = ConfigManager.get_confstore()
         self._rule_manager = MonitorRulesManager()
         self._event_consumer = self._get_consumer()
@@ -118,10 +116,8 @@ class HealthMonitorService:
     def set_sigterm(self, signum, frame):
         Log.info(f"Received SIGTERM: {signum}")
         Log.debug(f"Received signal: {signum} during execution of frame: {frame}")
-        Log.info(f"Stopping the Health Monitor...")
+        Log.info("Stopping the Health Monitor...")
         self._event_consumer.stop(flush=True)
-        # self.stop(flush=True)
-        # self._stop.set()
 
     def start(self):
         """
@@ -131,21 +127,6 @@ class HealthMonitorService:
         self._event_consumer.start()
         Log.info(f"The daemon for Health Monitor with PID {os.getpid()} started successfully.")
 
-    # def stop(self, flush=False):
-    #     """
-    #     Stops consumer daemon thread.
-    #     """
-    #     Log.info(f"Stopping the daemon for Health Monitor...")
-    #     self._event_consumer.stop(flush=flush)
-
-    # def run(self):
-    #     """
-    #     Run health monitor server
-    #     """
-    #     Log.info("Running the Health Monitor server...")
-    #     # while not self._stop.is_set():
-    #     #     self._stop.wait(timeout=CORTX_HA_WAIT_TIMEOUT)
-    #     self._event_consumer.join()
     def wait_for_exit(self):
         """
         join and wait for consumer thread to exit
