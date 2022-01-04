@@ -23,7 +23,6 @@ import signal
 import threading
 
 from cortx.utils.log import Log
-from ha.const import CORTX_HA_WAIT_TIMEOUT
 from ha.core.config.config_manager import ConfigManager
 from ha.fault_tolerance.fault_monitor import NodeFaultMonitor
 from ha.fault_tolerance.cluster_stop_monitor import ClusterStopMonitor
@@ -33,13 +32,12 @@ class FaultTolerance:
     Module responsible for consuming messages from message bus,
     further analyzes that event and publishes it if required
     """
-    def __init__(self, wait_time=10):
+    def __init__(self):
         """
         Init method
         Create monitor objects and Sets the callbacks to sigterm
         """
         signal.signal(signal.SIGTERM, self.set_sigterm)
-        self._wait_time = wait_time
         ConfigManager.init("fault_tolerance")
         self.node_fault_monitor = NodeFaultMonitor()
         self.cluster_stop_monitor = ClusterStopMonitor()
@@ -70,6 +68,6 @@ class FaultTolerance:
 
 if __name__ == '__main__':
 
-    fault_tolerance = FaultTolerance(wait_time=CORTX_HA_WAIT_TIMEOUT)
+    fault_tolerance = FaultTolerance()
     fault_tolerance.start()
     fault_tolerance.wait_for_exit()
