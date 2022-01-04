@@ -20,7 +20,6 @@
 """
 import os
 import signal
-import threading
 
 from cortx.utils.log import Log
 from ha.core.config.config_manager import ConfigManager
