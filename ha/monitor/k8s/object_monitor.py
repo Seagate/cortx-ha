@@ -70,7 +70,7 @@ class ObjectMonitor(threading.Thread):
         k8s_watch.stop()
         # flush out already fetched events and release the connection and other acquired resources
         Log.info(f"Flusing remaining Kubernetes {self._object} events.")
-        for an_event in k8s_watch_stream: # k8s_watch.stream(self._object_function, **kwargs):
+        for an_event in k8s_watch_stream:
             # Debug logging event type and metadata
             Log.debug(f'{self.name} flushing out the event type: {an_event[K8SEventsConst.TYPE]} \
                 metadata: {an_event[K8SEventsConst.RAW_OBJECT][K8SEventsConst.METADATA]}')
