@@ -140,8 +140,10 @@ class MessageBusConsumer:
                 Log.error(f"Supressing exception from message bus {e}")
                 retry = False
         if self.flush_on_exit:
-            # Need to flush remaining messages in message bus, so
-            # when next time consumer starts it will not read stale messages.
+            # we do not expect any messages to be present in the message bus at this point
+            # since previously received cluster stop would have ensured that message bus is empty
+            # here we are makeing sure that messages in message bus are flushed,
+            # so when next time consumer starts it will not read stale messages.
             Log.info(f"flush pending messages of type {self.message_type}.")
             while True:
                 # needs to set minimum feasible timeout but,
