@@ -71,7 +71,6 @@ class HealthMonitorService:
         ConfigManager.init(const.HEALTH_MONITOR_LOG)
         # set sigterm handler
         signal.signal(signal.SIGTERM, self.set_sigterm)
-        Log.info("Health Monitor daemon initializations...")
         self._confstore = ConfigManager.get_confstore()
         self._rule_manager = MonitorRulesManager()
         self._event_consumer = self._get_consumer()
@@ -118,24 +117,20 @@ class HealthMonitorService:
         Callback function to receive a signal
         """
         Log.info(f"Received SIGTERM: {signum}")
-        Log.debug(f"Received signal: {signum} during execution of frame: {frame}")
-        Log.info("Stopping the Health Monitor...")
+        Log.debug(f"Stopping the Health Monitor as received a signal: {signum} during execution of frame: {frame}")
         self._event_consumer.stop(flush=True)
 
     def start(self):
         """
         Starts consumer daemon thread to receive the alters and perform action on it.
         """
-        Log.info("Starting the daemon for Health Monitor...")
         self._event_consumer.start()
-        Log.info(f"The daemon for Health Monitor with PID {os.getpid()} started successfully.")
 
     def wait_for_exit(self):
         """
         join and wait for consumer thread to exit
         """
         self._event_consumer.join()
-        Log.info(f"The Health Monitor with PID {os.getpid()} stopped successfully.")
 
 def main(argv):
     """
@@ -143,11 +138,13 @@ def main(argv):
     """
     # argv can be used later when config parameters are needed
     try:
+        Log.info(f"Starting the Health Monitor with PID {os.getpid()}.")
         health_monitor = HealthMonitorService.get_instance()
         health_monitor.start()
         health_monitor.wait_for_exit()
+        Log.info(f"The Health Monitor with PID {os.getpid()} stopped successfully.")
     except Exception as e:
-        Log.error(f"Health Monitor service failed. Error: {e} {traceback.format_exc()}")
+        Log.error(f"Health Monitor service with PID {os.getpid()} failed. Error: {e} {traceback.format_exc()}")
         sys.exit(1)
 
 if __name__ == '__main__':

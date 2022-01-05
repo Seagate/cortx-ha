@@ -130,8 +130,9 @@ class ObjectMonitor(threading.Thread):
                 Log.info(f"{self._object}_monitor Sending alert on message bus {alert.to_dict()}")
                 self._producer.publish(str(alert.to_dict()))
 
-            # If stop processing events is set then no need to retry just break the loop and
+            # If stop processing events is set then no need to retry just break the loop
             # If we don't specify timeout no need to restart the loop it will happen internally
+            # as Watch.stream will be blocking call which has while True loop so no need a loop for it.
             if self._stop_event_processing or K8SClientConst.TIMEOUT_SECONDS not in self._args:
                 break
         Log.info(f"Stopping the {self.name}...")

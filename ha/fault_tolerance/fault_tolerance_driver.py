@@ -46,8 +46,7 @@ class FaultTolerance:
         Callback function to receive a signal
         """
         Log.info(f"Received SIGTERM {signum}")
-        Log.debug(f"Received signal: {signum} during execution of frame: {frame}")
-        Log.info("Stopping the Fault Tolerance Monitor...")
+        Log.debug(f"Stopping the Fault Tolerance Monitor received a signal: {signum} during execution of frame: {frame}")
         self.node_fault_monitor.stop(flush=True)
         self.cluster_stop_monitor.stop(flush=True)
 
@@ -55,10 +54,8 @@ class FaultTolerance:
         """
         start the threads
         """
-        Log.info("Starting all daemon threads of Fault Tolerance Monitor...")
         self.node_fault_monitor.start()
         self.cluster_stop_monitor.start()
-        Log.info(f"Fault Tolerance Monitor with PID {os.getpid()} started successfully.")
 
     def wait_for_exit(self):
         """
@@ -66,10 +63,11 @@ class FaultTolerance:
         """
         self.node_fault_monitor.join()
         self.cluster_stop_monitor.join()
-        Log.info(f"The Health Monitor with PID {os.getpid()} stopped successfully.")
 
 if __name__ == '__main__':
 
+    Log.info(f"Starting the Fault Tolerance Monitor with PID {os.getpid()}...")
     fault_tolerance = FaultTolerance()
     fault_tolerance.start()
     fault_tolerance.wait_for_exit()
+    Log.info(f"The Health Monitor with PID {os.getpid()} stopped successfully.")

@@ -47,6 +47,8 @@ class ResourceMonitor:
         # provisioner needs to be informed to add it in confstore  (to be added there )
         ConfigManager.init("k8s_resource_monitor")
 
+        self.monitors = []
+
         # event output in pretty format
         kwargs = {K8SClientConst.PRETTY : True}
 
@@ -62,7 +64,8 @@ class ResourceMonitor:
 
         # Change to multiprocessing
         # Creating NODE monitor object
-        self.node_monitor = ObjectMonitor(producer, K8SClientConst.NODE, **kwargs)
+        node_monitor = ObjectMonitor(producer, K8SClientConst.NODE, **kwargs)
+        self.monitors.append(node_monitor)
 
         pod_labels = Conf.get(const.HA_GLOBAL_INDEX, "data_pod_label")
         pod_label_str = ', '.join(pod_label for pod_label in pod_labels)
@@ -70,7 +73,8 @@ class ResourceMonitor:
         kwargs[K8SClientConst.LABEL_SELECTOR] = f'name in ({pod_label_str})'
 
         # Creating POD monitor object
-        self.pod_monitor = ObjectMonitor(producer, K8SClientConst.POD, **kwargs)
+        pod_monitor = ObjectMonitor(producer, K8SClientConst.POD, **kwargs)
+        self.monitors.append(pod_monitor)
 
     def _get_producer(self):
         """
@@ -78,7 +82,6 @@ class ResourceMonitor:
         """
         message_type = Conf.get(const.HA_GLOBAL_INDEX, f"MONITOR{_DELIM}message_type")
         producer_id = Conf.get(const.HA_GLOBAL_INDEX, f"MONITOR{_DELIM}producer_id")
-        Log.info("Initializing message bus.")
         MessageBus.init()
         Log.info(f"Getting producer {producer_id} for message type: {message_type}")
         return MessageBus.get_producer(producer_id, message_type)
@@ -86,33 +89,29 @@ class ResourceMonitor:
     def set_sigterm(self, signum, frame):
         """
         Callback function to receive a signal
+        This sets sigterm in all monitors
         """
         Log.info(f"Received SIGTERM {signum}.")
-        Log.debug(f"Received signal: {signum} during execution of frame: {frame}")
-        Log.info("Stopping the K8s Monitor...")
-        self.node_monitor.set_sigterm(signum, frame)
-        self.pod_monitor.set_sigterm(signum, frame)
+        for monitor in self.monitors:
+            monitor.set_sigterm(signum, frame)
 
     def start(self):
         """
         start the threads
         """
-        Log.info("Starting all threads of k8s Monitor...")
-        self.node_monitor.start()
-        self.pod_monitor.start()
-        Log.info(f"K8s Monitor with PID {os.getpid()} started successfully.")
+        for monitor in self.monitors:
+            monitor.start()
 
     def wait_for_exit(self):
         """
         join and wait for all threads to exit
         """
-        self.node_monitor.join()
-        self.pod_monitor.join()
-        Log.info(f"K8s Monitor with PID {os.getpid()} stopped successfully.")
-
+        for monitor in self.monitors:
+            monitor.join()
 
 if __name__ == "__main__":
+    Log.info(f"Starting the k8s Monitor with PID {os.getpid()}...")
     monitor = ResourceMonitor()
-
     monitor.start()
     monitor.wait_for_exit()
+    Log.info(f"K8s Monitor with PID {os.getpid()} stopped successfully.")

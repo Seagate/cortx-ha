@@ -158,6 +158,7 @@ class MessageBusConsumer:
         """
         Start the consumer
         """
+        Log.info(f"Starting the daemon for {self.name}...")
         self.consumer = MessageConsumer(consumer_id=str(self.consumer_id),
                         consumer_group=self.consumer_group,
                         message_types=[self.message_type],
@@ -165,11 +166,13 @@ class MessageBusConsumer:
         self.consumer_thread = Thread(target=self.run, name=self.name)
         self.consumer_thread.setDaemon(True)
         self.consumer_thread.start()
+        Log.info(f"The daemon {self.name} started successfully.")
 
     def stop(self, flush=False):
         """
         Set the stop event so consumer thread will stop
         """
+        Log.info(f"Stopping the daemon {self.name}...")
         self.flush_on_exit = flush
         self._stop.set()
 
@@ -178,9 +181,10 @@ class MessageBusConsumer:
         Blocking call, it calls join function of message bus consumer thread
         """
         if self.consumer_thread is not None:
-            Log.info(f"waiting for {self.consumer_thread.name} to exit...")
+            Log.info(f"waiting for {self.name} to exit...")
             # wait to stop consumer thread
             self.consumer_thread.join()
+            Log.info(f"The daemon {self.name} is stopped successfully.")
 
 class MessageBus:
     ADMIN_ID = "ha_admin"
