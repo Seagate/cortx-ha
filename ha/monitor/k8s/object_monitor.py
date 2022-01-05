@@ -27,6 +27,10 @@ from ha.const import _DELIM
 
 class ObjectMonitor(threading.Thread):
     def __init__(self, producer, k_object, **kwargs):
+        """
+        Init method
+        Initialization of member objects, and Thread super calss
+        """
         super().__init__()
         self._object = k_object
         self.name = f"Monitor-{k_object}-Thread"
