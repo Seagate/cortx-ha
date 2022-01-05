@@ -24,8 +24,12 @@ import json
 from ha.core.config.config_manager import ConfigManager
 from ha.k8s_setup.const import CLUSTER_CARDINALITY_KEY, CLUSTER_CARDINALITY_NUM_NODES, CLUSTER_CARDINALITY_LIST_NODES
 from cortx.utils.log import Log
+from ha.core.error import ClusterCardinalityError
 
 class ConftStoreSearch:
+    """
+    Wrapper class for using the confstore search APIs
+    """
 
     def __init__(self):
         """Init method"""
@@ -63,7 +67,8 @@ class ConftStoreSearch:
             return num_nodes, nodes_list
 
         else:
-            raise Exception
+            Log.error(f"Unable to get cluster cardinality. Key {CLUSTER_CARDINALITY_KEY} does not exist")
+            raise ClusterCardinalityError("Unable to get cluster cardinality")
 
     def set_cluster_cardinality(self, index):
         """
