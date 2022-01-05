@@ -381,7 +381,7 @@ class SystemHealth(Subscriber):
             return
 
     @staticmethod
-    def create_updated_event_object(event_timestamp: str, current_timestamp: str, status: str, spec_info: dict, updated_health: dict) -> dict:
+    def create_updated_event_object(event_timestamp: str, current_timestamp: str, status: str, spec_info: dict, updated_health: EntityHealth) -> str:
         """
         Creates objects of EntityEvent and EntityAction using incoming
         health status(coming from incoming health event from parser) and
@@ -399,7 +399,7 @@ class SystemHealth(Subscriber):
         updated_health = EntityHealth.write(updated_health)
         return updated_health
 
-    def _check_and_update(self, current_health, updated_health, healthevent, next_component):
+    def _check_and_update(self, current_health: str, updated_health: str, healthevent: HealthEvent, next_component: str) -> None:
         # Update in the store.
         if self._is_update_required(current_health, updated_health, healthevent):
             self._update(healthevent, updated_health, next_component=next_component)
@@ -443,49 +443,55 @@ class SystemHealth(Subscriber):
             if current_health:
                 current_health_dict = json.loads(current_health)
                 specific_info = current_health_dict["events"][0]["specific_info"]
-            if current_health and specific_info:
-                # If health is already stored and its a node_health, check further
-                stored_genration_id = current_health_dict["events"][0]["specific_info"]["generation_id"]
-                incoming_generation_id = healthevent.specific_info["generation_id"]
-                incoming_health_status = current_health_dict["events"][0]["status"]
-                pod_restart_val = current_health_dict["events"][0]["specific_info"]["pod_restart"]
-                # Update the current health value itself.
-                latest_health = EntityHealth.read(current_health)
-                if stored_genration_id != incoming_generation_id:
-                    if incoming_health_status == status:
-                        # If the generation id matches and stored node health matches
-                        # with incoming node health, means online event received first
-                        # instead of failed event in delete scenario
-                        healthevent.specific_info = {"generation_id": stored_genration_id, "pod_restart": 1}
-                        updated_health = SystemHealth.create_updated_event_object(healthevent.timestamp, current_timestamp, "failed", healthevent.specific_info, latest_health)
-                        # Create a "failed" event and update it in system health and publish
-                        self._check_and_update(current_health, updated_health, healthevent, next_component)
-                        current_health = updated_health
-                        # Now create an "online" event and update it in system health and publish
-                        healthevent.specific_info = {"generation_id": incoming_generation_id, "pod_restart": 1}
-                        updated_health = SystemHealth.create_updated_event_object(healthevent.timestamp, current_timestamp, status, healthevent.specific_info, latest_health)
-                        self._check_and_update(current_health, updated_health, healthevent, next_component)
-                    elif pod_restart_val is not None and pod_restart_val:
-                        # Check the pod_restart value assosciated with Node, if its 1,
-                        # means this alert is already updated. No need to send the alert again.
-                        # Just need to reset the pod_restart value
-                        key = self._prepare_key(component, cluster_id=self.node_map['cluster_id'], \
+                if current_health and specific_info:
+                    # If health is already stored and its a node_health, check further
+                    stored_genration_id = current_health_dict["events"][0]["specific_info"]["generation_id"]
+                    incoming_generation_id = healthevent.specific_info["generation_id"]
+                    incoming_health_status = current_health_dict["events"][0]["status"]
+                    pod_restart_val = current_health_dict["events"][0]["specific_info"]["pod_restart"]
+                    # Update the current health value itself.
+                    latest_health = EntityHealth.read(current_health)
+                    if stored_genration_id != incoming_generation_id:
+                        if incoming_health_status == status:
+                            # If the generation id matches and stored node health matches
+                            # with incoming node health, means online event received first
+                            # instead of failed event in delete scenario
+                            healthevent.specific_info = {"generation_id": stored_genration_id, "pod_restart": 1}
+                            healthevent.event_type = "failed"
+                            updated_health = SystemHealth.create_updated_event_object(healthevent.timestamp, current_timestamp, healthevent.event_type, healthevent.specific_info, latest_health)
+                            # Create a "failed" event and update it in system health and publish
+                            self._check_and_update(current_health, updated_health, healthevent, next_component)
+                            current_health = updated_health
+                            # Now create an "online" event and update it in system health and publish
+                            healthevent.specific_info = {"generation_id": incoming_generation_id, "pod_restart": 1}
+                            healthevent.event_type = "online"
+                            updated_health = SystemHealth.create_updated_event_object(healthevent.timestamp, current_timestamp, healthevent.event_type, healthevent.specific_info, latest_health)
+                            self._check_and_update(current_health, updated_health, healthevent, next_component)
+                        elif pod_restart_val is not None and pod_restart_val:
+                            # Check the pod_restart value assosciated with Node, if its 1,
+                            # means this alert is already updated. No need to send the alert again.
+                            # Just need to reset the pod_restart value
+                            # Check the pod_restart value assosciated with Node, if its 1,
+                            # means this alert is already updated. No need to send the alert again.
+                            # Just need to reset the pod_restart value
+                            key = self._prepare_key(component, cluster_id=self.node_map['cluster_id'], \
                                 site_id=self.node_map['site_id'], rack_id=self.node_map['rack_id'], \
                                 node_id=self.node_id)
-                        latest_health_dict = json.loads(current_health)
-                        new_spec_info = {"generation_id": stored_genration_id, "pod_restart": 0}
-                        latest_health_dict["events"][0]["specific_info"] = new_spec_info
-                        updated_health = EntityHealth.write(latest_health_dict)
-                        self.healthmanager.set_key(key, updated_health)
+                            latest_health_dict = json.loads(current_health)
+                            new_spec_info = {"generation_id": stored_genration_id, "pod_restart": 0}
+                            latest_health_dict["events"][0]["specific_info"] = new_spec_info
+                            updated_health = EntityHealth.write(latest_health_dict)
+                            self.healthmanager.set_key(key, updated_health)
+                    else:
+                        # current health is there and generation id is also already present.
+                        # That means its a normal failure scenario
+                        updated_health = SystemHealth.create_updated_event_object(healthevent.timestamp, current_timestamp, status, healthevent.specific_info, latest_health)
+                        self._check_and_update(current_health, updated_health, healthevent, next_component)
                 else:
-                    # current health is there and generation id is also already present.
-                    # That means its a normal failure scenario
+                    # Update hierachical components. such as site, rack
+                    latest_health = EntityHealth.read(current_health)
                     updated_health = SystemHealth.create_updated_event_object(healthevent.timestamp, current_timestamp, status, healthevent.specific_info, latest_health)
                     self._check_and_update(current_health, updated_health, healthevent, next_component)
-            elif current_health and not specific_info:
-                # Updates system health for cluster, rack and site
-                latest_health = EntityHealth.read(current_health)
-                updated_health = SystemHealth.create_updated_event_object(healthevent.timestamp, current_timestamp, status, healthevent.specific_info, latest_health)
             else:
                 # Health value not present in the store currently, create now.
                 latest_health = EntityHealth()
