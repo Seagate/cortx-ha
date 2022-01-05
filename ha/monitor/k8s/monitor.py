@@ -73,6 +73,9 @@ class ResourceMonitor:
         self.pod_monitor = ObjectMonitor(producer, K8SClientConst.POD, **kwargs)
 
     def _get_producer(self):
+        """
+        Get message bus producer
+        """
         message_type = Conf.get(const.HA_GLOBAL_INDEX, f"MONITOR{_DELIM}message_type")
         producer_id = Conf.get(const.HA_GLOBAL_INDEX, f"MONITOR{_DELIM}producer_id")
         Log.info("Initializing message bus.")
@@ -81,6 +84,9 @@ class ResourceMonitor:
         return MessageBus.get_producer(producer_id, message_type)
 
     def set_sigterm(self, signum, frame):
+        """
+        Callback function to receive a signal
+        """
         Log.info(f"Received SIGTERM {signum}.")
         Log.debug(f"Received signal: {signum} during execution of frame: {frame}")
         Log.info("Stopping the K8s Monitor...")

@@ -155,6 +155,9 @@ class MessageBusConsumer:
                     self.consumer.ack()
 
     def start(self):
+        """
+        Start the consumer
+        """
         self.consumer = MessageConsumer(consumer_id=str(self.consumer_id),
                         consumer_group=self.consumer_group,
                         message_types=[self.message_type],
@@ -164,10 +167,16 @@ class MessageBusConsumer:
         self.consumer_thread.start()
 
     def stop(self, flush=False):
+        """
+        Set the stop event so consumer thread will stop
+        """
         self.flush_on_exit = flush
         self._stop.set()
 
     def join(self):
+        """
+        Blocking call, it calls join function of message bus consumer thread
+        """
         if self.consumer_thread is not None:
             Log.info(f"waiting for {self.consumer_thread.name} to exit...")
             # wait to stop consumer thread

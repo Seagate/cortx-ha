@@ -114,6 +114,9 @@ class HealthMonitorService:
             return CONSUMER_STATUS.FAILED
 
     def set_sigterm(self, signum, frame):
+        """
+        Callback function to receive a signal
+        """
         Log.info(f"Received SIGTERM: {signum}")
         Log.debug(f"Received signal: {signum} during execution of frame: {frame}")
         Log.info("Stopping the Health Monitor...")

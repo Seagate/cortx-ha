@@ -64,6 +64,9 @@ class FaultMonitor:
             Log.warn(f"Consumer not found for message type  {self._message_type}.")
 
     def join(self):
+        """
+        Blocking call, it calls join function of message bus consumer thread
+        """
         if self._consumer is not None:
             self._consumer.join()
             Log.info("The daemon for the Fault Tolerance Monitor is stopped successfully.")

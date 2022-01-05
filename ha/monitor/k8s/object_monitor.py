@@ -79,7 +79,9 @@ class ObjectMonitor(threading.Thread):
         self._stop_event_processing = True
 
     def run(self):
-
+        """
+        Thread target method which loops on Kubernetes Watch.stream() to get pod or node events
+        """
         Log.info(f"Starting the {self.name}...")
 
         # Setup Credentials

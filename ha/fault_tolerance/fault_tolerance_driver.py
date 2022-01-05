@@ -42,6 +42,9 @@ class FaultTolerance:
         self.cluster_stop_monitor = ClusterStopMonitor()
 
     def set_sigterm(self, signum, frame):
+        """
+        Callback function to receive a signal
+        """
         Log.info(f"Received SIGTERM {signum}")
         Log.debug(f"Received signal: {signum} during execution of frame: {frame}")
         Log.info("Stopping the Fault Tolerance Monitor...")
