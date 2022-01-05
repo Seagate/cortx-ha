@@ -81,12 +81,7 @@ class ConftStoreSearch:
         Log.info(f"Cluster cardinality: number of nodes {num_pods}, machine ids for nodes {watch_pods} ")
 
         # Update the same to consul
-        # Note: if KV already present, it will not be modified.
-        # Confirm if that is fine or if we need to replace the same with new KV
-        # In that case self._confstore.update should be used instead of self._confstore.set
+        # if KV already present, it will be modified.
         cluster_cardinality_key = CLUSTER_CARDINALITY_KEY
         cluster_cardinality_value = {CLUSTER_CARDINALITY_NUM_NODES: num_pods, CLUSTER_CARDINALITY_LIST_NODES : watch_pods }
-        if not self._confstore.key_exists(cluster_cardinality_key):
-            self._confstore.set(cluster_cardinality_key, json.dumps(cluster_cardinality_value))
-        else:
-            Log.warn(f"KV already presnt for cluster cardinality but called again. new KV {cluster_cardinality_value}")
+        self._confstore.update(cluster_cardinality_key, json.dumps(cluster_cardinality_value))
