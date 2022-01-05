@@ -31,6 +31,9 @@ class TestSigtermHandling(unittest.TestCase):
     """
 
     def start_all_services(self):
+        """
+        Start all services to test sigterm
+        """
         print("Starting all services.")
         self.k8s_monitor     = Popen(['/usr/bin/python3', '/usr/lib/python3.6/site-packages/ha/monitor/k8s/monitor.py'],
                                      shell=False,
@@ -51,47 +54,67 @@ class TestSigtermHandling(unittest.TestCase):
 
 
     def send_sigterm(self):
+        """
+        Send sigterm (15) signal to all services
+        """
         print("sending sigterm to all services.")
         for service in self.services:
             service.send_signal(15)
 
     def check_for_stop(self, wait_time=20):
-        print(f"polling services for {wait_time} seconds, to check whether all are stopping.")
-        print("Total started services:")
-        services = [service for service in self.services]
-        print([service.args for service in services])
+        """
+        keep polling for provided wait_time with 1 seconds sleep in between
+        asster for below checks and close all popen resources after test
+        1. Assert if all services are not running before sigterm
+        2. Assert if not all services stop in provided wait_time
+        """
+        try:
+            print(f"polling services for {wait_time} seconds, to check whether all are stopping.")
+            print("Total started services:")
+            services = [service for service in self.services]
+            print([service.args for service in services])
 
-        # check how many services are running
-        services[:] = filterfalse(lambda service : service.poll() != None, services)
-        print(f"Running service: {[service.args for service in services]}")
-        self.assertTrue(len(services) == len(self.services), "Not all HA services are running.")
-        timeout = wait_time
-        # loop till timeout and check for services are running
-        while timeout:
-            timeout-=1
-            time.sleep(1)
+            # check how many services are running
+            services[:] = filterfalse(lambda service : service.poll() != None, services)
+            print(f"Running service: {[service.args for service in services]}")
+            self.assertTrue(len(services) == len(self.services), "Not all HA services are running.")
+            timeout = wait_time
+            # loop till timeout and check for services are running
+            while timeout:
+                timeout-=1
+                time.sleep(1)
+                if len(services):
+                    services[:] = filterfalse(lambda service : service.poll() != None, services)
+                    print(f"services left: {[service.args for service in services]}")
+                else:
+                    print(f"All services are successfully stopped {wait_time - timeout} seconds after receiving sigterm.")
+                    break # all services are successfully stopped
+            # After timeout check how many services are running, and if yes, then raise an exception.
             if len(services):
-                services[:] = filterfalse(lambda service : service.poll() != None, services)
-                print(f"services left: {[service.args for service in services]}")
-            else:
-                print(f"All services are successfully stopped {wait_time - timeout} seconds after receiving sigterm.")
-                break # all services are successfully stopped
-        # After timeout check how many services are running, and if yes, then raise an exception.
-        if len(services):
-            print(f"Not all services are successfully stopped withing timeout {wait_time} after receiving sigterm.")
-            for service in services:
-                print(f"service: pid: {service.pid} args: {service.args} is not stopped in provided time {wait_time}.")
-                print(f"Service with pid: {service.pid} is Killing now.")
-                service.kill()
-            self.assertTrue(len(services) == 0, f"Not all HA services are not stopped within provided timeout:{wait_time} seconds.")
+                print(f"Not all services are successfully stopped withing timeout {wait_time} after receiving sigterm.")
+                for service in services:
+                    print(f"Service: pid: {service.pid} args: {service.args} is not stopped in provided time.")
+                self.assertTrue(len(services) == 0, f"Not all HA services are not stopped within provided timeout:{wait_time} seconds.")
+        finally:
+            self.stop_and_release_all_resources()
 
-        # Release/resouces aquired by Popen object (stdout/stderr)
+    def stop_and_release_all_resources(self):
+        """
+        Cleanup: try closing all remaining services
+        and Release/close aquired resouces by Popen object
+        """
+        # Release/close aquired resouces by Popen object (stdout/stderr)
         for service in self.services:
             try:
+                try:
+                    print(f"Cleaning resources for service: pid: {service.pid} args: {service.args}.")
+                    service.kill()
+                except Exception as ex:
+                    print(f"Exception while closing service {service.args}: {ex}")
                 service.stderr.close()
                 service.stdout.close()
             except Exception as ex:
-                print(f"Exception while closing service {service.args} stderr, stdout: {ex}")
+                print(f"Exception while closing service {service.args} resources (stderr, stdout): {ex}")
 
     def setUp(self):
         pass
@@ -100,6 +123,10 @@ class TestSigtermHandling(unittest.TestCase):
         pass
 
     def test_sigterm(self):
+        """
+        Test call to test sigterm functionality to know more about check
+        refer to function check_for_stop()
+        """
         self.start_all_services()
         print("Waiting for 10 seconds to let run all services.")
         time.sleep(10)
