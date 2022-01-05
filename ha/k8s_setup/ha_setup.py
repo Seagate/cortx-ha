@@ -35,7 +35,7 @@ from ha.core.error import SetupError
 from ha.k8s_setup.const import _DELIM
 from ha.core.event_manager.event_manager import EventManager
 from ha.core.event_manager.subscribe_event import SubscribeEvent
-
+from ha.util.conf_store import ConftStoreSearch
 
 class Cmd:
     """
@@ -276,6 +276,10 @@ class ConfigCmd(Cmd):
             event_manager.subscribe(const.EVENT_COMPONENT, [SubscribeEvent(const.POD_EVENT, ["online", "failed"])])
             Log.info(f'event_manager subscription for {const.EVENT_COMPONENT}\
                        is successful for the event {const.POD_EVENT}')
+
+            Log.info('Creating cluster cardinality')
+            confStoreAPI = ConftStoreSearch()
+            confStoreAPI.set_cluster_cardinality(self._index)
 
             Log.info("config command is successful")
             sys.stdout.write("config command is successful.\n")
