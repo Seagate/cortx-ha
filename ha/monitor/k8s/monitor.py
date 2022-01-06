@@ -110,8 +110,8 @@ class ResourceMonitor:
             monitor.join()
 
 if __name__ == "__main__":
-    Log.info(f"Starting the k8s Monitor with PID {os.getpid()}...")
     monitor = ResourceMonitor()
+    Log.info(f"Starting the k8s Monitor with PID {os.getpid()}...")
     monitor.start()
     monitor.wait_for_exit()
     Log.info(f"K8s Monitor with PID {os.getpid()} stopped successfully.")

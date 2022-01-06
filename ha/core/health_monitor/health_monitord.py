@@ -138,8 +138,8 @@ def main(argv):
     """
     # argv can be used later when config parameters are needed
     try:
-        Log.info(f"Starting the Health Monitor with PID {os.getpid()}.")
         health_monitor = HealthMonitorService.get_instance()
+        Log.info(f"Starting the Health Monitor with PID {os.getpid()}.")
         health_monitor.start()
         health_monitor.wait_for_exit()
         Log.info(f"The Health Monitor with PID {os.getpid()} stopped successfully.")
