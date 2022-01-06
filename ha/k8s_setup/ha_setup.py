@@ -213,10 +213,6 @@ class ConfigCmd(Cmd):
             data_pod_label = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}product_release')
             # TBD delete once data_pod_label is avilable from confstore
             data_pod_label = ['cortx-data', 'cortx-server']
-
-            # Time till when system health can be collected in bootstrap mode
-            timeout = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}product_release')
-            timeout = '10' # in seconds ;  temporary value till the same is avilabe in cluster.conf
             # Total number of pods for which health is to be maintained
             num_pods = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}product_release')
             num_pods = '10' #temporary value till the same is avilabe in cluster.conf
@@ -235,7 +231,6 @@ class ConfigCmd(Cmd):
                                               'consumer_id' : '2'},
                          'NODE': {'resource_type': 'node'},
                          'SYSTEM_HEALTH' : {'num_entity_health_events' : 2,
-                                            'sys_health_bootstrap_timeout' : timeout,
                                             'total_num_pods' : num_pods }
                          }
 
