@@ -403,7 +403,6 @@ class SystemHealth(Subscriber):
         # Update in the store.
         if self._is_update_required(current_health, updated_health, healthevent):
             self._update(healthevent, updated_health, next_component=next_component)
-            # Log.info(f"Updated health for component: {component}, Type: {component_type}, Id: {component_id}")
 
     def process_event(self, healthevent: HealthEvent):
         """
@@ -468,9 +467,6 @@ class SystemHealth(Subscriber):
                             updated_health = SystemHealth.create_updated_event_object(healthevent.timestamp, current_timestamp, healthevent.event_type, healthevent.specific_info, latest_health)
                             self._check_and_update(current_health, updated_health, healthevent, next_component)
                         elif pod_restart_val is not None and pod_restart_val:
-                            # Check the pod_restart value assosciated with Node, if its 1,
-                            # means this alert is already updated. No need to send the alert again.
-                            # Just need to reset the pod_restart value
                             # Check the pod_restart value assosciated with Node, if its 1,
                             # means this alert is already updated. No need to send the alert again.
                             # Just need to reset the pod_restart value
