@@ -43,7 +43,6 @@ class ObjectMonitor(threading.Thread):
         self._producer = producer
         Log.info(f"Initialization done for {self._object} monitor")
 
-
     def set_sigterm(self, signum, frame):
         """
         Callback function for signal.signal
@@ -51,6 +50,9 @@ class ObjectMonitor(threading.Thread):
         """
         Log.info(f"{self.name} Received signal: {signum}")
         Log.debug(f"{self.name} Received signal: {signum} during execution of frame: {frame}")
+        if self._constore.key_exists(const.CLUSTER_STOP_KEY):
+            Log.debug(f"Deleting {const.CLUSTER_STOP_KEY} key from constore.")
+            self._constore.delete(key=const.CLUSTER_STOP_KEY, recurse=True)
         self._sigterm_received.set()
 
     def check_for_signals(self, k8s_watch: watch.Watch, k8s_watch_stream):
@@ -102,12 +104,6 @@ class ObjectMonitor(threading.Thread):
             self._producer.publish(str(alert.to_dict()))
         else:
             Log.debug(f"Skipping publish for alert: {str(alert.to_dict())}.")
-
-    # TODO: merge below function with SIGTERM implementation
-    def set_sigterm(self):
-        if self._constore.key_exists(const.CLUSTER_STOP_KEY):
-            Log.info(f"Deleting cluststor stop key from constore.")
-            self._constore.delete(key=const.CLUSTER_STOP_KEY, recurse=True)
 
     def run(self):
         """
