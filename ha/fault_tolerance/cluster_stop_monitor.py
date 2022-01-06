@@ -30,6 +30,7 @@ from ha.k8s_setup.const import _DELIM
 
 class ClusterStopMonitor:
 
+
     def __init__(self):
         """Init method"""
         self._consumer = self._get_consumer()
@@ -38,7 +39,26 @@ class ClusterStopMonitor:
         """
         Start to listen messages.
         """
-        self._consumer.start()
+        if self._consumer is not None:
+            self._consumer.start()
+        else:
+            Log.warn(f"Consumer not found for message type  {self._message_type}.")
+
+    def stop(self, flush=False):
+        """
+        stop to listen messages.
+        """
+        if self._consumer is not None:
+            self._consumer.stop(flush=flush)
+        else:
+            Log.warn(f"Consumer not found for message type  {self._message_type}.")
+
+    def join(self):
+        """
+        Blocking call, it calls join function of message bus consumer thread
+        """
+        if self._consumer is not None:
+            self._consumer.join()
 
     def _get_consumer(self) -> MessageBusConsumer:
         """
