@@ -99,7 +99,7 @@ class ClusterStopMonitor:
         """
         Log.info('Cluster stop message is received.')
         confstore = ConfigManager.get_confstore()
-        if confstore.key_exists(const.CLUSTER_STOP_KEY):
+        if not confstore.key_exists(const.CLUSTER_STOP_KEY):
             Log.info(f'Setting key {const.CLUSTER_STOP_KEY} to {const.CLUSTER_STOP_VAL_ENABLE} in confstore.')
             confstore.set(const.CLUSTER_STOP_KEY, const.CLUSTER_STOP_VAL_ENABLE)
         else:
