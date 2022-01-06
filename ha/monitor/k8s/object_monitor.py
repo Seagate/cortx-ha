@@ -51,7 +51,11 @@ class ObjectMonitor(threading.Thread):
         Log.info(f"{self.name} Received signal: {signum}")
         Log.debug(f"{self.name} Received signal: {signum} during execution of frame: {frame}")
         if self._constore.key_exists(const.CLUSTER_STOP_KEY):
+<<<<<<< HEAD
             Log.debug(f"Deleting {const.CLUSTER_STOP_KEY} key from constore.")
+=======
+            Log.debug(f"Deleting the key ({const.CLUSTER_STOP_KEY}) from confstore so next time we will not go in cluster stop mode.")
+>>>>>>> 757a504 (EOS-24900 : Merge fault_k8s into EOS-24900)
             self._constore.delete(key=const.CLUSTER_STOP_KEY, recurse=True)
         self._sigterm_received.set()
 
@@ -159,3 +163,4 @@ class ObjectMonitor(threading.Thread):
             if self._stop_event_processing or K8SClientConst.TIMEOUT_SECONDS not in self._args:
                 break
         Log.info(f"Stopping the {self.name}...")
+
