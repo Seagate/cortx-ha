@@ -88,24 +88,24 @@ class ObjectMonitor(threading.Thread):
         Log.info(f"Stopped watching for {self._object} events.")
         self._stop_event_processing = True
 
-    def publish_enable(self):
+    def publish_enable(self) -> bool:
         # check if cluster_stop key is exist and if exist check if it is enable
         # if enable then publish event should be stopped
         if self._publish_alert:
             if self._confstore.key_exists(const.CLUSTER_STOP_KEY):
                 _, cluster_stop = (self._confstore.get(const.CLUSTER_STOP_KEY)).popitem()
                 if cluster_stop == const.CLUSTER_STOP_VAL_ENABLE:
-                    Log.info(f"Stopping publish alert as cluster stop message is received.")
+                    Log.info(f"{self._object}_monitor stopping publish alert as cluster stop message is received.")
                     self._publish_alert = False
         return self._publish_alert
 
     def publish_alert(self, alert):
         if self.publish_enable():
             # Write to message bus
-            Log.info(f"Sending alert on message bus {alert.to_dict()}")
+            Log.info(f"{self._object}_monitor sending alert on message bus {alert.to_dict()}")
             self._producer.publish(str(alert.to_dict()))
         else:
-            Log.debug(f"Skipping publish for alert: {str(alert.to_dict())}.")
+            Log.debug(f"{self._object}_monitor skipping publish for alert: {str(alert.to_dict())}.")
 
     def run(self):
         """
@@ -152,7 +152,6 @@ class ObjectMonitor(threading.Thread):
                         self._starting_up = False
 
                 # Write to message bus
-                Log.info(f"{self._object}_monitor Sending alert on message bus {alert.to_dict()}")
                 self.publish_alert(alert)
 
             # If stop processing events is set then no need to retry just break the loop

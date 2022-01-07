@@ -109,37 +109,30 @@ class TestSigtermHandling(unittest.TestCase):
         1. Assert if all services are not running before sigterm
         2. Assert if not all services stop in provided wait_time
         """
-        try:
-            print(f"polling services for {wait_time} seconds, to check whether all are stopping.")
-            print("Total started services:")
-            services = [service for service in self.services]
-            print([service.args for service in services])
+        print(f"polling services for {wait_time} seconds, to check whether all are stopping.")
+        print("Total started services:")
+        services = [service for service in self.services]
+        print([service.args for service in services])
 
-            # check how many services are running
-            services[:] = filterfalse(lambda service : service.poll() != None, services)
-            print(f"Running service: {[service.args for service in services]}")
-            self.assertTrue(len(services) == len(self.services), "Not all HA services are running.")
-            timeout = wait_time
-            # loop till timeout and check for services are running
-            while timeout:
-                timeout-=1
-                time.sleep(1)
-                if len(services):
-                    services[:] = filterfalse(lambda service : service.poll() != None, services)
-                    print(f"services left: {[service.args for service in services]}")
-                else:
-                    print(f"All services are successfully stopped {wait_time - timeout} seconds after receiving sigterm.")
-                    break # all services are successfully stopped
-            # After timeout check how many services are running, and if yes, then raise an exception.
+        timeout = wait_time
+        # loop till timeout and check for services are running
+        while timeout:
+            timeout-=1
+            time.sleep(1)
             if len(services):
-                print(f"Not all services are successfully stopped withing timeout {wait_time} after receiving sigterm.")
-                for service in services:
-                    print(f"Service: pid: {service.pid} args: {service.args} is not stopped in provided time.")
-                self.assertTrue(len(services) == 0, f"Not all HA services are not stopped within provided timeout:{wait_time} seconds.")
-        finally:
-            self.stop_and_release_all_resources()
+                services[:] = filterfalse(lambda service : service.poll() != None, services)
+                print(f"services left: {[service.args for service in services]}")
+            else:
+                print(f"All services are successfully stopped {wait_time - timeout} seconds after receiving sigterm.")
+                break # all services are successfully stopped
+        # After timeout check how many services are running, and if yes, then raise an exception.
+        if len(services):
+            print(f"Not all services are successfully stopped withing timeout {wait_time} after receiving sigterm.")
+            for service in services:
+                print(f"Service: pid: {service.pid} args: {service.args} is not stopped in provided time.")
+            self.assertTrue(len(services) == 0, f"Not all HA services are not stopped within provided timeout:{wait_time} seconds.")
 
-    def stop_and_release_all_resources(self):
+    def cleanup_stop_and_release_all_resources(self):
         """
         Cleanup: try closing all remaining services
         and Release/close aquired resouces by Popen object
@@ -158,50 +151,69 @@ class TestSigtermHandling(unittest.TestCase):
                 print(f"Exception while closing service {service.args} resources (stderr, stdout): {ex}")
 
     def setUp(self):
+        print("Setup")
         ConfigManager.init("test_Cluster_stop_sigterm")
         self.confstore = ConfigManager.get_confstore()
+        MessageBus.init()
 
     def tearDown(self):
+        print("tearDown")
         MessageBus.deregister(self.message_type)
 
-    def test_sigterm(self):
+    def ignore_test_sigterm(self):
         """
         Test call to test sigterm functionality to know more about check
         refer to function check_for_stop()
         """
-        self.start_all_services()
-        print("After starting services waiting for 10 seconds to let run all services.")
-        time.sleep(10)
+        try:
+            self.start_all_services()
+            print("After starting services waiting for 10 seconds to let run all services.")
+            time.sleep(10)
 
-        self.send_sigterm()
-        self.check_for_stop()
+            # Check if all services are running
+            self.check_running_services()
+
+            self.send_sigterm()
+            self.check_for_stop()
+        finally:
+            self.cleanup_stop_and_release_all_resources()
 
     def test_cluster_stop_and_sigterm(self):
         """
         Test call to test sigterm functionality to know more about check
         refer to function check_for_stop()
         """
-        # Start all HA services
-        self.start_all_services()
-        print("After starting services waiting for 10 seconds to let run all services.")
-        time.sleep(10)
+        try:
+            # Start all HA services
+            self.start_all_services()
+            print("After starting services waiting for 10 seconds to let run all services.")
+            time.sleep(10)
 
-        # Check if all services are running
-        self.check_running_services()
+            # Check if all services are running
+            self.check_running_services()
 
-        # send start_cluster_shutdown message which will recived by
-        self.send_start_cluster_shutdown_message()
-        print("After sending (start_cluster_shutdown) message waiting for 10 seconds to process it by cluster stop monitor.")
-        time.sleep(10)
+            # send start_cluster_shutdown message which will recived by
+            self.send_start_cluster_shutdown_message()
+            print("After sending (start_cluster_shutdown) message waiting for 15 seconds to process it by cluster stop monitor.")
+            time.sleep(15)
 
-        # check if cluster stop monitor has added the key to confstore
-        self.check_cluster_stop_key()
+            # check if cluster stop monitor has added the key to confstore
+            self.check_cluster_stop_key(True)
 
-        # now send sigterm message to all services
-        self.send_sigterm()
+            # now send sigterm message to all services
+            self.send_sigterm()
+            print("After sending SIGTERM waiting for 5 seconds to make sure whether the signal is received.")
+            time.sleep(5)
 
-        # Check if due to sigterm is all services are exiting
-        self.check_for_stop()
+            # check if k8s monitor has deleted the key from confstore
+            self.check_cluster_stop_key(False)
+
+            # Check if due to sigterm is all services are exiting
+            self.check_for_stop()
+        finally:
+            self.cleanup_stop_and_release_all_resources()
+            self.cleanup_cluster_stop()
+
 
 if __name__ == "__main__":
     unittest.main()
