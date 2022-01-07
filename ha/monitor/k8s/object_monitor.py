@@ -89,8 +89,10 @@ class ObjectMonitor(threading.Thread):
         self._stop_event_processing = True
 
     def publish_enable(self) -> bool:
-        # check if cluster_stop key is exist and if exist check if it is enable
-        # if enable then publish event should be stopped
+        """
+        Check if cluster_stop key is exist and if exist check if it is enable
+        if enable then publish event should be stopped
+        """
         if self._publish_alert:
             if self._confstore.key_exists(const.CLUSTER_STOP_KEY):
                 _, cluster_stop = (self._confstore.get(const.CLUSTER_STOP_KEY)).popitem()
@@ -100,6 +102,10 @@ class ObjectMonitor(threading.Thread):
         return self._publish_alert
 
     def publish_alert(self, alert):
+        """
+        If publish is enabled, i.e. Yet the cluster stop message has not been received.
+        then publish the alert for Fault Tolerance Monitor
+        """
         if self.publish_enable():
             # Write to message bus
             Log.info(f"{self._object}_monitor sending alert on message bus {alert.to_dict()}")

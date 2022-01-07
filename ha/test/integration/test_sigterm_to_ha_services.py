@@ -58,6 +58,9 @@ class TestSigtermHandling(unittest.TestCase):
         self.services = [self.k8s_monitor, self.fault_tolerance, self.health_monitor]
 
     def send_start_cluster_shutdown_message(self):
+        """
+        Sends the "start_cluster_shutdown" message for cluster stop monitor
+        """
         producer_id="csm_producer"
         self.message_type = Conf.get(const.HA_GLOBAL_INDEX, f'CLUSTER_STOP_MON{const._DELIM}message_type')
         self.producer = MessageBus.get_producer(producer_id=producer_id, message_type=self.message_type)
@@ -151,12 +154,18 @@ class TestSigtermHandling(unittest.TestCase):
                 print(f"Exception while closing service {service.args} resources (stderr, stdout): {ex}")
 
     def setUp(self):
+        """
+        Setup the prerequisit of tests
+        """
         print("Setup")
         ConfigManager.init("test_Cluster_stop_sigterm")
         self.confstore = ConfigManager.get_confstore()
         MessageBus.init()
 
     def tearDown(self):
+        """
+        cleanup after all tests
+        """
         print("tearDown")
         MessageBus.deregister(self.message_type)
 

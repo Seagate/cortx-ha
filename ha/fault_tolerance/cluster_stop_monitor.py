@@ -86,7 +86,6 @@ class ClusterStopMonitor:
             cluster_alert = json.loads(msg)
 
             if cluster_alert["start_cluster_shutdown"] == '1':
-                # Placeholder function, to be replaced by appropriate function as part of EOS-24900
                 self.stop_cluster()
         except Exception as err:
             Log.error(f'Failed to analyze the event: {message} error: {err}')
@@ -95,7 +94,8 @@ class ClusterStopMonitor:
 
     def stop_cluster(self):
         """
-        Placeholder function
+        Sets the cluster stop key in confstore for the k8s monitor
+        to notify cltuster shutdown is started
         """
         Log.info('Cluster stop message is received.')
         confstore = ConfigManager.get_confstore()
