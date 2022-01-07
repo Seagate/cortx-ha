@@ -25,6 +25,11 @@ from itertools import filterfalse
 from subprocess import Popen, PIPE # nosec
 import unittest
 
+from cortx.utils.conf_store import Conf
+from ha import const
+from ha.util.message_bus import MessageBus
+from ha.core.config.config_manager import ConfigManager
+
 class TestSigtermHandling(unittest.TestCase):
     """
     Unit test for sigterm handling
@@ -52,6 +57,30 @@ class TestSigtermHandling(unittest.TestCase):
         print(f"Started: health monitor, pid: {self.health_monitor.pid}")
         self.services = [self.k8s_monitor, self.fault_tolerance, self.health_monitor]
 
+    def send_start_cluster_shutdown_message(self):
+        producer_id="csm_producer"
+        self.message_type = Conf.get(const.HA_GLOBAL_INDEX, f'CLUSTER_STOP_MON{const._DELIM}message_type')
+        self.producer = MessageBus.get_producer(producer_id=producer_id, message_type=self.message_type)
+        self.producer.publish({"start_cluster_shutdown":"1"})
+        # The consumer 'ClusterStopMonitor' will checking this message/key as cluster_alert["start_cluster_shutdown"] == '1'
+
+    def check_cluster_stop_key(self, should_exists):
+        """
+        This checks if const.CLUSTER_STOP_KEY is exist or not in confsore and assert on failure
+        should_exists : if it is true and key doen not exist then assert (it raise failure exception) and vice versa.
+        This key should be added by cluster stop monitor (falult tolerance monitor service) and
+        should be get deleted by k8s monitor after receiving sigterm.
+        """
+        key_exists = self.confstore.key_exists(const.CLUSTER_STOP_KEY)
+        self.assertTrue(key_exists == should_exists, f"Error: The Key {const.CLUSTER_STOP_KEY} must should be deleted by k8s monitor only after sigterm is received.")
+
+    def cleanup_cluster_stop(self):
+        """
+        Cleanup the key const.CLUSTER_STOP_KEY from confstore.
+        """
+        if self.confstore.key_exists(const.CLUSTER_STOP_KEY):
+            print(f"The Key {const.CLUSTER_STOP_KEY} is exist in confstore so deleting now.")
+            self.confstore.delete(const.CLUSTER_STOP_KEY)
 
     def send_sigterm(self):
         """
@@ -60,6 +89,18 @@ class TestSigtermHandling(unittest.TestCase):
         print("sending sigterm to all services.")
         for service in self.services:
             service.send_signal(15)
+
+    def check_running_services(self):
+        """
+        Check if all services are running if not then assert
+        """
+        services = [service for service in self.services]
+
+        # filter out the running services
+        print("Check running services.")
+        services[:] = filterfalse(lambda service : service.poll() != None, services)
+        print(f"Running service: {[service.args for service in services]}")
+        self.assertTrue(len(services) == len(self.services), "Not all HA services are running.")
 
     def check_for_stop(self, wait_time=20):
         """
@@ -117,10 +158,11 @@ class TestSigtermHandling(unittest.TestCase):
                 print(f"Exception while closing service {service.args} resources (stderr, stdout): {ex}")
 
     def setUp(self):
-        pass
+        ConfigManager.init("test_Cluster_stop_sigterm")
+        self.confstore = ConfigManager.get_confstore()
 
     def tearDown(self):
-        pass
+        MessageBus.deregister(self.message_type)
 
     def test_sigterm(self):
         """
@@ -128,9 +170,37 @@ class TestSigtermHandling(unittest.TestCase):
         refer to function check_for_stop()
         """
         self.start_all_services()
-        print("Waiting for 10 seconds to let run all services.")
+        print("After starting services waiting for 10 seconds to let run all services.")
         time.sleep(10)
+
         self.send_sigterm()
+        self.check_for_stop()
+
+    def test_cluster_stop_and_sigterm(self):
+        """
+        Test call to test sigterm functionality to know more about check
+        refer to function check_for_stop()
+        """
+        # Start all HA services
+        self.start_all_services()
+        print("After starting services waiting for 10 seconds to let run all services.")
+        time.sleep(10)
+
+        # Check if all services are running
+        self.check_running_services()
+
+        # send start_cluster_shutdown message which will recived by
+        self.send_start_cluster_shutdown_message()
+        print("After sending (start_cluster_shutdown) message waiting for 10 seconds to process it by cluster stop monitor.")
+        time.sleep(10)
+
+        # check if cluster stop monitor has added the key to confstore
+        self.check_cluster_stop_key()
+
+        # now send sigterm message to all services
+        self.send_sigterm()
+
+        # Check if due to sigterm is all services are exiting
         self.check_for_stop()
 
 if __name__ == "__main__":

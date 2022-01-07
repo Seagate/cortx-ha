@@ -18,12 +18,13 @@
 import threading
 from kubernetes import config, client, watch
 
+from ha.core.config.config_manager import ConfigManager
 from ha.monitor.k8s.objects import ObjectMap
 from ha.monitor.k8s.parser import EventParser
 from ha.monitor.k8s.const import EventStates, K8SClientConst
 from ha.monitor.k8s.const import K8SEventsConst
 from cortx.utils.log import Log
-from ha.const import _DELIM
+from ha import const
 
 class ObjectMonitor(threading.Thread):
     def __init__(self, producer, k_object, **kwargs):
@@ -41,6 +42,7 @@ class ObjectMonitor(threading.Thread):
         self._sigterm_received = threading.Event()
         self._stop_event_processing = False
         self._producer = producer
+        self._confstore = ConfigManager.get_confstore()
         Log.info(f"Initialization done for {self._object} monitor")
 
     def set_sigterm(self, signum, frame):
@@ -50,9 +52,9 @@ class ObjectMonitor(threading.Thread):
         """
         Log.info(f"{self.name} Received signal: {signum}")
         Log.debug(f"{self.name} Received signal: {signum} during execution of frame: {frame}")
-        if self._constore.key_exists(const.CLUSTER_STOP_KEY):
+        if self._confstore.key_exists(const.CLUSTER_STOP_KEY):
             Log.debug(f"Deleting the key ({const.CLUSTER_STOP_KEY}) from confstore so next time we will not go in cluster stop mode.")
-            self._constore.delete(key=const.CLUSTER_STOP_KEY, recurse=True)
+            self._confstore.delete(key=const.CLUSTER_STOP_KEY, recurse=True)
         self._sigterm_received.set()
 
     def check_for_signals(self, k8s_watch: watch.Watch, k8s_watch_stream):
@@ -90,8 +92,8 @@ class ObjectMonitor(threading.Thread):
         # check if cluster_stop key is exist and if exist check if it is enable
         # if enable then publish event should be stopped
         if self._publish_alert:
-            if self._constore.key_exists(const.CLUSTER_STOP_KEY):
-                _, cluster_stop = (self._constore.get(const.CLUSTER_STOP_KEY)).popitem()
+            if self._confstore.key_exists(const.CLUSTER_STOP_KEY):
+                _, cluster_stop = (self._confstore.get(const.CLUSTER_STOP_KEY)).popitem()
                 if cluster_stop == const.CLUSTER_STOP_VAL_ENABLE:
                     Log.info(f"Stopping publish alert as cluster stop message is received.")
                     self._publish_alert = False
