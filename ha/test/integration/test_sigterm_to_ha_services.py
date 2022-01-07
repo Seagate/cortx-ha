@@ -86,7 +86,7 @@ class TestSigtermHandling(unittest.TestCase):
         """
         Send sigterm (15) signal to all services
         """
-        print("sending sigterm to all services.")
+        print("Sending SIGTERM to all services.")
         for service in self.services:
             service.send_signal(15)
 
@@ -109,7 +109,7 @@ class TestSigtermHandling(unittest.TestCase):
         1. Assert if all services are not running before sigterm
         2. Assert if not all services stop in provided wait_time
         """
-        print(f"polling services for {wait_time} seconds, to check whether all are stopping.")
+        print(f"Pulling services for {wait_time} seconds, to check whether all are stopping.")
         print("Total started services:")
         services = [service for service in self.services]
         print([service.args for service in services])
@@ -127,7 +127,7 @@ class TestSigtermHandling(unittest.TestCase):
                 break # all services are successfully stopped
         # After timeout check how many services are running, and if yes, then raise an exception.
         if len(services):
-            print(f"Not all services are successfully stopped withing timeout {wait_time} after receiving sigterm.")
+            print(f"Not all services are successfully stopped withing timeout {wait_time} after start pulling.")
             for service in services:
                 print(f"Service: pid: {service.pid} args: {service.args} is not stopped in provided time.")
             self.assertTrue(len(services) == 0, f"Not all HA services are not stopped within provided timeout:{wait_time} seconds.")
