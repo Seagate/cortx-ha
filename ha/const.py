@@ -181,6 +181,9 @@ NODE_STOP_TIMEOUT = 300 # 300 sec to stop single node
 CLUSTER_STANDBY_UNSTANDBY_TIMEOUT = 600 # 600 sec to stop single node
 NODE_POWERON_DELAY = 300 # Delay after node is powered-on before cluster start
 
+# wait timeout in cortx ha servervices while checking for stop
+CORTX_HA_WAIT_TIMEOUT = 5
+
 # Event Analyzer
 INCLUSION = "inclusion"
 EXCLUSION = "exclusion"
