@@ -165,6 +165,9 @@ class ClusterResourceParser(Parser):
         """
         super(ClusterResourceParser, self).__init__()
         ConfigManager.init("event_analyzer")
+        self.cluster_id = Conf.get(const.HA_GLOBAL_INDEX, f"COMMON_CONFIG{_DELIM}cluster_id")
+        self.site_id = Conf.get(const.HA_GLOBAL_INDEX, f"COMMON_CONFIG{_DELIM}site_id")
+        self.rack_id = Conf.get(const.HA_GLOBAL_INDEX, f"COMMON_CONFIG{_DELIM}rack_id")
         Log.info("ClusterResource Parser is initialized ...")
 
     def parse_event(self, msg: str) -> HealthEvent:
@@ -176,30 +179,28 @@ class ClusterResourceParser(Parser):
         try:
             message = json.dumps(ast.literal_eval(msg))
             cluster_resource_alert = json.loads(message)
-            cluster_id = Conf.get(const.HA_GLOBAL_INDEX, f"COMMON_CONFIG{_DELIM}cluster_id")
-            site_id = Conf.get(const.HA_GLOBAL_INDEX, f"COMMON_CONFIG{_DELIM}site_id")
-            rack_id = Conf.get(const.HA_GLOBAL_INDEX, f"COMMON_CONFIG{_DELIM}rack_id")
             timestamp = str(int(time.time()))
             event_id = timestamp + str(uuid.uuid4().hex)
             node_id = cluster_resource_alert["_resource_name"]
             resource_type = cluster_resource_alert["_resource_type"]
             event_type = cluster_resource_alert["_event_type"]
             timestamp = cluster_resource_alert["_timestamp"]
+            generation_id = cluster_resource_alert["_generation_id"]
 
             event = {
                 EVENT_ATTRIBUTES.EVENT_ID : event_id,
                 EVENT_ATTRIBUTES.EVENT_TYPE : event_type,
                 EVENT_ATTRIBUTES.SEVERITY : StatusMapper.EVENT_TO_SEVERITY_MAPPING[event_type],
-                EVENT_ATTRIBUTES.SITE_ID : site_id, # TODO: Should be fetched from confstore
-                EVENT_ATTRIBUTES.RACK_ID : rack_id, # TODO: Should be fetched from confstore
-                EVENT_ATTRIBUTES.CLUSTER_ID : cluster_id, # TODO: Should be fetched from confstore
+                EVENT_ATTRIBUTES.SITE_ID : self.site_id, # TODO: Should be fetched from confstore
+                EVENT_ATTRIBUTES.RACK_ID : self.rack_id, # TODO: Should be fetched from confstore
+                EVENT_ATTRIBUTES.CLUSTER_ID : self.cluster_id, # TODO: Should be fetched from confstore
                 EVENT_ATTRIBUTES.STORAGESET_ID : node_id,
                 EVENT_ATTRIBUTES.NODE_ID : node_id,
                 EVENT_ATTRIBUTES.HOST_ID : node_id,
                 EVENT_ATTRIBUTES.RESOURCE_TYPE : resource_type,
                 EVENT_ATTRIBUTES.TIMESTAMP : timestamp,
                 EVENT_ATTRIBUTES.RESOURCE_ID : node_id,
-                EVENT_ATTRIBUTES.SPECIFIC_INFO : "specific_info"
+                EVENT_ATTRIBUTES.SPECIFIC_INFO : {"generation_id": generation_id, "pod_restart": 0}
             }
 
             Log.debug(f"Parsed {event} schema")
@@ -207,5 +208,5 @@ class ClusterResourceParser(Parser):
             Log.debug(f"Event {event[EVENT_ATTRIBUTES.EVENT_ID]} is parsed and converted to object.")
             return health_event
 
-        except Exception as e:
-            raise EventParserException(f"Failed to parse cluster resource alert. Message: {msg}, Error: {e}")
+        except Exception as err:
+            raise EventParserException(f"Failed to parse cluster resource alert. Message: {msg}, Error: {err}")
