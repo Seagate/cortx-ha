@@ -71,7 +71,7 @@ class Cmd:
         sys.stderr.write(
             f"usage: {prog} [-h] <cmd> <--config url> <args>...\n"
             f"where:\n"
-            f"cmd   post_install, prepare, config, init, test, reset, cleanup\n"
+            f"cmd   post_install, prepare, config, init, test, reset, cleanup, upgrade\n"
             f"--config   Config URL.\n"
             f"--services   Service name.\n")
 
@@ -309,6 +309,24 @@ class InitCmd(Cmd):
         Process init command.
         """
         sys.stdout.write('HA initialization is done.\n')
+
+class UpgradeCmd(Cmd):
+    """
+    Setup Upgrade Cmd
+    """
+    name = "upgrade"
+
+    def __init__(self, args):
+        """
+        Init method.
+        """
+        super().__init__(args)
+
+    def process(self):
+        """
+        Process upgrade command.
+        """
+        sys.stdout.write("HA has been upgraded successfully\n")
 
 class TestCmd(Cmd):
     """
