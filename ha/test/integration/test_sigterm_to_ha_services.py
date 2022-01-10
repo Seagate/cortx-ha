@@ -40,17 +40,17 @@ class TestSigtermHandling(unittest.TestCase):
         Start all services to test sigterm
         """
         print("Starting all services.")
-        self.k8s_monitor     = Popen(['/usr/bin/python3', '/usr/lib/python3.6/site-packages/ha/monitor/k8s/monitor.py'],
+        self.k8s_monitor     = Popen(['/opt/seagate/cortx/ha/bin/ha_start', '-s', 'k8s_monitor', "-c", "yaml:///etc/cortx/cluster.conf"],
                                      shell=False,
                                      stdout=PIPE,
                                      stderr=PIPE)
         print(f"Started: k8s monitor, pid: {self.k8s_monitor.pid}")
-        self.fault_tolerance = Popen(['/usr/bin/python3', '/usr/lib/python3.6/site-packages/ha/fault_tolerance/fault_tolerance_driver.py'],
+        self.fault_tolerance = Popen(['/opt/seagate/cortx/ha/bin/ha_start', '-s', 'fault_tolerance', "-c", "yaml:///etc/cortx/cluster.conf"],
                                     shell=False,
                                     stdout=PIPE,
                                     stderr=PIPE)
         print(f"Started: fault monitor, pid: {self.fault_tolerance.pid}")
-        self.health_monitor  = Popen(['/usr/bin/python3', '/usr/lib/python3.6/site-packages/ha/core/health_monitor/health_monitord.py'],
+        self.health_monitor  = Popen(['/opt/seagate/cortx/ha/bin/ha_start', '-s', 'health_monitor', "-c", "yaml:///etc/cortx/cluster.conf"],
                                     shell=False,
                                     stdout=PIPE,
                                     stderr=PIPE)
@@ -105,7 +105,7 @@ class TestSigtermHandling(unittest.TestCase):
         print(f"Running service: {[service.args for service in services]}")
         self.assertTrue(len(services) == len(self.services), "Not all HA services are running.")
 
-    def check_for_stop(self, wait_time=20):
+    def check_for_stop(self, wait_time=30) -> int:
         """
         keep polling for provided wait_time with 1 seconds sleep in between
         asster for below checks and close all popen resources after test
@@ -118,6 +118,7 @@ class TestSigtermHandling(unittest.TestCase):
         print([service.args for service in services])
 
         timeout = wait_time
+        total_time = 0
         # loop till timeout and check for services are running
         while timeout:
             timeout-=1
@@ -126,7 +127,8 @@ class TestSigtermHandling(unittest.TestCase):
                 services[:] = filterfalse(lambda service : service.poll() != None, services)
                 print(f"services left: {[service.args for service in services]}")
             else:
-                print(f"All services are successfully stopped {wait_time - timeout} seconds after receiving sigterm.")
+                print(f"All services are successfully stopped {wait_time - timeout} seconds after start pulling.")
+                total_time = wait_time - timeout
                 break # all services are successfully stopped
         # After timeout check how many services are running, and if yes, then raise an exception.
         if len(services):
@@ -134,6 +136,7 @@ class TestSigtermHandling(unittest.TestCase):
             for service in services:
                 print(f"Service: pid: {service.pid} args: {service.args} is not stopped in provided time.")
             self.assertTrue(len(services) == 0, f"Not all HA services are not stopped within provided timeout:{wait_time} seconds.")
+        return total_time
 
     def cleanup_stop_and_release_all_resources(self):
         """
@@ -223,13 +226,17 @@ class TestSigtermHandling(unittest.TestCase):
             # now send sigterm message to all services
             self.send_sigterm()
             print("After sending SIGTERM waiting for 5 seconds to make sure whether the signal is received.")
-            time.sleep(5)
+            grace_period = 30 # container default grace period after getting sigterm is 30
+            wait_time_after_sigterm = 5
+            grace_period -= wait_time_after_sigterm
+            time.sleep(wait_time_after_sigterm)
 
             # check if k8s monitor has deleted the key from confstore
             self.check_cluster_stop_key(False)
 
             # Check if due to sigterm is all services are exiting
-            self.check_for_stop()
+            total_time = self.check_for_stop(wait_time=grace_period) + wait_time_after_sigterm
+            print(f"**Total time required to stop all services after getting SIGTERM is {total_time}.**")
         finally:
             self.cleanup_stop_and_release_all_resources()
             self.cleanup_cluster_stop()

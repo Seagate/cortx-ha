@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
 import argparse
+import signal
 from subprocess import Popen, PIPE # nosec
 import sys
 
+driver_process = None
 
 my_parser = argparse.ArgumentParser(prog="ha_start",
                                     description='Entrypoint for HA containerization',
@@ -30,11 +32,29 @@ def usage(prog: str):
             f"--services health_monitor, fault_tolerance, k8s_monitor\n"
             f"--config   Config URL\n")
 
+def handle_signal(signum, frame):
+    """
+    Sif the process is started already then forward the received signal
+    """
+    print(f"Signal {signum} at frame {frame} received.")
+    print(f"Sending {signum} to driver process pid: {driver_process.pid}.")
+    driver_process.send_signal(signum)
+
 try:
     if args.services not in service_entry_mapping:
         print('Please provide a valid service name')
         usage('ha_start')
         sys.exit(22)
+    # aetting Signal handlers for all standered signals
+    signal.signal(signal.SIGABRT, handle_signal)
+    signal.signal(signal.SIGFPE, handle_signal)
+    signal.signal(signal.SIGILL, handle_signal)
+    signal.signal(signal.SIGINT, handle_signal)
+    signal.signal(signal.SIGSEGV, handle_signal)
+    signal.signal(signal.SIGTERM, handle_signal)
+
     driver_process = Popen(['/usr/bin/python3', service_entry_mapping[args.services]], shell=False, stdout=PIPE, stderr=PIPE) # nosec
+    print(f"The dricer process with pid {driver_process.pid}, and args {driver_process.args} started successfully.")
+    exit(driver_process.wait())
 except Exception as proc_err:
     sys.stderr.write(f'Driver execution stopped because of some reason: {proc_err}')
