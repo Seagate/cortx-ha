@@ -45,3 +45,12 @@ class AlertStates:
     ONLINE = 'online'
     OFFLINE = 'offline'
     FAILED = 'failed'
+
+class K8SClientConst:
+    PRETTY = 'pretty'
+    LABEL_SELECTOR = 'label_selector'
+    TIMEOUT_SECONDS = 'timeout_seconds'
+    NODE = 'node'
+    POD = 'pod'
+
+    VAL_WATCH_TIMEOUT_DEFAULT = 5
