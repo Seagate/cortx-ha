@@ -188,6 +188,10 @@ class ConfigCmd(Cmd):
         Process config command.
         """
         try:
+            # Get log path from cluster.conf.
+            log_path = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}storage{_DELIM}log')
+            ha_log_path = os.path.join(log_path, f'ha/{Conf.machine_id}')
+
             consul_endpoints = Conf.get(self._index, f'cortx{_DELIM}external{_DELIM}consul{_DELIM}endpoints')
             #========================================================#
             # consul Service endpoints from cluster.conf             #
@@ -221,7 +225,7 @@ class ConfigCmd(Cmd):
             num_pods = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}product_release')
             num_pods = '10' #temporary value till the same is avilabe in cluster.conf
 
-            conf_file_dict = {'LOG' : {'path' : const.HA_LOG_DIR, 'level' : const.HA_LOG_LEVEL},
+            conf_file_dict = {'LOG' : {'path' : ha_log_path, 'level' : const.HA_LOG_LEVEL},
                          'consul_config' : {'endpoint' : consul_endpoint},
                          'kafka_config' : {'endpoints': kafka_endpoint},
                          'event_topic' : 'hare',

@@ -13,6 +13,7 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
+# Needs to be replaced by log path defined in cluster.conf[EOS-27352].
 HA_LOG_DIR="/var/log/seagate/cortx/ha"
 HA_LOG_LEVEL="INFO"
 CONFIG_DIR="/etc/cortx/ha"
