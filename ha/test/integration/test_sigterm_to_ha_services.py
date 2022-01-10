@@ -153,6 +153,17 @@ class TestSigtermHandling(unittest.TestCase):
             except Exception as ex:
                 print(f"Exception while closing service {service.args} resources (stderr, stdout): {ex}")
 
+    def cleanup_deregister_all_message_types(self):
+        try:
+            cluster_stop_message_type = Conf.get(const.HA_GLOBAL_INDEX, f'CLUSTER_STOP_MON{const._DELIM}message_type')
+            MessageBus.deregister(cluster_stop_message_type)
+            health_message_type = Conf.get(const.HA_GLOBAL_INDEX, f'EVENT_MANAGER{const._DELIM}message_type')
+            MessageBus.deregister(health_message_type)
+            fault_message_type = Conf.get(const.HA_GLOBAL_INDEX, f'FAULT_TOLERANCE{const._DELIM}message_type')
+            MessageBus.deregister(fault_message_type)
+        except Exception as ex:
+            print(f"Exeception during derigister all messages: {ex}")
+
     def setUp(self):
         """
         Setup the prerequisit of tests
@@ -167,7 +178,7 @@ class TestSigtermHandling(unittest.TestCase):
         cleanup after all tests
         """
         print("tearDown")
-        MessageBus.deregister(self.message_type)
+        self.cleanup_deregister_all_message_types()
 
     def ignore_test_sigterm(self):
         """
