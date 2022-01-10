@@ -35,7 +35,7 @@ from ha.core.error import SetupError
 from ha.k8s_setup.const import _DELIM
 from ha.core.event_manager.event_manager import EventManager
 from ha.core.event_manager.subscribe_event import SubscribeEvent
-
+from ha.util.conf_store import ConftStoreSearch
 
 class Cmd:
     """
@@ -71,7 +71,7 @@ class Cmd:
         sys.stderr.write(
             f"usage: {prog} [-h] <cmd> <--config url> <args>...\n"
             f"where:\n"
-            f"cmd   post_install, prepare, config, init, test, reset, cleanup\n"
+            f"cmd   post_install, prepare, config, init, test, reset, cleanup, upgrade\n"
             f"--config   Config URL.\n"
             f"--services   Service name.\n")
 
@@ -277,6 +277,10 @@ class ConfigCmd(Cmd):
             Log.info(f'event_manager subscription for {const.EVENT_COMPONENT}\
                        is successful for the event {const.POD_EVENT}')
 
+            Log.info('Creating cluster cardinality')
+            confStoreAPI = ConftStoreSearch()
+            confStoreAPI.set_cluster_cardinality(self._index)
+
             Log.info("config command is successful")
             sys.stdout.write("config command is successful.\n")
         except TypeError as type_err:
@@ -305,6 +309,24 @@ class InitCmd(Cmd):
         Process init command.
         """
         sys.stdout.write('HA initialization is done.\n')
+
+class UpgradeCmd(Cmd):
+    """
+    Setup Upgrade Cmd
+    """
+    name = "upgrade"
+
+    def __init__(self, args):
+        """
+        Init method.
+        """
+        super().__init__(args)
+
+    def process(self):
+        """
+        Process upgrade command.
+        """
+        sys.stdout.write("HA has been upgraded successfully\n")
 
 class TestCmd(Cmd):
     """

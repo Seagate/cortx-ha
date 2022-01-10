@@ -18,7 +18,6 @@
 Handler for handling events received from k8s monitor service
 """
 
-
 import traceback
 from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
@@ -51,7 +50,23 @@ class FaultMonitor:
         if self._consumer is not None:
             self._consumer.start()
         else:
-            Log.warn(f"Consumer not found for message type  {self._message_type} ")
+            Log.warn(f"Consumer not found for message type {self._message_type}.")
+
+    def stop(self, flush=False):
+        """
+        stop to listen messages.
+        """
+        if self._consumer is not None:
+            self._consumer.stop(flush=flush)
+        else:
+            Log.warn(f"Consumer not found for message type  {self._message_type}.")
+
+    def join(self):
+        """
+        Blocking call, it calls join function of message bus consumer thread
+        """
+        if self._consumer is not None:
+            self._consumer.join()
 
 class NodeFaultMonitor(FaultMonitor):
     """
