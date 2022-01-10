@@ -22,15 +22,15 @@ import json
 import ast
 
 from cortx.utils.conf_store import Conf
-from ha.core.config.config_manager import ConfigManager
-
 from cortx.utils.log import Log
 from ha.util.message_bus import MessageBus, CONSUMER_STATUS, MessageBusConsumer
 
 from ha import const
 from ha.k8s_setup.const import _DELIM
+from ha.core.config.config_manager import ConfigManager
 
 class ClusterStopMonitor:
+
 
     def __init__(self):
         """Init method"""
@@ -97,7 +97,7 @@ class ClusterStopMonitor:
         Sets the cluster stop key in confstore for the k8s monitor
         to notify cltuster shutdown is started
         """
-        Log.info('Cluster stop message is received.')
+        Log.info('The cluster stop message on message bus ({self._message_type}) is received.')
         confstore = ConfigManager.get_confstore()
         if not confstore.key_exists(const.CLUSTER_STOP_KEY):
             Log.info(f'Setting key {const.CLUSTER_STOP_KEY} to {const.CLUSTER_STOP_VAL_ENABLE} in confstore.')

@@ -22,7 +22,6 @@ import os
 import signal
 
 from cortx.utils.log import Log
-
 from ha.core.config.config_manager import ConfigManager
 from ha.fault_tolerance.fault_monitor import NodeFaultMonitor
 from ha.fault_tolerance.cluster_stop_monitor import ClusterStopMonitor
