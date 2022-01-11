@@ -207,8 +207,9 @@ RESOURCE_TYPE = "resource_type"
 STONITH_AUTH_TYPE = 'PASSWORD'
 logger_utility_iec_cmd="logger -i -p local3.err"
 CLUSTER_STOP_KEY = "cluster_stop_key"
+# We are using only key 'CLUSTER_STOP_KEY' and ckecking whether ths key is exist
+# not using the value anywhere but as default value for key.
 CLUSTER_STOP_VAL_ENABLE = "1"
-CLUSTER_STOP_VAL_DISABLE = "0"
 
 class STATUSES(Enum):
     IN_PROGRESS = "InProgress"

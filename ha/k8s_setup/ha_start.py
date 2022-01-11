@@ -34,7 +34,7 @@ def usage(prog: str):
 
 def handle_signal(signum, frame):
     """
-    Sif the process is started already then forward the received signal
+    Signal handler call beck function, to forward the received signal to driver process
     """
     sys.stdout.write(f"Signal {signum} at frame {frame} received.")
     sys.stdout.write(f"Sending {signum} to driver process pid: {driver_process.pid}.")

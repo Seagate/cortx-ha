@@ -111,7 +111,7 @@ class ObjectMonitor(threading.Thread):
             Log.info(f"{self._object}_monitor sending alert on message bus {alert.to_dict()}")
             self._producer.publish(str(alert.to_dict()))
         else:
-            Log.debug(f"{self._object}_monitor skipping publish for alert: {str(alert.to_dict())}.")
+            Log.debug(f"{self._object}_monitor received cluster stop message so skipping publish alert: {str(alert.to_dict())}.")
 
     def run(self):
         """
