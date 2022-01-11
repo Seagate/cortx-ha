@@ -45,7 +45,7 @@ try:
         sys.stdout.write('Please provide a valid service name')
         usage('ha_start')
         sys.exit(22)
-    # aetting Signal handlers for all standered signals
+    # setting Signal handlers for all standered signals
     signal.signal(signal.SIGABRT, handle_signal)
     signal.signal(signal.SIGFPE, handle_signal)
     signal.signal(signal.SIGILL, handle_signal)
