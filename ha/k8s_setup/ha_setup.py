@@ -213,14 +213,7 @@ class ConfigCmd(Cmd):
             # TBD delete once data_pod_label is avilable from confstore
             data_pod_label = ['cortx-data', 'cortx-server']
 
-            # Time till when system health can be collected in bootstrap mode
-            timeout = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}product_release')
-            timeout = '10' # in seconds ;  temporary value till the same is avilabe in cluster.conf
-            # Total number of pods for which health is to be maintained
-            num_pods = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}product_release')
-            num_pods = '10' #temporary value till the same is avilabe in cluster.conf
-
-            conf_file_dict = {'LOG' : {'path' : ha_log_path, 'level' : const.HA_LOG_LEVEL},
+            conf_file_dict = {'LOG' : {'path' : const.HA_LOG_DIR, 'level' : const.HA_LOG_LEVEL},
                          'consul_config' : {'endpoint' : consul_endpoint},
                          'kafka_config' : {'endpoints': kafka_endpoint},
                          'event_topic' : 'hare',
@@ -233,9 +226,7 @@ class ConfigCmd(Cmd):
                          'CLUSTER_STOP_MON' : {'message_type' : 'cluster_stop', 'consumer_group' : 'cluster_mon',
                                               'consumer_id' : '2'},
                          'NODE': {'resource_type': 'node'},
-                         'SYSTEM_HEALTH' : {'num_entity_health_events' : 2,
-                                            'sys_health_bootstrap_timeout' : timeout,
-                                            'total_num_pods' : num_pods }
+                         'SYSTEM_HEALTH' : {'num_entity_health_events' : 2}
                          }
 
             if not os.path.isdir(const.CONFIG_DIR):
