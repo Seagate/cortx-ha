@@ -164,7 +164,6 @@ class ClusterResourceParser(Parser):
         Init method.
         """
         super(ClusterResourceParser, self).__init__()
-        ConfigManager.init("event_analyzer")
         self.cluster_id = Conf.get(const.HA_GLOBAL_INDEX, f"COMMON_CONFIG{_DELIM}cluster_id")
         self.site_id = Conf.get(const.HA_GLOBAL_INDEX, f"COMMON_CONFIG{_DELIM}site_id")
         self.rack_id = Conf.get(const.HA_GLOBAL_INDEX, f"COMMON_CONFIG{_DELIM}rack_id")
