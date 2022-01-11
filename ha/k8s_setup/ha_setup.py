@@ -90,12 +90,6 @@ class Cmd:
         args = parser.parse_args(argv)
         return args.command(args)
 
-    def get_machine_id(self):
-        command = "cat /etc/machine-id"
-        machine_id, err, rc = self._execute.run_cmd(command, check_error=True)
-        Log.info(f"Read machine-id. Output: {machine_id}, Err: {err}, RC: {rc}")
-        return machine_id.strip()
-
     @staticmethod
     def add_args(parser: str, cls: str, name: str):
         """
@@ -188,6 +182,11 @@ class ConfigCmd(Cmd):
         Process config command.
         """
         try:
+            # Get log path from cluster.conf.
+            log_path = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}storage{_DELIM}log')
+            machine_id = Conf.machine_id
+            ha_log_path = os.path.join(log_path, f'ha/{machine_id}')
+
             consul_endpoints = Conf.get(self._index, f'cortx{_DELIM}external{_DELIM}consul{_DELIM}endpoints')
             #========================================================#
             # consul Service endpoints from cluster.conf             #
@@ -221,7 +220,7 @@ class ConfigCmd(Cmd):
             num_pods = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}product_release')
             num_pods = '10' #temporary value till the same is avilabe in cluster.conf
 
-            conf_file_dict = {'LOG' : {'path' : const.HA_LOG_DIR, 'level' : const.HA_LOG_LEVEL},
+            conf_file_dict = {'LOG' : {'path' : ha_log_path, 'level' : const.HA_LOG_LEVEL},
                          'consul_config' : {'endpoint' : consul_endpoint},
                          'kafka_config' : {'endpoints': kafka_endpoint},
                          'event_topic' : 'hare',
@@ -256,7 +255,6 @@ class ConfigCmd(Cmd):
             # in the similar way, confstore will have this key when
             # the cluster.conf load will taked place.
             # So, to get the cluster_id field from Confstore, we need machine_id
-            machine_id = self.get_machine_id()
             cluster_id = Conf.get(self._index, f'node{_DELIM}{machine_id}{_DELIM}cluster_id')
             # site_id = Conf.get(self._index, f'node{_DELIM}{machine_id}{_DELIM}site_id')
             site_id = '1'
