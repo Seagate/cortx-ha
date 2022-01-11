@@ -30,6 +30,7 @@ from ha.k8s_setup.const import _DELIM
 
 class ClusterStopMonitor:
 
+
     def __init__(self):
         """Init method"""
         self._consumer = self._get_consumer()
