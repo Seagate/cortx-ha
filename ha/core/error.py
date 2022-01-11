@@ -39,6 +39,7 @@ HA_ALERT_EVENT_FILTER_ERROR     = 0x000f
 HA_EVENT_MANAGER_ERROR          = 0x0010
 HA_ACTION_HANDLER_ERROR         = 0x0011
 HA_HEALTH_MONITOR_ERROR         = 0x0012
+HA_CLUSTER_CARDINALITY_ERROR    = 0x0013
 
 class HAError(BaseError):
     def __init__(self, rc=1, desc=None, message_id=HA_BASIC_ERROR, message_args=None):
@@ -258,3 +259,13 @@ class EventAnalyzerError(HAError):
         _message_id = HA_EVENT_ANALYZER_ERROR
         _rc = 1
         super(EventAnalyzerError, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
+
+class ClusterCardinalityError(HAError):
+    def __init__(self, desc=None):
+        """
+        Cluster cardinality unavilable.
+        """
+        _desc = "Cluster cardinality unavilable" if desc is None else desc
+        _message_id = HA_CLUSTER_CARDINALITY_ERROR
+        _rc = 1
+        super(ClusterCardinalityError, self).__init__(rc=_rc, desc=_desc, message_id=_message_id)
