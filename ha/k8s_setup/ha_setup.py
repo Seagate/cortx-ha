@@ -213,9 +213,6 @@ class ConfigCmd(Cmd):
             data_pod_label = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}product_release')
             # TBD delete once data_pod_label is avilable from confstore
             data_pod_label = ['cortx-data', 'cortx-server']
-            # Total number of pods for which health is to be maintained
-            num_pods = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}product_release')
-            num_pods = '10' #temporary value till the same is avilabe in cluster.conf
 
             conf_file_dict = {'LOG' : {'path' : const.HA_LOG_DIR, 'level' : const.HA_LOG_LEVEL},
                          'consul_config' : {'endpoint' : consul_endpoint},
@@ -230,8 +227,7 @@ class ConfigCmd(Cmd):
                          'CLUSTER_STOP_MON' : {'message_type' : 'cluster_stop', 'consumer_group' : 'cluster_mon',
                                               'consumer_id' : '2'},
                          'NODE': {'resource_type': 'node'},
-                         'SYSTEM_HEALTH' : {'num_entity_health_events' : 2,
-                                            'total_num_pods' : num_pods }
+                         'SYSTEM_HEALTH' : {'num_entity_health_events' : 2}
                          }
 
             if not os.path.isdir(const.CONFIG_DIR):
