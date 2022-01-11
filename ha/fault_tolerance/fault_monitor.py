@@ -94,7 +94,7 @@ class NodeFaultMonitor(FaultMonitor):
 
     def process_message(self, message: str):
         """Callback method for MessageConsumer"""
-        Log.debug(f'Received the message from message bus: {message}')
+        Log.info(f'Received the message from message bus: {message}')
         try:
             EventAnalyzer(message.decode('utf-8'))
             return CONSUMER_STATUS.SUCCESS
