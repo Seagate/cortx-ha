@@ -36,13 +36,13 @@ def handle_signal(signum, frame):
     """
     Sif the process is started already then forward the received signal
     """
-    print(f"Signal {signum} at frame {frame} received.")
-    print(f"Sending {signum} to driver process pid: {driver_process.pid}.")
+    sys.stdout.write(f"Signal {signum} at frame {frame} received.")
+    sys.stdout.write(f"Sending {signum} to driver process pid: {driver_process.pid}.")
     driver_process.send_signal(signum)
 
 try:
     if args.services not in service_entry_mapping:
-        print('Please provide a valid service name')
+        sys.stdout.write('Please provide a valid service name')
         usage('ha_start')
         sys.exit(22)
     # aetting Signal handlers for all standered signals
@@ -54,7 +54,7 @@ try:
     signal.signal(signal.SIGTERM, handle_signal)
 
     driver_process = Popen(['/usr/bin/python3', service_entry_mapping[args.services]], shell=False, stdout=PIPE, stderr=PIPE) # nosec
-    print(f"The dricer process with pid {driver_process.pid}, and args {driver_process.args} started successfully.")
+    sys.stdout.write(f"The dricer process with pid {driver_process.pid}, and args {driver_process.args} started successfully.")
     exit(driver_process.wait())
 except Exception as proc_err:
     sys.stderr.write(f'Driver execution stopped because of some reason: {proc_err}')
