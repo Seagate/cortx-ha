@@ -21,8 +21,11 @@ Wrappeprs for using the search APIs from conf store
 
 import json
 
+from cortx.utils.conf_store import Conf
+from cortx.utils.cortx.const import Const
 from ha.core.config.config_manager import ConfigManager
 from ha.k8s_setup.const import CLUSTER_CARDINALITY_KEY, CLUSTER_CARDINALITY_NUM_NODES, CLUSTER_CARDINALITY_LIST_NODES
+from ha.k8s_setup.const import NODE_CONST, SERVICE_CONST, _DELIM
 from cortx.utils.log import Log
 from ha.core.error import ClusterCardinalityError
 
@@ -41,6 +44,11 @@ class ConftStoreSearch:
         Get machine ids for data pods: returns list of machine ids.
         """
         machine_ids = []
+        keys = Conf.search(index, NODE_CONST, SERVICE_CONST, Const.SERVICE_MOTR_IO.value)
+        for key in keys:
+            machine_id = key.split('>')[1]
+            # Add machine id to list
+            machine_ids.append(machine_id)
         return machine_ids
 
     def _get_server_pods(self, index):
@@ -48,6 +56,11 @@ class ConftStoreSearch:
         Get machine ids for server pods: returns list of machine ids.
         """
         machine_ids = []
+        keys = Conf.search(index, NODE_CONST, SERVICE_CONST, Const.SERVICE_S3_HAPROXY.value)
+        for key in keys:
+            machine_id = key.split('>')[1]
+            # Add machine id to list
+            machine_ids.append(machine_id)
         return machine_ids
 
     def get_cluster_cardinality(self):
@@ -85,8 +98,10 @@ class ConftStoreSearch:
 
         Log.info(f"Cluster cardinality: number of nodes {num_pods}, machine ids for nodes {watch_pods} ")
 
-        # Update the same to consul
-        # if KV already present, it will be modified.
+        if num_pods is 0:
+            Log.warn(f"Possible cluster cardinality issue; number of pods to be watched {num_pods}")
+
+        # Update the same to consul; if KV already present, it will be modified.
         cluster_cardinality_key = CLUSTER_CARDINALITY_KEY
         cluster_cardinality_value = {CLUSTER_CARDINALITY_NUM_NODES: num_pods, CLUSTER_CARDINALITY_LIST_NODES : watch_pods }
         self._confstore.update(cluster_cardinality_key, json.dumps(cluster_cardinality_value))
