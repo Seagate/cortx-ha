@@ -213,7 +213,7 @@ class ConfigCmd(Cmd):
             # TBD delete once data_pod_label is avilable from confstore
             data_pod_label = ['cortx-data', 'cortx-server']
 
-            conf_file_dict = {'LOG' : {'path' : const.HA_LOG_DIR, 'level' : const.HA_LOG_LEVEL},
+            conf_file_dict = {'LOG' : {'path' : ha_log_path, 'level' : const.HA_LOG_LEVEL},
                          'consul_config' : {'endpoint' : consul_endpoint},
                          'kafka_config' : {'endpoints': kafka_endpoint},
                          'event_topic' : 'hare',
