@@ -28,6 +28,7 @@ from ha.k8s_setup.const import _DELIM
 from ha import const
 from ha.core.config.config_manager import ConfigManager
 from ha.util.message_bus import MessageBus
+from ha.util.conf_store import ConftStoreSearch
 from ha.monitor.k8s.object_monitor import ObjectMonitor
 from ha.monitor.k8s.const import K8SClientConst
 
@@ -40,41 +41,47 @@ class ResourceMonitor:
         Init method
         Create monitor objects and Sets the callbacks to sigterm
         """
-        # set sigterm handler
-        signal.signal(signal.SIGTERM, self.set_sigterm)
+        try:
+            # set sigterm handler
+            signal.signal(signal.SIGTERM, self.set_sigterm)
 
-        # Read I/O pod selector label from ha.conf . Will be received from provisioner confstore
-        # provisioner needs to be informed to add it in confstore  (to be added there )
-        ConfigManager.init("k8s_resource_monitor")
+            # Read I/O pod selector label from ha.conf . Will be received from provisioner confstore
+            # provisioner needs to be informed to add it in confstore  (to be added there )
+            ConfigManager.init("k8s_resource_monitor")
+            self._conf_stor_search = ConftStoreSearch()
 
-        self.monitors = []
+            self.monitors = []
 
-        # event output in pretty format
-        kwargs = {K8SClientConst.PRETTY : True}
+            # event output in pretty format
+            kwargs = {K8SClientConst.PRETTY : True}
 
-        # Seting a timeout value, 'timout_seconds', for the stream.
-        # timeout value for connection to the server
-        # If do not set then we will not able to stop immediately,
-        # becuase synchronus function watch.stream() will not come back
-        # until catch any event on which it is waiting.
-        kwargs[K8SClientConst.TIMEOUT_SECONDS] = K8SClientConst.VAL_WATCH_TIMEOUT_DEFAULT
+            # Seting a timeout value, 'timout_seconds', for the stream.
+            # timeout value for connection to the server
+            # If do not set then we will not able to stop immediately,
+            # becuase synchronus function watch.stream() will not come back
+            # until catch any event on which it is waiting.
+            kwargs[K8SClientConst.TIMEOUT_SECONDS] = K8SClientConst.VAL_WATCH_TIMEOUT_DEFAULT
 
-        # Get MessageBus producer object for all monitor threads
-        producer = self._get_producer()
+            # Get MessageBus producer object for all monitor threads
+            producer = self._get_producer()
 
-        # Change to multiprocessing
-        # Creating NODE monitor object
-        node_monitor = ObjectMonitor(producer, K8SClientConst.NODE, **kwargs)
-        self.monitors.append(node_monitor)
+            # Change to multiprocessing
+            # Creating NODE monitor object
+            node_monitor = ObjectMonitor(producer, K8SClientConst.NODE, **kwargs)
+            self.monitors.append(node_monitor)
 
-        pod_labels = Conf.get(const.HA_GLOBAL_INDEX, "data_pod_label")
-        pod_label_str = ', '.join(pod_label for pod_label in pod_labels)
-        # TODO : Change 'name' field to 'app' in label_selector if required.
-        kwargs[K8SClientConst.LABEL_SELECTOR] = f'name in ({pod_label_str})'
+            _, nodes_list = self._conf_stor_search.get_cluster_cardinality()
+            # This one is for testing purpose. To be removed once the node_list will be available
+            # from get_cluster_cardinality() API
+            nodes_list = ['27d9b5122785444444444444444']
+            watcher_node_ids = ', '.join(node_id for node_id in nodes_list)
+            kwargs[K8SClientConst.LABEL_SELECTOR] = f'cortx.io/machine-id in ({watcher_node_ids})'
 
-        # Creating POD monitor object
-        pod_monitor = ObjectMonitor(producer, K8SClientConst.POD, **kwargs)
-        self.monitors.append(pod_monitor)
+            # Creating POD monitor object
+            pod_monitor = ObjectMonitor(producer, K8SClientConst.POD, **kwargs)
+            self.monitors.append(pod_monitor)
+        except Exception as err:
+            Log.error(f'Monitor failed to start watchers: {err}')
 
     def _get_producer(self):
         """
