@@ -16,11 +16,9 @@
 import os
 import pathlib
 import sys
-import time
 
 from ha.util.conf_store import ConftStoreSearch
 from cortx.utils.conf_store import Conf
-from cortx.utils.cortx.const import Const
 from ha.core.config.config_manager import ConfigManager
 
 sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..', '..'))

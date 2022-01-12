@@ -25,7 +25,7 @@ from cortx.utils.conf_store import Conf
 from cortx.utils.cortx.const import Const
 from ha.core.config.config_manager import ConfigManager
 from ha.k8s_setup.const import CLUSTER_CARDINALITY_KEY, CLUSTER_CARDINALITY_NUM_NODES, CLUSTER_CARDINALITY_LIST_NODES
-from ha.k8s_setup.const import NODE_CONST, SERVICE_CONST, _DELIM
+from ha.k8s_setup.const import NODE_CONST, SERVICE_CONST
 from cortx.utils.log import Log
 from ha.core.error import ClusterCardinalityError
 
@@ -98,7 +98,7 @@ class ConftStoreSearch:
 
         Log.info(f"Cluster cardinality: number of nodes {num_pods}, machine ids for nodes {watch_pods} ")
 
-        if num_pods is 0:
+        if num_pods == 0:
             Log.warn(f"Possible cluster cardinality issue; number of pods to be watched {num_pods}")
 
         # Update the same to consul; if KV already present, it will be modified.
