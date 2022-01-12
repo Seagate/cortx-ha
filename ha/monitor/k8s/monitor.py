@@ -48,7 +48,7 @@ class ResourceMonitor:
             # Read I/O pod selector label from ha.conf . Will be received from provisioner confstore
             # provisioner needs to be informed to add it in confstore  (to be added there )
             ConfigManager.init("k8s_resource_monitor")
-            self._conf_stor_search = ConftStoreSearch()
+            _conf_stor_search = ConftStoreSearch()
 
             self.monitors = []
 
@@ -70,8 +70,11 @@ class ResourceMonitor:
             node_monitor = ObjectMonitor(producer, K8SClientConst.NODE, **kwargs)
             self.monitors.append(node_monitor)
 
-            _, nodes_list = self._conf_stor_search.get_cluster_cardinality()
-            nodes_list = ['27d9b5122785444444444444444']
+            _, nodes_list = _conf_stor_search.get_cluster_cardinality()
+            if not nodes_list:
+                Log.warn(f"No nodes in the cluster to watch for nodes_list: {nodes_list}")
+            else:
+                Log.info(f"Starting watch for: nodes_list: {nodes_list}")
             watcher_node_ids = ', '.join(node_id for node_id in nodes_list)
             kwargs[K8SClientConst.LABEL_SELECTOR] = f'cortx.io/machine-id in ({watcher_node_ids})'
 
