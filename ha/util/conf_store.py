@@ -44,8 +44,13 @@ class ConftStoreSearch:
         Get machine ids for data pods: returns list of machine ids.
         """
         machine_ids = []
-        keys = Conf.search(index, NODE_CONST, SERVICE_CONST, Const.SERVICE_MOTR_IO.value)
-        for key in keys:
+        # Sample output of the serach API
+        # ex: Conf.search("cortx", "node", "services", Const.SERVICE_MOTR_IO.value)
+        # ['node>5f3dc3a153454a918277ee4a2c57f36b>components[1]>services[0]',
+        # 'node>6203a14bde204e8ea798ad9d42583fb5>components[1]>services[0]', 'node>8cc8b13101e34b3ca1e51ed6e3228d5b>components[1]>services[0]']
+
+        data_pod_keys = Conf.search(index, NODE_CONST, SERVICE_CONST, Const.SERVICE_MOTR_IO.value)
+        for key in data_pod_keys:
             machine_id = key.split('>')[1]
             # Add machine id to list
             machine_ids.append(machine_id)
@@ -56,8 +61,8 @@ class ConftStoreSearch:
         Get machine ids for server pods: returns list of machine ids.
         """
         machine_ids = []
-        keys = Conf.search(index, NODE_CONST, SERVICE_CONST, Const.SERVICE_S3_HAPROXY.value)
-        for key in keys:
+        server_pod_keys = Conf.search(index, NODE_CONST, SERVICE_CONST, Const.SERVICE_S3_HAPROXY.value)
+        for key in server_pod_keys:
             machine_id = key.split('>')[1]
             # Add machine id to list
             machine_ids.append(machine_id)
