@@ -104,10 +104,13 @@ class EventAnalyzerService:
 
 # This will be instantiated from the fault_tolerance
 class EventAnalyzer:
-
+    """
+    Analyzes an event, filter gets applied. Further it parses
+    an alert to create health event object required for system
+    health processing
+    """
     def __init__(self, msg=None):
         '''init method'''
-        ConfigManager.init('event_analyzer')
         self._confstore = ConfigManager.get_confstore()
         system_health = SystemHealth(self._confstore)
         self._cluster_resource_filter = ClusterResourceFilter()

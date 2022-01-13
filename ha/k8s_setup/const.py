@@ -13,6 +13,7 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
+# Needs to be replaced by log path defined in cluster.conf[EOS-27352].
 HA_LOG_DIR="/var/log/seagate/cortx/ha"
 HA_LOG_LEVEL="INFO"
 CONFIG_DIR="/etc/cortx/ha"
@@ -31,3 +32,10 @@ consul_scheme = 'http'
 # Event_manager keys
 POD_EVENT="node"
 EVENT_COMPONENT="hare"
+
+# confStore search API constants
+NODE_CONST = "node"
+SERVICE_CONST = "services"
+CLUSTER_CARDINALITY_KEY = "cluster_cardinality"
+CLUSTER_CARDINALITY_NUM_NODES = "num_nodes"
+CLUSTER_CARDINALITY_LIST_NODES = "node_list"
