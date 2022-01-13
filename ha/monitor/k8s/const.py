@@ -15,14 +15,42 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-import enum
-from ha.util.enum_list import EnumListMeta
 
-class HEALTH_MON_ACTIONS(enum.Enum, metaclass=EnumListMeta):
-    PUBLISH_ACT = "publish"
-    HA_ACT = "ha"
+class K8SEventsConst:
+    TYPE = 'type'
+    RAW_OBJECT = 'raw_object'
+    METADATA = 'metadata'
+    NAME = 'name'
+    LABELS ='labels'
+    # cortx specific key for fetching machine id from event.
+    # k8s event: ['raw_object']['metadata']['labels']['cortx.io/machine-id']
+    MACHINEID = 'cortx.io/machine-id'
+    SPEC = 'spec'
+    NODE_NAME = 'nodeName'
+    PHASE = 'phase'
+    RUNNING = 'Running'
+    STATUS = 'status'
+    CONDITIONS = 'conditions'
+    READY = 'Ready'
+    true = 'true'
 
-class HEALTH_MON_KEYS(enum.Enum, metaclass=EnumListMeta):
-    ACT_RULE = "action"
 
-HEALTH_MONITOR_LOG = "health_monitor"
+class EventStates:
+    ADDED = 'ADDED'
+    MODIFIED = 'MODIFIED'
+    DELETED = 'DELETED'
+
+
+class AlertStates:
+    ONLINE = 'online'
+    OFFLINE = 'offline'
+    FAILED = 'failed'
+
+class K8SClientConst:
+    PRETTY = 'pretty'
+    LABEL_SELECTOR = 'label_selector'
+    TIMEOUT_SECONDS = 'timeout_seconds'
+    NODE = 'node'
+    POD = 'pod'
+
+    VAL_WATCH_TIMEOUT_DEFAULT = 5

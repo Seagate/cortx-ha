@@ -26,6 +26,7 @@ import time
 import sys
 import json
 import traceback
+import signal
 from cortx.utils.log import Log
 from cortx.utils.conf_store.conf_store import Conf
 from ha.const import HA_GLOBAL_INDEX
@@ -68,7 +69,8 @@ class HealthMonitorService:
             raise Exception("HealthMonitorService is singleton class, use HealthMonitorService.get_instance().")
         # initialize
         ConfigManager.init(const.HEALTH_MONITOR_LOG)
-        Log.info("Health Monitor daemon initializations...")
+        # set sigterm handler
+        signal.signal(signal.SIGTERM, self.set_sigterm)
         self._confstore = ConfigManager.get_confstore()
         self._rule_manager = MonitorRulesManager()
         self._event_consumer = self._get_consumer()
@@ -80,6 +82,7 @@ class HealthMonitorService:
         consumer_id = Conf.get(HA_GLOBAL_INDEX, f"EVENT_MANAGER{_DELIM}consumer_id")
         consumer_group = Conf.get(HA_GLOBAL_INDEX, f"EVENT_MANAGER{_DELIM}consumer_group")
         message_type = Conf.get(HA_GLOBAL_INDEX, f"EVENT_MANAGER{_DELIM}message_type")
+        MessageBus.init()
         return MessageBus.get_consumer(consumer_id=consumer_id, consumer_group=consumer_group,
                                         message_type=message_type, callback=self.process_event)
 
@@ -109,14 +112,25 @@ class HealthMonitorService:
             Log.error(f"Failed to process {message} error: {e} {traceback.format_exc()}")
             return CONSUMER_STATUS.FAILED
 
-    def run(self):
+    def set_sigterm(self, signum, frame):
         """
-        Run server
+        Callback function to receive a signal
         """
-        Log.info(f"Running the daemon for Health Monitor with PID {os.getpid()}...")
+        Log.info(f"Received SIGTERM: {signum}")
+        Log.debug(f"Stopping the Health Monitor as received a signal: {signum} during execution of frame: {frame}")
+        self._event_consumer.stop(flush=True)
+
+    def start(self):
+        """
+        Starts consumer daemon thread to receive the alters and perform action on it.
+        """
         self._event_consumer.start()
-        while True:
-            time.sleep(600)
+
+    def wait_for_exit(self):
+        """
+        join and wait for consumer thread to exit
+        """
+        self._event_consumer.join()
 
 def main(argv):
     """
@@ -125,9 +139,12 @@ def main(argv):
     # argv can be used later when config parameters are needed
     try:
         health_monitor = HealthMonitorService.get_instance()
-        health_monitor.run()
+        Log.info(f"Starting the Health Monitor with PID {os.getpid()}.")
+        health_monitor.start()
+        health_monitor.wait_for_exit()
+        Log.info(f"The Health Monitor with PID {os.getpid()} stopped successfully.")
     except Exception as e:
-        Log.error(f"Health Monitor service failed. Error: {e} {traceback.format_exc()}")
+        Log.error(f"Health Monitor service with PID {os.getpid()} failed. Error: {e} {traceback.format_exc()}")
         sys.exit(1)
 
 if __name__ == '__main__':
