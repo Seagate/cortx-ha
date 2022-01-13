@@ -207,17 +207,11 @@ class ConfigCmd(Cmd):
             if not kafka_endpoint:
                 sys.stderr.write(f'Failed to get kafka config. kafka_config: {kafka_endpoint}. \n')
                 sys.exit(1)
-            # Dummy value fetched for now. This will be replaced by the key/path for the pod label onces that is avilable in confstore
-            # Ref ticket EOS-25694
-            data_pod_label = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}product_release')
-            # TBD delete once data_pod_label is avilable from confstore
-            data_pod_label = ['cortx-data', 'cortx-server']
 
             conf_file_dict = {'LOG' : {'path' : ha_log_path, 'level' : const.HA_LOG_LEVEL},
                          'consul_config' : {'endpoint' : consul_endpoint},
                          'kafka_config' : {'endpoints': kafka_endpoint},
                          'event_topic' : 'hare',
-                         'data_pod_label' : data_pod_label,
                          'MONITOR' : {'message_type' : 'cluster_event', 'producer_id' : 'cluster_monitor'},
                          'EVENT_MANAGER' : {'message_type' : 'health_events', 'producer_id' : 'system_health',
                                             'consumer_group' : 'health_monitor', 'consumer_id' : '1'},
@@ -257,8 +251,7 @@ class ConfigCmd(Cmd):
                 yaml.dump(conf_file_dict, conf_file, default_flow_style=False)
             self._confstore = ConfigManager.get_confstore()
 
-            Log.info(f'Populating the ha config file with consul_endpoint: {consul_endpoint}, \
-                       data_pod_label: {data_pod_label}')
+            Log.info(f'Populating the ha config file with consul_endpoint: {consul_endpoint}')
 
             Log.info('Performing event_manager subscription')
             event_manager = EventManager.get_instance()
