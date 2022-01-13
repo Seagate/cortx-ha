@@ -38,8 +38,8 @@ ls /var/lib/ha_env/ | grep yum_init || {
     echo "Please complete preqs."
 }
 
-req_file=${REPO_PATH}/jenkins/pyinstaller/v2/requirements.txt
-python3 -m pip install -r $req_file
+# req_file=${REPO_PATH}/jenkins/pyinstaller/v2/requirements.txt
+# python3 -m pip install -r $req_file
 
 [ ${USER} != "root" ] && {
     su - -c "/${REPO_PATH}/jenkins/build.sh -v 2" ${USER}

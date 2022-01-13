@@ -38,7 +38,7 @@ with open('README.md', 'r') as rf:
 
 
 def get_data_files() -> list:
-    data_files = [(install_dir + '/meta-info', ['LICENSE', 'README.md', 'jenkins/requirements.txt'])]
+    data_files = [(install_dir + '/meta-info', ['LICENSE', 'README.md'])]#, 'jenkins/requirements.txt'])]
     ignore_dirs = ['v1', 'iostack-ha']
     replace_dirs_in_dest = ('v2', 'common', 'mini_provisioner')
     conf_dir = 'conf'
@@ -78,11 +78,11 @@ def get_packages() -> list:
     return packages
 
 
-def get_install_requirements() -> list:
-    install_requires = []
-    with open('jenkins/requirements.txt') as r:
-        install_requires = [line.strip() for line in r]
-    return install_requires
+# def get_install_requirements() -> list:
+#     install_requires = []
+#     with open('jenkins/requirements.txt') as r:
+#         install_requires = [line.strip() for line in r]
+#     return install_requires
 
 
 setup(name='cortx-ha',
@@ -100,5 +100,5 @@ setup(name='cortx-ha',
       data_files = get_data_files(),
       long_description=long_description,
       zip_safe=False,
-      python_requires='>=3.6',
-      install_requires=get_install_requirements())
+      python_requires='>=3.6')#,
+      #install_requires=get_install_requirements())
