@@ -70,4 +70,4 @@ if __name__ == '__main__':
     Log.info(f"Starting the Fault Tolerance Monitor with PID {os.getpid()}...")
     fault_tolerance.start()
     fault_tolerance.wait_for_exit()
-    Log.info(f"The Health Monitor with PID {os.getpid()} stopped successfully.")
+    Log.info(f"The Fault Tolerance Monitor with PID {os.getpid()} stopped successfully.")
