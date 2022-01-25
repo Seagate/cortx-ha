@@ -85,7 +85,7 @@ class ClusterStopMonitor:
             msg = json.dumps(ast.literal_eval(msg_decode))
             cluster_alert = json.loads(msg)
 
-            if cluster_alert["start_cluster_shutdown"] == '1':
+            if cluster_alert["start_cluster_shutdown"] == 1:
                 self.stop_cluster()
         except Exception as err:
             Log.error(f'Failed to analyze the event: {message} error: {err}')
@@ -97,7 +97,7 @@ class ClusterStopMonitor:
         Sets the cluster stop key in confstore for the k8s monitor
         to notify cltuster shutdown is started
         """
-        Log.info('The cluster stop message on message bus ({self._message_type}) is received.')
+        Log.info(f'The cluster stop message on message bus ({self._message_type}) is received.')
         confstore = ConfigManager.get_confstore()
         if not confstore.key_exists(const.CLUSTER_STOP_KEY):
             Log.info(f'Setting key {const.CLUSTER_STOP_KEY} to {const.CLUSTER_STOP_VAL_ENABLE} in confstore.')
