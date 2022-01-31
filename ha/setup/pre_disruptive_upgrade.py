@@ -35,6 +35,7 @@ from ha.const import (BACKUP_DEST_DIR_CONF, BACKUP_DEST_DIR_CONSUL, CONFIG_DIR, 
                     PCS_CLUSTER_STANDBY, RA_LOG_DIR, PCS_CLEANUP, PCS_CLUSTER_STATUS, PCS_FAILCOUNT_STATUS, PCS_DELETE_RESOURCE)
 from ha.core.error import UpgradeError
 from ha.execute import SimpleCommand
+from ha.core.config.config_manager import ConfigManager
 
 def backup_consul(filename: str = "consul-kv-dump.json", dst: str = BACKUP_DEST_DIR_CONSUL) -> None:
     """
@@ -180,7 +181,8 @@ def _parse_arguments() -> Any:
 
 def _main() -> None:
     args = _parse_arguments()
-    Log.init(service_name="pre_disruptive_upgrade", log_path=RA_LOG_DIR, level="INFO")
+    ConfigManager.centralized_log_init(service_name="pre_disruptive_upgrade",
+                                        log_path=RA_LOG_DIR, level="INFO")
     Log.info("Script invoked as executable with params: {}".format(vars(args)))
     check_cluster_health()
     if args.backup_consul:

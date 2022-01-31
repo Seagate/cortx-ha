@@ -369,6 +369,9 @@ class TestExecutor:
 
 
 def _main():
+    """
+    This function is for test only, not in production use
+    """
     args = TestExecutor.parse_args()
 
     Log.init(service_name="validate_cluster",

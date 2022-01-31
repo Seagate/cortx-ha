@@ -31,7 +31,7 @@ from ha.const import (CONFIG_DIR, SOURCE_CONFIG_PATH, \
                         SOURCE_CONFIG_FILE, CLUSTER_STANDBY_UNSTANDBY_TIMEOUT, \
                         PCS_CLUSTER_STANDBY, PCS_CLUSTER_UNSTANDBY)
 from ha.setup.create_pacemaker_resources import create_all_resources
-
+from ha.core.config.config_manager import ConfigManager
 
 def _get_cib_xml() -> Element:
     """Call `pcs cluster cib` and return XML object for further parsing."""
@@ -157,7 +157,8 @@ def _unstandby_cluster() -> None:
 
 def perform_post_upgrade(ios_instances=None, s3_instances=None, do_unstandby=False, mgmt_info=None, node_count=None):
     '''Starting routine for post-upgrade process'''
-    Log.init(service_name="post_disruptive_upgrade", log_path=RA_LOG_DIR, level="INFO")
+    ConfigManager.centralized_log_init(service_name="post_disruptive_upgrade",
+                                        log_path=RA_LOG_DIR, level="INFO")
     _check_for_any_resource_presence()
     _is_cluster_standby_on()
     _load_config()

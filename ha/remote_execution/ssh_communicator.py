@@ -87,6 +87,9 @@ def main() -> None:
     remote_executor.execute(args.command)
 
 if __name__ == '__main__':
+    """
+    Below code is for testing only
+    """
     Log.init(service_name="SSHRemoteExecutor", log_path=RA_LOG_DIR, level="INFO")
     try:
         main()
