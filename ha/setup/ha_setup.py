@@ -1089,8 +1089,7 @@ def main(argv: list):
             Conf.load(const.HA_GLOBAL_INDEX, f"yaml://{const.SOURCE_CONFIG_FILE}")
             log_path = Conf.get(const.HA_GLOBAL_INDEX, f"LOG{_DELIM}path")
             log_level = Conf.get(const.HA_GLOBAL_INDEX, f"LOG{_DELIM}level")
-            ConfigManager.centralized_log_init(service_name='ha_setup', log_path=log_path,
-                                                level=log_level)
+            ConfigManager.centralized_log_init(service_name='ha_setup', log_path=log_path, level=log_level)
         elif sys.argv[1] == "cleanup":
             if not os.path.exists(const.HA_CONFIG_FILE):
                 a_str = f'Cleanup can not be proceed as \
@@ -1099,9 +1098,9 @@ def main(argv: list):
                            is some other problem'
                 sys.stdout.write(a_str)
                 return 0
-            ConfigManager.init()
+            ConfigManager.init("ha_setup")
         else:
-            ConfigManager.init()
+            ConfigManager.init("ha_setup")
 
         desc = "HA Setup command"
         command = Cmd.get_command(desc, argv[1:])
