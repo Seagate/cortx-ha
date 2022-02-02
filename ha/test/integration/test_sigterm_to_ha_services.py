@@ -64,7 +64,7 @@ class TestSigtermHandling(unittest.TestCase):
         producer_id="csm_producer"
         self.message_type = Conf.get(const.HA_GLOBAL_INDEX, f'CLUSTER_STOP_MON{const._DELIM}message_type')
         self.producer = MessageBus.get_producer(producer_id=producer_id, message_type=self.message_type)
-        self.producer.publish({"start_cluster_shutdown":"1"})
+        self.producer.publish({"start_cluster_shutdown":1})
         # The consumer 'ClusterStopMonitor' will checking this message/key as cluster_alert["start_cluster_shutdown"] == '1'
 
     def check_cluster_stop_key(self, should_exists):
