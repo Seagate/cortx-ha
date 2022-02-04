@@ -18,12 +18,17 @@
 import threading
 from kubernetes import config, client, watch
 
+from ha.core.config.config_manager import ConfigManager
 from ha.monitor.k8s.objects import ObjectMap
 from ha.monitor.k8s.parser import EventParser
 from ha.monitor.k8s.const import EventStates, K8SClientConst
 from ha.monitor.k8s.const import K8SEventsConst
 from cortx.utils.log import Log
+<<<<<<< HEAD
 from ha.const import _DELIM
+=======
+from ha import const
+>>>>>>> upstream/fault_k8s
 
 class ObjectMonitor(threading.Thread):
     def __init__(self, producer, k_object, **kwargs):
@@ -32,6 +37,7 @@ class ObjectMonitor(threading.Thread):
         Initialization of member objects, and Thread super calss
         """
         super().__init__()
+        self._publish_alert = True
         self._object = k_object
         self.name = f"Monitor-{k_object}-Thread"
         self._args = kwargs
@@ -40,6 +46,10 @@ class ObjectMonitor(threading.Thread):
         self._sigterm_received = threading.Event()
         self._stop_event_processing = False
         self._producer = producer
+<<<<<<< HEAD
+=======
+        self._confstore = ConfigManager.get_confstore()
+>>>>>>> upstream/fault_k8s
         Log.info(f"Initialization done for {self._object} monitor")
 
     def set_sigterm(self, signum, frame):
@@ -49,6 +59,12 @@ class ObjectMonitor(threading.Thread):
         """
         Log.info(f"{self.name} Received signal: {signum}")
         Log.debug(f"{self.name} Received signal: {signum} during execution of frame: {frame}")
+<<<<<<< HEAD
+=======
+        if self._confstore.key_exists(const.CLUSTER_STOP_KEY):
+            Log.debug(f"Deleting the key ({const.CLUSTER_STOP_KEY}) from confstore so next time we will not go in cluster stop mode.")
+            self._confstore.delete(key=const.CLUSTER_STOP_KEY, recurse=True)
+>>>>>>> upstream/fault_k8s
         self._sigterm_received.set()
 
     def check_for_signals(self, k8s_watch: watch.Watch, k8s_watch_stream):
@@ -81,6 +97,34 @@ class ObjectMonitor(threading.Thread):
         # Setting flag to stop event processing loop
         Log.info(f"Stopped watching for {self._object} events.")
         self._stop_event_processing = True
+<<<<<<< HEAD
+=======
+
+    def is_publish_enable(self) -> bool:
+        """
+        Check if cluster_stop key is exist and if exist check if it is enable
+        if enable then publish event should be stopped
+        """
+        if self._publish_alert:
+            if self._confstore.key_exists(const.CLUSTER_STOP_KEY):
+                _, cluster_stop = (self._confstore.get(const.CLUSTER_STOP_KEY)).popitem()
+                if cluster_stop == const.CLUSTER_STOP_VAL_ENABLE:
+                    Log.info(f"{self._object}_monitor stopping publish alert as cluster stop message is received.")
+                    self._publish_alert = False
+        return self._publish_alert
+
+    def publish_alert(self, alert):
+        """
+        If publish is enabled, i.e. Yet the cluster stop message has not been received.
+        then publish the alert for Fault Tolerance Monitor
+        """
+        if self.is_publish_enable():
+            # Write to message bus
+            Log.info(f"{self._object}_monitor sending alert on message bus {alert.to_dict()}")
+            self._producer.publish(str(alert.to_dict()))
+        else:
+            Log.info(f"{self._object}_monitor received cluster stop message so skipping publish alert: {str(alert.to_dict())}.")
+>>>>>>> upstream/fault_k8s
 
     def run(self):
         """
@@ -127,8 +171,12 @@ class ObjectMonitor(threading.Thread):
                         self._starting_up = False
 
                 # Write to message bus
+<<<<<<< HEAD
                 Log.info(f"{self._object}_monitor Sending alert on message bus {alert.to_dict()}")
                 self._producer.publish(str(alert.to_dict()))
+=======
+                self.publish_alert(alert)
+>>>>>>> upstream/fault_k8s
 
             # If stop processing events is set then no need to retry just break the loop
             # If we don't specify timeout no need to restart the loop it will happen internally
@@ -136,3 +184,7 @@ class ObjectMonitor(threading.Thread):
             if self._stop_event_processing or K8SClientConst.TIMEOUT_SECONDS not in self._args:
                 break
         Log.info(f"Stopping the {self.name}...")
+<<<<<<< HEAD
+=======
+
+>>>>>>> upstream/fault_k8s

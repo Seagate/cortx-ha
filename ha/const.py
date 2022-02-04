@@ -22,6 +22,7 @@ CORTX_VERSION_2="2"
 HA_CLUSTER_SOFTWARE="corosync"
 HACLUSTER_KEY = "cortx"
 SERVER_NODE_KEY = "server_node"
+# RA_LOG_DIR this is deprecated.[#620 PR]
 RA_LOG_DIR="/var/log/seagate/cortx/ha"
 PACEMAKER_LOG="/var/log/pacemaker.log"
 AUTH_DIR="/var/lib/pcsd"
@@ -32,6 +33,7 @@ PCSD_DIR="/var/log/pcsd"
 LOG_DIR="/var/log"
 CONFIG_DIR="/etc/cortx/ha"
 SYSTEM_DIR="/etc/systemd/system"
+# Needs to be replaced by log path defined in cluster.conf[EOS-27352].
 SUPPORT_BUNDLE_ERR="{}/support_bundle.err".format(RA_LOG_DIR)
 SUPPORT_BUNDLE_LOGS=[RA_LOG_DIR, PCSD_LOG, PACEMAKER_LOG, COROSYNC_LOG]
 CORTX_SUPPORT_BUNDLE_LOGS=[RA_LOG_DIR, PCSD_LOG, PACEMAKER_LOG, CONFIG_DIR, COROSYNC_LOG]
@@ -206,6 +208,10 @@ MODULE = "module"
 RESOURCE_TYPE = "resource_type"
 STONITH_AUTH_TYPE = 'PASSWORD'
 logger_utility_iec_cmd="logger -i -p local3.err"
+CLUSTER_STOP_KEY = "cluster_stop_key"
+# We are using only key 'CLUSTER_STOP_KEY' and ckecking whether ths key is exist
+# not using the value anywhere but as default value for key.
+CLUSTER_STOP_VAL_ENABLE = "1"
 
 class STATUSES(Enum):
     IN_PROGRESS = "InProgress"

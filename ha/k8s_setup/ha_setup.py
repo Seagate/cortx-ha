@@ -90,12 +90,6 @@ class Cmd:
         args = parser.parse_args(argv)
         return args.command(args)
 
-    def get_machine_id(self):
-        command = "cat /etc/machine-id"
-        machine_id, err, rc = self._execute.run_cmd(command, check_error=True)
-        Log.info(f"Read machine-id. Output: {machine_id}, Err: {err}, RC: {rc}")
-        return machine_id.strip()
-
     @staticmethod
     def add_args(parser: str, cls: str, name: str):
         """
@@ -188,6 +182,11 @@ class ConfigCmd(Cmd):
         Process config command.
         """
         try:
+            # Get log path from cluster.conf.
+            log_path = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}storage{_DELIM}log')
+            machine_id = Conf.machine_id
+            ha_log_path = os.path.join(log_path, f'ha/{machine_id}')
+
             consul_endpoints = Conf.get(self._index, f'cortx{_DELIM}external{_DELIM}consul{_DELIM}endpoints')
             #========================================================#
             # consul Service endpoints from cluster.conf             #
@@ -208,24 +207,11 @@ class ConfigCmd(Cmd):
             if not kafka_endpoint:
                 sys.stderr.write(f'Failed to get kafka config. kafka_config: {kafka_endpoint}. \n')
                 sys.exit(1)
-            # Dummy value fetched for now. This will be replaced by the key/path for the pod label onces that is avilable in confstore
-            # Ref ticket EOS-25694
-            data_pod_label = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}product_release')
-            # TBD delete once data_pod_label is avilable from confstore
-            data_pod_label = ['cortx-data', 'cortx-server']
 
-            # Time till when system health can be collected in bootstrap mode
-            timeout = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}product_release')
-            timeout = '10' # in seconds ;  temporary value till the same is avilabe in cluster.conf
-            # Total number of pods for which health is to be maintained
-            num_pods = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}product_release')
-            num_pods = '10' #temporary value till the same is avilabe in cluster.conf
-
-            conf_file_dict = {'LOG' : {'path' : const.HA_LOG_DIR, 'level' : const.HA_LOG_LEVEL},
+            conf_file_dict = {'LOG' : {'path' : ha_log_path, 'level' : const.HA_LOG_LEVEL},
                          'consul_config' : {'endpoint' : consul_endpoint},
                          'kafka_config' : {'endpoints': kafka_endpoint},
                          'event_topic' : 'hare',
-                         'data_pod_label' : data_pod_label,
                          'MONITOR' : {'message_type' : 'cluster_event', 'producer_id' : 'cluster_monitor'},
                          'EVENT_MANAGER' : {'message_type' : 'health_events', 'producer_id' : 'system_health',
                                             'consumer_group' : 'health_monitor', 'consumer_id' : '1'},
@@ -234,9 +220,7 @@ class ConfigCmd(Cmd):
                          'CLUSTER_STOP_MON' : {'message_type' : 'cluster_stop', 'consumer_group' : 'cluster_mon',
                                               'consumer_id' : '2'},
                          'NODE': {'resource_type': 'node'},
-                         'SYSTEM_HEALTH' : {'num_entity_health_events' : 2,
-                                            'sys_health_bootstrap_timeout' : timeout,
-                                            'total_num_pods' : num_pods }
+                         'SYSTEM_HEALTH' : {'num_entity_health_events' : 2}
                          }
 
             if not os.path.isdir(const.CONFIG_DIR):
@@ -256,7 +240,6 @@ class ConfigCmd(Cmd):
             # in the similar way, confstore will have this key when
             # the cluster.conf load will taked place.
             # So, to get the cluster_id field from Confstore, we need machine_id
-            machine_id = self.get_machine_id()
             cluster_id = Conf.get(self._index, f'node{_DELIM}{machine_id}{_DELIM}cluster_id')
             # site_id = Conf.get(self._index, f'node{_DELIM}{machine_id}{_DELIM}site_id')
             site_id = '1'
@@ -268,8 +251,7 @@ class ConfigCmd(Cmd):
                 yaml.dump(conf_file_dict, conf_file, default_flow_style=False)
             self._confstore = ConfigManager.get_confstore()
 
-            Log.info(f'Populating the ha config file with consul_endpoint: {consul_endpoint}, \
-                       data_pod_label: {data_pod_label}')
+            Log.info(f'Populating the ha config file with consul_endpoint: {consul_endpoint}')
 
             Log.info('Performing event_manager subscription')
             event_manager = EventManager.get_instance()

@@ -27,8 +27,10 @@ from ha.util.message_bus import MessageBus, CONSUMER_STATUS, MessageBusConsumer
 
 from ha import const
 from ha.k8s_setup.const import _DELIM
+from ha.core.config.config_manager import ConfigManager
 
 class ClusterStopMonitor:
+
 
     def __init__(self):
         """Init method"""
@@ -83,8 +85,7 @@ class ClusterStopMonitor:
             msg = json.dumps(ast.literal_eval(msg_decode))
             cluster_alert = json.loads(msg)
 
-            if cluster_alert["start_cluster_shutdown"] == '1':
-                # Placeholder function, to be replaced by appropriate function as part of EOS-24900
+            if cluster_alert["start_cluster_shutdown"] == 1:
                 self.stop_cluster()
         except Exception as err:
             Log.error(f'Failed to analyze the event: {message} error: {err}')
@@ -93,6 +94,14 @@ class ClusterStopMonitor:
 
     def stop_cluster(self):
         """
-        Placeholder function
+        Sets the cluster stop key in confstore for the k8s monitor
+        to notify cltuster shutdown is started
         """
-        Log.info('Cluster stop received ')
+        Log.info(f'The cluster stop message on message bus ({self._message_type}) is received.')
+        confstore = ConfigManager.get_confstore()
+        if not confstore.key_exists(const.CLUSTER_STOP_KEY):
+            Log.info(f'Setting key {const.CLUSTER_STOP_KEY} to {const.CLUSTER_STOP_VAL_ENABLE} in confstore.')
+            confstore.set(const.CLUSTER_STOP_KEY, const.CLUSTER_STOP_VAL_ENABLE)
+        else:
+            Log.info(f'Updating key {const.CLUSTER_STOP_KEY} to {const.CLUSTER_STOP_VAL_ENABLE} in confstore.')
+            confstore.update(const.CLUSTER_STOP_KEY, const.CLUSTER_STOP_VAL_ENABLE)

@@ -13,29 +13,25 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-# Needs to be replaced by log path defined in cluster.conf[EOS-27352].
-HA_LOG_DIR="/var/log/seagate/cortx/ha"
-HA_LOG_LEVEL="INFO"
-CONFIG_DIR="/etc/cortx/ha"
-HA_CONFIG_FILE="{}/ha.conf".format(CONFIG_DIR)
-SOURCE_PATH="/opt/seagate/cortx/ha"
-SOURCE_CONFIG_PATH="{}/conf/etc".format(SOURCE_PATH)
-SOURCE_HEALTH_HIERARCHY_FILE = "{}/system_health_hierarchy.json".format(SOURCE_CONFIG_PATH)
-HEALTH_HIERARCHY_FILE = "{}/system_health_hierarchy.json".format(CONFIG_DIR)
+import os
+import pathlib
+import sys
 
-#Confstore delimiter
-_DELIM=">"
+from ha.util.conf_store import ConftStoreSearch
+from cortx.utils.conf_store import Conf
+from ha.core.config.config_manager import ConfigManager
 
-# consul endpoint scheme: http
-consul_scheme = 'http'
+sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..', '..'))
 
-# Event_manager keys
-POD_EVENT="node"
-EVENT_COMPONENT="hare"
+if __name__ == "__main__":
+    print("******** Testing confstore search APIs for data and server PODs ********")
+    try:
+        Conf.load("cortx", "yaml:///etc/cortx/cluster.conf")
+        ConfigManager.init("test_conf_store_search_api")
+        cluster_card  = ConftStoreSearch()
+        cluster_card.set_cluster_cardinality("cortx")
+        cc = cluster_card.get_cluster_cardinality()
+        print(f"Following clsuter cardinality is set: {cc}")
 
-# confStore search API constants
-NODE_CONST = "node"
-SERVICE_CONST = "services"
-CLUSTER_CARDINALITY_KEY = "cluster_cardinality"
-CLUSTER_CARDINALITY_NUM_NODES = "num_nodes"
-CLUSTER_CARDINALITY_LIST_NODES = "node_list"
+    except Exception as e:
+        print(f"Failed to test confstore search APIs for data and server PODs, Error: {e}")
