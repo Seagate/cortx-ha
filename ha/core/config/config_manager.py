@@ -65,7 +65,7 @@ class ConfigManager:
 
     @staticmethod
     def centralized_log_init(service_name, log_path=None, level="INFO",
-                            backup_count=5,file_size_in_mb=10,
+                            backup_count=5, file_size_in_mb=10,
                             syslog_server=None, syslog_port=None,
                             console_output=False):
         """
