@@ -157,7 +157,7 @@ def _unstandby_cluster() -> None:
 
 def perform_post_upgrade(ios_instances=None, s3_instances=None, do_unstandby=False, mgmt_info=None, node_count=None):
     '''Starting routine for post-upgrade process'''
-    ConfigManager.centralized_log_init(service_name="post_disruptive_upgrade",
+    ConfigManager.init(log_name="post_disruptive_upgrade",
                                         log_path=RA_LOG_DIR, level="INFO")
     _check_for_any_resource_presence()
     _is_cluster_standby_on()

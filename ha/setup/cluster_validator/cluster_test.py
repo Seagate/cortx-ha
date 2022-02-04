@@ -374,6 +374,7 @@ def _main():
     """
     args = TestExecutor.parse_args()
 
+    # Deprecated: RA_LOG_DIR is deprecated
     Log.init(service_name="validate_cluster",
              log_path=RA_LOG_DIR, level="INFO")
 

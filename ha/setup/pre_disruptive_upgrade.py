@@ -181,7 +181,7 @@ def _parse_arguments() -> Any:
 
 def _main() -> None:
     args = _parse_arguments()
-    ConfigManager.centralized_log_init(service_name="pre_disruptive_upgrade",
+    ConfigManager.init(log_name="pre_disruptive_upgrade",
                                         log_path=RA_LOG_DIR, level="INFO")
     Log.info("Script invoked as executable with params: {}".format(vars(args)))
     check_cluster_health()

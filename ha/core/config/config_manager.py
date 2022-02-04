@@ -41,43 +41,33 @@ class ConfigManager:
 
     # TODO: create separate function for log and conf file
     @staticmethod
-    def init(log_name):
+    def init(log_name, log_path=None, level="INFO",
+                            backup_count=5, file_size_in_mb=10,
+                            syslog_server=None, syslog_port=None,
+                            console_output=False):
         """
         Initialize ha conf and log
         Args:
             log_name (str): service_name for log init.
         """
-        if len(ConfigManager._conf) == 0:
-            Conf.init()
-        ConfigManager._safe_load(const.HA_GLOBAL_INDEX, f"yaml://{const.HA_CONFIG_FILE}")
-        if log_name is not None:
-            ConfigManager._init_log(log_name)
-
-    @staticmethod
-    def _init_log(log_name: str):
-        """
-        Log initalize
-        """
-        log_path = Conf.get(const.HA_GLOBAL_INDEX, f"LOG{_DELIM}path")
-        log_level = Conf.get(const.HA_GLOBAL_INDEX, f"LOG{_DELIM}level")
-        ConfigManager.centralized_log_init(service_name=log_name,
-                        log_path=log_path, level=log_level)
-
-    @staticmethod
-    def centralized_log_init(service_name, log_path=None, level="INFO",
-                            backup_count=5, file_size_in_mb=10,
-                            syslog_server=None, syslog_port=None,
-                            console_output=False):
-        """
-        centralized_log_init will allow ha to setup log anywhere inside HA.
-        This function should not depend on init() as module may configure log without init.
-        """
+        ConfigManager._conf_init()
         if log_path == None:
             log_path = Conf.get(const.HA_GLOBAL_INDEX, f"LOG{_DELIM}path")
-        Log.init(service_name=service_name, log_path=log_path, level=level,
+        log_path = Conf.get(const.HA_GLOBAL_INDEX, f"LOG{_DELIM}path")
+        log_level = Conf.get(const.HA_GLOBAL_INDEX, f"LOG{_DELIM}level")
+        Log.init(service_name=log_name, log_path=log_path, level=log_level,
                 backup_count=backup_count, file_size_in_mb=file_size_in_mb,
                 syslog_server=syslog_server, syslog_port=syslog_port,
                 console_output=console_output)
+
+    @staticmethod
+    def _conf_init():
+        """
+        Init Conf
+        """
+        if len(ConfigManager._conf) == 0:
+            Conf.init()
+        ConfigManager._safe_load(const.HA_GLOBAL_INDEX, f"yaml://{const.HA_CONFIG_FILE}")
 
     @staticmethod
     def get_confstore():
