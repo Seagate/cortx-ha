@@ -73,7 +73,7 @@ class ConfigManager:
         This function should not depend on init() as module may configure log without init.
         """
         if log_path == None:
-            log_path = const.HA_GLOBAL_INDEX
+            log_path = Conf.get(const.HA_GLOBAL_INDEX, f"LOG{_DELIM}path")
         Log.init(service_name=service_name, log_path=log_path, level=level,
                 backup_count=backup_count, file_size_in_mb=file_size_in_mb,
                 syslog_server=syslog_server, syslog_port=syslog_port,
