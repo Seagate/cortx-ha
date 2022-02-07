@@ -1086,11 +1086,12 @@ def main(argv: list):
     try:
         if sys.argv[1] == "post_install":
             Conf.init()
-            ConfigManager._safe_load(const.HA_GLOBAL_INDEX, f"yaml://{const.SOURCE_CONFIG_FILE}")
+            Conf.load(const.HA_GLOBAL_INDEX, f"yaml://{const.SOURCE_CONFIG_FILE}")
             log_path = Conf.get(const.HA_GLOBAL_INDEX, f"LOG{_DELIM}path")
             log_level = Conf.get(const.HA_GLOBAL_INDEX, f"LOG{_DELIM}level")
-            ConfigManager.init(log_name="ha_setup",
-                    log_path=log_path, level=log_level)
+            ConfigManager.init(log_name="ha_setup", log_path=log_path,
+                        level=log_level,
+                        config_file=f"yaml://{const.SOURCE_CONFIG_FILE}")
         elif sys.argv[1] == "cleanup":
             if not os.path.exists(const.HA_CONFIG_FILE):
                 a_str = f'Cleanup can not be proceed as \
