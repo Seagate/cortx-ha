@@ -30,7 +30,6 @@ from ha.util.consul_kv_store import ConsulKvStore
 from ha.const import _DELIM
 from ha.core.error import HAInvalidNode
 
-# TODO: redefine class as per config manager module design
 class ConfigManager:
     """
     HA configuration to provide central ha configuration
@@ -39,28 +38,35 @@ class ConfigManager:
     _conf = []
     _cluster_confstore = None
 
-    # TODO: create separate function for log and conf file
     @staticmethod
-    def init(log_name):
+    def init(log_name, log_path=None, level="INFO",
+            backup_count=5, file_size_in_mb=10, syslog_server=None,
+            syslog_port=None, console_output=False, config_file=None):
         """
         Initialize ha conf and log
         Args:
             log_name (str): service_name for log init.
         """
-        if len(ConfigManager._conf) == 0:
-            Conf.init()
-        ConfigManager._safe_load(const.HA_GLOBAL_INDEX, f"yaml://{const.HA_CONFIG_FILE}")
-        if log_name is not None:
-            ConfigManager._init_log(log_name)
+        # log_path will be piked from cluster config only
+        # log_path can be updated for testing only
+        ConfigManager._conf_init(config_file)
+        if log_name:
+            if not log_path:
+                log_path = Conf.get(const.HA_GLOBAL_INDEX, f"LOG{_DELIM}path")
+            level = Conf.get(const.HA_GLOBAL_INDEX, f"LOG{_DELIM}level")
+            Log.init(service_name=log_name, log_path=log_path, level=level,
+                    backup_count=backup_count, file_size_in_mb=file_size_in_mb,
+                    syslog_server=syslog_server, syslog_port=syslog_port,
+                    console_output=console_output)
 
     @staticmethod
-    def _init_log(log_name: str):
+    def _conf_init(config_file):
         """
-        Log initalize
+        Init Conf
         """
-        log_path = Conf.get(const.HA_GLOBAL_INDEX, f"LOG{_DELIM}path")
-        log_level = Conf.get(const.HA_GLOBAL_INDEX, f"LOG{_DELIM}level")
-        Log.init(service_name=log_name, log_path=log_path, level=log_level)
+        if not config_file:
+            config_file = f"yaml://{const.HA_CONFIG_FILE}"
+        ConfigManager._safe_load(const.HA_GLOBAL_INDEX, config_file)
 
     @staticmethod
     def get_confstore():
