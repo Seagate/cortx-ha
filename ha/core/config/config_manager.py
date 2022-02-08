@@ -47,6 +47,8 @@ class ConfigManager:
         Args:
             log_name (str): service_name for log init.
         """
+        # log_path will be piked from cluster config only
+        # log_path can be updated for testing only
         ConfigManager._conf_init(config_file)
         if log_name:
             if not log_path:
@@ -64,8 +66,6 @@ class ConfigManager:
         """
         if not config_file:
             config_file = f"yaml://{const.HA_CONFIG_FILE}"
-        if len(ConfigManager._conf) == 0:
-            Conf.init()
         ConfigManager._safe_load(const.HA_GLOBAL_INDEX, config_file)
 
     @staticmethod
