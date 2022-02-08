@@ -33,6 +33,7 @@ from cortx.utils.log import Log
 from cortx.utils.ha.dm.decision_monitor import DecisionMonitor
 from cortx.utils.ha.dm.actions import Action
 from ha.resource.resource_agent import ResourceAgent
+from ha.core.config.config_manager import ConfigManager
 from ha import const
 from ha.const import _DELIM
 
@@ -356,10 +357,7 @@ def main(resource, action=''):
     try:
         if action == 'meta-data':
             return resource.metadata()
-        Conf.load(const.HA_GLOBAL_INDEX, Yaml(const.HA_CONFIG_FILE))
-        log_path = Conf.get(const.HA_GLOBAL_INDEX, f"LOG{_DELIM}path")
-        log_level = Conf.get(const.HA_GLOBAL_INDEX, f"LOG{_DELIM}level")
-        Log.init(service_name='resource_agent', log_path=log_path, level=log_level)
+        ConfigManager.init(log_name='resource_agent')
         with open(const.RESOURCE_SCHEMA, 'r') as f:
             resource_schema = json.load(f)
         os.makedirs(const.RA_LOG_DIR, exist_ok=True)
