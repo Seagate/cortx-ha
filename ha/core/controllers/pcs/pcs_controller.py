@@ -19,6 +19,7 @@ import time
 import json
 import re
 import socket
+from ha.core.config.config_manager import ConfigManager
 
 from ha.core.controllers.element_controller import ElementController
 from ha.execute import SimpleCommand
@@ -37,6 +38,7 @@ class PcsController(ElementController):
         """
         super(PcsController, self).__init__()
         self._execute = SimpleCommand()
+        self._confstore = ConfigManager.get_confstore()
 
     def _check_non_empty(self, **kwargs):
         """
@@ -218,12 +220,15 @@ class PcsController(ElementController):
                 raise HAClusterCLIError(f'{node_id} not a valid node_id: {err}')
         return True
 
-    def _is_node_in_cluster(self, node_id):
-        '''
-           Checks if node_id present in cluster or not
-           Returns: bool
-           Exception: HAInvalidNode
-        '''
+    def _is_node_in_cluster(self, node_id: str):
+        """
+        Checks if node_id present in cluster or not
+        Args:
+            node_id (str): Private fqdn define in conf store.
+        Raises: HAInvalidNode
+        If Node is not present in cluster or Node is not valid raise Exception
+        """
         if node_id in self._get_node_list():
             return True
         raise HAInvalidNode(f"The node {node_id} is not present in the cluster.")
+

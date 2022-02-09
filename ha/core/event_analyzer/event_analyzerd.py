@@ -35,6 +35,9 @@ from ha import const
 from ha.core.config.config_manager import ConfigManager
 from ha.core.system_health.system_health import SystemHealth
 from ha.core.event_analyzer.watcher.watcher import Watcher
+from ha.core.event_analyzer.filter.filter import ClusterResourceFilter
+from ha.core.event_analyzer.parser.parser import ClusterResourceParser
+from ha.core.event_analyzer.event_analyzer_exceptions import SubscriberException
 from ha.const import _DELIM
 
 class EventAnalyzerService:
@@ -98,6 +101,27 @@ class EventAnalyzerService:
         Log.info(f"Running the daemon for HA event analyzer with PID {os.getpid()}...")
         while True:
             time.sleep(600)
+
+# This will be instantiated from the fault_tolerance
+class EventAnalyzer:
+    """
+    Analyzes an event, filter gets applied. Further it parses
+    an alert to create health event object required for system
+    health processing
+    """
+    def __init__(self, msg=None):
+        '''init method'''
+        self._confstore = ConfigManager.get_confstore()
+        system_health = SystemHealth(self._confstore)
+        self._cluster_resource_filter = ClusterResourceFilter()
+        self._cluster_resource_parser = ClusterResourceParser()
+        if self._cluster_resource_filter.filter_event(msg):
+            health_event = self._cluster_resource_parser.parse_event(msg)
+            try:
+                system_health.process_event(health_event)
+            except Exception as e:
+                Log.error(f"Failed to process event. Error: {e}")
+                raise SubscriberException(f"Failed to process event {str(health_event)}. Error: {e}")
 
 def main(argv):
     """

@@ -17,11 +17,9 @@
 
 import json
 import traceback
-from threading import Thread
-
-from cortx.utils.message_bus import MessageConsumer
 from cortx.utils.log import Log
-
+from ha.util.message_bus import MessageBus
+from ha.util.message_bus import CONSUMER_STATUS
 from ha.core.event_analyzer.filter.filter import Filter
 from ha.core.event_analyzer.parser.parser import Parser
 from ha.core.event_analyzer.subscriber import Subscriber
@@ -30,23 +28,21 @@ from ha.core.event_analyzer.event_analyzer_exceptions import EventFilterExceptio
 from ha.core.event_analyzer.event_analyzer_exceptions import EventParserException
 from ha.core.event_analyzer.event_analyzer_exceptions import SubscriberException
 
-class Watcher(Thread):
+class Watcher:
     """ Watch message bus to check in coming event. """
 
     def __init__(self, consumer_id: int, message_type: str, consumer_group: str,
                 event_filter: Filter, event_parser: Parser, subscriber: Subscriber):
         """
         Initalize Watcher class to monitor message bus event.
-
         Args:
-            id (int): Consumer ID for message bus.
+            consumer_id (int): Consumer ID for message bus.
             message_type (str): Message type for getting event.
-            group (str): Consumer Group of message bus.
+            consumer_group (str): Consumer Group of message bus.
             event_filter (Filter): Filter unused event.
-            parser (Parser): Parse event to HealthEvent
+            event_parser (Parser): Parse event to HealthEvent
             subscriber (Subscriber): Pass event to Subscriber.
         """
-        super(Watcher, self).__init__(name=f"{message_type}-{str(consumer_id)}", daemon=True)
         Log.info(f"Initalizing watcher {message_type}-{str(consumer_id)}")
         self.consumer_id = consumer_id
         self.message_type = message_type
@@ -55,77 +51,59 @@ class Watcher(Thread):
         self.parser = event_parser
         self.subscriber = subscriber
         self._validate()
-        self.consumer = self._get_connection()
+        # TBD : Call MessageBus.init() from here if this watcher needs to be used in HA. Reference EOS-26999
+        self.consumer = MessageBus.get_consumer(consumer_id=str(self.consumer_id),
+                                consumer_group=self.consumer_group,
+                                message_type=self.message_type,
+                                callback=self.process_message)
 
     def _validate(self) -> None:
         """
         Validate watcher and raise exception.
-
         Raises:
             EventAnalyzer: event analyzer exception.
         """
         if not isinstance(self.subscriber, Subscriber):
             raise InvalidSubscriber(f"Invalid subscriber {self.subscriber}")
 
-    def _get_connection(self) -> MessageConsumer:
+    def process_message(self, message: str) -> None:
         """
-        Get message consumer connection.
-
-        Returns:
-            MessageConsumer: Return instance of MessageConsumer.
-        """
-        return MessageConsumer(consumer_id=str(self.consumer_id),
-                                consumer_group=self.consumer_group,
-                                message_types=[self.message_type],
-                                auto_ack=False, offset='earliest')
-
-    def _get_message(self):
-        """
-        Receive message from message bus.
-
-        Returns:
-            str: JSON object of message
+        Callback function to get message.
+        Args:
+            message (str): Message received from message bus.
         """
         try:
-            message = self.consumer.receive(timeout=0)
+            message = json.loads(message.decode('utf-8'))
         except Exception as e:
-            Log.error(f"Failed to receive message, error: {e}. Retrying to receive.")
-            return None
+            Log.error(f"Invalid message {message}, sollow exception and ack it. Error: {e}")
+            return CONSUMER_STATUS.SUCCESS
         try:
-            return json.loads(message.decode('utf-8'))
+            Log.debug(f"Captured message: {message}")
+            if self.filter.filter_event(json.dumps(message)):
+                Log.info(f"Filtered Event detected: {message}")
+                event = self.parser.parse_event(json.dumps(message))
+                try:
+                    Log.info(f"Processing event {event} to subscriber...")
+                    self.subscriber.process_event(event)
+                except Exception as e:
+                    raise SubscriberException(f"Failed to process event {message}. Error: {e}")
+            return CONSUMER_STATUS.SUCCESS
+        except EventFilterException as e:
+            Log.error(f"Filter exception {e} {traceback.format_exc()} for {message}. Ack Message.")
+            return CONSUMER_STATUS.SUCCESS
+        except EventParserException as e:
+            Log.error(f"Parser exception {e} {traceback.format_exc()} for {message}.  Ack Message.")
+            return CONSUMER_STATUS.SUCCESS
+        except SubscriberException as e:
+            Log.error(f"Subscriber exception {e} {traceback.format_exc()} for {message}, retry without ack.")
+            return CONSUMER_STATUS.FAILED
         except Exception as e:
-            Log.error(f"Invalid format of message failed due to {e}. Message : {str(message)}")
-            self.consumer.ack()
-            return None
+            Log.error(f"Unknown Exception caught {e} {traceback.format_exc()}")
+            Log.error(f"Forcefully ack failed msg: {message}")
+            return CONSUMER_STATUS.FAILED
 
-    def run(self):
+    def start(self):
         """
-        Overloaded of Thread.
+        Start watcher to listen messages.
         """
-        while True:
-            message = self._get_message()
-            if message is None:
-                continue
-            try:
-                Log.debug(f"Captured message: {message}")
-                if self.filter.filter_event(json.dumps(message)):
-                    Log.info(f"Filtered Event detected: {message}")
-                    event = self.parser.parse_event(json.dumps(message))
-                    try:
-                        Log.info(f"Processing event {event} to subscriber...")
-                        self.subscriber.process_event(event)
-                    except Exception as e:
-                        raise SubscriberException(f"Failed to process event {message}. Error: {e}")
-                self.consumer.ack()
-            except EventFilterException as e:
-                Log.error(f"Filter exception {e} {traceback.format_exc()} for {message}")
-                self.consumer.ack()
-            except EventParserException as e:
-                Log.error(f"Parser exception {e} {traceback.format_exc()} for {message}")
-                self.consumer.ack()
-            except SubscriberException as e:
-                Log.error(f"Subscriber exception {e} {traceback.format_exc()} for {message}, retry without ack.")
-            except Exception as e:
-                Log.error(f"Unknown Exception caught {e} {traceback.format_exc()}")
-                Log.error(f"Forcefully ack failed msg: {message}")
-                self.consumer.ack()
+        self.consumer.start()

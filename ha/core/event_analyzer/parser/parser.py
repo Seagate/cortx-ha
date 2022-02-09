@@ -16,14 +16,21 @@
 # cortx-questions@seagate.com.
 
 import abc
+import ast
 import json
 import re
+import time
+import uuid
 
 from cortx.utils.log import Log
+from cortx.utils.conf_store import Conf
 
+from ha.const import _DELIM
+from ha import const
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.event_analyzer.event_analyzer_exceptions import EventParserException
 from ha.core.system_health.const import CLUSTER_ELEMENTS, HEALTH_EVENTS, EVENT_SEVERITIES
+from ha.core.system_health.status_mapper import StatusMapper
 from ha.core.config.config_manager import ConfigManager
 from ha.const import PVTFQDN_TO_NODEID_KEY, ALERT_ATTRIBUTES, EVENT_ATTRIBUTES
 
@@ -145,3 +152,60 @@ class IEMParser(Parser):
 
         except Exception as e:
             raise EventParserException(f"Failed to parse IEM. Message: {msg}, Error: {e}")
+
+
+class ClusterResourceParser(Parser):
+    """
+    Subscriber for event analyzer to pass msg.
+    """
+
+    def __init__(self):
+        """
+        Init method.
+        """
+        super(ClusterResourceParser, self).__init__()
+        self.cluster_id = Conf.get(const.HA_GLOBAL_INDEX, f"COMMON_CONFIG{_DELIM}cluster_id")
+        self.site_id = Conf.get(const.HA_GLOBAL_INDEX, f"COMMON_CONFIG{_DELIM}site_id")
+        self.rack_id = Conf.get(const.HA_GLOBAL_INDEX, f"COMMON_CONFIG{_DELIM}rack_id")
+        Log.info("ClusterResource Parser is initialized ...")
+
+    def parse_event(self, msg: str) -> HealthEvent:
+        """
+        Parse event.
+        Args:
+            msg (str): Msg
+        """
+        try:
+            message = json.dumps(ast.literal_eval(msg))
+            cluster_resource_alert = json.loads(message)
+            timestamp = str(int(time.time()))
+            event_id = timestamp + str(uuid.uuid4().hex)
+            node_id = cluster_resource_alert["_resource_name"]
+            resource_type = cluster_resource_alert["_resource_type"]
+            event_type = cluster_resource_alert["_event_type"]
+            timestamp = cluster_resource_alert["_timestamp"]
+            generation_id = cluster_resource_alert["_generation_id"]
+
+            event = {
+                EVENT_ATTRIBUTES.EVENT_ID : event_id,
+                EVENT_ATTRIBUTES.EVENT_TYPE : event_type,
+                EVENT_ATTRIBUTES.SEVERITY : StatusMapper.EVENT_TO_SEVERITY_MAPPING[event_type],
+                EVENT_ATTRIBUTES.SITE_ID : self.site_id, # TODO: Should be fetched from confstore
+                EVENT_ATTRIBUTES.RACK_ID : self.rack_id, # TODO: Should be fetched from confstore
+                EVENT_ATTRIBUTES.CLUSTER_ID : self.cluster_id, # TODO: Should be fetched from confstore
+                EVENT_ATTRIBUTES.STORAGESET_ID : node_id,
+                EVENT_ATTRIBUTES.NODE_ID : node_id,
+                EVENT_ATTRIBUTES.HOST_ID : node_id,
+                EVENT_ATTRIBUTES.RESOURCE_TYPE : resource_type,
+                EVENT_ATTRIBUTES.TIMESTAMP : timestamp,
+                EVENT_ATTRIBUTES.RESOURCE_ID : node_id,
+                EVENT_ATTRIBUTES.SPECIFIC_INFO : {"generation_id": generation_id, "pod_restart": 0}
+            }
+
+            Log.debug(f"Parsed {event} schema")
+            health_event = HealthEvent.dict_to_object(event)
+            Log.debug(f"Event {event[EVENT_ATTRIBUTES.EVENT_ID]} is parsed and converted to object.")
+            return health_event
+
+        except Exception as err:
+            raise EventParserException(f"Failed to parse cluster resource alert. Message: {msg}, Error: {err}")

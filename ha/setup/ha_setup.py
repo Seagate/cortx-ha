@@ -25,6 +25,7 @@ import json
 import grp, pwd
 import time
 import uuid
+
 from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
 from cortx.utils.validator.v_pkg import PkgV
@@ -54,6 +55,8 @@ from ha.core.system_health.system_health import SystemHealth
 from ha.core.system_health.const import CLUSTER_ELEMENTS, HEALTH_EVENTS, EVENT_SEVERITIES
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.const import _DELIM
+from ha.util.ipmi_fencing_agent import IpmiFencingAgent
+
 
 class Cmd:
     """
@@ -292,6 +295,10 @@ class Cmd:
                 key = Cipher.generate_key(machine, const.SERVER_NODE_KEY)
                 ipmi_password = Cipher.decrypt(key, ipmi_password_encrypted.encode('ascii')).decode()
 
+                # setup BMC Credentials for ipmi_fencing_agent
+                ipmi_fencing_agent = IpmiFencingAgent()
+                ipmi_fencing_agent.setup_ipmi_credentials(ipmi_ipaddr=ipmi_ipaddr, ipmi_user=ipmi_user, ipmi_password=ipmi_password, node_name=node_name)
+
                 stonith_config[node_name] = {
                     "resource_id": f"stonith-{node_name}",
                     "pcmk_host_list": node_name,
@@ -368,10 +375,12 @@ class PostInstallCmd(Cmd):
             PostInstallCmd.copy_file(const.SOURCE_ALERT_FILTER_RULES_FILE, const.ALERT_FILTER_RULES_FILE)
             PostInstallCmd.copy_file(const.SOURCE_ALERT_EVENT_RULES_FILE, const.ALERT_EVENT_RULES_FILE)
             PostInstallCmd.copy_file(const.SOURCE_CLI_SCHEMA_FILE, const.CLI_SCHEMA_FILE)
-            PostInstallCmd.copy_file(const.SOURCE_SERVICE_FILE, const.SYSTEM_SERVICE_FILE)
+            PostInstallCmd.copy_file(const.SOURCE_EVENT_ANALYZER_SERVICE_FILE, const.SYSTEM_EVENT_ANALYZER_SERVICE_FILE)
+            PostInstallCmd.copy_file(const.SOURCE_HEALTH_MONITOR_SERVICE_FILE, const.SYSTEM_HEALTH_MONITOR_SERVICE_FILE)
             PostInstallCmd.copy_file(const.SOURCE_HEALTH_HIERARCHY_FILE, const.HEALTH_HIERARCHY_FILE)
             PostInstallCmd.copy_file(const.SOURCE_IEM_SCHEMA_PATH, const.IEM_SCHEMA)
             PostInstallCmd.copy_file(const.SOURCE_LOGROTATE_CONF_FILE, const.LOGROTATE_CONF_DIR)
+            PostInstallCmd.copy_file(const.SOURCE_ACTUATOR_SCHEMA, const.ACTUATOR_SCHEMA)
             self._execute.run_cmd("systemctl daemon-reload")
             Log.info(f"{self.name}: Copied HA configs file.")
             # Pre-requisite checks are done here.
@@ -388,10 +397,17 @@ class PostInstallCmd(Cmd):
                 raise HaPrerequisiteException("post_install command failed")
             else:
                 Log.info("hacluster is a part of the haclient group")
-            self._execute.run_cmd(f"setfacl -R -m g:{const.USER_GROUP_HACLIENT}:rwx {const.RA_LOG_DIR}")
-            self._execute.run_cmd(f"setfacl -R -m g:{const.USER_GROUP_ROOT}:rwx {const.RA_LOG_DIR}")
-            self._execute.run_cmd(f"setfacl -R -m g:{const.USER_GROUP_HACLIENT}:r-x {const.CONFIG_DIR}")
-            self._execute.run_cmd(f"setfacl -R -m g:{const.USER_GROUP_ROOT}:rwx {const.CONFIG_DIR}")
+            # For setting the acl, calling setfacl with -d option will set the
+            # passed acl as default for all new files and directories that would
+            # be created inside the parent directory, and then call setfacl with
+            # -R option to recursively set the same acls for existing files and
+            # directories.
+            self._execute.run_cmd(f"setfacl -d -R -m g:{const.USER_GROUP_HACLIENT}:rwx,g:{const.USER_GROUP_ROOT}:rwx {const.RA_LOG_DIR}")
+            self._execute.run_cmd(f"setfacl -R -m g:{const.USER_GROUP_HACLIENT}:rwx,g:{const.USER_GROUP_ROOT}:rwx {const.RA_LOG_DIR}")
+
+            self._execute.run_cmd(f"setfacl -d -R -m g:{const.USER_GROUP_HACLIENT}:r-x,g:{const.USER_GROUP_ROOT}:rwx {const.CONFIG_DIR}")
+            self._execute.run_cmd(f"setfacl -R -m g:{const.USER_GROUP_HACLIENT}:r-x,g:{const.USER_GROUP_ROOT}:rwx {const.CONFIG_DIR}")
+
         except Exception as e:
             Log.error(f"Failed prerequisite with Error: {e}")
             raise HaPrerequisiteException("post_install command failed")
@@ -711,8 +727,10 @@ class ConfigCmd(Cmd):
         site_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.SITE_ID.value}")
         rack_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{NODE_MAP_ATTRIBUTES.RACK_ID.value}")
         storageset_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}{CONFSTORE_KEY_ATTRIBUTES.STORAGE_SET_ID.value}")
+        host_id = Conf.get(self._index, f"server_node{_DELIM}{machine_id}{_DELIM}network{_DELIM}management{_DELIM}public_fqdn")
         node_map = {NODE_MAP_ATTRIBUTES.CLUSTER_ID.value: cluster_id, NODE_MAP_ATTRIBUTES.SITE_ID.value: site_id,
-                    NODE_MAP_ATTRIBUTES.RACK_ID.value: rack_id, NODE_MAP_ATTRIBUTES.STORAGESET_ID.value: storageset_id}
+                    NODE_MAP_ATTRIBUTES.RACK_ID.value: rack_id, NODE_MAP_ATTRIBUTES.STORAGESET_ID.value: storageset_id,
+                    NODE_MAP_ATTRIBUTES.HOST_ID.value: host_id}
         system_health = SystemHealth(self._confstore)
         key = system_health._prepare_key(const.COMPONENTS.NODE_MAP.value, node_id=node_id)
         # Check key is already exist if not, store the node map.
@@ -777,15 +795,6 @@ class InitCmd(Cmd):
         Process init command.
         """
         Log.info("Processing init command")
-        env_type = self.get_installation_type().lower()
-        if env_type == const.INSTALLATION_TYPE.HW.value.lower():
-            Log.info("Enabling the stonith.")
-            self._execute.run_cmd(const.PCS_STONITH_ENABLE)
-            Log.info("Stonith enabled successfully.")
-        elif env_type == const.INSTALLATION_TYPE.VM.value.lower():
-            Log.warn(f"Stonith configuration not available, detected {env_type} env")
-        else:
-            raise HaConfigException(f"Invalid env detected, {env_type}")
         Log.info("init command is successful")
 
 class TestCmd(Cmd):
@@ -872,7 +881,7 @@ class ResetCmd(Cmd):
 
             self._remove_logs(older_logs)
         except Exception as e:
-            Log.error(f"Cluster reset command failed. Error: {e}")
+            sys.stderr.write(f"Cluster reset command failed. {traceback.format_exc()}, Error: {e}\n")
             raise HaResetException("Cluster reset failed")
 
     def _remove_logs(self, logs: list):
@@ -932,6 +941,7 @@ class CleanupCmd(Cmd):
 
         except Exception as e:
             Log.error(f"Cluster cleanup command failed. Error: {e}")
+            sys.stderr.write(f"Cluster cleanup command failed. {traceback.format_exc()}, Error: {e}\n")
             raise HaCleanupException("Cluster cleanup failed")
         Log.info("cleanup command is successful")
 

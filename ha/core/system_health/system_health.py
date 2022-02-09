@@ -18,13 +18,17 @@ import re
 import time
 import ast
 import json
+import uuid
 
 from cortx.utils.log import Log
+
 from ha import const
+from ha.util.message_bus import MessageBus
+from cortx.utils.conf_store.conf_store import Conf
+from ha.const import _DELIM
+from ha.core.config.config_manager import ConfigManager
 from ha.core.system_health.health_evaluators.element_health_evaluator import ElementHealthEvaluator
-
-
-from ha.core.system_health.const import NODE_MAP_ATTRIBUTES
+from ha.core.system_health.const import EVENT_SEVERITIES, NODE_MAP_ATTRIBUTES
 from ha.core.event_analyzer.subscriber import Subscriber
 from ha.core.system_health.system_health_metadata import SystemHealthComponents, SystemHealthHierarchy
 from ha.core.system_health.model.health_event import HealthEvent
@@ -37,6 +41,7 @@ from ha.core.cluster.const import SYSTEM_HEALTH_OUTPUT_V2, GET_SYS_HEALTH_ARGS
 from ha.core.system_health.const import CLUSTER_ELEMENTS, HEALTH_STATUSES
 from ha.core.system_health.model.health_status import StatusOutput, ComponentStatus
 from ha.core.system_health.system_health_hierarchy import HealthHierarchy
+from ha.core.event_manager.resources import RESOURCE_TYPES
 
 class SystemHealth(Subscriber):
     """
@@ -56,7 +61,13 @@ class SystemHealth(Subscriber):
         HealthEvaluatorFactory.init_evaluators()
         # TODO: Temporary code remove when all status method moved to evaluators
         self.health_evaluator = HealthEvaluatorFactory.get_generic_evaluator()
+        self.producer = self._get_producer()
         Log.info("All cluster element are loaded, Ready to process alerts .................")
+
+    def _get_producer(self):
+        message_type = Conf.get(const.HA_GLOBAL_INDEX, f"EVENT_MANAGER{_DELIM}message_type")
+        producer_id = Conf.get(const.HA_GLOBAL_INDEX, f"EVENT_MANAGER{_DELIM}producer_id")
+        return MessageBus.get_producer(producer_id, message_type)
 
     def _prepare_key(self, component: str, **kwargs) -> str:
         """
@@ -254,6 +265,47 @@ class SystemHealth(Subscriber):
         """
         get cluster status method. This method is for returning a status of a cluster.
         """
+        pass
+
+    def _is_update_required(self, current_health: str, updated_health: str, event: HealthEvent) -> bool:
+        """
+        Check if update is needed for system health.
+
+        Args:
+            current_health (dict): current health.
+            healthevent (HealthEvent): health event object.
+
+        Returns:
+            bool: return true if update is needed.
+        """
+        if not current_health:
+            return True
+        is_needed: bool = True
+        old_health = json.loads(current_health)
+        new_health = json.loads(updated_health)
+        old_status = old_health["events"][0]["status"]
+        new_status = new_health["events"][0]["status"]
+
+        # Common cases
+        if old_status == new_status:
+            is_needed = False
+
+        # specific cases
+        # 1. Do not overwrite node status to failed if offline already
+        if event.resource_type == RESOURCE_TYPES.NODE.value and \
+            old_status == HEALTH_STATUSES.OFFLINE.value and new_status == HEALTH_STATUSES.FAILED.value:
+            Log.info(f"Updating is not needed node is in {old_status} and received {new_status}")
+            is_needed = False
+        return is_needed
+
+    def publish_event(self, healthevent: HealthEvent, healthvalue: str= ""):
+        """
+        Produce event
+        """
+        healthevent.event_type = json.loads(healthvalue).get("events")[0]["status"]
+        node_id = healthevent.node_id
+        self.producer.publish(str(healthevent))
+        healthevent.node_id = node_id
 
     def _update(self, healthevent: HealthEvent, healthvalue: str, next_component: str=None):
         """
@@ -262,11 +314,15 @@ class SystemHealth(Subscriber):
         component = SystemHealthComponents.get_component(healthevent.resource_type)
         comp_type = healthevent.resource_type.split(':')[-1]
         comp_id = healthevent.resource_id
+
         key = self._prepare_key(component, cluster_id=self.node_map['cluster_id'], site_id=self.node_map['site_id'],
                                 rack_id=self.node_map['rack_id'], storageset_id=self.node_map['storageset_id'],
                                 node_id=self.node_id, server_id=self.node_id, storage_id=self.node_id,
                                 comp_type=comp_type, comp_id=comp_id)
+        is_key_exists = self.healthmanager.key_exists(key)
         self.healthmanager.set_key(key, healthvalue)
+        if is_key_exists:
+            self.publish_event(healthevent, healthvalue)
 
         # Check the next component to be updated, if none then return.
         if next_component is None:
@@ -280,13 +336,36 @@ class SystemHealth(Subscriber):
             self.process_event(new_event)
             return
 
+    @staticmethod
+    def create_updated_event_object(event_timestamp: str, current_timestamp: str, status: str, spec_info: dict, updated_health: EntityHealth) -> str:
+        """
+        Creates objects of EntityEvent and EntityAction using incoming
+        health status(coming from incoming health event from parser) and
+        other required values and adds it to the latest health object.
+        converts it to a appropriate format which needs to be updated in
+        the system health
+        """
+        # Create a new event and action
+        entity_event = EntityEvent(event_timestamp, current_timestamp, status, spec_info)
+        entity_action = EntityAction(current_timestamp, const.ACTION_STATUS.PENDING.value)
+        # Add the new event and action to the health value
+        updated_health.add_event(entity_event)
+        updated_health.set_action(entity_action)
+        # Convert the health value as appropriate for writing to the store.
+        updated_health = EntityHealth.write(updated_health)
+        return updated_health
+
+    def _check_and_update(self, current_health: str, updated_health: str, healthevent: HealthEvent, next_component: str) -> None:
+        # Update in the store.
+        if self._is_update_required(current_health, updated_health, healthevent):
+            self._update(healthevent, updated_health, next_component=next_component)
+
     def process_event(self, healthevent: HealthEvent):
         """
         Process Event method. This method could be called for updating the health status.
         """
 
         # TODO: Check the user and see if allowed to update the system health.
-
         try:
             status = self.statusmapper.map_event(healthevent.event_type)
             component = SystemHealthComponents.get_component(healthevent.resource_type)
@@ -303,38 +382,108 @@ class SystemHealth(Subscriber):
             component_id = healthevent.resource_id
             Log.info(f"SystemHealth: Processing {component}:{component_type}:{component_id} with status {status}")
 
+            # Update the node map
+            self.node_id = healthevent.node_id
+            self.node_map = {'cluster_id':healthevent.cluster_id, 'site_id':healthevent.site_id,
+                             'rack_id':healthevent.rack_id, 'storageset_id':healthevent.storageset_id}
+
             # Read the currently stored health value
             current_health = self.get_status_raw(component, component_id, comp_type=component_type,
                                         cluster_id=healthevent.cluster_id, site_id=healthevent.site_id,
                                         rack_id=healthevent.rack_id, storageset_id=healthevent.storageset_id,
                                         node_id=healthevent.node_id, server_id=healthevent.node_id,
                                         storage_id=healthevent.node_id)
+
+            current_timestamp = str(int(time.time()))
             if current_health:
-                # Update the current health value itself.
-                updated_health = EntityHealth.read(current_health)
+                current_health_dict = json.loads(current_health)
+                specific_info = current_health_dict["events"][0]["specific_info"]
+                if current_health and specific_info:
+                    # If health is already stored and its a node_health, check further
+                    stored_genration_id = current_health_dict["events"][0]["specific_info"]["generation_id"]
+                    incoming_generation_id = healthevent.specific_info["generation_id"]
+                    incoming_health_status = current_health_dict["events"][0]["status"]
+                    pod_restart_val = current_health_dict["events"][0]["specific_info"]["pod_restart"]
+                    # Update the current health value itself.
+                    latest_health = EntityHealth.read(current_health)
+                    if stored_genration_id != incoming_generation_id:
+                        if incoming_health_status == status:
+                            # If the generation id matches and stored node health matches
+                            # with incoming node health, means online event received first
+                            # instead of failed event in delete scenario
+                            healthevent.specific_info = {"generation_id": stored_genration_id, "pod_restart": 1}
+                            healthevent.event_type = "failed"
+                            updated_health = SystemHealth.create_updated_event_object(healthevent.timestamp, current_timestamp, healthevent.event_type, healthevent.specific_info, latest_health)
+                            # Create a "failed" event and update it in system health and publish
+                            self._check_and_update(current_health, updated_health, healthevent, next_component)
+                            current_health = updated_health
+                            # Now create an "online" event and update it in system health and publish
+                            healthevent.specific_info = {"generation_id": incoming_generation_id, "pod_restart": 1}
+                            healthevent.event_type = "online"
+                            updated_health = SystemHealth.create_updated_event_object(healthevent.timestamp, current_timestamp, healthevent.event_type, healthevent.specific_info, latest_health)
+                            self._check_and_update(current_health, updated_health, healthevent, next_component)
+                        elif pod_restart_val is not None and pod_restart_val:
+                            # Check the pod_restart value assosciated with Node, if its 1,
+                            # means this alert is already updated. No need to send the alert again.
+                            # Just need to reset the pod_restart value
+                            key = self._prepare_key(component, cluster_id=self.node_map['cluster_id'], \
+                                site_id=self.node_map['site_id'], rack_id=self.node_map['rack_id'], \
+                                node_id=self.node_id)
+                            latest_health_dict = json.loads(current_health)
+                            new_spec_info = {"generation_id": stored_genration_id, "pod_restart": 0}
+                            latest_health_dict["events"][0]["specific_info"] = new_spec_info
+                            updated_health = EntityHealth.write(latest_health_dict)
+                            self.healthmanager.set_key(key, updated_health)
+                    else:
+                        # current health is there and generation id is also already present.
+                        # That means its a normal failure scenario
+                        updated_health = SystemHealth.create_updated_event_object(healthevent.timestamp, current_timestamp, status, healthevent.specific_info, latest_health)
+                        self._check_and_update(current_health, updated_health, healthevent, next_component)
+                else:
+                    # Update hierachical components. such as site, rack
+                    latest_health = EntityHealth.read(current_health)
+                    updated_health = SystemHealth.create_updated_event_object(healthevent.timestamp, current_timestamp, status, healthevent.specific_info, latest_health)
+                    self._check_and_update(current_health, updated_health, healthevent, next_component)
             else:
                 # Health value not present in the store currently, create now.
-                updated_health = EntityHealth()
-
-            # Create a new event and action
-            current_timestamp = str(int(time.time()))
-            entity_event = EntityEvent(healthevent.timestamp, current_timestamp, status, healthevent.specific_info)
-            entity_action = EntityAction(current_timestamp, const.ACTION_STATUS.PENDING.value)
-            # Add the new event and action to the health value
-            updated_health.add_event(entity_event)
-            updated_health.set_action(entity_action)
-            # Convert the health value as appropriate for writing to the store.
-            updated_health = EntityHealth.write(updated_health)
-
-            # Update the node map
-            self.node_id = healthevent.node_id
-            self.node_map = {'cluster_id':healthevent.cluster_id, 'site_id':healthevent.site_id,
-                             'rack_id':healthevent.rack_id, 'storageset_id':healthevent.storageset_id}
-
-            # Update in the store.
-            self._update(healthevent, updated_health, next_component=next_component)
-            Log.info(f"Updated health for component: {component}, Type: {component_type}, Id: {component_id}")
-
-        except Exception as e:
-            Log.error(f"Failed processing system health event with Error: {e}")
+                latest_health = EntityHealth()
+                updated_health = SystemHealth.create_updated_event_object(healthevent.timestamp, current_timestamp, status, healthevent.specific_info, latest_health)
+                self._check_and_update(current_health, updated_health, healthevent, next_component)
+        except Exception as err:
+            Log.error(f"Failed processing system health event with Error: {err}")
             raise HaSystemHealthException("Failed processing system health event")
+
+    def get_health_event_template(self, nodeid: str, event_type: str) -> dict:
+        """
+        Create health event
+        Args:
+            nodeid (str): nodeid
+            event_type (str): event type will be offline, online, failed
+
+        Returns:
+            dict: Return dictionary of health event
+        """
+        key = self._prepare_key(const.COMPONENTS.NODE_MAP.value, node_id=nodeid)
+        node_map_val = self.healthmanager.get_key(key)
+        if node_map_val is None:
+            raise HaSystemHealthException("Failed to fetch node_map value")
+        node_map_dict = ast.literal_eval(node_map_val)
+
+        timestamp = str(int(time.time()))
+        event_id = timestamp + str(uuid.uuid4().hex)
+        initial_event = {
+            const.EVENT_ATTRIBUTES.EVENT_ID : event_id,
+            const.EVENT_ATTRIBUTES.EVENT_TYPE : event_type,
+            const.EVENT_ATTRIBUTES.SEVERITY : EVENT_SEVERITIES.WARNING.value,
+            const.EVENT_ATTRIBUTES.SITE_ID : node_map_dict[NODE_MAP_ATTRIBUTES.SITE_ID.value],
+            const.EVENT_ATTRIBUTES.RACK_ID : node_map_dict[NODE_MAP_ATTRIBUTES.RACK_ID.value],
+            const.EVENT_ATTRIBUTES.CLUSTER_ID : node_map_dict[NODE_MAP_ATTRIBUTES.CLUSTER_ID.value],
+            const.EVENT_ATTRIBUTES.STORAGESET_ID : node_map_dict[NODE_MAP_ATTRIBUTES.STORAGESET_ID.value],
+            const.EVENT_ATTRIBUTES.NODE_ID : nodeid,
+            const.EVENT_ATTRIBUTES.HOST_ID : node_map_dict[NODE_MAP_ATTRIBUTES.HOST_ID.value],
+            const.EVENT_ATTRIBUTES.RESOURCE_TYPE : CLUSTER_ELEMENTS.NODE.value,
+            const.EVENT_ATTRIBUTES.TIMESTAMP : timestamp,
+            const.EVENT_ATTRIBUTES.RESOURCE_ID : nodeid,
+            const.EVENT_ATTRIBUTES.SPECIFIC_INFO : None
+        }
+        return initial_event

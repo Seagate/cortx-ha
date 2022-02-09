@@ -52,12 +52,6 @@ class ConsulKvStore:
         """
         if prefix == "":
             raise Exception("Invalid prefix. It cannot be empty.")
-        if host != "localhost":
-            try:
-                socket.gethostbyname(host)
-                int(port)
-            except Exception as e:
-                raise Exception(f"Invalid host or port name. Refused connection to {host}. Error: {e}")
 
     def _get_connection(self, prefix: str, host: str, port: int):
         """
@@ -144,6 +138,8 @@ class ConsulKvStore:
         self._consul.kv.put(self._prepare_key(key), new_val)
         return new_val
 
+    # TODO : Currently all keys with the matching prefix "key" are returned
+    # add additional parameter so that only the exact matching key is returned when required
     def get(self, key: str = ""):
         """
         Get values. Default it will return all keys. It is block call,

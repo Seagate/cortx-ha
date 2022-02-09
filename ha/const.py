@@ -14,6 +14,7 @@
 # cortx-questions@seagate.com.
 
 from enum import Enum
+from ha.util.enum_list import EnumListMeta
 
 #LOGS and config
 CORTX_VERSION_1="1"
@@ -21,6 +22,7 @@ CORTX_VERSION_2="2"
 HA_CLUSTER_SOFTWARE="corosync"
 HACLUSTER_KEY = "cortx"
 SERVER_NODE_KEY = "server_node"
+# RA_LOG_DIR this is deprecated.[#620 PR]
 RA_LOG_DIR="/var/log/seagate/cortx/ha"
 PACEMAKER_LOG="/var/log/pacemaker.log"
 AUTH_DIR="/var/lib/pcsd"
@@ -31,6 +33,7 @@ PCSD_DIR="/var/log/pcsd"
 LOG_DIR="/var/log"
 CONFIG_DIR="/etc/cortx/ha"
 SYSTEM_DIR="/etc/systemd/system"
+# Needs to be replaced by log path defined in cluster.conf[EOS-27352].
 SUPPORT_BUNDLE_ERR="{}/support_bundle.err".format(RA_LOG_DIR)
 SUPPORT_BUNDLE_LOGS=[RA_LOG_DIR, PCSD_LOG, PACEMAKER_LOG, COROSYNC_LOG]
 CORTX_SUPPORT_BUNDLE_LOGS=[RA_LOG_DIR, PCSD_LOG, PACEMAKER_LOG, CONFIG_DIR, COROSYNC_LOG]
@@ -62,6 +65,8 @@ HEALTH_HIERARCHY_FILE = "{}/system_health_hierarchy.json".format(CONFIG_DIR)
 IEM_SCHEMA="{}/iem_ha.json".format(CONFIG_DIR)
 SOURCE_LOGROTATE_CONF_FILE = "{}/conf/logrotate/cortx_ha_log.conf".format(SOURCE_PATH)
 LOGROTATE_CONF_DIR="/etc/logrotate.d"
+SOURCE_ACTUATOR_SCHEMA="{}/actuator_req.json".format(SOURCE_CONFIG_PATH)
+ACTUATOR_SCHEMA="{}/actuator_req.json".format(CONFIG_DIR)
 
 # IEM DESCRIPTION string: To be removed
 IEM_DESCRIPTION="WS0080010001,Node, The cluster has lost $host server. System is running in degraded mode. For more information refer the Troubleshooting guide. Extra Info: host=$host; status=$status;"
@@ -153,8 +158,13 @@ PCS_NODE_UNSTANDBY="pcs node unstandby <node>"
 PCS_RESOURCE_REFRESH="pcs resource refresh --force"
 PCS_DELETE_RESOURCE="pcs resource delete <resource> --force"
 PCS_STONITH_DISABLE="pcs property set stonith-enabled=False"
+PCS_BAN_RESOURCES="pcs resource ban <resource_id> <node>"
+PCS_CLEAR_RESOURCES="pcs resource clear <resource_id> <node>"
 LIST_PCS_RESOURCES = '/usr/sbin/crm_resource --list-raw'
+DISABLE_STONITH="pcs resource disable stonith-<node>-clone"
+ENABLE_STONITH="pcs resource enable stonith-<node>-clone"
 CHECK_PCS_STANDBY_MODE = '/usr/sbin/crm_standby --query | awk \'{print $3}\''
+GET_CLUSTER_STATUS = "crm_mon --as-xml"
 GET_ONLINE_NODES_CMD = "crm_mon --as-xml"
 GET_LOCAL_NODE_ID_CMD = "crm_node -i"
 GET_LOCAL_NODE_NAME_CMD = "crm_node -n"
@@ -166,10 +176,15 @@ CM_ELEMENT=["cluster", "node", "service", "storageset"]
 RETRY_COUNT = 2
 PCS_NODE_GROUP_SIZE = 3
 NODE_CONTROLLER = "node_controller"
+SERVICE_CONTROLLER = "service_controller"
 CLUSTER_RETRY_COUNT = 6
 BASE_WAIT_TIME = 5
 NODE_STOP_TIMEOUT = 300 # 300 sec to stop single node
 CLUSTER_STANDBY_UNSTANDBY_TIMEOUT = 600 # 600 sec to stop single node
+NODE_POWERON_DELAY = 300 # Delay after node is powered-on before cluster start
+
+# wait timeout in cortx ha servervices while checking for stop
+CORTX_HA_WAIT_TIMEOUT = 5
 
 # Event Analyzer
 INCLUSION = "inclusion"
@@ -180,8 +195,10 @@ ALERT_FILTER_RULES_FILE = "{}/alert_filter_rules.json".format(CONFIG_DIR)
 ALERT_EVENT_RULES_FILE = "{}/alert_event_rules.json".format(CONFIG_DIR)
 SOURCE_ALERT_FILTER_RULES_FILE = "{}/alert_filter_rules.json".format(SOURCE_CONFIG_PATH)
 SOURCE_ALERT_EVENT_RULES_FILE = "{}/alert_event_rules.json".format(SOURCE_CONFIG_PATH)
-SYSTEM_SERVICE_FILE = "{}/event_analyzer.service".format(SYSTEM_DIR)
-SOURCE_SERVICE_FILE = "{}/conf/service/event_analyzer.service".format(SOURCE_PATH)
+SYSTEM_EVENT_ANALYZER_SERVICE_FILE = "{}/event_analyzer.service".format(SYSTEM_DIR)
+SOURCE_EVENT_ANALYZER_SERVICE_FILE = "{}/conf/service/event_analyzer.service".format(SOURCE_PATH)
+SYSTEM_HEALTH_MONITOR_SERVICE_FILE = "{}/health_monitor.service".format(SYSTEM_DIR)
+SOURCE_HEALTH_MONITOR_SERVICE_FILE = "{}/conf/service/health_monitor.service".format(SOURCE_PATH)
 ACTUATOR_RESPONSE_TYPE= "actuator_response_type"
 SENSOR_RESPONSE_TYPE= "sensor_response_type"
 SPECIFIC_INFO = "specific_info"
@@ -191,12 +208,17 @@ MODULE = "module"
 RESOURCE_TYPE = "resource_type"
 STONITH_AUTH_TYPE = 'PASSWORD'
 logger_utility_iec_cmd="logger -i -p local3.err"
+CLUSTER_STOP_KEY = "cluster_stop_key"
+# We are using only key 'CLUSTER_STOP_KEY' and ckecking whether ths key is exist
+# not using the value anywhere but as default value for key.
+CLUSTER_STOP_VAL_ENABLE = "1"
 
 class STATUSES(Enum):
     IN_PROGRESS = "InProgress"
     SUCCEEDED = "Succeeded"
     PARTIAL = "Partial"
     FAILED = "Failed"
+    WARNING = "warning"
 
 class NODE_STATUSES(Enum):
     CLUSTER_OFFLINE = "Offline".lower() # Cluster not running on current node.
@@ -281,6 +303,25 @@ class ALERT_ATTRIBUTES:
     POSITION = "position"
     HEALTH_RECOMMENDATION = "health-recommendation"
 
+# TBD combine ACTUATOR_ATTRIBUTES and ALERT_ATTRIBUTES to a single class
+# or have common class and derive both from it
+# Actuator request-response attributes
+class ACTUATOR_ATTRIBUTES(ALERT_ATTRIBUTES):
+    UUID = "uuid"
+    REQUEST_PATH = "request_path"
+    RESPONSE_DEST = "response_dest"
+    TARGET_NODE_ID ="target_node_id"
+    ACTUATOR_REQUEST_TYPE =  "actuator_request_type"
+    STORAGE_ENCLOSURE =  "storage_enclosure"
+    ENCLOSURE_REQUEST =  "enclosure_request"
+    RESOURCE = "resource"
+    COMMAND = "command"
+
+# Timout = ACTUATOR_RESP_RETRY_COUNT * ACTUATOR_RESP_WAIT_TIME
+ACTUATOR_RESP_RETRY_COUNT = 30
+ACTUATOR_RESP_WAIT_TIME = 2
+ACTUATOR_MSG_WAIT_TIME = 2
+
 # Health event attribute constants
 class EVENT_ATTRIBUTES:
     EVENT_ID = "event_id"
@@ -305,9 +346,23 @@ class AlertEventConstants(Enum):
     IEM_COMPONENTS = f"iem{_DELIM}components"
     IEM_MODULES = f"iem{_DELIM}modules"
 
+
 class CLUSTER_STATUS(Enum):
     OFFLINE = "offline"
     STANDBY = "standby"
     DEGRADED = "degraded"
     UNHEALTHY = "unhealthy"
     ONLINE = "online"
+
+class SERVER_POWER_STATUS(Enum, metaclass=EnumListMeta):
+    ON = "on"
+    OFF = "off"
+    UNKNOWN = "unknown"
+
+class K8S_ALERT_STATUS(Enum, metaclass=EnumListMeta):
+    STATUS_FAILED = "failed"
+    STATUS_ONLINE = "online"
+
+class K8S_ALERT_RESOURCE_TYPE(Enum, metaclass=EnumListMeta):
+    RESOURCE_TYPE_POD = "pod"
+    RESOURCE_TYPE_NODE = "node"

@@ -28,6 +28,7 @@ from cortx.utils.conf_store.conf_store import Conf
 from ha import const
 from ha.util.consul_kv_store import ConsulKvStore
 from ha.const import _DELIM
+from ha.core.error import HAInvalidNode
 
 # TODO: redefine class as per config manager module design
 class ConfigManager:
@@ -68,7 +69,10 @@ class ConfigManager:
         Used by config manager methods to check and initalize confstore if needed.
         """
         if ConfigManager._cluster_confstore is None:
-            ConfigManager._cluster_confstore = ConsulKvStore(prefix=const.CLUSTER_CONFSTORE_PREFIX)
+            consul_endpoint = Conf.get(const.HA_GLOBAL_INDEX, f'consul_config{_DELIM}endpoint')
+            consul_host = consul_endpoint.split(":")[1].strip("//")
+            consul_port = consul_endpoint.split(":")[-1]
+            ConfigManager._cluster_confstore = ConsulKvStore(prefix=const.CLUSTER_CONFSTORE_PREFIX, host=consul_host, port=consul_port)
         return ConfigManager._cluster_confstore
 
     @staticmethod
@@ -126,3 +130,33 @@ class ConfigManager:
         Get if system is running on VM or actual h/w.
         """
         return Conf.get(const.HA_GLOBAL_INDEX, f"CLUSTER_MANAGER{_DELIM}env")
+
+    @staticmethod
+    def get_node_name(node_id: str) -> str:
+        """
+        Get node_name(pvtfqdn) from node_id
+        Args:
+            node_id (str): Node ID from cluster nodes.
+        Returns: str
+        """
+        confstore = ConfigManager.get_confstore()
+        nodeid_dict = confstore.get(f"{const.PVTFQDN_TO_NODEID_KEY}")
+        for key, nodeid in nodeid_dict.items():
+            if nodeid == node_id:
+                node_name = key.split('/')[-1]
+                return node_name
+        raise HAInvalidNode(f"node_id {node_id} is not valid.")
+
+    @staticmethod
+    def get_node_id(node_name: str) -> str:
+        """
+        Get node_id from node_name
+        Args:
+            node_name (str): Node name from cluster nodes.
+        Returns: str
+            node_id (str): Node ID from cluster nodes.
+        """
+        confstore = ConfigManager.get_confstore()
+        key_val = confstore.get(f"{const.PVTFQDN_TO_NODEID_KEY}/{node_name}")
+        _, node_id = key_val.popitem()
+        return node_id

@@ -18,6 +18,7 @@
 import json
 import time
 from cortx.utils.log import Log
+from cortx.utils.conf_store.conf_store import Conf
 
 from ha.core.controllers.pcs.cluster_status import PcsClusterStatus
 from ha.core.error import HAUnimplemented
@@ -157,6 +158,22 @@ class PcsClusterController(ClusterController, PcsController):
         return {"status": const.STATUSES.SUCCEEDED.value, "output": result, "error": ""}
 
     @controller_error_handler
+    def enable_stonith(self):
+        """
+        Enable stonith for HW
+        Returns:
+
+        """
+        # enable the stonith here
+        env_type = Conf.get(const.HA_GLOBAL_INDEX, f"CLUSTER_MANAGER{const._DELIM}env")
+        if env_type.lower() == const.INSTALLATION_TYPE.HW.value.lower():
+            Log.info("Enabling the stonith.")
+            self._execute.run_cmd(const.PCS_STONITH_ENABLE)
+            Log.info("Stonith enabled successfully.")
+        else:
+            Log.warn(f"Stonith is not enabled, detected {env_type} env")
+
+    @controller_error_handler
     def start(self, sync=False, timeout=120) -> dict:
         """
         Start cluster and all service.
@@ -182,13 +199,14 @@ class PcsClusterController(ClusterController, PcsController):
         try:
             node_group: list = self._get_node_group()
             for node_subgroup in node_group:
-                for node_id in node_subgroup:
+                for node_name in node_subgroup:
+                    node_id = ConfigManager.get_node_id(node_name)
                     res = json.loads(self._controllers[const.NODE_CONTROLLER].start(node_id))
                     Log.info(f'res: {res}')
                     if res.get("status") == const.STATUSES.FAILED.value:
                         msg = res.get("error")
-                        Log.error(f"Node {node_id} : {msg}")
-                        failed_node_list.append(node_id)
+                        Log.error(f"Node {node_name} : {msg}")
+                        failed_node_list.append(node_name)
                 # Wait till all the resources get started in the sub group
                 time.sleep(const.BASE_WAIT_TIME * const.PCS_NODE_GROUP_SIZE)
         except Exception as e:
@@ -200,6 +218,7 @@ class PcsClusterController(ClusterController, PcsController):
             raise ClusterManagerError(f"Failed to start all nodes {failed_node_list}")
         else:
             status += "All node started successfully, resource start in progress."
+            self.enable_stonith()
 
         if sync:
             timeout = timeout - const.BASE_WAIT_TIME*const.PCS_NODE_GROUP_SIZE*len(node_group)
@@ -236,22 +255,23 @@ class PcsClusterController(ClusterController, PcsController):
         offline_nodes = self._get_filtered_nodes([NODE_STATUSES.POWEROFF.value])
         # Stop cluster for other group
         for node_subgroup in node_group:
-            for nodeid in node_subgroup:
+            for node_name in node_subgroup:
                 # Offline node can not be started without stonith.
-                if nodeid not in offline_nodes:
-                    if self.heal_resource(nodeid):
+                if node_name not in offline_nodes:
+                    if self.heal_resource(node_name):
                         time.sleep(const.BASE_WAIT_TIME)
-                    res = json.loads(self._controllers[const.NODE_CONTROLLER].stop(nodeid))
-                    Log.info(f"Stopping node {nodeid}, output {res}")
+                    node_id = ConfigManager.get_node_id(node_name)
+                    res = json.loads(self._controllers[const.NODE_CONTROLLER].stop(node_id))
+                    Log.info(f"Stopping node {node_id}, output {res}")
                     if NODE_STATUSES.POWEROFF.value in res.get("output"):
-                        offline_nodes.append(nodeid)
-                        Log.warn(f"Node {nodeid}, is in offline or lost from network.")
+                        offline_nodes.append(node_id)
+                        Log.warn(f"Node {node_id}, is in offline or lost from network.")
                     elif res.get("status") == const.STATUSES.FAILED.value:
-                        raise ClusterManagerError(f"Cluster Stop failed. Unable to stop {nodeid}")
+                        raise ClusterManagerError(f"Cluster Stop failed. Unable to stop {node_id}")
                     else:
-                        Log.info(f"Node {nodeid} stop is in progress.")
+                        Log.info(f"Node {node_id} stop is in progress.")
                 else:
-                    Log.info(f"Node {nodeid}, is in offline or lost from network.")
+                    Log.info(f"Node {node_name}, is in offline or lost from network.")
             # Wait till resource will get stop.
             Log.info(f"Waiting, for {node_subgroup} to stop is in progress.")
         # Stop self group of cluster

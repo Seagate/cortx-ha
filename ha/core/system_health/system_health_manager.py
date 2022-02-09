@@ -45,3 +45,15 @@ class SystemHealthManager:
             self._store.update(key=key, new_val=value)
         else:
             self._store.set(key=key, val=value)
+
+    def key_exists(self, key: str) -> bool:
+        """
+        Check if key exists.
+        Args:
+            key (str): Key.
+        Return:
+            bool: True if key exists else False.
+        """
+        if self._store.key_exists(key):
+            return True
+        return False
