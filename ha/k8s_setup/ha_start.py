@@ -2,7 +2,7 @@
 
 import argparse
 import signal
-from subprocess import Popen, PIPE # nosec
+from subprocess import Popen, PIPE, STDOUT # nosec
 import sys
 
 driver_process = None
@@ -53,8 +53,19 @@ try:
     signal.signal(signal.SIGSEGV, handle_signal)
     signal.signal(signal.SIGTERM, handle_signal)
 
-    driver_process = Popen(['/usr/bin/python3', service_entry_mapping[args.services]], shell=False, stdout=PIPE, stderr=PIPE) # nosec
+    driver_process = Popen(['/usr/bin/python3', service_entry_mapping[args.services], "--start"], shell=False, stdout=PIPE, stderr=STDOUT) # nosec
+
     sys.stdout.write(f"The driver process with pid {driver_process.pid}, and args {driver_process.args} started successfully.")
+
+    # Poll process.stdout to show stdout live
+    while True:
+        output = driver_process.stdout.readline()
+        if driver_process.poll() is not None:
+            break
+        if output:
+            print(output.strip().decode("utf-8"))
+    rc = driver_process.poll()
+
     exit(driver_process.wait())
 except Exception as proc_err:
     sys.stderr.write(f'Driver execution stopped because of some reason: {proc_err}')

@@ -41,7 +41,7 @@ class ConfigManager:
     @staticmethod
     def init(log_name, log_path=None, level="INFO",
             backup_count=5, file_size_in_mb=10, syslog_server=None,
-            syslog_port=None, console_output=False, config_file=None):
+            syslog_port=None, console_output=True, config_file=None):
         """
         Initialize ha conf and log
         Args:
@@ -58,6 +58,7 @@ class ConfigManager:
                     backup_count=backup_count, file_size_in_mb=file_size_in_mb,
                     syslog_server=syslog_server, syslog_port=syslog_port,
                     console_output=console_output)
+            Log.info(f"Started logging for service {log_name}")
 
     @staticmethod
     def _conf_init(config_file):
