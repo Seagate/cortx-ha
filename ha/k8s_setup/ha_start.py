@@ -64,8 +64,6 @@ try:
             break
         if output:
             print(output.strip().decode("utf-8"))
-    rc = driver_process.poll()
-
-    exit(driver_process.wait())
+    exit(driver_process.poll())
 except Exception as proc_err:
     sys.stderr.write(f'Driver execution stopped because of some reason: {proc_err}')
