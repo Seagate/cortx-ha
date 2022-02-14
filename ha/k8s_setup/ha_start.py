@@ -53,7 +53,7 @@ try:
     signal.signal(signal.SIGSEGV, handle_signal)
     signal.signal(signal.SIGTERM, handle_signal)
 
-    driver_process = Popen(['/usr/bin/python3', service_entry_mapping[args.services], "--start"], shell=False, stdout=PIPE, stderr=STDOUT) # nosec
+    driver_process = Popen(['/usr/bin/python3', service_entry_mapping[args.services]], shell=False, stdout=PIPE, stderr=STDOUT) # nosec
 
     sys.stdout.write(f"The driver process with pid {driver_process.pid}, and args {driver_process.args} started successfully.")
 
