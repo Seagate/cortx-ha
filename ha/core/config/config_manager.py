@@ -41,7 +41,7 @@ class ConfigManager:
     @staticmethod
     def init(log_name, log_path=None, level="INFO",
             backup_count=5, file_size_in_mb=10, syslog_server=None,
-            syslog_port=None, console_output=False, config_file=None):
+            syslog_port=None, console_output=True, config_file=None):
         """
         Initialize ha conf and log
         Args:
@@ -54,10 +54,13 @@ class ConfigManager:
             if not log_path:
                 log_path = Conf.get(const.HA_GLOBAL_INDEX, f"LOG{_DELIM}path")
             level = Conf.get(const.HA_GLOBAL_INDEX, f"LOG{_DELIM}level")
+            # console_output=True will redirect all log to console and log file both
+            # TODO: CORTX-28795 filter redirect log for console and file
             Log.init(service_name=log_name, log_path=log_path, level=level,
                     backup_count=backup_count, file_size_in_mb=file_size_in_mb,
                     syslog_server=syslog_server, syslog_port=syslog_port,
                     console_output=console_output)
+            Log.info(f"Started logging for service {log_name}")
 
     @staticmethod
     def _conf_init(config_file):
