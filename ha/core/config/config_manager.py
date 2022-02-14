@@ -54,7 +54,7 @@ class ConfigManager:
             if not log_path:
                 log_path = Conf.get(const.HA_GLOBAL_INDEX, f"LOG{_DELIM}path")
             level = Conf.get(const.HA_GLOBAL_INDEX, f"LOG{_DELIM}level")
-            # console_output=True will redirect all log to console
+            # console_output=True will redirect all log to console and log file both
             # TODO: filter redirect log for console and file
             Log.init(service_name=log_name, log_path=log_path, level=level,
                     backup_count=backup_count, file_size_in_mb=file_size_in_mb,
