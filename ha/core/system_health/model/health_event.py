@@ -25,11 +25,13 @@ class HealthEvent:
 
     VERSION = const.DATASTORE_VERSION
 
-    def __init__(self, event_id: str, event_type: str, severity: str, site_id: int, rack_id: int, cluster_id: str, storageset_id: int,
-                 node_id: int, host_id: str, resource_type: str, timestamp: str, resource_id: str, specific_info: dict=None):
+    def __init__(self, source: str, event_id: str, event_type: str, severity: str, site_id: int, rack_id: int, cluster_id: str,
+                 storageset_id: int, node_id: int, host_id: str, resource_type: str, timestamp: str, resource_id: str,
+                 specific_info: dict=None):
         """
         Init method.
         """
+        self.source = source
         self.event_id = event_id
         self.event_type = event_type
         self.severity = severity
@@ -47,6 +49,7 @@ class HealthEvent:
     @staticmethod
     def dict_to_object(event):
         return HealthEvent(
+            source = event["source"],
             event_id = event["event_id"],
             event_type = event["event_type"],
             severity = event["severity"],
@@ -64,6 +67,7 @@ class HealthEvent:
 
     def __str__(self):
         return json.dumps({
+            "source": self.source,
             "event_id": self.event_id,
             "event_type": self.event_type,
             "severity": self.severity,

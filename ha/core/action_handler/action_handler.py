@@ -69,7 +69,7 @@ class ActionHandler:
         """
         # Create RecoveryActionEvent and call publish
         recovery_action_event = RecoveryActionEvent(event)
-        self.event_manager.publish(recovery_action_event)
+        self.event_manager.publish(recovery_action_event.get_event())
 
     def on_failure(self, event: HealthEvent, publish: bool) -> None:
         """

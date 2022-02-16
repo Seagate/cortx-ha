@@ -20,6 +20,7 @@ import re
 import time
 import uuid
 from cortx.utils.log import Log
+from cortx.utils.health.const import HEALTH_EVENT_SOURCES
 from ha.core.system_health.system_health_hierarchy import HealthHierarchy
 from ha.core.config.config_manager import ConfigManager
 from ha.core.system_health.model.health_event import HealthEvent
@@ -127,6 +128,7 @@ class ElementHealthEvaluator(metaclass=abc.ABCMeta):
         Update health event
         """
         new_event =  HealthEvent(
+            source=HEALTH_EVENT_SOURCES.HA.value,
             event_id=str(int(time.time())) + str(uuid.uuid4().hex),
             event_type=event_type,
             severity=subelement_event.severity,
