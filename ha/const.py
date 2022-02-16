@@ -326,6 +326,7 @@ ACTUATOR_MSG_WAIT_TIME = 2
 
 # Health event attribute constants
 class EVENT_ATTRIBUTES:
+    SOURCE = "source"
     EVENT_ID = "event_id"
     EVENT_TYPE = "event_type"
     SEVERITY = "severity"

@@ -178,15 +178,20 @@ class ClusterResourceParser(Parser):
         try:
             message = json.dumps(ast.literal_eval(msg))
             cluster_resource_alert = json.loads(message)
-            timestamp = str(int(time.time()))
-            event_id = timestamp + str(uuid.uuid4().hex)
-            node_id = cluster_resource_alert["_resource_name"]
-            resource_type = cluster_resource_alert["_resource_type"]
-            event_type = cluster_resource_alert["_event_type"]
-            timestamp = cluster_resource_alert["_timestamp"]
-            generation_id = cluster_resource_alert["_generation_id"]
+            timestamp = cluster_resource_alert["event"]["header"]["timestamp"]
+            event_id = cluster_resource_alert["event"]["header"]["event_id"]
+            source = cluster_resource_alert["event"]["payload"]["source"]
+            node_id = cluster_resource_alert["event"]["payload"]["node_id"]
+            resource_type = cluster_resource_alert["event"]["payload"]["resource_type"]
+            resource_id = cluster_resource_alert["event"]["payload"]["resource_id"]
+            event_type = cluster_resource_alert["event"]["payload"]["resource_status"]
+            specific_info = cluster_resource_alert["event"]["payload"]["specific_info"]
+            if specific_info and specific_info["generation_id"] and source == "monitor":
+                generation_id = cluster_resource_alert["event"]["payload"]["specific_info"]["generation_id"]
+                specific_info = {"generation_id": generation_id, "pod_restart": 0}
 
             event = {
+                EVENT_ATTRIBUTES.SOURCE : source,
                 EVENT_ATTRIBUTES.EVENT_ID : event_id,
                 EVENT_ATTRIBUTES.EVENT_TYPE : event_type,
                 EVENT_ATTRIBUTES.SEVERITY : StatusMapper.EVENT_TO_SEVERITY_MAPPING[event_type],
@@ -198,8 +203,8 @@ class ClusterResourceParser(Parser):
                 EVENT_ATTRIBUTES.HOST_ID : node_id,
                 EVENT_ATTRIBUTES.RESOURCE_TYPE : resource_type,
                 EVENT_ATTRIBUTES.TIMESTAMP : timestamp,
-                EVENT_ATTRIBUTES.RESOURCE_ID : node_id,
-                EVENT_ATTRIBUTES.SPECIFIC_INFO : {"generation_id": generation_id, "pod_restart": 0}
+                EVENT_ATTRIBUTES.RESOURCE_ID : resource_id,
+                EVENT_ATTRIBUTES.SPECIFIC_INFO : specific_info
             }
 
             Log.debug(f"Parsed {event} schema")

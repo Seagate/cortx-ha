@@ -187,7 +187,7 @@ class ClusterResourceFilter(Filter):
             message = json.loads(message)
 
             Log.debug('Received alert from fault tolerance')
-            event_resource_type = message.get("_resource_type")
+            event_resource_type = message.get("event").get("payload").get("resource_type")
 
             required_resource_type = Conf.get(const.HA_GLOBAL_INDEX, f"NODE{_DELIM}resource_type")
             if event_resource_type == required_resource_type:

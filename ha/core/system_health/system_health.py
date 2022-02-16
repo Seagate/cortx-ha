@@ -453,10 +453,11 @@ class SystemHealth(Subscriber):
             Log.error(f"Failed processing system health event with Error: {err}")
             raise HaSystemHealthException("Failed processing system health event")
 
-    def get_health_event_template(self, nodeid: str, event_type: str) -> dict:
+    def get_health_event_template(self, nodeid: str, event_type: str, source: str = None) -> dict:
         """
         Create health event
         Args:
+            source: Source (Ex: monitor, hare) who wants this event template
             nodeid (str): nodeid
             event_type (str): event type will be offline, online, failed
 
@@ -472,6 +473,7 @@ class SystemHealth(Subscriber):
         timestamp = str(int(time.time()))
         event_id = timestamp + str(uuid.uuid4().hex)
         initial_event = {
+            const.EVENT_ATTRIBUTES.SOURCE: source,
             const.EVENT_ATTRIBUTES.EVENT_ID : event_id,
             const.EVENT_ATTRIBUTES.EVENT_TYPE : event_type,
             const.EVENT_ATTRIBUTES.SEVERITY : EVENT_SEVERITIES.WARNING.value,

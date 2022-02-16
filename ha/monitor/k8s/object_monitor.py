@@ -25,6 +25,8 @@ from ha.monitor.k8s.const import EventStates, K8SClientConst
 from ha.monitor.k8s.const import K8SEventsConst
 from cortx.utils.log import Log
 from ha import const
+from ha.util.health_event_schema import Event
+
 
 class ObjectMonitor(threading.Thread):
     def __init__(self, producer, k_object, **kwargs):
@@ -60,7 +62,7 @@ class ObjectMonitor(threading.Thread):
     def check_for_signals(self, k8s_watch: watch.Watch, k8s_watch_stream):
         """
         Check if any pending signal while watching on kubernetes.watch.stream synchronusly.
-        Note: curretnly handling only SIGTERM signal
+        Note: curretnly handling only SIGl
         but if required we can make use of this function for convey some message/events/signals
         to handle while loopping  over synchronus watch.stream call
         """
@@ -108,10 +110,11 @@ class ObjectMonitor(threading.Thread):
         """
         if self.is_publish_enable():
             # Write to message bus
-            Log.info(f"{self._object}_monitor sending alert on message bus {alert.to_dict()}")
-            self._producer.publish(str(alert.to_dict()))
+            Log.info(f"{self._object}_monitor sending alert on message bus {alert}")
+            print(f"{self._object}_monitor sending alert on message bus {alert}")
+            self._producer.publish(str(alert))
         else:
-            Log.info(f"{self._object}_monitor received cluster stop message so skipping publish alert: {str(alert.to_dict())}.")
+            Log.info(f"{self._object}_monitor received cluster stop message so skipping publish alert: {str(alert)}.")
 
     def run(self):
         """
@@ -148,12 +151,12 @@ class ObjectMonitor(threading.Thread):
                     break
 
                 Log.debug(f"Received event {an_event}")
-                alert = EventParser.parse(self._object, an_event, self._object_state)
+                alert, event = EventParser.parse(self._object, an_event, self._object_state)
                 if alert is None:
                     continue
                 if self._starting_up:
                     if an_event[K8SEventsConst.TYPE] == EventStates.ADDED:
-                        alert.is_status = True
+                        alert = event.update_event(key_to_update={"is_status": True})
                     else:
                         self._starting_up = False
 
