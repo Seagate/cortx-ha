@@ -17,6 +17,7 @@
 import enum
 from ha.util.enum_list import EnumListMeta
 
+
 class FAULT_TOLERANCE_KEYS(enum.Enum, metaclass=EnumListMeta):
     """
     Message types of components.
