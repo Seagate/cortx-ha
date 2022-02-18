@@ -298,11 +298,10 @@ class SystemHealth(Subscriber):
             event_action = HEALTH_EVENT_ACTIONS.IGNORE.value
         return event_action
 
-    def publish_event(self, healthevent: HealthEvent, healthvalue: str= ""):
+    def publish_event(self, healthevent: HealthEvent):
         """
         Produce event
         """
-        healthevent.event_type = json.loads(healthvalue).get("events")[0]["status"]
         node_id = healthevent.node_id
         self.producer.publish(str(healthevent))
         healthevent.node_id = node_id
@@ -322,7 +321,7 @@ class SystemHealth(Subscriber):
         is_key_exists = self.healthmanager.key_exists(key)
         self.healthmanager.set_key(key, healthvalue)
         if is_key_exists:
-            self.publish_event(healthevent, healthvalue)
+            self.publish_event(healthevent)
 
         # Check the next component to be updated, if none then return.
         if next_component is None:

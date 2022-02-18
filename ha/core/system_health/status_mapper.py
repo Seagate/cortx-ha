@@ -34,7 +34,9 @@ class StatusMapper:
         "online": "online",
         "failed": "failed",
         "unknown": "unknown",
-        "degraded": "degraded"
+        "degraded": "degraded",
+        "threshold_breached:low": "degraded",
+        "threshold_breached:high": "degraded"
     }
 
     EVENT_TO_SEVERITY_MAPPING = {
@@ -52,7 +54,7 @@ class StatusMapper:
         super(StatusMapper, self).__init__()
 
     def map_event(self, event: HealthEvent) -> str:
-        """Returns the status by mapping it against the source and event type"""
+        """Returns the status by mapping it against the source and event type."""
         try:
             if event.source == HEALTH_EVENT_SOURCES.MONITOR.value and event.event_type == HEALTH_EVENTS.ONLINE.value:
                 status = HEALTH_STATUSES.STARTING.value

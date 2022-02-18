@@ -45,6 +45,8 @@ class HEALTH_EVENTS(Enum):
     ONLINE = "online"
     FAILED = "failed"
     DEGRADED = "degraded"
+    THRESHOLD_BREACHED_LOW = "threshold_breached:low"
+    THRESHOLD_BREACHED_HIGH = "threshold_breached:high"
     UNKNOWN = "unknown"
 
 # Health event severities

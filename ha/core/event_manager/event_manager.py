@@ -24,7 +24,7 @@ from typing import List
 from ha.core.event_manager.subscribe_event import SubscribeEvent
 from cortx.utils.log import Log
 from cortx.utils.health.const import HEALTH_EVENT_ATTRIBUTES
-from cortx.utils.health.const import HEALTH_EVENT_HEADER, HEALTH_EVENT_PAYLOAD
+from cortx.utils.health.const import HEALTH_EVENT_PAYLOAD
 from cortx.utils.health.event import Event
 from ha.util.message_bus import MessageBus
 from ha.core.config.config_manager import ConfigManager
