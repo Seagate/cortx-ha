@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published
 # by the Free Software Foundation, either version 3 of the License, or
@@ -19,6 +19,7 @@ from ha.util.enum_list import EnumListMeta
 
 
 class FAULT_TOLERANCE_KEYS(enum.Enum, metaclass=EnumListMeta):
+
     """ Message types of components. """
 
     HARE_HA_MESSAGE_TYPE = "cortx_health_events"
