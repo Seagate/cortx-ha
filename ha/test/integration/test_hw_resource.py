@@ -21,6 +21,7 @@
  ****************************************************************************
 """
 
+from ha.core.config.config_manager import ConfigManager
 import os
 import json
 import consul
@@ -42,7 +43,7 @@ class TestHardwareResourceAgent(unittest.TestCase):
     """
 
     def setUp(self):
-        Log.init(service_name='resource_agent', log_path=const.RA_LOG_DIR, level="DEBUG")
+        ConfigManager.init('resource_agent')
         self.ts = int(time.time())
         self.td = datetime.fromtimestamp(self.ts).strftime('%Y-%m-%dT%H:%M:%S.000000+0000')
         with open(const.RESOURCE_SCHEMA, 'r') as f:
