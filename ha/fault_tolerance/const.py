@@ -19,9 +19,7 @@ from ha.util.enum_list import EnumListMeta
 
 
 class FAULT_TOLERANCE_KEYS(enum.Enum, metaclass=EnumListMeta):
-    """
-    Message types of components.
-    """
+    """ Message types of components. """
 
     HARE_HA_MESSAGE_TYPE = "cortx_health_events"
     MONITOR_HA_MESSAGE_TYPE = "cortx_health_events"
