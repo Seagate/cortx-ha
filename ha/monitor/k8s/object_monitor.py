@@ -25,7 +25,6 @@ from ha.monitor.k8s.const import EventStates, K8SClientConst
 from ha.monitor.k8s.const import K8SEventsConst
 from cortx.utils.log import Log
 from ha import const
-from ha.util.health_event_schema import Event
 
 
 class ObjectMonitor(threading.Thread):
@@ -62,7 +61,7 @@ class ObjectMonitor(threading.Thread):
     def check_for_signals(self, k8s_watch: watch.Watch, k8s_watch_stream):
         """
         Check if any pending signal while watching on kubernetes.watch.stream synchronusly.
-        Note: curretnly handling only SIGl
+        Note: curretnly handling only SIGTERM signal
         but if required we can make use of this function for convey some message/events/signals
         to handle while loopping  over synchronus watch.stream call
         """
@@ -111,7 +110,6 @@ class ObjectMonitor(threading.Thread):
         if self.is_publish_enable():
             # Write to message bus
             Log.info(f"{self._object}_monitor sending alert on message bus {alert}")
-            print(f"{self._object}_monitor sending alert on message bus {alert}")
             self._producer.publish(str(alert))
         else:
             Log.info(f"{self._object}_monitor received cluster stop message so skipping publish alert: {str(alert)}.")

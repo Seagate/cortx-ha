@@ -47,7 +47,7 @@ class NodeEventParser(ObjectParser):
     def _create_health_alert(self, res_type, res_name, health_status):
         """
         Instantiates Event class which creates Health event object with necessary
-        attributes to pass it for further processing
+        attributes to pass it for further processing.
         """
         self.event = Event()
         self.payload["resource_type"] = res_type
@@ -124,7 +124,7 @@ class PodEventParser(ObjectParser):
     def _create_health_alert(self, res_type, res_name, health_status, generation_id):
         """
         Instantiates Event class which creates Health event object with necessary
-        attributes to pass it for further processing
+        attributes to pass it for further processing.
         """
         self.event = Event()
         self.payload["resource_type"] = res_type
@@ -143,8 +143,9 @@ class PodEventParser(ObjectParser):
             resource_name = labels[K8SEventsConst.MACHINEID]
         if K8SEventsConst.TYPE in an_event:
             event_type = an_event[K8SEventsConst.TYPE]
-        if K8SEventsConst.NODE_NAME in raw_object[K8SEventsConst.SPEC]:
-            node = raw_object[K8SEventsConst.SPEC][K8SEventsConst.NODE_NAME]
+        # Actual physical host information is not needed now.
+        # If required, can be available in K8SEventsConst.SPEC.
+        # So, removing it from now.
         if K8SEventsConst.NAME in raw_object[K8SEventsConst.METADATA]:
             generation_id = raw_object[K8SEventsConst.METADATA][K8SEventsConst.NAME]
 
@@ -157,7 +158,7 @@ class PodEventParser(ObjectParser):
             Log.debug(f"Exception received during parsing {e}")
 
         if ready_status is None:
-            Log.debug(f"ready_status is None for pod resource {alert.resource_name}")
+            Log.debug(f"ready_status is None for pod resource {resource_name}")
             cached_state[resource_name] = ready_status
             return None
 
