@@ -22,7 +22,6 @@ from ha.fault_tolerance.const import HEALTH_ATTRIBUTES, \
 VERSION = "1.0"
 
 class Event:
-
     """
     Class for health status event message schema,
     where producer can import this class object and add it
