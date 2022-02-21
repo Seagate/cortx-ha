@@ -186,10 +186,10 @@ class ObjectMonitor(threading.Thread):
         self._published_alerts = { resource_name: [alert1, alert2] }
 
         Returns:
-            True if incoming alert is a new alert
-            False, otherwise.
+            True if it is published already
+            False if it is a new alert
         """
-        incoming_alert = alert.to_dict()
+        incoming_alert = alert.to_dict().copy()
 
         # Alert with no status change also has new timestamp.
         # So timestamp field should be ignored for validation.
