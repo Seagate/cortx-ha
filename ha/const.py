@@ -245,6 +245,8 @@ class COMPONENTS(Enum):
     CLUSTER = "cluster"
     AGG_SERVICE = "agg_service"
     NODE_MAP = "node_map"
+    CVG = "cvg"
+    DISK = "disk"
 
 RESOURCE_LIST = "resource_list"
 KEY = "key"
@@ -362,7 +364,12 @@ class SERVER_POWER_STATUS(Enum, metaclass=EnumListMeta):
 class K8S_ALERT_STATUS(Enum, metaclass=EnumListMeta):
     STATUS_FAILED = "failed"
     STATUS_ONLINE = "online"
+    STATUS_REPAIRING = "repairing"
+    STATUS_REPAIRED = "repaired"
+    STATUS_REBALANCING = "rebalancing"
 
 class K8S_ALERT_RESOURCE_TYPE(Enum, metaclass=EnumListMeta):
     RESOURCE_TYPE_POD = "pod"
     RESOURCE_TYPE_NODE = "node"
+    RESOURCE_TYPE_CVG = "cvg"
+    RESOURCE_TYPE_DISK = "disk"

@@ -22,6 +22,8 @@ class CLUSTER_ELEMENTS(Enum):
     RACK = "rack"
     NODE = "node"
     STORAGE_SET = "storageset"
+    CVG = "cvg"
+    DISK = "disk"
 
 # Health statuses
 class HEALTH_STATUSES(Enum):
@@ -32,6 +34,9 @@ class HEALTH_STATUSES(Enum):
     OFFLINE = "offline"
     FAILED = "failed"
     UNKNOWN = "unknown"
+    REPAIRING = "repairing"
+    REPAIRED = "repaired"
+    REBALANCING = "rebalancing"
 
 # Health event types
 class HEALTH_EVENTS(Enum):
@@ -43,6 +48,9 @@ class HEALTH_EVENTS(Enum):
     THRESHOLD_BREACHED_LOW = "threshold_breached:low"
     THRESHOLD_BREACHED_HIGH = "threshold_breached:high"
     UNKNOWN = "unknown"
+    REPAIRING = "repairing"
+    REPAIRED = "repaired"
+    REBALANCING = "rebalancing"
 
 # Health event severities
 class EVENT_SEVERITIES(Enum):
