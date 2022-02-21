@@ -3,6 +3,8 @@
         "cluster",
         "site",
         "rack",
-        "node"
+        "node",
+        "cvg",
+        "disk"
     ]
 }

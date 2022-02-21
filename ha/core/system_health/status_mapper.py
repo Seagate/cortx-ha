@@ -31,7 +31,11 @@ class StatusMapper:
         "failed": "failed",
         "unknown": "unknown",
         "threshold_breached:low": "degraded",
-        "threshold_breached:high": "degraded"
+        "threshold_breached:high": "degraded",
+        "offline":"offline",
+        "recovering": "recovering",
+        "recovered": "recovered",
+        "rebalancing": "rebalancing"
     }
 
     EVENT_TO_SEVERITY_MAPPING = {
