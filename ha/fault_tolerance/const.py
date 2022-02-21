@@ -18,6 +18,12 @@ import enum
 from ha.util.enum_list import EnumListMeta
 
 
+class HEALTH_EVENT_SOURCES(enum.Enum):
+    HA = 'ha'
+    HARE = 'hare'
+    MONITOR = 'monitor'
+
+
 # Message types of components
 class FAULT_TOLERANCE_KEYS(enum.Enum, metaclass=EnumListMeta):
     HARE_HA_MESSAGE_TYPE = 'cortx_health_events'
