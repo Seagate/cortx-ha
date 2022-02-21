@@ -34,8 +34,8 @@ class HEALTH_STATUSES(Enum):
     OFFLINE = "offline"
     FAILED = "failed"
     UNKNOWN = "unknown"
-    RECOVERING = "recovering"
-    RECOVERED = "recovered"
+    REPAIRING = "repairing"
+    REPAIRED = "repaired"
     REBALANCING = "rebalancing"
 
 # Health event types
@@ -48,8 +48,8 @@ class HEALTH_EVENTS(Enum):
     THRESHOLD_BREACHED_LOW = "threshold_breached:low"
     THRESHOLD_BREACHED_HIGH = "threshold_breached:high"
     UNKNOWN = "unknown"
-    RECOVERING = "recovering"
-    RECOVERED = "recovered"
+    REPAIRING = "repairing"
+    REPAIRED = "repaired"
     REBALANCING = "rebalancing"
 
 # Health event severities

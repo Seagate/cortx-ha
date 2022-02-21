@@ -364,8 +364,8 @@ class SERVER_POWER_STATUS(Enum, metaclass=EnumListMeta):
 class K8S_ALERT_STATUS(Enum, metaclass=EnumListMeta):
     STATUS_FAILED = "failed"
     STATUS_ONLINE = "online"
-    STATUS_RECOVERING = "recovering"
-    STATUS_RECOVERED = "recovered"
+    STATUS_REPAIRING = "repairing"
+    STATUS_REPAIRED = "repaired"
     STATUS_REBALANCING = "rebalancing"
 
 class K8S_ALERT_RESOURCE_TYPE(Enum, metaclass=EnumListMeta):

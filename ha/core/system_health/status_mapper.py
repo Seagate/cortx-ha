@@ -33,8 +33,8 @@ class StatusMapper:
         "threshold_breached:low": "degraded",
         "threshold_breached:high": "degraded",
         "offline":"offline",
-        "recovering": "recovering",
-        "recovered": "recovered",
+        "repairing": "repairing",
+        "repaired": "repaired",
         "rebalancing": "rebalancing"
     }
 
