@@ -22,7 +22,6 @@ from ha.monitor.k8s.error import NotSupportedObjectError
 from ha.monitor.k8s.const import K8SEventsConst
 from ha.monitor.k8s.const import AlertStates
 from ha.monitor.k8s.const import EventStates
-from ha.monitor.k8s.alert import K8sAlert
 
 from cortx.utils.log import Log
 from ha.util.health_event_schema import Event
@@ -74,7 +73,7 @@ class NodeEventParser(ObjectParser):
             Log.debug(f"Exception received during parsing {e}")
 
         if ready_status is None:
-            Log.debug(f"ready_status is None for node resource {alert}")
+            Log.debug(f"ready_status is None for node resource {resource_name}")
             cached_state[resource_name] = ready_status
             return None
 
@@ -165,7 +164,7 @@ class PodEventParser(ObjectParser):
         if an_event[K8SEventsConst.TYPE] == EventStates.ADDED:
             cached_state[resource_name] = ready_status.lower()
             if ready_status.lower() != K8SEventsConst.true:
-                Log.debug(f"[EventStates ADDED] No change detected for pod resource {alert.resource_name}")
+                Log.debug(f"[EventStates ADDED] No change detected for pod resource {resource_name}")
                 return None
             else:
                 event_type = AlertStates.ONLINE
