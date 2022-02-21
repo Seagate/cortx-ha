@@ -15,6 +15,7 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
+import json
 import threading
 from kubernetes import config, client, watch
 
@@ -46,6 +47,7 @@ class ObjectMonitor(threading.Thread):
         self._stop_event_processing = False
         self._producer = producer
         self._confstore = ConfigManager.get_confstore()
+        self._published_alerts = {}
         Log.info(f"Initialization done for {self._object} monitor")
 
     def set_sigterm(self, signum, frame):
@@ -163,6 +165,9 @@ class ObjectMonitor(threading.Thread):
                     else:
                         self._starting_up = False
 
+                if self._is_published_alert(alert):
+                    continue
+
                 # Write to message bus
                 self.publish_alert(alert)
 
@@ -173,3 +178,44 @@ class ObjectMonitor(threading.Thread):
                 break
         Log.info(f"Stopping the {self.name}...")
 
+    def _is_published_alert(self, alert) -> bool:
+        """
+        Check incoming alert is already published or not.
+        If incoming alert is not found in published alerts then,
+        it is a new alert to publish.
+        self._published_alerts = { resource_name: [alert1, alert2] }
+
+        Returns:
+            True if incoming alert is a new alert
+            False, otherwise.
+        """
+        incoming_alert = alert.to_dict()
+
+        # Alert with no status change also has new timestamp.
+        # So timestamp field should be ignored for validation.
+        if not incoming_alert.get('_timestamp') is not None:
+            return False
+        del incoming_alert['_timestamp']
+
+        # Remove user added fields those aren't exist in raw event
+        if incoming_alert.get('_is_status') is not None:
+            del incoming_alert['_is_status']
+
+        resource_name = incoming_alert.get('_resource_name')
+
+        if resource_name:
+            incoming_alert_msg = json.dumps(incoming_alert, sort_keys=True)
+            published_alerts = self._published_alerts.get(resource_name)
+            if published_alerts and isinstance(published_alerts, list):
+                if incoming_alert_msg in published_alerts:
+                    return True
+                else:
+                    published_alerts.append(incoming_alert_msg)
+            else:
+                self._published_alerts[resource_name] = []
+                self._published_alerts[resource_name].append(incoming_alert_msg)
+        else:
+            # Consider any other alerts to be published
+            pass
+
+        return False
