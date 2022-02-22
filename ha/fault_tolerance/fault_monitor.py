@@ -68,7 +68,7 @@ class FaultMonitor:
         if self._consumer is not None:
             self._consumer.join()
 
-class NodeFaultMonitor(FaultMonitor):
+class HealthStatusMonitor(FaultMonitor):
     """
     Module responsible for:
     -  consuming node messages from k8s monitor that come on message bus
