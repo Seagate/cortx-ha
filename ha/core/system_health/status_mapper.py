@@ -53,7 +53,7 @@ class StatusMapper:
         """
         super(StatusMapper, self).__init__()
 
-    def map_event(self, event_type: str) -> str:
+    def map_event(self, event: HealthEvent) -> str:
         """Returns the status by mapping it against the source and event type."""
         try:
             if event.source == HEALTH_EVENT_SOURCES.MONITOR.value and event.event_type == HEALTH_EVENTS.ONLINE.value:
