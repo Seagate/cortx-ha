@@ -57,6 +57,7 @@ class Cmd:
         if args is not None:
             self._url = args.config
             self._service = args.services
+            # self._url This file can be only loaded once
             Conf.load(self._index, self._url)
             self._args = args.args
         self._confstore = None
