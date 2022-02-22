@@ -40,7 +40,7 @@ from ha.core.event_manager.subscribe_event import SubscribeEvent
 from ha.util.conf_store import ConftStoreSearch
 from ha.core.system_health.const import CLUSTER_ELEMENTS, HEALTH_EVENTS, EVENT_SEVERITIES
 from ha.const import EVENT_ATTRIBUTES
-from ha.fault_tolerance.const import HEALTH_EVENT_SOURCES
+from ha.fault_tolerance.const import FAULT_TOLERANCE_KEYS, HEALTH_EVENT_SOURCES
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.system_health.system_health import SystemHealth
 
@@ -216,14 +216,16 @@ class ConfigCmd(Cmd):
                 sys.stderr.write(f'Failed to get kafka config. kafka_config: {kafka_endpoint}. \n')
                 sys.exit(1)
 
+            health_comm_msg_type = FAULT_TOLERANCE_KEYS.MONITOR_HA_MESSAGE_TYPE.value
+
             conf_file_dict = {'LOG' : {'path' : ha_log_path, 'level' : const.HA_LOG_LEVEL},
                          'consul_config' : {'endpoint' : consul_endpoint},
                          'kafka_config' : {'endpoints': kafka_endpoint},
                          'event_topic' : 'hare',
-                         'MONITOR' : {'message_type' : 'cluster_event', 'producer_id' : 'cluster_monitor'},
+                         'MONITOR' : {'message_type' : health_comm_msg_type, 'producer_id' : 'cluster_monitor'},
                          'EVENT_MANAGER' : {'message_type' : 'health_events', 'producer_id' : 'system_health',
                                             'consumer_group' : 'health_monitor', 'consumer_id' : '1'},
-                         'FAULT_TOLERANCE' : {'message_type' : 'cluster_event', 'consumer_group' : 'event_listener',
+                         'FAULT_TOLERANCE' : {'message_type' : health_comm_msg_type, 'consumer_group' : 'event_listener',
                                               'consumer_id' : '1'},
                          'CLUSTER_STOP_MON' : {'message_type' : 'cluster_stop', 'consumer_group' : 'cluster_mon',
                                               'consumer_id' : '2'},

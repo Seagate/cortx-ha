@@ -25,6 +25,9 @@ from ha.monitor.k8s.const import EventStates, K8SClientConst
 from ha.monitor.k8s.const import K8SEventsConst
 from cortx.utils.log import Log
 from ha import const
+from ha.fault_tolerance.const import HEALTH_ATTRIBUTES, \
+    EVENT_ATTRIBUTES
+
 
 class ObjectMonitor(threading.Thread):
     def __init__(self, producer, k_object, **kwargs):
@@ -108,10 +111,10 @@ class ObjectMonitor(threading.Thread):
         """
         if self.is_publish_enable():
             # Write to message bus
-            Log.info(f"{self._object}_monitor sending alert on message bus {alert.to_dict()}")
-            self._producer.publish(str(alert.to_dict()))
+            Log.info(f"{self._object}_monitor sending alert on message bus {alert}")
+            self._producer.publish(str(alert))
         else:
-            Log.info(f"{self._object}_monitor received cluster stop message so skipping publish alert: {str(alert.to_dict())}.")
+            Log.info(f"{self._object}_monitor received cluster stop message so skipping publish alert: {str(alert)}.")
 
     def run(self):
         """
@@ -148,12 +151,15 @@ class ObjectMonitor(threading.Thread):
                     break
 
                 Log.debug(f"Received event {an_event}")
-                alert = EventParser.parse(self._object, an_event, self._object_state)
+                alert, event = EventParser.parse(self._object, an_event, self._object_state)
                 if alert is None:
                     continue
                 if self._starting_up:
                     if an_event[K8SEventsConst.TYPE] == EventStates.ADDED:
-                        alert.is_status = True
+                        spec_info = alert['event'][EVENT_ATTRIBUTES.HEALTH_EVENT_PAYLOAD.value][HEALTH_ATTRIBUTES.SPECIFIC_INFO.value]
+                        spec_info['is_status'] = True
+                        event.set_payload(spec_info)
+                        alert = event.ret_dict()
                     else:
                         self._starting_up = False
 
