@@ -15,11 +15,9 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-import json
-
 from ha.core.system_health.model.health_event import HealthEvent
-from ha.core.event_manager.const import ACTION_EVENT_VERSION
-
+from ha.fault_tolerance.event import Event
+from ha.fault_tolerance.const import HEALTH_ATTRIBUTES
 
 class RecoveryActionEvent:
     """
@@ -31,31 +29,20 @@ class RecoveryActionEvent:
         """
         Init method.
         """
-        self.version = ACTION_EVENT_VERSION
-        self.event_type = healthevent.event_type
-        self.event_id = healthevent.event_id
-        self.resource_type = healthevent.resource_type
-        self.cluster_id = healthevent.cluster_id
-        self.site_id = healthevent.site_id
-        self.rack_id = healthevent.rack_id
-        self.storageset_id = healthevent.storageset_id
-        self.node_id = healthevent.node_id
-        self.resource_id = healthevent.resource_id
-        self.timestamp = healthevent.timestamp
-        self.event_specific_info = healthevent.specific_info
+        self.event = Event()
+        payload = {
+            HEALTH_ATTRIBUTES.SOURCE.value : healthevent.source,
+            HEALTH_ATTRIBUTES.CLUSTER_ID.value : healthevent.cluster_id,
+            HEALTH_ATTRIBUTES.SITE_ID.value : healthevent.site_id,
+            HEALTH_ATTRIBUTES.RACK_ID.value : healthevent.rack_id,
+            HEALTH_ATTRIBUTES.STORAGESET_ID.value : healthevent.storageset_id,
+            HEALTH_ATTRIBUTES.NODE_ID.value : healthevent.node_id,
+            HEALTH_ATTRIBUTES.RESOURCE_TYPE.value : healthevent.resource_type,
+            HEALTH_ATTRIBUTES.RESOURCE_ID.value : healthevent.resource_id,
+            HEALTH_ATTRIBUTES.RESOURCE_STATUS.value : healthevent.event_type,
+            HEALTH_ATTRIBUTES.SPECIFIC_INFO.value : healthevent.specific_info,
+        }
+        self.event.set_payload(payload)
 
-    def __str__(self):
-        return json.dumps({
-            "version": self.version,
-            "event_type": self.event_type,
-            "event_id": self.event_id,
-            "resource_type": self.resource_type,
-            "cluster_id": self.cluster_id,
-            "site_id": self.site_id,
-            "rack_id": self.rack_id,
-            "storageset_id": self.storageset_id,
-            "node_id": self.node_id,
-            "resource_id": self.resource_id,
-            "timestamp": self.timestamp,
-            "event_specific_info": self.event_specific_info
-        })
+    def get_event(self):
+        return self.event

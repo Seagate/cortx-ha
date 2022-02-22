@@ -15,6 +15,9 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
 from cortx.utils.log import Log
+from ha.fault_tolerance.const import HEALTH_EVENT_SOURCES
+from ha.core.system_health.model.health_event import HealthEvent
+from ha.core.system_health.const import HEALTH_EVENTS, HEALTH_STATUSES
 from ha.core.error import HaStatusMapperException
 
 class StatusMapper:
@@ -27,15 +30,20 @@ class StatusMapper:
         "fault_resolved": "online",
         "missing": "offline",
         "insertion": "online",
+        "recovering": "recovering",
         "online": "online",
         "failed": "failed",
         "unknown": "unknown",
+        "degraded": "degraded",
         "threshold_breached:low": "degraded",
         "threshold_breached:high": "degraded"
     }
 
     EVENT_TO_SEVERITY_MAPPING = {
+        "starting": "informational",
+        "recovering": "informational",
         "online": "informational",
+        "degraded": "informational",
         "failed": "error"
     }
 
@@ -46,9 +54,12 @@ class StatusMapper:
         super(StatusMapper, self).__init__()
 
     def map_event(self, event_type: str) -> str:
-        """Returns the status by mapping it against the event type"""
+        """Returns the status by mapping it against the source and event type."""
         try:
-            status = self.EVENT_TO_STATUS_MAPPING[event_type]
+            if event.source == HEALTH_EVENT_SOURCES.MONITOR.value and event.event_type == HEALTH_EVENTS.ONLINE.value:
+                status = HEALTH_STATUSES.STARTING.value
+            else:
+                status = self.EVENT_TO_STATUS_MAPPING[event.event_type]
             return status
         except KeyError as e:
             Log.error(f"StatusMapper, map_event, No equivalent event type found: {e}")

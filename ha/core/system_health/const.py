@@ -25,6 +25,8 @@ class CLUSTER_ELEMENTS(Enum):
 
 # Health statuses
 class HEALTH_STATUSES(Enum):
+    STARTING = "starting"
+    RECOVERING = "recovering"
     ONLINE = "online"
     DEGRADED = "degraded"
     STANDBY = "standby"
@@ -39,7 +41,10 @@ class HEALTH_EVENTS(Enum):
     FAULT_RESOLVED = "fault_resolved"
     MISSING = "missing"
     INSERTION = "insertion"
+    RECOVERING = "recovering"
+    ONLINE = "online"
     FAILED = "failed"
+    DEGRADED = "degraded"
     THRESHOLD_BREACHED_LOW = "threshold_breached:low"
     THRESHOLD_BREACHED_HIGH = "threshold_breached:high"
     UNKNOWN = "unknown"
@@ -71,3 +76,10 @@ class HEALTH_EVALUATOR_CLASSES:
 # Confstore key attributes
 class CONFSTORE_KEY_ATTRIBUTES(Enum):
     STORAGE_SET_ID = "storage_set_id"
+
+# Health event action in system health
+class HEALTH_EVENT_ACTIONS(Enum):
+    IGNORE = "ignore"
+    UPDATE = "update"
+    UPDATEPUBLISH = "updatepublish"
+    PUBLISH = "publish"
