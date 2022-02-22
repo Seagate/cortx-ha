@@ -453,7 +453,7 @@ class SystemHealth(Subscriber):
             Log.error(f"Failed processing system health event with Error: {err}")
             raise HaSystemHealthException("Failed processing system health event")
 
-    def get_health_event_template(self, nodeid: str, event_type: str, source: str = None) -> dict:
+    def get_health_event_template(self, nodeid: str, event_type: str, source: str) -> dict:
         """
         Create health event
         Args:
