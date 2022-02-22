@@ -25,7 +25,6 @@ from ha.monitor.k8s.const import EventStates, K8SClientConst
 from ha.monitor.k8s.const import K8SEventsConst
 from cortx.utils.log import Log
 from ha import const
-from ha.fault_tolerance.event import Event
 from ha.fault_tolerance.const import HEALTH_ATTRIBUTES, \
     EVENT_ATTRIBUTES
 

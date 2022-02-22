@@ -25,8 +25,7 @@ from ha.monitor.k8s.const import EventStates
 
 from cortx.utils.log import Log
 from ha.fault_tolerance.event import Event
-from ha.fault_tolerance.const import HEALTH_ATTRIBUTES, \
-    EVENT_ATTRIBUTES, HEALTH_EVENT_SOURCES
+from ha.fault_tolerance.const import HEALTH_ATTRIBUTES, HEALTH_EVENT_SOURCES
 
 
 class ObjectParser:
