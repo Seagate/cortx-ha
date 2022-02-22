@@ -24,15 +24,19 @@ from ha.monitor.k8s.const import AlertStates
 from ha.monitor.k8s.const import EventStates
 
 from cortx.utils.log import Log
-from ha.util.health_event_schema import Event
+from ha.fault_tolerance.event import Event
+from ha.fault_tolerance.const import HEALTH_ATTRIBUTES, \
+    EVENT_ATTRIBUTES, HEALTH_EVENT_SOURCES
 
 
 class ObjectParser:
     def __init__(self):
-        self.payload = {"source": "monitor", "cluster_id": None, "site_id": None, \
-                   "rack_id": None, "storageset_id": None, "node_id": None, \
-                   "resource_type": None, "resource_id": None, "resource_status": None, \
-                   "specific_info": {}}
+        self.payload = {HEALTH_ATTRIBUTES.SOURCE.value: HEALTH_EVENT_SOURCES.MONITOR.value, \
+                    HEALTH_ATTRIBUTES.CLUSTER_ID.value: None, HEALTH_ATTRIBUTES.SITE_ID.value: None, \
+                    HEALTH_ATTRIBUTES.RACK_ID.value: None, HEALTH_ATTRIBUTES.STORAGESET_ID.value: None, \
+                    HEALTH_ATTRIBUTES.NODE_ID.value: None, HEALTH_ATTRIBUTES.RESOURCE_TYPE.value: None, \
+                    HEALTH_ATTRIBUTES.RESOURCE_ID.value: None, HEALTH_ATTRIBUTES.RESOURCE_STATUS.value: None, \
+                    HEALTH_ATTRIBUTES.SPECIFIC_INFO.value: {}}
 
     def parse(self, an_event, cached_state):
         pass
@@ -43,15 +47,20 @@ class NodeEventParser(ObjectParser):
         super().__init__()
         self._type = 'host'
 
-    def _create_health_alert(self, res_type, res_name, health_status):
+    def _create_health_alert(self, res_type: str, res_name: str, health_status: str) -> dict:
         """
         Instantiates Event class which creates Health event object with necessary
         attributes to pass it for further processing.
+
+        Args:
+        res_type: resource_type for which event needs to be created. Ex: node, disk
+        res_name: actual resource name. Ex: machine_id in case of node alerts
+        health_status: health of that resource. Ex: online, failed
         """
         self.event = Event()
-        self.payload["resource_type"] = res_type
-        self.payload["resource_id"] = self.payload["node_id"] = res_name
-        self.payload["resource_status"] = health_status
+        self.payload[HEALTH_ATTRIBUTES.RESOURCE_TYPE.value] = res_type
+        self.payload[HEALTH_ATTRIBUTES.RESOURCE_ID.value] = self.payload[HEALTH_ATTRIBUTES.NODE_ID.value] = res_name
+        self.payload[HEALTH_ATTRIBUTES.RESOURCE_STATUS.value] = health_status
         self.event.set_payload(self.payload)
         return self.event.ret_dict()
 
@@ -124,12 +133,18 @@ class PodEventParser(ObjectParser):
         """
         Instantiates Event class which creates Health event object with necessary
         attributes to pass it for further processing.
+
+        Args:
+        res_type: resource_type for which event needs to be created. Ex: node, disk
+        res_name: actual resource name. Ex: machine_id in case of node alerts
+        health_status: health of that resource. Ex: online, failed
+        generation_id: name of the node in case of node alert
         """
         self.event = Event()
-        self.payload["resource_type"] = res_type
-        self.payload["resource_id"] = self.payload["node_id"] = res_name
-        self.payload["resource_status"] = health_status
-        self.payload["specific_info"]["generation_id"] = generation_id
+        self.payload[HEALTH_ATTRIBUTES.RESOURCE_TYPE.value] = res_type
+        self.payload[HEALTH_ATTRIBUTES.RESOURCE_ID.value] = self.payload[HEALTH_ATTRIBUTES.NODE_ID.value] = res_name
+        self.payload[HEALTH_ATTRIBUTES.RESOURCE_STATUS.value] = health_status
+        self.payload[HEALTH_ATTRIBUTES.SPECIFIC_INFO.value]["generation_id"] = generation_id
         self.event.set_payload(self.payload)
         return self.event.ret_dict()
 
@@ -184,10 +199,10 @@ class PodEventParser(ObjectParser):
                     health_alert = self._create_health_alert(resource_type, resource_name, event_type, generation_id)
                     return health_alert, self.event
                 else:
-                    Log.debug(f"[EventStates MODIFIED] No change detected for pod resource {alert.resource_name}")
+                    Log.debug(f"[EventStates MODIFIED] No change detected for pod resource {resource_name}")
                     return None
             else:
-                Log.debug(f"[EventStates MODIFIED] No cached state detected for pod resource {alert.resource_name}")
+                Log.debug(f"[EventStates MODIFIED] No cached state detected for pod resource {resource_name}")
                 return None
 
         # Handle DELETED event - Not required for Cortx

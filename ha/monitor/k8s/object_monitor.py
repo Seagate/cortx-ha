@@ -25,6 +25,9 @@ from ha.monitor.k8s.const import EventStates, K8SClientConst
 from ha.monitor.k8s.const import K8SEventsConst
 from cortx.utils.log import Log
 from ha import const
+from ha.fault_tolerance.event import Event
+from ha.fault_tolerance.const import HEALTH_ATTRIBUTES, \
+    EVENT_ATTRIBUTES
 
 
 class ObjectMonitor(threading.Thread):
@@ -154,7 +157,10 @@ class ObjectMonitor(threading.Thread):
                     continue
                 if self._starting_up:
                     if an_event[K8SEventsConst.TYPE] == EventStates.ADDED:
-                        alert = event.update_event(key_to_update={"is_status": True})
+                        spec_info = alert['event'][EVENT_ATTRIBUTES.HEALTH_EVENT_PAYLOAD.value][HEALTH_ATTRIBUTES.SPECIFIC_INFO.value]
+                        spec_info['is_status'] = True
+                        event.set_payload(spec_info)
+                        alert = event.ret_dict()
                     else:
                         self._starting_up = False
 
