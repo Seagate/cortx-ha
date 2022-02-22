@@ -31,7 +31,7 @@ from ha.core.system_health.const import CLUSTER_ELEMENTS, HEALTH_EVENTS, EVENT_S
 from ha.core.system_health.status_mapper import StatusMapper
 from ha.core.config.config_manager import ConfigManager
 from ha.const import PVTFQDN_TO_NODEID_KEY, ALERT_ATTRIBUTES, EVENT_ATTRIBUTES as event_attr
-from ha.fault_tolerance.const import HEALTH_ATTRIBUTES, \
+from ha.fault_tolerance.const import HEALTH_ATTRIBUTES, HEALTH_EVENT_SOURCES, \
     EVENT_ATTRIBUTES
 
 
@@ -187,7 +187,7 @@ class ClusterResourceParser(Parser):
             resource_id = cluster_resource_alert["event"][EVENT_ATTRIBUTES.HEALTH_EVENT_PAYLOAD.value][HEALTH_ATTRIBUTES.RESOURCE_ID.value]
             event_type = cluster_resource_alert["event"][EVENT_ATTRIBUTES.HEALTH_EVENT_PAYLOAD.value][HEALTH_ATTRIBUTES.RESOURCE_STATUS.value]
             specific_info = cluster_resource_alert["event"][EVENT_ATTRIBUTES.HEALTH_EVENT_PAYLOAD.value][HEALTH_ATTRIBUTES.SPECIFIC_INFO.value]
-            if specific_info and specific_info["generation_id"] and source == "monitor":
+            if specific_info and specific_info["generation_id"] and source == HEALTH_EVENT_SOURCES.MONITOR.value:
                 generation_id = cluster_resource_alert["event"][EVENT_ATTRIBUTES.HEALTH_EVENT_PAYLOAD.value][HEALTH_ATTRIBUTES.SPECIFIC_INFO.value]["generation_id"]
                 specific_info = {"generation_id": generation_id, "pod_restart": 0}
 
