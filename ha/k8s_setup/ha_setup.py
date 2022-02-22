@@ -22,6 +22,8 @@ import traceback
 import os
 import shutil
 import yaml
+import time
+import uuid
 from urllib.parse import urlparse
 
 from cortx.utils.conf_store import Conf
@@ -36,8 +38,11 @@ from ha.k8s_setup.const import _DELIM
 from ha.core.event_manager.event_manager import EventManager
 from ha.core.event_manager.subscribe_event import SubscribeEvent
 from ha.util.conf_store import ConftStoreSearch
-from ha.fault_tolerance.const import FAULT_TOLERANCE_KEYS
-
+from ha.core.system_health.const import CLUSTER_ELEMENTS, HEALTH_EVENTS, EVENT_SEVERITIES
+from ha.const import EVENT_ATTRIBUTES
+from ha.fault_tolerance.const import FAULT_TOLERANCE_KEYS, HEALTH_EVENT_SOURCES
+from ha.core.system_health.model.health_event import HealthEvent
+from ha.core.system_health.system_health import SystemHealth
 
 class Cmd:
     """
@@ -245,12 +250,13 @@ class ConfigCmd(Cmd):
             # in the similar way, confstore will have this key when
             # the cluster.conf load will taked place.
             # So, to get the cluster_id field from Confstore, we need machine_id
-            cluster_id = Conf.get(self._index, f'node{_DELIM}{machine_id}{_DELIM}cluster_id')
+            self._cluster_id = Conf.get(self._index, f'node{_DELIM}{machine_id}{_DELIM}cluster_id')
             # site_id = Conf.get(self._index, f'node{_DELIM}{machine_id}{_DELIM}site_id')
-            site_id = '1'
+            self._site_id = '1'
             # rack_id = Conf.get(self._index, f'node{_DELIM}{machine_id}{_DELIM}rack_id')
-            rack_id = '1'
-            conf_file_dict.update({'COMMON_CONFIG': {'cluster_id': cluster_id, 'rack_id': rack_id, 'site_id': site_id}})
+            self._rack_id = '1'
+            self._storageset_id = '1'
+            conf_file_dict.update({'COMMON_CONFIG': {'cluster_id': self._cluster_id, 'rack_id': self._rack_id, 'site_id': self._site_id}})
             # TODO: Verify whether these newly added config is avilable in the confstore or not
             with open(const.HA_CONFIG_FILE, 'w+') as conf_file:
                 yaml.dump(conf_file_dict, conf_file, default_flow_style=False)
@@ -265,8 +271,10 @@ class ConfigCmd(Cmd):
                        is successful for the event {const.POD_EVENT}')
 
             Log.info('Creating cluster cardinality')
-            confStoreAPI = ConftStoreSearch()
-            confStoreAPI.set_cluster_cardinality(self._index)
+            self._confStoreAPI = ConftStoreSearch()
+            self._confStoreAPI.set_cluster_cardinality(self._index)
+            # Init node health
+            self._add_node_health()
 
             Log.info("config command is successful")
             sys.stdout.write("config command is successful.\n")
@@ -278,6 +286,35 @@ class ConfigCmd(Cmd):
             sys.stderr.write(f'HA Config failed. OS_error: {os_err}.\n')
         except Exception as c_err:
             sys.stderr.write(f'HA config command failed: {c_err}.\n')
+
+    def _add_node_health(self) -> None:
+        """
+        Add node health
+        """
+        _, nodes_list = self._confStoreAPI.get_cluster_cardinality()
+        for node in nodes_list:
+            timestamp = str(int(time.time()))
+            event_id = timestamp + str(uuid.uuid4().hex)
+            node_health_event = {
+                EVENT_ATTRIBUTES.SOURCE : HEALTH_EVENT_SOURCES.HA.value,
+                EVENT_ATTRIBUTES.EVENT_ID : event_id,
+                EVENT_ATTRIBUTES.EVENT_TYPE : HEALTH_EVENTS.UNKNOWN.value,
+                EVENT_ATTRIBUTES.SEVERITY : EVENT_SEVERITIES.INFORMATIONAL.value,
+                EVENT_ATTRIBUTES.SITE_ID : self._site_id,
+                EVENT_ATTRIBUTES.RACK_ID : self._rack_id,
+                EVENT_ATTRIBUTES.CLUSTER_ID : self._cluster_id,
+                EVENT_ATTRIBUTES.STORAGESET_ID : self._storageset_id,
+                EVENT_ATTRIBUTES.NODE_ID : node,
+                EVENT_ATTRIBUTES.HOST_ID : None,
+                EVENT_ATTRIBUTES.RESOURCE_TYPE : CLUSTER_ELEMENTS.NODE.value,
+                EVENT_ATTRIBUTES.TIMESTAMP : timestamp,
+                EVENT_ATTRIBUTES.RESOURCE_ID : node,
+                EVENT_ATTRIBUTES.SPECIFIC_INFO : None
+            }
+            Log.debug(f"Adding initial health {node_health_event} for node {node}")
+            health_event = HealthEvent.dict_to_object(node_health_event)
+            system_health = SystemHealth(self._confstore)
+            system_health.process_event(health_event)
 
 class InitCmd(Cmd):
     """
