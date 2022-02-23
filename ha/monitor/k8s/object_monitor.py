@@ -195,16 +195,13 @@ class ObjectMonitor(threading.Thread):
         incoming_resource_name = incoming_alert.get('_resource_name')
         incoming_generation_id = incoming_alert.get('_generation_id')
 
-        if incoming_alert.get('_timestamp') is None or incoming_resource_name is None:
-            # Consider any other alerts to be published
-            return False
-
         # Alert which is getting repeated also has new timestamp.
         # So timestamp field should be ignored for validation.
-        del incoming_alert['_timestamp']
+        if "_timestamp" in incoming_alert.keys():
+            del incoming_alert['_timestamp']
 
         # Remove user added fields those aren't exist in raw event
-        if incoming_alert.get('_is_status') is not None:
+        if "_is_status" in incoming_alert.keys():
             del incoming_alert['_is_status']
 
         incoming_alert_msg = json.dumps(incoming_alert, sort_keys=True)
