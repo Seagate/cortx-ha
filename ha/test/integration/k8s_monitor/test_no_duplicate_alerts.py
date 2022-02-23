@@ -29,14 +29,11 @@ class MockProducer:
 
     def __init__(self, producer_id: str, message_type: str, partitions: int):
        print(f"Producer id: {producer_id}, message_type: {message_type}, partition: {partitions}")
-       self.is_publish = False
-       self.mock_message = None
 
     def publish(self, message: any):
-        if self.mock_message:
-            message = self.mock_message
-        print(f"Publishing..\n{message.to_dict()}")
+        print(f"Publishing alert..\n{message.to_dict()}")
         return message
+
 
 class MockAlert:
 
@@ -56,7 +53,7 @@ class MockAlert:
 
 
 if __name__ == "__main__":
-    print("******** Testing K8s Alert Parsing ********")
+    print("******** Testing K8s Not Publishing Duplicate Alerts ********")
     try:
         ConfigManager.init("test_k8s_resource_monitor")
 
@@ -80,7 +77,7 @@ if __name__ == "__main__":
         mock_producer.publish(alert)
 
         # Check the alert is already published
-        assert monitor._is_published_alert(alert) == True, "Publishing duplicate alert"
+        assert monitor._is_published_alert(alert) == True, "Duplicate alert is published"
         print("Successfully verified the alert.")
 
         # we are exiting here so no needs to join the thread

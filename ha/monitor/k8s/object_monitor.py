@@ -182,16 +182,15 @@ class ObjectMonitor(threading.Thread):
         """
         Check incoming alert is already published or not.
         If incoming alert is not found in published alerts, then
-        it is a new alert to publish. Alert will be stored like,
-        self._published_alerts = {
-            resource_name: { generation_id : alert }
-            }
-
+        it is a new alert to publish.
+        Alert will be stored and mapped to its unique key,
+            self._published_alerts = { alert_key : alert }
         Returns:
             True if it is published already
             False if it is a new alert
         """
         incoming_alert = alert.to_dict().copy()
+        incoming_resource_type = incoming_alert.get('_resource_type')
         incoming_resource_name = incoming_alert.get('_resource_name')
         incoming_generation_id = incoming_alert.get('_generation_id')
 
@@ -204,21 +203,23 @@ class ObjectMonitor(threading.Thread):
         if "_is_status" in incoming_alert.keys():
             del incoming_alert['_is_status']
 
-        incoming_alert_msg = json.dumps(incoming_alert, sort_keys=True)
-        published_alerts = self._published_alerts.get(incoming_resource_name)
+        if incoming_generation_id:
+            alert_key = f"{incoming_resource_type}_{incoming_generation_id}"
+        else:
+            alert_key = f"{incoming_resource_type}_{incoming_resource_name}"
 
-        if published_alerts:
-            incoming_generation_id = incoming_alert.get('_generation_id')
-            published_alert = published_alerts.get(incoming_generation_id)
+        incoming_alert_msg = json.dumps(incoming_alert, sort_keys=True)
+        published_alert = self._published_alerts.get(alert_key)
+
+        if published_alert:
             if incoming_alert_msg == published_alert:
                 # Published already
                 return True
             else:
                 # New alert
-                self._published_alerts[incoming_resource_name][incoming_generation_id] = incoming_alert_msg
+                self._published_alerts[alert_key] = incoming_alert_msg
+
         else:
-            self._published_alerts[incoming_resource_name] = {
-                incoming_generation_id: incoming_alert_msg
-                }
+            self._published_alerts[alert_key] = incoming_alert_msg
 
         return False
