@@ -74,7 +74,7 @@ cp -rf ${BASE_DIR}/conf/etc/v2/ha.conf.template ${BASE_DIR}/conf/etc/v2/ha.conf
 sed -i -e "s|<VERSION>|${version}|g" ${BASE_DIR}/conf/etc/v2/ha.conf
 
 python3.6 setup.py bdist_rpm --version="${version}" --install-dir="${HA_INSTALL_PATH}" --release="$BUILD" \
---force-arch x86_64 --post-install jenkins/rpm/v2/k8s/post_install_script.sh \
+--post-install jenkins/rpm/v2/k8s/post_install_script.sh \
 --post-uninstall jenkins/rpm/v2/k8s/post_uninstall_script.sh
 
 # Above --force-arch flag and below code is just for backward compatibility.
