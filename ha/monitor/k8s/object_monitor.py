@@ -199,7 +199,7 @@ class ObjectMonitor(threading.Thread):
             # Consider any other alerts to be published
             return False
 
-        # Alert with no status change also has new timestamp.
+        # Alert which is getting repeated also has new timestamp.
         # So timestamp field should be ignored for validation.
         del incoming_alert['_timestamp']
 
