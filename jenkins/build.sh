@@ -79,9 +79,9 @@ python3.6 setup.py bdist_rpm --version="${version}" --install-dir="${HA_INSTALL_
 
 # Above --force-arch flag and below code is just for backward compatibility.
 # Can be removed once integration is done with RE.
-rpm_file=`ls -1 ${BASE_DIR}/dist/ | grep x86_64 | grep -v debug`
-mkdir -p ${BASE_DIR}/dist/rpmbuild/RPMS/x86_64
-cp ${BASE_DIR}/dist/${rpm_file} ${BASE_DIR}/dist/rpmbuild/RPMS/x86_64/
+rpm_file=`ls -1 ${BASE_DIR}/dist/`
+mkdir -p ${BASE_DIR}/dist/rpmbuild/RPMS/noarch
+cp ${BASE_DIR}/dist/${rpm_file} ${BASE_DIR}/dist/rpmbuild/RPMS/noarch/
 
 # Show RPM
 cd ${BASE_DIR}/dist/rpmbuild
