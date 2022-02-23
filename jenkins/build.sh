@@ -73,13 +73,13 @@ rm -rf ${BASE_DIR}/dist
 cp -rf ${BASE_DIR}/conf/etc/v2/ha.conf.template ${BASE_DIR}/conf/etc/v2/ha.conf
 sed -i -e "s|<VERSION>|${version}|g" ${BASE_DIR}/conf/etc/v2/ha.conf
 
-python3.6 setup.py bdist_rpm --version="${version}" --install-dir="${HA_INSTALL_PATH}" --release="$BUILD" \
+python3.6 setup.py bdist_rpm --version="${version}" --install-dir="${HA_INSTALL_PATH}" --binary-only --release="$BUILD" \
 --post-install jenkins/rpm/v2/k8s/post_install_script.sh \
 --post-uninstall jenkins/rpm/v2/k8s/post_uninstall_script.sh
 
 # Above --force-arch flag and below code is just for backward compatibility.
 # Can be removed once integration is done with RE.
-rpm_file=`ls -1 ${BASE_DIR}/dist/`
+rpm_file=`ls -1 ${BASE_DIR}/dist/ | grep noarch`
 mkdir -p ${BASE_DIR}/dist/rpmbuild/RPMS/noarch
 cp ${BASE_DIR}/dist/${rpm_file} ${BASE_DIR}/dist/rpmbuild/RPMS/noarch/
 
