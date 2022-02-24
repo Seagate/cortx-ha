@@ -31,25 +31,71 @@ class MockProducer:
        print(f"Producer id: {producer_id}, message_type: {message_type}, partition: {partitions}")
 
     def publish(self, message: any):
-        print(f"Publishing alert..\n{message.to_dict()}")
+        print(f"Publishing alert..\n{message}")
         return message
 
 
 class MockAlert:
 
-    alert = {
-        '_resource_type': 'node',
-        '_resource_name': '0000759b5d544cad8ea8cc6ee8ef0000',
-        '_alert_type': 'online',
-        '_k8s_container': None,
-        '_generation_id': 'cortx-data-dummy',
-        '_node': 'dummy-host.colo.seagate.com',
-        '_is_status': True,
-        '_timestamp': '1645601710'}
+    @staticmethod
+    def get_host_alert():
+        # Alert without generation_id
+        return { "event": {
+                "header":{
+                    "version":"1.0",
+                    "timestamp":"112255",
+                    "event_id":"11225568919c5ba8f88ad24cc18f632a75de115aca"
+                },
+                "payload":{
+                    "source":"monitor",
+                    "cluster_id":"None",
+                    "site_id":"None",
+                    "rack_id":"None",
+                    "storageset_id":"None",
+                    "node_id":"dummy.colo.seagate.com",
+                    "resource_type":"host",
+                    "resource_id":"dummy.colo.seagate.com",
+                    "resource_status":"online",
+                    "specific_info":{
+                    }
+                }
+            }
+        }
 
     @staticmethod
-    def to_dict():
-        return MockAlert.alert
+    def get_pod_alert():
+        # Alert with generation_id
+        return { "event":{
+                "header":{
+                    "version":"1.0",
+                    "timestamp":"112233",
+                    "event_id":"11223368911c9b81b8d3c84305a49c191e6a8c3bb5"
+                },
+                "payload":{
+                    "source":"monitor",
+                    "cluster_id":"None",
+                    "site_id":"None",
+                    "rack_id":"None",
+                    "storageset_id":"None",
+                    "node_id":"dummy0fff6f947e8aecc6a27a25b7329",
+                    "resource_type":"node",
+                    "resource_id":"dummy02fff6f947e8aecc6a27a25b7329",
+                    "resource_status":"online",
+                    "specific_info":{
+                        "generation_id":"cortx-data-dummy0"
+                    }
+                }
+            }
+        }
+
+    @staticmethod
+    def toggle_status(alert):
+        if alert["event"]["payload"]["resource_status"] == "online":
+            alert["event"]["payload"]["resource_status"] = "offline"
+        else:
+            alert["event"]["payload"]["resource_status"] = "online"
+        return alert
+
 
 
 if __name__ == "__main__":
@@ -68,16 +114,27 @@ if __name__ == "__main__":
 
         monitor = ObjectMonitor(mock_producer, 'pod', **kwargs)
 
-        alert = MockAlert()
+        host_alert = MockAlert.get_pod_alert()
+        pod_alert = MockAlert.get_host_alert()
 
         # Check the alert is a new alert
-        assert monitor._is_published_alert(alert) == False
+        assert monitor._is_published_alert(host_alert) == False, "Failed to publish new alert"
+        assert monitor._is_published_alert(pod_alert) == False, "Failed to publish new alert"
 
         # Publish
-        mock_producer.publish(alert)
+        mock_producer.publish(host_alert)
+        mock_producer.publish(pod_alert)
 
         # Check the alert is already published
-        assert monitor._is_published_alert(alert) == True, "Duplicate alert is published"
+        assert monitor._is_published_alert(host_alert) == True, "Duplicate host alert is published"
+        assert monitor._is_published_alert(pod_alert) == True, "Duplicate pod alert is published"
+
+        # Change pod status
+        pod_alert = MockAlert.toggle_status(pod_alert)
+        mock_producer.publish(pod_alert)
+
+        # Check the alert is already published
+        assert monitor._is_published_alert(pod_alert) == False, "Failed to publish new alert"
         print("Successfully verified the alert.")
 
         # we are exiting here so no needs to join the thread

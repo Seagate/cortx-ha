@@ -178,7 +178,7 @@ class ObjectMonitor(threading.Thread):
                 break
         Log.info(f"Stopping the {self.name}...")
 
-    def _is_published_alert(self, alert) -> bool:
+    def _is_published_alert(self, incoming_alert) -> bool:
         """
         Check incoming alert is already published or not.
         If incoming alert is not found in published alerts, then
@@ -189,37 +189,34 @@ class ObjectMonitor(threading.Thread):
             True if it is published already
             False if it is a new alert
         """
-        incoming_alert = alert.to_dict().copy()
-        incoming_resource_type = incoming_alert.get('_resource_type')
-        incoming_resource_name = incoming_alert.get('_resource_name')
-        incoming_generation_id = incoming_alert.get('_generation_id')
+        if not isinstance(incoming_alert, dict):
+            return False
+
+        header = incoming_alert["event"]["header"]
+        payload = incoming_alert["event"]["payload"]
+
+        if payload["specific_info"].get("generation_id"):
+            alert_key = "%s_%s_%s" % (payload["node_id"],
+                                      payload["resource_type"],
+                                      payload["specific_info"]["generation_id"])
+        else:
+            alert_key = "%s_%s_%s" % (payload["node_id"],
+                                      payload["resource_type"],
+                                      payload["resource_id"])
 
         # Alert which is getting repeated also has new timestamp.
         # So timestamp field should be ignored for validation.
-        if "_timestamp" in incoming_alert.keys():
-            del incoming_alert['_timestamp']
+        if "timestamp" in header.keys():
+            del incoming_alert["event"]["header"]["timestamp"]
 
-        # Remove user added fields those aren't exist in raw event
-        if "_is_status" in incoming_alert.keys():
-            del incoming_alert['_is_status']
-
-        if incoming_generation_id:
-            alert_key = f"{incoming_resource_type}_{incoming_generation_id}"
-        else:
-            alert_key = f"{incoming_resource_type}_{incoming_resource_name}"
-
-        incoming_alert_msg = json.dumps(incoming_alert, sort_keys=True)
+        incoming_alert_msg = json.dumps(payload, sort_keys=True)
         published_alert = self._published_alerts.get(alert_key)
 
-        if published_alert:
-            if incoming_alert_msg == published_alert:
-                # Published already
-                return True
-            else:
-                # New alert
-                self._published_alerts[alert_key] = incoming_alert_msg
-
+        if incoming_alert_msg == published_alert:
+            # Published already
+            return True
         else:
+            # New alert
             self._published_alerts[alert_key] = incoming_alert_msg
 
         return False
