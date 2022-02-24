@@ -10,14 +10,17 @@ HA_ENTRYPOINT=${SITE_PACKAGES}/ha/k8s_setup/ha_start.py
 FAULT_TOLERANCE_DRIVER=${SITE_PACKAGES}/ha/fault_tolerance/fault_tolerance_driver.py
 CLI_EXEC=${SITE_PACKAGES}/ha/cli/cortxha.py
 EVENT_ANALYZER=${SITE_PACKAGES}/ha/core/event_analyzer/event_analyzerd.py
+HA_SB_LOCATION=${SITE_PACKAGES}/ha/core/support_bundle/ha_support_bundle.py
 
 chmod +x "${HA_SETUP}"
 chmod +x "${HA_ENTRYPOINT}"
 chmod +x "${FAULT_TOLERANCE_DRIVER}"
+chmod +x "${HA_SB_LOCATION}"
 ln -sf "${HA_SETUP}" ${BIN_DIR}/ha_setup
 ln -sf "${HA_ENTRYPOINT}" ${BIN_DIR}/ha_start
 ln -sf "${HA_SETUP}" /usr/bin/ha_setup
 ln -sf "${HA_SETUP}" /usr/local/bin/ha_setup
+ln -sf "${HA_SB_LOCATION}" ${BIN_DIR}/ha_support_bundle
 
 chmod +x "${CLI_EXEC}"
 ln -sf "${CLI_EXEC}" ${BIN_DIR}/cortx

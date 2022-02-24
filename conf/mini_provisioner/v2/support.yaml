@@ -14,4 +14,4 @@
 # cortx-questions@seagate.com.
 
 support_bundle:
-    - cortx support_bundle create
+    - /opt/seagate/cortx/ha/bin/ha_support_bundle
