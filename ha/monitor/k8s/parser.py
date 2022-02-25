@@ -83,7 +83,7 @@ class NodeEventParser(ObjectParser):
         if ready_status is None:
             Log.debug(f"ready_status is None for node resource {resource_name}")
             cached_state[resource_name] = ready_status
-            return None
+            return (None, None)
 
         if event_type == EventStates.ADDED:
             cached_state[resource_name] = ready_status.lower()
@@ -93,7 +93,7 @@ class NodeEventParser(ObjectParser):
                 return health_alert, self.event
             else:
                 Log.debug(f"[EventStates ADDED] No change detected for node resource {resource_name}")
-                return None
+                return (None, None)
 
         if event_type == EventStates.MODIFIED:
             if resource_name in cached_state:
@@ -109,14 +109,14 @@ class NodeEventParser(ObjectParser):
                     return health_alert, self.event
                 else:
                     Log.debug(f"[EventStates MODIFIED] No change detected for node resource {resource_name}")
-                    return None
+                    return (None, None)
             else:
                 Log.debug(f"[EventStates MODIFIED] No cached state detected for node resource {resource_name}")
-                return None
+                return (None, None)
 
         # Handle DELETED event - Not required for Cortx
 
-        return None
+        return (None, None)
 
 
 class PodEventParser(ObjectParser):
@@ -173,13 +173,13 @@ class PodEventParser(ObjectParser):
         if ready_status is None:
             Log.debug(f"ready_status is None for pod resource {resource_name}")
             cached_state[resource_name] = ready_status
-            return None
+            return (None, None)
 
         if an_event[K8SEventsConst.TYPE] == EventStates.ADDED:
             cached_state[resource_name] = ready_status.lower()
             if ready_status.lower() != K8SEventsConst.true:
                 Log.debug(f"[EventStates ADDED] No change detected for pod resource {resource_name}")
-                return None
+                return (None, None)
             else:
                 event_type = AlertStates.ONLINE
                 health_alert = self._create_health_alert(resource_type, resource_name, event_type, generation_id)
@@ -199,14 +199,14 @@ class PodEventParser(ObjectParser):
                     return health_alert, self.event
                 else:
                     Log.debug(f"[EventStates MODIFIED] No change detected for pod resource {resource_name}")
-                    return None
+                    return (None, None)
             else:
                 Log.debug(f"[EventStates MODIFIED] No cached state detected for pod resource {resource_name}")
-                return None
+                return (None, None)
 
         # Handle DELETED event - Not required for Cortx
 
-        return None
+        return (None, None)
 
 
 class EventParser:
