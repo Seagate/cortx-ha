@@ -144,6 +144,5 @@ if __name__ == "__main__":
         # we are exiting here so no needs to join the thread
         mock_producer._stop_alert_processing = True
 
-
     except Exception as e:
        print(f"Failed to verify the alert is already published or not. Error: {e}")
