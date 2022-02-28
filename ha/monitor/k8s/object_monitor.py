@@ -15,6 +15,7 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
+import copy
 import json
 import threading
 from kubernetes import config, client, watch
@@ -178,7 +179,7 @@ class ObjectMonitor(threading.Thread):
                 break
         Log.info(f"Stopping the {self.name}...")
 
-    def _is_published_alert(self, incoming_alert) -> bool:
+    def _is_published_alert(self, alert) -> bool:
         """
         Check incoming alert is already published or not.
         If incoming alert is not found in published alerts, then
@@ -189,8 +190,10 @@ class ObjectMonitor(threading.Thread):
             True if it is published already
             False if it is a new alert
         """
-        if not isinstance(incoming_alert, dict):
+        if not isinstance(alert, dict):
             return False
+
+        incoming_alert = copy.deepcopy(alert)
 
         header = incoming_alert["event"]["header"]
         payload = incoming_alert["event"]["payload"]
