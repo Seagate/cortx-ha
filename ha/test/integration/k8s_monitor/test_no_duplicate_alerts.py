@@ -114,8 +114,8 @@ if __name__ == "__main__":
 
         monitor = ObjectMonitor(mock_producer, 'pod', **kwargs)
 
-        host_alert = MockAlert.get_pod_alert()
-        pod_alert = MockAlert.get_host_alert()
+        host_alert = MockAlert.get_host_alert()
+        pod_alert = MockAlert.get_pod_alert()
 
         # Check the alert is a new alert
         assert monitor._is_published_alert(host_alert) == False, "Failed to publish new alert"
@@ -129,6 +129,10 @@ if __name__ == "__main__":
         assert monitor._is_published_alert(host_alert) == True, "Duplicate host alert is published"
         assert monitor._is_published_alert(pod_alert) == True, "Duplicate pod alert is published"
 
+        # Check alert is not getting modified by is_published_alert validation
+        actual_pod_alert = MockAlert.get_pod_alert()
+        assert pod_alert == actual_pod_alert
+
         # Change pod status
         pod_alert = MockAlert.toggle_status(pod_alert)
         mock_producer.publish(pod_alert)
@@ -139,6 +143,7 @@ if __name__ == "__main__":
 
         # we are exiting here so no needs to join the thread
         mock_producer._stop_alert_processing = True
+
 
     except Exception as e:
        print(f"Failed to verify the alert is already published or not. Error: {e}")
