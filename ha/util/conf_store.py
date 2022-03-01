@@ -35,11 +35,12 @@ class ConftStoreSearch:
     Wrapper class for using the confstore search APIs
     """
 
-    def __init__(self):
+    def __init__(self, conf_store_req: bool = True):
         """Init method"""
-        self._confstore = ConfigManager.get_confstore()
+        if conf_store_req:
+            self._confstore = ConfigManager.get_confstore()
 
-    def _get_data_pods(self, index):
+    def get_data_pods(self, index):
         """
         Get machine ids for data pods: returns list of machine ids.
         """
@@ -56,7 +57,7 @@ class ConftStoreSearch:
             machine_ids.append(machine_id)
         return machine_ids
 
-    def _get_server_pods(self, index):
+    def get_server_pods(self, index):
         """
         Get machine ids for server pods: returns list of machine ids.
         """
@@ -93,8 +94,8 @@ class ConftStoreSearch:
         Set number of nodes(pods) and their machine ids in confstore used by HA
         """
 
-        data_pods = self._get_data_pods(index)
-        server_pods = self._get_server_pods(index)
+        data_pods = self.get_data_pods(index)
+        server_pods = self.get_server_pods(index)
 
         # Combine the lists data_pods, server_pod and find unique machine ids
         watch_pods = data_pods + server_pods
