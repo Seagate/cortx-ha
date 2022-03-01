@@ -38,7 +38,7 @@ from ha.core.system_health.system_health_manager import SystemHealthManager
 from ha.core.error import HaSystemHealthException
 from ha.core.system_health.health_evaluator_factory import HealthEvaluatorFactory
 from ha.core.cluster.const import SYSTEM_HEALTH_OUTPUT_V2, GET_SYS_HEALTH_ARGS
-from ha.core.system_health.const import CLUSTER_ELEMENTS, HEALTH_STATUSES
+from ha.core.system_health.const import CLUSTER_ELEMENTS, HEALTH_STATUSES, HEALTH_EVENT_ACTIONS
 from ha.core.system_health.model.health_status import StatusOutput, ComponentStatus
 from ha.core.system_health.system_health_hierarchy import HealthHierarchy
 from ha.core.event_manager.resources import RESOURCE_TYPES
@@ -267,7 +267,7 @@ class SystemHealth(Subscriber):
         """
         pass
 
-    def _is_update_required(self, current_health: str, updated_health: str, event: HealthEvent) -> bool:
+    def _is_update_required(self, current_health: str, updated_health: str, event: HealthEvent) -> HEALTH_EVENT_ACTIONS:
         """
         Check if update is needed for system health.
 
@@ -276,11 +276,11 @@ class SystemHealth(Subscriber):
             healthevent (HealthEvent): health event object.
 
         Returns:
-            bool: return true if update is needed.
+            HEALTH_EVENT_ACTIONS
         """
+        event_action: HEALTH_EVENT_ACTIONS = HEALTH_EVENT_ACTIONS.UPDATEPUBLISH.value
         if not current_health:
-            return True
-        is_needed: bool = True
+            return event_action
         old_health = json.loads(current_health)
         new_health = json.loads(updated_health)
         old_status = old_health["events"][0]["status"]
@@ -288,21 +288,20 @@ class SystemHealth(Subscriber):
 
         # Common cases
         if old_status == new_status:
-            is_needed = False
+            event_action = HEALTH_EVENT_ACTIONS.IGNORE.value
 
         # specific cases
         # 1. Do not overwrite node status to failed if offline already
         if event.resource_type == RESOURCE_TYPES.NODE.value and \
             old_status == HEALTH_STATUSES.OFFLINE.value and new_status == HEALTH_STATUSES.FAILED.value:
             Log.info(f"Updating is not needed node is in {old_status} and received {new_status}")
-            is_needed = False
-        return is_needed
+            event_action = HEALTH_EVENT_ACTIONS.IGNORE.value
+        return event_action
 
-    def publish_event(self, healthevent: HealthEvent, healthvalue: str= ""):
+    def publish_event(self, healthevent: HealthEvent):
         """
         Produce event
         """
-        healthevent.event_type = json.loads(healthvalue).get("events")[0]["status"]
         node_id = healthevent.node_id
         self.producer.publish(str(healthevent))
         healthevent.node_id = node_id
@@ -322,7 +321,7 @@ class SystemHealth(Subscriber):
         is_key_exists = self.healthmanager.key_exists(key)
         self.healthmanager.set_key(key, healthvalue)
         if is_key_exists:
-            self.publish_event(healthevent, healthvalue)
+            self.publish_event(healthevent)
 
         # Check the next component to be updated, if none then return.
         if next_component is None:
@@ -357,7 +356,8 @@ class SystemHealth(Subscriber):
 
     def _check_and_update(self, current_health: str, updated_health: str, healthevent: HealthEvent, next_component: str) -> None:
         # Update in the store.
-        if self._is_update_required(current_health, updated_health, healthevent):
+        update_action = self._is_update_required(current_health, updated_health, healthevent)
+        if update_action != HEALTH_EVENT_ACTIONS.IGNORE.value:
             self._update(healthevent, updated_health, next_component=next_component)
 
     def process_event(self, healthevent: HealthEvent):
@@ -367,7 +367,7 @@ class SystemHealth(Subscriber):
 
         # TODO: Check the user and see if allowed to update the system health.
         try:
-            status = self.statusmapper.map_event(healthevent.event_type)
+            status = self.statusmapper.map_event(healthevent)
             component = SystemHealthComponents.get_component(healthevent.resource_type)
 
             # Get the health update hierarchy
@@ -453,10 +453,11 @@ class SystemHealth(Subscriber):
             Log.error(f"Failed processing system health event with Error: {err}")
             raise HaSystemHealthException("Failed processing system health event")
 
-    def get_health_event_template(self, nodeid: str, event_type: str) -> dict:
+    def get_health_event_template(self, nodeid: str, event_type: str, source: str) -> dict:
         """
         Create health event
         Args:
+            source: Source (Ex: monitor, hare) who wants this event template
             nodeid (str): nodeid
             event_type (str): event type will be offline, online, failed
 
@@ -472,6 +473,7 @@ class SystemHealth(Subscriber):
         timestamp = str(int(time.time()))
         event_id = timestamp + str(uuid.uuid4().hex)
         initial_event = {
+            const.EVENT_ATTRIBUTES.SOURCE: source,
             const.EVENT_ATTRIBUTES.EVENT_ID : event_id,
             const.EVENT_ATTRIBUTES.EVENT_TYPE : event_type,
             const.EVENT_ATTRIBUTES.SEVERITY : EVENT_SEVERITIES.WARNING.value,

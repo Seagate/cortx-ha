@@ -64,3 +64,5 @@ class RESOURCE_TYPES(enum.Enum, metaclass=EnumListMeta):
     NODE_INTERFACE_SAS = "node:interface:sas"
     NODE_INTERFACE_SAS_PORT = "node:interface:sas:port"
     NODE_SW_OS_SERVICE = "node:sw:os:service"
+    CVG = "cvg"
+    DISK = "disk"

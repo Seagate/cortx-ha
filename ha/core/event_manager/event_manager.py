@@ -31,11 +31,12 @@ from ha.core.event_manager.error import InvalidEvent
 from ha.core.event_manager.error import SubscribeException
 from ha.core.event_manager.error import UnSubscribeException
 from ha.core.event_manager.error import PublishException
-from ha.core.event_manager.model.action_event import RecoveryActionEvent
 from ha.core.event_manager.resources import SUBSCRIPTION_LIST
 from ha.core.event_manager.const import EVENT_MANAGER_KEYS
 from ha.core.health_monitor.const import HEALTH_MON_ACTIONS
 from ha.core.health_monitor.monitor_rules_manager import MonitorRulesManager
+from ha.fault_tolerance.const import HEALTH_ATTRIBUTES, EVENT_ATTRIBUTES
+from ha.fault_tolerance.event import Event
 
 class EventManager:
     """
@@ -383,27 +384,28 @@ class EventManager:
                     break
         return value
 
-    def publish(self, event: RecoveryActionEvent) -> None:
+    def publish(self, event: Event) -> None:
         """
         Publish event.
         Args:
-            event (RecoveryActionEvent): Action event.
+            event (Event): Action event.
         """
         try:
             #TODO: Use Transactional producer in future.
             component_list = []
             # Run through list of components subscribed for this event and send event to each of them
             component_list_key = EVENT_MANAGER_KEYS.EVENT_KEY.value.replace(
-                "<resource>", event.resource_type).replace("<state>", event.event_type)
+                "<resource>", event.event[EVENT_ATTRIBUTES.HEALTH_EVENT_PAYLOAD.value][HEALTH_ATTRIBUTES.RESOURCE_TYPE.value]).replace("<state>", event.event[EVENT_ATTRIBUTES.HEALTH_EVENT_PAYLOAD.value][HEALTH_ATTRIBUTES.RESOURCE_STATUS.value])
             component_list_key_val = self._confstore.get(component_list_key)
             if component_list_key_val:
                 _, value = component_list_key_val.popitem()
                 component_list = json.loads(value)
             for component in component_list:
-                message_producer = self._get_producer(component)
-                event_to_send = str(event)
-                Log.info(f"Sending action event {event_to_send} to component {component}")
-                message_producer.publish(event_to_send)
+                if component != event.event[EVENT_ATTRIBUTES.HEALTH_EVENT_PAYLOAD.value][HEALTH_ATTRIBUTES.SOURCE.value]:
+                    message_producer = self._get_producer(component)
+                    event_to_send = event.ret_dict()
+                    Log.info(f"Sending action event {event_to_send} to component {component}")
+                    message_producer.publish(event_to_send)
         except Exception as e:
             Log.error(f"Failed sending message for {event.resource_type}, Error: {e}")
             raise PublishException(f"Failed sending message for {event.resource_type}, Error: {e}")
