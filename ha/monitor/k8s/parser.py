@@ -20,7 +20,7 @@ import time
 
 from ha.monitor.k8s.error import NotSupportedObjectError
 from ha.monitor.k8s.const import K8SEventsConst
-from ha.monitor.k8s.const import AlertStates
+from ha.monitor.k8s.const import AlertStates, AlertResourceType
 from ha.monitor.k8s.const import EventStates
 
 from cortx.utils.log import Log
@@ -44,7 +44,7 @@ class ObjectParser:
 class NodeEventParser(ObjectParser):
     def __init__(self):
         super().__init__()
-        self._type = 'host'
+        self._type = AlertResourceType.HOST
 
     def _create_health_alert(self, res_type: str, res_name: str, health_status: str) -> dict:
         """
@@ -126,7 +126,7 @@ class PodEventParser(ObjectParser):
         # Note: The below type is not a Kubernetes 'node'.
         #       in cortx cluster the pod is called or considered as a node.
         #       hence while sending alert to cortx, below type is set to 'node'.
-        self._type = 'node'
+        self._type = AlertResourceType.NODE
 
     def _create_health_alert(self, res_type, res_name, health_status, generation_id):
         """
