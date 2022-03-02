@@ -403,7 +403,6 @@ class SystemHealth(Subscriber):
                     # If health is already stored and its a node_health, check further
                     stored_genration_id = current_health_dict["events"][0]["specific_info"]["generation_id"]
                     incoming_generation_id = healthevent.specific_info["generation_id"]
-                    stored_health_status = current_health_dict["events"][0]["status"]
                     incoming_health_status = healthevent.event_type
                     pod_restart_val = current_health_dict["events"][0]["specific_info"]["pod_restart"]
                     # Update the current health value itself.
