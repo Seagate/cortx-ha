@@ -178,7 +178,7 @@ class ClusterResourceFilter(Filter):
         """
         super(ClusterResourceFilter, self).__init__()
 
-    def _filter_resource_type(event_resource_type: str) -> bool:
+    def _filter_resource_type(self, event_resource_type: str) -> bool:
         # filter out supported resources types
         supported_resource_types = [
             HEALTH_EVENT_RESOURCE_TYPE.RESOURCE_TYPE_NODE.value, # 'node'
