@@ -16,10 +16,9 @@
 # cortx-questions@seagate.com.
 
 from ha.core.system_health.model.health_event import HealthEvent
-from ha.fault_tolerance.event import Event
-from ha.fault_tolerance.const import HEALTH_ATTRIBUTES
+from cortx.utils.event_framework.health import HealthAttr, HealthEvent as HEvent
 
-class RecoveryActionEvent:
+class RecoveryActionvent:
     """
     Action Event. This class implements an action event object,
     that is delegated to components for taking the action.
@@ -29,20 +28,21 @@ class RecoveryActionEvent:
         """
         Init method.
         """
-        self.event = Event()
+        self.event = HEvent()
         payload = {
-            HEALTH_ATTRIBUTES.SOURCE.value : healthevent.source,
-            HEALTH_ATTRIBUTES.CLUSTER_ID.value : healthevent.cluster_id,
-            HEALTH_ATTRIBUTES.SITE_ID.value : healthevent.site_id,
-            HEALTH_ATTRIBUTES.RACK_ID.value : healthevent.rack_id,
-            HEALTH_ATTRIBUTES.STORAGESET_ID.value : healthevent.storageset_id,
-            HEALTH_ATTRIBUTES.NODE_ID.value : healthevent.node_id,
-            HEALTH_ATTRIBUTES.RESOURCE_TYPE.value : healthevent.resource_type,
-            HEALTH_ATTRIBUTES.RESOURCE_ID.value : healthevent.resource_id,
-            HEALTH_ATTRIBUTES.RESOURCE_STATUS.value : healthevent.event_type,
-            HEALTH_ATTRIBUTES.SPECIFIC_INFO.value : healthevent.specific_info,
+            HealthAttr.SOURCE: healthevent.source,
+            HealthAttr.CLUSTER_ID: healthevent.cluster_id,
+            HealthAttr.SITE_ID: healthevent.site_id,
+            HealthAttr.RACK_ID: healthevent.rack_id,
+            HealthAttr.STORAGESET_ID: healthevent.storageset_id,
+            HealthAttr.NODE_ID: healthevent.node_id,
+            HealthAttr.RESOURCE_TYPE: healthevent.resource_type,
+            HealthAttr.RESOURCE_ID: healthevent.resource_id,
+            HealthAttr.RESOURCE_STATUS: healthevent.event_type,
         }
         self.event.set_payload(payload)
+        specific_info = {HealthAttr.SPECIFIC_INFO: healthevent.specific_info}
+        self.event.set_specific_info()
 
     def get_event(self):
         return self.event

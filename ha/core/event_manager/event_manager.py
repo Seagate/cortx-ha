@@ -35,8 +35,8 @@ from ha.core.event_manager.resources import SUBSCRIPTION_LIST
 from ha.core.event_manager.const import EVENT_MANAGER_KEYS
 from ha.core.health_monitor.const import HEALTH_MON_ACTIONS
 from ha.core.health_monitor.monitor_rules_manager import MonitorRulesManager
-from ha.fault_tolerance.const import HEALTH_ATTRIBUTES, EVENT_ATTRIBUTES
-from ha.fault_tolerance.event import Event
+from cortx.utils.event_framework.event import EventAttr
+from cortx.utils.event_framework.health import HealthAttr, HealthEvent
 
 class EventManager:
     """
@@ -395,13 +395,13 @@ class EventManager:
             component_list = []
             # Run through list of components subscribed for this event and send event to each of them
             component_list_key = EVENT_MANAGER_KEYS.EVENT_KEY.value.replace(
-                "<resource>", event.event[EVENT_ATTRIBUTES.HEALTH_EVENT_PAYLOAD.value][HEALTH_ATTRIBUTES.RESOURCE_TYPE.value]).replace("<state>", event.event[EVENT_ATTRIBUTES.HEALTH_EVENT_PAYLOAD.value][HEALTH_ATTRIBUTES.RESOURCE_STATUS.value])
+                "<resource>", event[EventAttr.EVENT_PAYLOAD][HealthAttr.RESOURCE_TYPE]).replace("<state>", event[EventAttr.EVENT_PAYLOAD][Healthattr.RESOURCE_STATUS])
             component_list_key_val = self._confstore.get(component_list_key)
             if component_list_key_val:
                 _, value = component_list_key_val.popitem()
                 component_list = json.loads(value)
             for component in component_list:
-                if component != event.event[EVENT_ATTRIBUTES.HEALTH_EVENT_PAYLOAD.value][HEALTH_ATTRIBUTES.SOURCE.value]:
+                if component != event[EventAttr.EVENT_PAYLOAD][HealthAttr.SOURCE]:
                     message_producer = self._get_producer(component)
                     event_to_send = event.ret_dict()
                     Log.info(f"Sending action event {event_to_send} to component {component}")

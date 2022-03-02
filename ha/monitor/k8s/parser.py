@@ -24,18 +24,18 @@ from ha.monitor.k8s.const import AlertStates
 from ha.monitor.k8s.const import EventStates
 
 from cortx.utils.log import Log
-from ha.fault_tolerance.event import Event
-from ha.fault_tolerance.const import HEALTH_ATTRIBUTES, HEALTH_EVENT_SOURCES
+from ha.fault_tolerance.const import HEALTH_EVENT_SOURCES
+from cortx.utils.event_framework.health import HealthAttr, HealthEvent
 
 
 class ObjectParser:
     def __init__(self):
-        self.payload = {HEALTH_ATTRIBUTES.SOURCE.value: HEALTH_EVENT_SOURCES.MONITOR.value, \
-                    HEALTH_ATTRIBUTES.CLUSTER_ID.value: None, HEALTH_ATTRIBUTES.SITE_ID.value: None, \
-                    HEALTH_ATTRIBUTES.RACK_ID.value: None, HEALTH_ATTRIBUTES.STORAGESET_ID.value: None, \
-                    HEALTH_ATTRIBUTES.NODE_ID.value: None, HEALTH_ATTRIBUTES.RESOURCE_TYPE.value: None, \
-                    HEALTH_ATTRIBUTES.RESOURCE_ID.value: None, HEALTH_ATTRIBUTES.RESOURCE_STATUS.value: None, \
-                    HEALTH_ATTRIBUTES.SPECIFIC_INFO.value: {}}
+        self.payload = {HealthAttr.SOURCE: HEALTH_EVENT_SOURCES.MONITOR.value, \
+                    HealthAttr.CLUSTER_ID: None, HEALTH_ATTRIBUTES.SITE_ID: None, \
+                    HealthAttr.RACK_ID: None, HEALTH_ATTRIBUTES.STORAGESET_ID: None, \
+                    HealthAttr.NODE_ID: None, HEALTH_ATTRIBUTES.RESOURCE_TYPE: None, \
+                    HealthAttr.RESOURCE_ID.value: None, HEALTH_ATTRIBUTES.RESOURCE_STATUS: None, \
+                    HealthAttr.SPECIFIC_INFO.value: {}}
 
     def parse(self, an_event, cached_state):
         pass
@@ -56,12 +56,12 @@ class NodeEventParser(ObjectParser):
         res_name: actual resource name. Ex: machine_id in case of node alerts
         health_status: health of that resource. Ex: online, failed
         """
-        self.event = Event()
-        self.payload[HEALTH_ATTRIBUTES.RESOURCE_TYPE.value] = res_type
-        self.payload[HEALTH_ATTRIBUTES.RESOURCE_ID.value] = self.payload[HEALTH_ATTRIBUTES.NODE_ID.value] = res_name
-        self.payload[HEALTH_ATTRIBUTES.RESOURCE_STATUS.value] = health_status
+        self.event = HealthEvent()
+        self.payload[HealthAttr.RESOURCE_TYPE] = res_type
+        self.payload[HealthAttr.RESOURCE_ID] = self.payload[HealthAttr.NODE_ID] = res_name
+        self.payload[HealthAttr.RESOURCE_STATUS] = health_status
         self.event.set_payload(self.payload)
-        return self.event.ret_dict()
+        return self.event.json
 
     def parse(self, an_event, cached_state):
         resource_type = self._type
@@ -139,13 +139,13 @@ class PodEventParser(ObjectParser):
         health_status: health of that resource. Ex: online, failed
         generation_id: name of the node in case of node alert
         """
-        self.event = Event()
-        self.payload[HEALTH_ATTRIBUTES.RESOURCE_TYPE.value] = res_type
-        self.payload[HEALTH_ATTRIBUTES.RESOURCE_ID.value] = self.payload[HEALTH_ATTRIBUTES.NODE_ID.value] = res_name
-        self.payload[HEALTH_ATTRIBUTES.RESOURCE_STATUS.value] = health_status
-        self.payload[HEALTH_ATTRIBUTES.SPECIFIC_INFO.value]["generation_id"] = generation_id
+        self.event = HealthEvent()
+        self.payload[HealthAttr.RESOURCE_TYPE] = res_type
+        self.payload[HealthAttr.RESOURCE_ID] = self.payload[HealthAttr.NODE_ID] = res_name
+        self.payload[HealthAttr.RESOURCE_STATUS] = health_status
+        self.payload[HealthAttr.SPECIFIC_INFO.value]["generation_id"] = generation_id
         self.event.set_payload(self.payload)
-        return self.event.ret_dict()
+        return self.event.json
 
     def parse(self, an_event, cached_state):
         resource_type = self._type
