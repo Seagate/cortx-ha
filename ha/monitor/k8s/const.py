@@ -40,12 +40,6 @@ class EventStates:
     MODIFIED = 'MODIFIED'
     DELETED = 'DELETED'
 
-
-class AlertResourceType:
-    HOST = 'host'
-    NODE = 'node'
-
-
 class AlertStates:
     ONLINE = 'online'
     OFFLINE = 'offline'
