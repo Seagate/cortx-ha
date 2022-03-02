@@ -40,6 +40,7 @@ class EventStates:
     MODIFIED = 'MODIFIED'
     DELETED = 'DELETED'
 
+
 class AlertStates:
     ONLINE = 'online'
     OFFLINE = 'offline'
