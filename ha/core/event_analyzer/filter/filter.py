@@ -27,7 +27,7 @@ from ha.const import _DELIM, ALERT_ATTRIBUTES
 from ha.core.event_analyzer.event_analyzer_exceptions import EventFilterException
 from ha.core.event_analyzer.event_analyzer_exceptions import InvalidFilterRules
 from ha.fault_tolerance.const import HEALTH_ATTRIBUTES, \
-    EVENT_ATTRIBUTES, HEALTH_EVENT_RESOURCE_TYPE
+    EVENT_ATTRIBUTES
 
 
 class MESSAGETYPE(Enum):
@@ -178,18 +178,6 @@ class ClusterResourceFilter(Filter):
         """
         super(ClusterResourceFilter, self).__init__()
 
-    def _filter_resource_type(self, event_resource_type: str) -> bool:
-        # filter out supported resources types
-        supported_resource_types = [
-            HEALTH_EVENT_RESOURCE_TYPE.RESOURCE_TYPE_NODE.value, # 'node'
-            HEALTH_EVENT_RESOURCE_TYPE.RESOURCE_TYPE_DISK.value] # 'disk'
-
-        # return True if event resource type is in list of supported resource types
-        if event_resource_type in supported_resource_types:
-            return True
-
-        return False
-
     def filter_event(self, msg: str) -> bool:
         """
         Filter event.
@@ -204,7 +192,8 @@ class ClusterResourceFilter(Filter):
             Log.debug('Received alert from fault tolerance')
             event_resource_type = message.get("event").get(EVENT_ATTRIBUTES.HEALTH_EVENT_PAYLOAD.value).get(HEALTH_ATTRIBUTES.RESOURCE_TYPE.value)
 
-            if self._filter_resource_type(event_resource_type):
+            required_resource_type = Conf.get(const.HA_GLOBAL_INDEX, f"NODE{_DELIM}resource_type")
+            if event_resource_type == required_resource_type:
                 resource_alert_required = True
                 Log.info(f'This alert needs an attention: resource_type: {event_resource_type}')
             return resource_alert_required

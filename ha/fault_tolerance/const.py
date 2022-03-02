@@ -22,12 +22,6 @@ class HEALTH_EVENT_SOURCES(enum.Enum, metaclass=EnumListMeta):
     HARE = 'hare'
     MONITOR = 'monitor'
 
-class HEALTH_EVENT_RESOURCE_TYPE(enum.Enum, metaclass=EnumListMeta):
-    RESOURCE_TYPE_HOST = 'host'
-    RESOURCE_TYPE_NODE = 'node'
-    RESOURCE_TYPE_CVG = "cvg"
-    RESOURCE_TYPE_DISK = "disk"
-
 # Message types of components
 class FAULT_TOLERANCE_KEYS(enum.Enum, metaclass=EnumListMeta):
     HARE_HA_MESSAGE_TYPE = 'cortx_health_events'
