@@ -15,6 +15,8 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
+import copy
+import json
 import threading
 from kubernetes import config, client, watch
 
@@ -25,6 +27,9 @@ from ha.monitor.k8s.const import EventStates, K8SClientConst
 from ha.monitor.k8s.const import K8SEventsConst
 from cortx.utils.log import Log
 from ha import const
+from ha.fault_tolerance.const import HEALTH_ATTRIBUTES, \
+    EVENT_ATTRIBUTES
+
 
 class ObjectMonitor(threading.Thread):
     def __init__(self, producer, k_object, **kwargs):
@@ -43,6 +48,7 @@ class ObjectMonitor(threading.Thread):
         self._stop_event_processing = False
         self._producer = producer
         self._confstore = ConfigManager.get_confstore()
+        self._published_alerts = {}
         Log.info(f"Initialization done for {self._object} monitor")
 
     def set_sigterm(self, signum, frame):
@@ -108,10 +114,10 @@ class ObjectMonitor(threading.Thread):
         """
         if self.is_publish_enable():
             # Write to message bus
-            Log.info(f"{self._object}_monitor sending alert on message bus {alert.to_dict()}")
-            self._producer.publish(str(alert.to_dict()))
+            Log.info(f"{self._object}_monitor sending alert on message bus {alert}")
+            self._producer.publish(str(alert))
         else:
-            Log.info(f"{self._object}_monitor received cluster stop message so skipping publish alert: {str(alert.to_dict())}.")
+            Log.info(f"{self._object}_monitor received cluster stop message so skipping publish alert: {str(alert)}.")
 
     def run(self):
         """
@@ -148,14 +154,20 @@ class ObjectMonitor(threading.Thread):
                     break
 
                 Log.debug(f"Received event {an_event}")
-                alert = EventParser.parse(self._object, an_event, self._object_state)
+                alert, event = EventParser.parse(self._object, an_event, self._object_state)
                 if alert is None:
                     continue
                 if self._starting_up:
                     if an_event[K8SEventsConst.TYPE] == EventStates.ADDED:
-                        alert.is_status = True
+                        spec_info = alert['event'][EVENT_ATTRIBUTES.HEALTH_EVENT_PAYLOAD.value][HEALTH_ATTRIBUTES.SPECIFIC_INFO.value]
+                        spec_info['is_status'] = True
+                        event.set_payload(spec_info)
+                        alert = event.ret_dict()
                     else:
                         self._starting_up = False
+
+                if self._is_published_alert(alert):
+                    continue
 
                 # Write to message bus
                 self.publish_alert(alert)
@@ -167,3 +179,47 @@ class ObjectMonitor(threading.Thread):
                 break
         Log.info(f"Stopping the {self.name}...")
 
+    def _is_published_alert(self, alert) -> bool:
+        """
+        Check incoming alert is already published or not.
+        If incoming alert is not found in published alerts, then
+        it is a new alert to publish.
+        Alert will be stored and mapped to its unique key,
+            self._published_alerts = { alert_key : alert }
+        Returns:
+            True if it is published already
+            False if it is a new alert
+        """
+        if not isinstance(alert, dict):
+            return False
+
+        incoming_alert = copy.deepcopy(alert)
+
+        header = incoming_alert["event"]["header"]
+        payload = incoming_alert["event"]["payload"]
+
+        if payload["specific_info"].get("generation_id"):
+            alert_key = "%s_%s_%s" % (payload["node_id"],
+                                      payload["resource_type"],
+                                      payload["specific_info"]["generation_id"])
+        else:
+            alert_key = "%s_%s_%s" % (payload["node_id"],
+                                      payload["resource_type"],
+                                      payload["resource_id"])
+
+        # Alert which is getting repeated also has new timestamp.
+        # So timestamp field should be ignored for validation.
+        if "timestamp" in header.keys():
+            del incoming_alert["event"]["header"]["timestamp"]
+
+        incoming_alert_msg = json.dumps(payload, sort_keys=True)
+        published_alert = self._published_alerts.get(alert_key)
+
+        if incoming_alert_msg == published_alert:
+            # Published already
+            return True
+        else:
+            # New alert
+            self._published_alerts[alert_key] = incoming_alert_msg
+
+        return False

@@ -15,7 +15,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
 from cortx.utils.log import Log
-from cortx.utils.health.const import HEALTH_EVENT_SOURCES
+from ha.fault_tolerance.const import HEALTH_EVENT_SOURCES
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.system_health.const import HEALTH_EVENTS, HEALTH_STATUSES
 from ha.core.error import HaStatusMapperException
@@ -36,7 +36,11 @@ class StatusMapper:
         "unknown": "unknown",
         "degraded": "degraded",
         "threshold_breached:low": "degraded",
-        "threshold_breached:high": "degraded"
+        "threshold_breached:high": "degraded",
+        "offline":"offline",
+        "repairing": "repairing",
+        "repaired": "repaired",
+        "rebalancing": "rebalancing"
     }
 
     EVENT_TO_SEVERITY_MAPPING = {

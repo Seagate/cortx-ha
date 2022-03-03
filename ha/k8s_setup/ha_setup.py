@@ -41,6 +41,7 @@ from ha.core.event_manager.subscribe_event import SubscribeEvent
 from ha.util.conf_store import ConftStoreSearch
 from ha.core.system_health.const import CLUSTER_ELEMENTS, HEALTH_EVENTS, EVENT_SEVERITIES
 from ha.const import EVENT_ATTRIBUTES
+from ha.fault_tolerance.const import FAULT_TOLERANCE_KEYS, HEALTH_EVENT_SOURCES
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.system_health.system_health import SystemHealth
 
@@ -57,6 +58,7 @@ class Cmd:
         if args is not None:
             self._url = args.config
             self._service = args.services
+            # self._url This file can be only loaded once
             Conf.load(self._index, self._url)
             self._args = args.args
         self._confstore = None
@@ -215,14 +217,16 @@ class ConfigCmd(Cmd):
                 sys.stderr.write(f'Failed to get kafka config. kafka_config: {kafka_endpoint}. \n')
                 sys.exit(1)
 
+            health_comm_msg_type = FAULT_TOLERANCE_KEYS.MONITOR_HA_MESSAGE_TYPE.value
+
             conf_file_dict = {'LOG' : {'path' : ha_log_path, 'level' : const.HA_LOG_LEVEL},
                          'consul_config' : {'endpoint' : consul_endpoint},
                          'kafka_config' : {'endpoints': kafka_endpoint},
                          'event_topic' : 'hare',
-                         'MONITOR' : {'message_type' : 'cluster_event', 'producer_id' : 'cluster_monitor'},
+                         'MONITOR' : {'message_type' : health_comm_msg_type, 'producer_id' : 'cluster_monitor'},
                          'EVENT_MANAGER' : {'message_type' : 'health_events', 'producer_id' : 'system_health',
                                             'consumer_group' : 'health_monitor', 'consumer_id' : '1'},
-                         'FAULT_TOLERANCE' : {'message_type' : 'cluster_event', 'consumer_group' : 'event_listener',
+                         'FAULT_TOLERANCE' : {'message_type' : health_comm_msg_type, 'consumer_group' : 'event_listener',
                                               'consumer_id' : '1'},
                          'CLUSTER_STOP_MON' : {'message_type' : 'cluster_stop', 'consumer_group' : 'cluster_mon',
                                               'consumer_id' : '2'},
@@ -268,8 +272,8 @@ class ConfigCmd(Cmd):
                        is successful for the event {const.POD_EVENT}')
 
             Log.info('Creating cluster cardinality')
-            confStoreAPI = ConftStoreSearch()
-            confStoreAPI.set_cluster_cardinality(self._index)
+            self._confStoreAPI = ConftStoreSearch()
+            self._confStoreAPI.set_cluster_cardinality(self._index)
             # Init node health
             self._add_node_health()
 
@@ -288,8 +292,7 @@ class ConfigCmd(Cmd):
         """
         Add node health
         """
-        confStoreAPI = ConftStoreSearch()
-        _, nodes_list = confStoreAPI.get_cluster_cardinality()
+        _, nodes_list = self._confStoreAPI.get_cluster_cardinality()
         for node in nodes_list:
             timestamp = str(int(time.time()))
             event_id = timestamp + str(uuid.uuid4().hex)

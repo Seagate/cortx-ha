@@ -128,8 +128,8 @@ class ElementHealthEvaluator(metaclass=abc.ABCMeta):
         Update health event
         """
         new_event =  HealthEvent(
-            source=HEALTH_EVENT_SOURCES.HA.value,
-            event_id=str(int(time.time())) + str(uuid.uuid4().hex),
+            source=subelement_event.source,
+            event_id=subelement_event.event_id,
             event_type=event_type,
             severity=subelement_event.severity,
             site_id=subelement_event.site_id,

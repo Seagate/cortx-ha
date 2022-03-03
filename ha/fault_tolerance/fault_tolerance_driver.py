@@ -23,7 +23,7 @@ import signal
 
 from cortx.utils.log import Log
 from ha.core.config.config_manager import ConfigManager
-from ha.fault_tolerance.fault_monitor import NodeFaultMonitor
+from ha.fault_tolerance.fault_monitor import HealthStatusMonitor
 from ha.fault_tolerance.cluster_stop_monitor import ClusterStopMonitor
 
 class FaultTolerance:
@@ -38,7 +38,7 @@ class FaultTolerance:
         """
         signal.signal(signal.SIGTERM, self.set_sigterm)
         ConfigManager.init("fault_tolerance")
-        self.node_fault_monitor = NodeFaultMonitor()
+        self.node_fault_monitor = HealthStatusMonitor()
         self.cluster_stop_monitor = ClusterStopMonitor()
 
     def set_sigterm(self, signum, frame):

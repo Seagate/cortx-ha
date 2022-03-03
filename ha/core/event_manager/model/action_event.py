@@ -16,8 +16,8 @@
 # cortx-questions@seagate.com.
 
 from ha.core.system_health.model.health_event import HealthEvent
-from cortx.utils.health.event import Event
-from cortx.utils.health.const import HEALTH_EVENT_ATTRIBUTES
+from ha.fault_tolerance.event import Event
+from ha.fault_tolerance.const import HEALTH_ATTRIBUTES
 
 class RecoveryActionEvent:
     """
@@ -31,16 +31,16 @@ class RecoveryActionEvent:
         """
         self.event = Event()
         payload = {
-            HEALTH_EVENT_ATTRIBUTES.SOURCE : healthevent.source,
-            HEALTH_EVENT_ATTRIBUTES.CLUSTER_ID : healthevent.cluster_id,
-            HEALTH_EVENT_ATTRIBUTES.SITE_ID : healthevent.site_id,
-            HEALTH_EVENT_ATTRIBUTES.RACK_ID : healthevent.rack_id,
-            HEALTH_EVENT_ATTRIBUTES.STORAGESET_ID : healthevent.storageset_id,
-            HEALTH_EVENT_ATTRIBUTES.NODE_ID : healthevent.node_id,
-            HEALTH_EVENT_ATTRIBUTES.RESOURCE_TYPE : healthevent.resource_type,
-            HEALTH_EVENT_ATTRIBUTES.RESOURCE_ID : healthevent.resource_id,
-            HEALTH_EVENT_ATTRIBUTES.RESOURCE_STATUS : healthevent.event_type,
-            HEALTH_EVENT_ATTRIBUTES.SPECIFIC_INFO : healthevent.specific_info,
+            HEALTH_ATTRIBUTES.SOURCE.value : healthevent.source,
+            HEALTH_ATTRIBUTES.CLUSTER_ID.value : healthevent.cluster_id,
+            HEALTH_ATTRIBUTES.SITE_ID.value : healthevent.site_id,
+            HEALTH_ATTRIBUTES.RACK_ID.value : healthevent.rack_id,
+            HEALTH_ATTRIBUTES.STORAGESET_ID.value : healthevent.storageset_id,
+            HEALTH_ATTRIBUTES.NODE_ID.value : healthevent.node_id,
+            HEALTH_ATTRIBUTES.RESOURCE_TYPE.value : healthevent.resource_type,
+            HEALTH_ATTRIBUTES.RESOURCE_ID.value : healthevent.resource_id,
+            HEALTH_ATTRIBUTES.RESOURCE_STATUS.value : healthevent.event_type,
+            HEALTH_ATTRIBUTES.SPECIFIC_INFO.value : healthevent.specific_info,
         }
         self.event.set_payload(payload)
 
