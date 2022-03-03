@@ -13,6 +13,10 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
+"""
+Module helps in generating the mock health event and publishing it to the
+message bus
+"""
 
 import sys
 import argparse
@@ -25,7 +29,7 @@ _index = 'cortx'
 cluster_config_file = '/etc/cortx/cluster.conf'
 config_file_format = 'yaml'
 
-def get_data_nodes(conf_store: ConftStoreSearch = None, node_id: str = None) -> list:
+def get_data_nodes(conf_store: ConftStoreSearch = None) -> None:
     """
     Fetches data node ids using HA wrapper class and displays the result
 
@@ -37,7 +41,7 @@ def get_data_nodes(conf_store: ConftStoreSearch = None, node_id: str = None) -> 
     data_node_ids = conf_store.get_data_pods(_index)
     return data_node_ids
 
-def get_server_nodes(conf_store: ConftStoreSearch = None, node_id: str = None) -> None:
+def get_server_nodes(conf_store: ConftStoreSearch = None) -> None:
     """
     Fetches server node ids using HA wrapper class and displays the result
 
@@ -45,9 +49,9 @@ def get_server_nodes(conf_store: ConftStoreSearch = None, node_id: str = None) -
     conf_store: ConftStoreSearch object
     """
     server_node_ids = conf_store.get_server_pods(_index)
-    print(server_node_ids)
+    return server_node_ids
 
-def get_disks(conf_store: ConftStoreSearch, node_id: str) -> None:
+def get_disks(args, conf_store: ConftStoreSearch = None) -> None:
     """
     Fetches disk ids using ConfStore search API and displays the result
 
@@ -56,6 +60,7 @@ def get_disks(conf_store: ConftStoreSearch, node_id: str) -> None:
     node_id: machine_id value
     """
     # TODO: This is temporary code till this is avalable in HA.
+    node_id = args.node_id
     num_of_cvgs = Conf.get(_index, f'node>{node_id}>storage>num_cvg')
     disk_ids = []
     for cvg in range(num_of_cvgs):
@@ -65,7 +70,7 @@ def get_disks(conf_store: ConftStoreSearch, node_id: str) -> None:
         [ disk_ids.append(Conf.get(_index, f'node>{node_id}>storage>cvg[{cvg}]>devices>metadata[{md_disk}]')) for md_disk in range(num_of_metadata_disks)]
     print(disk_ids)
 
-def get_cvgs(conf_store: ConftStoreSearch, node_id: str) -> None:
+def get_cvgs(args, conf_store: ConftStoreSearch = None) -> None:
     """
     Fetches cvg ids using ConfStore search API and displays the result
 
@@ -73,46 +78,87 @@ def get_cvgs(conf_store: ConftStoreSearch, node_id: str) -> None:
     conf_store: ConftStoreSearch object
     node_id: machine_id value
     """
+    node_id = args.node_id
     # TODO: This is temporary code till this is avalable in HA.
     cvg_count = Conf.get(_index, f'node>{node_id}>storage>num_cvg')
     print([Conf.get(_index, f'node>{node_id}>storage>cvg[{cvg}]>name') for cvg in range(cvg_count)])
 
-def publish(conf_store: ConftStoreSearch = None, node_id: str = None, config_file: str = None):
-    print('inside publish')
+def publish(args, conf_store: ConftStoreSearch = None) -> None:
+    """
+    publishes the message on the message bus
+
+    Args:
+    conf_store: ConftStoreSearch object
+    node_id: machine_id value
+    config_file: config file path
+    """
+    print(f'inside publish, config file: {args.file}')
+
+def command_help(args, conf_store: ConftStoreSearch = None) -> None:
+    """Handler function which displays help"""
+    print(parser.parse_args([args.command, '--help']))
+
 
 FUNCTION_MAP = {
                 '-gdt' : get_data_nodes, '--get-data-nodes': get_data_nodes,
-                '-gs' : get_server_nodes, '--get-server-nodes': get_server_nodes,
-                '-gd' : get_disks, '--get-disks': get_disks,
-                '-gc' : get_cvgs, '--get-cvgs': get_cvgs,
-                '-p' : publish, '--publish': publish
+                '-gs' : get_server_nodes, '--get-server-nodes': get_server_nodes
                 }
 
-my_parser = argparse.ArgumentParser(prog='health_event_publisher',
-                                    usage='%(prog)s [options]',
-                                    description='Helps in publishing the mock health event',
-                                    epilog='Hope it is useful! :)')
+def get_args():
+    """
+    Configures the command line arguments.
+    """
+    my_parser = argparse.ArgumentParser(prog='health_event_publisher',
+                                        usage='%(prog)s [options]',
+                                        description='Helps in publishing the mock health event',
+                                        epilog='Hope it is useful! :)')
 
-get_options = my_parser.add_mutually_exclusive_group(required=True)
-get_options.add_argument('-gd', '--get-disks', action='store_true', help='Get the DISK IDs')
-get_options.add_argument('-gc', '--get-cvgs', action='store_true', help='Get the CVG IDs')
-get_options.add_argument('-gdt', '--get-data-nodes', action='store_true', help='Get the data nodes')
-get_options.add_argument('-gs', '--get-server-nodes', action='store_true', help='Get the server nodes')
-get_options.add_argument('-p', '--publish', action='store_true', help='Publish the message')
+    subparsers = my_parser.add_subparsers()
 
-my_parser.parse_args()
+    my_parser.add_argument('-gdt', '--get-data-nodes', action='store_true', help='Get the list of data node ids')
+    my_parser.add_argument('-gs', '--get-server-nodes', action='store_true', help='Get the list of server node ids')
+
+    parser_publish = subparsers.add_parser('publish', help='Publish the message')
+    parser_publish.add_argument('-f', '--file', action='store', help='imput config file', required=True)
+    parser_publish.set_defaults(handler=publish)
+
+    parser_disks = subparsers.add_parser('get-disks', help='Displys the Disk Ids assosciated with the Node')
+    parser_disks.add_argument('-n', '--node-id', help='Node id for which disk id is required', required=True)
+    parser_disks.set_defaults(handler=get_disks)
+
+    parser_cvgs = subparsers.add_parser('get-cvgs', help='Displys the CVG Ids assosciated with the Node')
+    parser_cvgs.add_argument('-n', '--node-id', help='Node id for which disk id is required', required=True)
+    parser_cvgs.set_defaults(handler=get_cvgs)
+
+    parser_help = subparsers.add_parser('help', help='see `help -h`')
+    parser_help.add_argument('command', help='command name which help is shown')
+    parser_help.set_defaults(handler=command_help)
+
+    args = my_parser.parse_args()
+    return args, my_parser
+
 
 if __name__ == '__main__':
+    option = None
+    args, parser_obj = get_args()
     Conf.init()
     file_to_load = f'{config_file_format}://{cluster_config_file}'
     Conf.load(_index, file_to_load)
     _conf_store = ConftStoreSearch(conf_store_req=False)
-    # To fetch disk or cvg id, node id is required. So, one of the node_id
-    # will be picked from the list which we will get from get_data_nodes function
-    # and ids of disk and cvg assosciated with that node will be displayed
-    node_ids = get_data_nodes(conf_store=_conf_store)
-    option = sys.argv[1]
-    if option == '-gdt' or option == '--get-data-nodes':
-        print(node_ids)
+
+    data_node_ids = get_data_nodes(conf_store=_conf_store)
+
+    if len(sys.argv) > 1:
+        option = sys.argv[1]
     else:
-        FUNCTION_MAP[option](conf_store=_conf_store, node_id=node_ids[0])
+        parser_obj.print_help()
+        sys.exit(0)
+
+    if hasattr(args, 'handler'):
+        if hasattr(args, 'node_id') and args.node_id not in data_node_ids:
+            print('Please provide data node id to get disk and cvg id')
+            sys.exit(1)
+        args.handler(args, conf_store=_conf_store)
+    else:
+        print(FUNCTION_MAP[option](conf_store=_conf_store))
+
