@@ -187,9 +187,10 @@ class ClusterResourceParser(Parser):
             resource_id = cluster_resource_alert["event"][EVENT_ATTRIBUTES.HEALTH_EVENT_PAYLOAD.value][HEALTH_ATTRIBUTES.RESOURCE_ID.value]
             event_type = cluster_resource_alert["event"][EVENT_ATTRIBUTES.HEALTH_EVENT_PAYLOAD.value][HEALTH_ATTRIBUTES.RESOURCE_STATUS.value]
             specific_info = cluster_resource_alert["event"][EVENT_ATTRIBUTES.HEALTH_EVENT_PAYLOAD.value][HEALTH_ATTRIBUTES.SPECIFIC_INFO.value]
-            if specific_info and specific_info["generation_id"] and source == HEALTH_EVENT_SOURCES.MONITOR.value:
-                generation_id = cluster_resource_alert["event"][EVENT_ATTRIBUTES.HEALTH_EVENT_PAYLOAD.value][HEALTH_ATTRIBUTES.SPECIFIC_INFO.value]["generation_id"]
-                specific_info = {"generation_id": generation_id, "pod_restart": 0}
+            if source == HEALTH_EVENT_SOURCES.MONITOR.value:
+                if specific_info and specific_info.get("generation_id"):
+                    generation_id = cluster_resource_alert["event"][EVENT_ATTRIBUTES.HEALTH_EVENT_PAYLOAD.value][HEALTH_ATTRIBUTES.SPECIFIC_INFO.value]["generation_id"]
+                    specific_info = {"generation_id": generation_id, "pod_restart": 0}
 
             event = {
                 event_attr.SOURCE : source,
@@ -211,6 +212,7 @@ class ClusterResourceParser(Parser):
             Log.debug(f"Parsed {event} schema")
             health_event = HealthEvent.dict_to_object(event)
             Log.debug(f"Event {event[event_attr.EVENT_ID]} is parsed and converted to object.")
+            Log.error(f"#### Event {health_event} is parsed and converted to object.")
             return health_event
 
         except Exception as err:

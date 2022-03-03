@@ -229,7 +229,7 @@ class ConfigCmd(Cmd):
                                               'consumer_id' : '1'},
                          'CLUSTER_STOP_MON' : {'message_type' : 'cluster_stop', 'consumer_group' : 'cluster_mon',
                                               'consumer_id' : '2'},
-                         'NODE': {'resource_type': 'node'},
+                         'CLUSTER': {'resource_type': ['node', 'disk', 'cvg']},
                          'SYSTEM_HEALTH' : {'num_entity_health_events' : 2}
                          }
 
