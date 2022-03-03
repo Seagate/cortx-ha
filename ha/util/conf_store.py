@@ -19,6 +19,7 @@
 Wrappeprs for using the search APIs from conf store
 """
 
+import enum
 import json
 
 from cortx.utils.conf_store import Conf
@@ -29,6 +30,17 @@ from ha.k8s_setup.const import NODE_CONST, SERVICE_CONST
 from cortx.utils.log import Log
 from ha.core.error import ClusterCardinalityError
 
+
+# Confstore keys
+class GconfKeys(enum.Enum):
+    CVG_NAME = "node>(node_id)>storage>cvg[(cvg_index)]>name"
+    CVG_COUNT = "node>(node_id)>storage>num_cvg"
+    DATA_COUNT = "node>(node_id)>storage>cvg[(cvg_index)]>devices>num_data"
+    METADATA_COUNT = "node>(node_id)>storage>cvg[(cvg_index)]>devices>num_metadata"
+    DATA_DISK = "node>(node_id)>storage>cvg[(cvg_index)]>devices>data[(d_index)]"
+    METADATA_DISK = "node>(node_id)>storage>cvg[(cvg_index)]>devices>metadata[(m_index)]"
+
+
 class ConftStoreSearch:
     """
     Wrapper class for using the confstore search APIs
@@ -37,7 +49,6 @@ class ConftStoreSearch:
     def __init__(self):
         """Init method"""
         self._confstore = ConfigManager.get_confstore()
-
 
     def _get_data_pods(self, index):
         """
@@ -110,3 +121,85 @@ class ConftStoreSearch:
         cluster_cardinality_key = CLUSTER_CARDINALITY_KEY
         cluster_cardinality_value = {CLUSTER_CARDINALITY_NUM_NODES: num_pods, CLUSTER_CARDINALITY_LIST_NODES : watch_pods }
         self._confstore.update(cluster_cardinality_key, json.dumps(cluster_cardinality_value))
+
+    def get_cvg_list(self, index, node_id):
+        """
+        Return list of CVG's for any given node.
+        Args:
+            index(str): index of conf file
+            node_id (str): node id
+        Returns:
+            list: list of CVG's
+
+        >>> get_cvg_list(index, '21d6291109304485b3daff43a06cff77')
+        ['cvg-01', 'cvg-02']
+        """
+        try:
+            cvg_list = []
+            cvg_count = Conf.get(index, GconfKeys.CVG_COUNT.value.replace("(node_id)", node_id))
+            cvg_list = [Conf.get(index, GconfKeys.CVG_NAME.value.replace("(node_id)", node_id)
+                            .replace("(cvg_index)", str(c))) for c in range(cvg_count)]
+            return cvg_list
+        except Exception as e:
+            Log.error(f"Unable to fetch CVG list from GConf. Error {e}")
+            raise Exception(f"Unable to fetch CVG list. Error {e}")
+
+    def get_disk_list(self, index, node_id):
+        """
+        Return list of disks for any given node
+        Args:
+            index(str): index of conf file
+            node_id (str): node id
+        Returns:
+            list: list of disks id's
+
+        >>> get_disk_list(index, '21d6291109304485b3daff43a06cff77')
+        ['/dev/sdd', '/dev/sde', '/dev/sdc', '/dev/sdg', '/dev/sdh', '/dev/sdf']
+        """
+        try:
+            cvg_count = Conf.get(index, GconfKeys.CVG_COUNT.value.replace("(node_id)", node_id))
+            disk_list = []
+            for cvg_index in range(cvg_count):
+                num_of_data_disks = Conf.get(index, GconfKeys.DATA_COUNT.value.replace("(node_id)", node_id)
+                                            .replace("(cvg_index)", str(cvg_index)))
+                num_of_metadata_disks = Conf.get(index, GconfKeys.METADATA_COUNT.value.replace("(node_id)", node_id)
+                                                .replace("(cvg_index)", str(cvg_index)))
+                [disk_list.append(Conf.get(index, GconfKeys.DATA_DISK.value.replace("(node_id)", node_id).
+                                            replace("(cvg_index)", str(cvg_index)).replace("(d_index)", str(d)))) for d in range(num_of_data_disks)]
+                [disk_list.append(Conf.get(index, GconfKeys.METADATA_DISK.value.replace("(node_id)", node_id).
+                                            replace("(cvg_index)", str(cvg_index)).replace("(m_index)", str(m)))) for m in range(num_of_metadata_disks)]
+            return disk_list
+        except Exception as e:
+            Log.error(f"Unable to fetch Disk list from GConf. Error {e}")
+            raise Exception(f"Unable to fetch Disk list. Error {e}")
+
+    def get_disk_list_for_cvg(self, index, node_id, cvg_id):
+        """
+        Return list of disks for any given node and CVG.
+        Args:
+            index(str): index of conf file
+            node_id (str): node id
+            cvg_id (str): cvg id
+        Returns:
+            list: list of disks id's
+
+        >>> get_disk_list_for_cvg(index, '21d6291109304485b3daff43a06cff77', 'cvg-01')
+        ['/dev/sdd', '/dev/sde', '/dev/sdc']
+        """
+        try:
+            disk_list = []
+            cvg_list = self.get_cvg_list(index, node_id)
+            if cvg_id in cvg_list:
+                cvg_index = cvg_list.index(cvg_id)
+                num_of_data_disks = Conf.get(index, GconfKeys.DATA_COUNT.value.
+                                            replace("(node_id)", node_id).replace("(cvg_index)", str(cvg_index)))
+                num_of_metadata_disks = Conf.get(index, GconfKeys.METADATA_COUNT.value.
+                                                replace("(node_id)", node_id).replace("(cvg_index)", str(cvg_index)))
+                [disk_list.append(Conf.get(index, GconfKeys.DATA_DISK.value.replace("(node_id)", node_id).
+                                            replace("(cvg_index)", str(cvg_index)).replace("(d_index)", str(d)))) for d in range(num_of_data_disks)]
+                [disk_list.append(Conf.get(index, GconfKeys.METADATA_DISK.value.replace("(node_id)", node_id).
+                                            replace("(cvg_index)", str(cvg_index)).replace("(m_index)", str(m)))) for m in range(num_of_metadata_disks)]
+            return disk_list
+        except Exception as e:
+            Log.error(f"Unable to fetch Disk list from GConf. Error {e}")
+            raise Exception(f"Unable to fetch Disk list. Error {e}")
