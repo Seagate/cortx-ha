@@ -212,7 +212,6 @@ class ClusterResourceParser(Parser):
             Log.debug(f"Parsed {event} schema")
             health_event = HealthEvent.dict_to_object(event)
             Log.debug(f"Event {event[event_attr.EVENT_ID]} is parsed and converted to object.")
-            Log.error(f"#### Event {health_event} is parsed and converted to object.")
             return health_event
 
         except Exception as err:
