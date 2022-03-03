@@ -13,7 +13,6 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-HA_LOG_DIR="/var/log/seagate/cortx/ha"
 HA_LOG_LEVEL="INFO"
 CONFIG_DIR="/etc/cortx/ha"
 HA_CONFIG_FILE="{}/ha.conf".format(CONFIG_DIR)
@@ -25,6 +24,16 @@ HEALTH_HIERARCHY_FILE = "{}/system_health_hierarchy.json".format(CONFIG_DIR)
 #Confstore delimiter
 _DELIM=">"
 
+# consul endpoint scheme: http
+consul_scheme = 'http'
+
 # Event_manager keys
 POD_EVENT="node"
 EVENT_COMPONENT="hare"
+
+# confStore search API constants
+NODE_CONST = "node"
+SERVICE_CONST = "services"
+CLUSTER_CARDINALITY_KEY = "cluster_cardinality"
+CLUSTER_CARDINALITY_NUM_NODES = "num_nodes"
+CLUSTER_CARDINALITY_LIST_NODES = "node_list"

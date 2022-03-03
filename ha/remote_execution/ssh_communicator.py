@@ -87,7 +87,8 @@ def main() -> None:
     remote_executor.execute(args.command)
 
 if __name__ == '__main__':
-    Log.init(service_name="SSHRemoteExecutor", log_path=RA_LOG_DIR, level="INFO")
+    from ha.core.config.config_manager import ConfigManager
+    ConfigManager.init("SSHRemoteExecutor")
     try:
         main()
     except RemoteExecutorError as re:

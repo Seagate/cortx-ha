@@ -22,6 +22,9 @@ import traceback
 import os
 import shutil
 import yaml
+import time
+import uuid
+from urllib.parse import urlparse
 
 from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
@@ -34,7 +37,12 @@ from ha.core.error import SetupError
 from ha.k8s_setup.const import _DELIM
 from ha.core.event_manager.event_manager import EventManager
 from ha.core.event_manager.subscribe_event import SubscribeEvent
-
+from ha.util.conf_store import ConftStoreSearch
+from ha.core.system_health.const import CLUSTER_ELEMENTS, HEALTH_EVENTS, EVENT_SEVERITIES
+from ha.const import EVENT_ATTRIBUTES
+from ha.fault_tolerance.const import FAULT_TOLERANCE_KEYS, HEALTH_EVENT_SOURCES
+from ha.core.system_health.model.health_event import HealthEvent
+from ha.core.system_health.system_health import SystemHealth
 
 class Cmd:
     """
@@ -49,6 +57,7 @@ class Cmd:
         if args is not None:
             self._url = args.config
             self._service = args.services
+            # self._url This file can be only loaded once
             Conf.load(self._index, self._url)
             self._args = args.args
         self._confstore = None
@@ -70,7 +79,7 @@ class Cmd:
         sys.stderr.write(
             f"usage: {prog} [-h] <cmd> <--config url> <args>...\n"
             f"where:\n"
-            f"cmd   post_install, prepare, config, init, test, reset, cleanup\n"
+            f"cmd   post_install, prepare, config, init, test, reset, cleanup, upgrade\n"
             f"--config   Config URL.\n"
             f"--services   Service name.\n")
 
@@ -88,12 +97,6 @@ class Cmd:
             cmd.add_args(subparsers, cmd, name)
         args = parser.parse_args(argv)
         return args.command(args)
-
-    def get_machine_id(self):
-        command = "cat /etc/machine-id"
-        machine_id, err, rc = self._execute.run_cmd(command, check_error=True)
-        Log.info(f"Read machine-id. Output: {machine_id}, Err: {err}, RC: {rc}")
-        return machine_id.strip()
 
     @staticmethod
     def add_args(parser: str, cls: str, name: str):
@@ -187,35 +190,45 @@ class ConfigCmd(Cmd):
         Process config command.
         """
         try:
-            consul_endpoint = Conf.get(self._index, f'cortx{_DELIM}external{_DELIM}consul{_DELIM}endpoints[0]')
-            if not consul_endpoint:
-                sys.stderr.write(f'Failed to get consul config. consul_config: {consul_endpoint}. \n')
+            # Get log path from cluster.conf.
+            log_path = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}storage{_DELIM}log')
+            machine_id = Conf.machine_id
+            ha_log_path = os.path.join(log_path, f'ha/{machine_id}')
+
+            consul_endpoints = Conf.get(self._index, f'cortx{_DELIM}external{_DELIM}consul{_DELIM}endpoints')
+            #========================================================#
+            # consul Service endpoints from cluster.conf             #
+            #____________________ cluster.conf ______________________#
+            # endpoints:                                             #
+            # - tcp://consul-server.default.svc.cluster.local:8301   #
+            # - http://consul-server.default.svc.cluster.local:8500  #
+            #========================================================#
+            # search for supported consul endpoint url from list of configured consul endpoints
+            filtered_consul_endpoints = list(filter(lambda x: isinstance(x, str) and urlparse(x).scheme == const.consul_scheme, consul_endpoints))
+            if not filtered_consul_endpoints:
+                sys.stderr.write(f'Failed to get consul config. consul_config: {filtered_consul_endpoints}. \n')
+                sys.exit(1)
+            # discussed and confirmed to select the first hhtp endpoint
+            consul_endpoint = filtered_consul_endpoints[0]
+
+            kafka_endpoint = Conf.get(self._index, f'cortx{_DELIM}external{_DELIM}kafka{_DELIM}endpoints')
+            if not kafka_endpoint:
+                sys.stderr.write(f'Failed to get kafka config. kafka_config: {kafka_endpoint}. \n')
                 sys.exit(1)
 
-            # Dummy value fetched for now. This will be replaced by the key/path for the pod label once that is available in confstore
-            # Ref ticket EOS-25694
-            data_pod_label = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}product_release')
-            # cluster_id = Conf.get(self._index, f'node{_DELIM}{machine_id}{_DELIM}cluster_id')
-            # TBD delete once data_pod_label is avilable from confstore
-            data_pod_label = ['cortx-data', 'cortx-server']
+            health_comm_msg_type = FAULT_TOLERANCE_KEYS.MONITOR_HA_MESSAGE_TYPE.value
 
-            # Dummy value fetched for now. This will be replaced by the key/path for the service ID/machine ID once that is available in confstore
-            # Ref ticket EOS-???
-            machine_id_key = Conf.get(self._index, f'cortx{_DELIM}common{_DELIM}product_release')
-            # TBD delete once machine_id_key is avilable from confstore
-            # Note: machine id key is not available in pod event hence using pod name
-            #       but once it is available machine id key we will using it
-            machine_id_key = 'metadata/name'
-
-            conf_file_dict = {'LOG' : {'path' : const.HA_LOG_DIR, 'level' : const.HA_LOG_LEVEL},
+            conf_file_dict = {'LOG' : {'path' : ha_log_path, 'level' : const.HA_LOG_LEVEL},
                          'consul_config' : {'endpoint' : consul_endpoint},
+                         'kafka_config' : {'endpoints': kafka_endpoint},
                          'event_topic' : 'hare',
-                         'data_pod_label' : data_pod_label,
-                         'MONITOR' : {'message_type' : 'cluster_event', 'producer_id' : 'cluster_monitor', 'machine_id_key' : machine_id_key},
+                         'MONITOR' : {'message_type' : health_comm_msg_type, 'producer_id' : 'cluster_monitor'},
                          'EVENT_MANAGER' : {'message_type' : 'health_events', 'producer_id' : 'system_health',
                                             'consumer_group' : 'health_monitor', 'consumer_id' : '1'},
-                         'FAULT_TOLERANCE' : {'message_type' : 'cluster_event', 'consumer_group' : 'event_listener',
+                         'FAULT_TOLERANCE' : {'message_type' : health_comm_msg_type, 'consumer_group' : 'event_listener',
                                               'consumer_id' : '1'},
+                         'CLUSTER_STOP_MON' : {'message_type' : 'cluster_stop', 'consumer_group' : 'cluster_mon',
+                                              'consumer_id' : '2'},
                          'NODE': {'resource_type': 'node'},
                          'SYSTEM_HEALTH' : {'num_entity_health_events' : 2}
                          }
@@ -232,26 +245,36 @@ class ConfigCmd(Cmd):
             # be stored in the confstore as key values
             ConfigManager.init("ha_setup")
 
-            machine_id = self.get_machine_id()
-            cluster_id = Conf.get(self._index, f'node{_DELIM}{machine_id}{_DELIM}cluster_id')
+            # Inside cluster.conf, cluster_id will be present under
+            # "node".<actual POD machind id>."cluster_id". So,
+            # in the similar way, confstore will have this key when
+            # the cluster.conf load will taked place.
+            # So, to get the cluster_id field from Confstore, we need machine_id
+            self._cluster_id = Conf.get(self._index, f'node{_DELIM}{machine_id}{_DELIM}cluster_id')
             # site_id = Conf.get(self._index, f'node{_DELIM}{machine_id}{_DELIM}site_id')
-            site_id = '1'
+            self._site_id = '1'
             # rack_id = Conf.get(self._index, f'node{_DELIM}{machine_id}{_DELIM}rack_id')
-            rack_id = '1'
-            conf_file_dict.update({'COMMON_CONFIG': {'cluster_id': cluster_id, 'rack_id': rack_id, 'site_id': site_id}})
+            self._rack_id = '1'
+            self._storageset_id = '1'
+            conf_file_dict.update({'COMMON_CONFIG': {'cluster_id': self._cluster_id, 'rack_id': self._rack_id, 'site_id': self._site_id}})
+            # TODO: Verify whether these newly added config is avilable in the confstore or not
             with open(const.HA_CONFIG_FILE, 'w+') as conf_file:
                 yaml.dump(conf_file_dict, conf_file, default_flow_style=False)
-
             self._confstore = ConfigManager.get_confstore()
 
-            Log.info(f'Populating the ha config file with consul_endpoint: {consul_endpoint}, \
-                       data_pod_label: {data_pod_label}')
+            Log.info(f'Populating the ha config file with consul_endpoint: {consul_endpoint}')
 
             Log.info('Performing event_manager subscription')
             event_manager = EventManager.get_instance()
             event_manager.subscribe(const.EVENT_COMPONENT, [SubscribeEvent(const.POD_EVENT, ["online", "failed"])])
             Log.info(f'event_manager subscription for {const.EVENT_COMPONENT}\
                        is successful for the event {const.POD_EVENT}')
+
+            Log.info('Creating cluster cardinality')
+            self._confStoreAPI = ConftStoreSearch()
+            self._confStoreAPI.set_cluster_cardinality(self._index)
+            # Init node health
+            self._add_node_health()
 
             Log.info("config command is successful")
             sys.stdout.write("config command is successful.\n")
@@ -263,6 +286,35 @@ class ConfigCmd(Cmd):
             sys.stderr.write(f'HA Config failed. OS_error: {os_err}.\n')
         except Exception as c_err:
             sys.stderr.write(f'HA config command failed: {c_err}.\n')
+
+    def _add_node_health(self) -> None:
+        """
+        Add node health
+        """
+        _, nodes_list = self._confStoreAPI.get_cluster_cardinality()
+        for node in nodes_list:
+            timestamp = str(int(time.time()))
+            event_id = timestamp + str(uuid.uuid4().hex)
+            node_health_event = {
+                EVENT_ATTRIBUTES.SOURCE : HEALTH_EVENT_SOURCES.HA.value,
+                EVENT_ATTRIBUTES.EVENT_ID : event_id,
+                EVENT_ATTRIBUTES.EVENT_TYPE : HEALTH_EVENTS.UNKNOWN.value,
+                EVENT_ATTRIBUTES.SEVERITY : EVENT_SEVERITIES.INFORMATIONAL.value,
+                EVENT_ATTRIBUTES.SITE_ID : self._site_id,
+                EVENT_ATTRIBUTES.RACK_ID : self._rack_id,
+                EVENT_ATTRIBUTES.CLUSTER_ID : self._cluster_id,
+                EVENT_ATTRIBUTES.STORAGESET_ID : self._storageset_id,
+                EVENT_ATTRIBUTES.NODE_ID : node,
+                EVENT_ATTRIBUTES.HOST_ID : None,
+                EVENT_ATTRIBUTES.RESOURCE_TYPE : CLUSTER_ELEMENTS.NODE.value,
+                EVENT_ATTRIBUTES.TIMESTAMP : timestamp,
+                EVENT_ATTRIBUTES.RESOURCE_ID : node,
+                EVENT_ATTRIBUTES.SPECIFIC_INFO : None
+            }
+            Log.debug(f"Adding initial health {node_health_event} for node {node}")
+            health_event = HealthEvent.dict_to_object(node_health_event)
+            system_health = SystemHealth(self._confstore)
+            system_health.process_event(health_event)
 
 class InitCmd(Cmd):
     """
@@ -281,6 +333,24 @@ class InitCmd(Cmd):
         Process init command.
         """
         sys.stdout.write('HA initialization is done.\n')
+
+class UpgradeCmd(Cmd):
+    """
+    Setup Upgrade Cmd
+    """
+    name = "upgrade"
+
+    def __init__(self, args):
+        """
+        Init method.
+        """
+        super().__init__(args)
+
+    def process(self):
+        """
+        Process upgrade command.
+        """
+        sys.stdout.write("HA has been upgraded successfully\n")
 
 class TestCmd(Cmd):
     """

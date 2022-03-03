@@ -22,16 +22,20 @@ from ha.monitor.k8s.error import NotSupportedObjectError
 from ha.monitor.k8s.const import K8SEventsConst
 from ha.monitor.k8s.const import AlertStates
 from ha.monitor.k8s.const import EventStates
-from ha.monitor.k8s.alert import K8sAlert
-from ha import const
-from ha.const import _DELIM
 
 from cortx.utils.log import Log
-from cortx.utils.conf_store import Conf
+from ha.fault_tolerance.event import Event
+from ha.fault_tolerance.const import HEALTH_ATTRIBUTES, HEALTH_EVENT_SOURCES
+
 
 class ObjectParser:
     def __init__(self):
-        pass
+        self.payload = {HEALTH_ATTRIBUTES.SOURCE.value: HEALTH_EVENT_SOURCES.MONITOR.value, \
+                    HEALTH_ATTRIBUTES.CLUSTER_ID.value: None, HEALTH_ATTRIBUTES.SITE_ID.value: None, \
+                    HEALTH_ATTRIBUTES.RACK_ID.value: None, HEALTH_ATTRIBUTES.STORAGESET_ID.value: None, \
+                    HEALTH_ATTRIBUTES.NODE_ID.value: None, HEALTH_ATTRIBUTES.RESOURCE_TYPE.value: None, \
+                    HEALTH_ATTRIBUTES.RESOURCE_ID.value: None, HEALTH_ATTRIBUTES.RESOURCE_STATUS.value: None, \
+                    HEALTH_ATTRIBUTES.SPECIFIC_INFO.value: {}}
 
     def parse(self, an_event, cached_state):
         pass
@@ -42,58 +46,77 @@ class NodeEventParser(ObjectParser):
         super().__init__()
         self._type = 'host'
 
+    def _create_health_alert(self, res_type: str, res_name: str, health_status: str) -> dict:
+        """
+        Instantiates Event class which creates Health event object with necessary
+        attributes to pass it for further processing.
+
+        Args:
+        res_type: resource_type for which event needs to be created. Ex: node, disk
+        res_name: actual resource name. Ex: machine_id in case of node alerts
+        health_status: health of that resource. Ex: online, failed
+        """
+        self.event = Event()
+        self.payload[HEALTH_ATTRIBUTES.RESOURCE_TYPE.value] = res_type
+        self.payload[HEALTH_ATTRIBUTES.RESOURCE_ID.value] = self.payload[HEALTH_ATTRIBUTES.NODE_ID.value] = res_name
+        self.payload[HEALTH_ATTRIBUTES.RESOURCE_STATUS.value] = health_status
+        self.event.set_payload(self.payload)
+        return self.event.ret_dict()
+
     def parse(self, an_event, cached_state):
-        alert = K8sAlert()
-        alert.resource_type = self._type
-        alert.timestamp = str(int(time.time()))
+        resource_type = self._type
+        raw_object = an_event[K8SEventsConst.RAW_OBJECT]
 
         if K8SEventsConst.TYPE in an_event:
-            alert.event_type = an_event[K8SEventsConst.TYPE]
-        if K8SEventsConst.NAME in an_event[K8SEventsConst.RAW_OBJECT][K8SEventsConst.METADATA]:
-            alert.resource_name = an_event[K8SEventsConst.RAW_OBJECT][K8SEventsConst.METADATA][K8SEventsConst.NAME]
+            event_type = an_event[K8SEventsConst.TYPE]
+        if K8SEventsConst.NAME in raw_object[K8SEventsConst.METADATA]:
+            resource_name = raw_object[K8SEventsConst.METADATA][K8SEventsConst.NAME]
 
         ready_status = None
         try:
-            for a_condition in an_event[K8SEventsConst.RAW_OBJECT][K8SEventsConst.STATUS][K8SEventsConst.CONDITIONS]:
+            for a_condition in raw_object[K8SEventsConst.STATUS][K8SEventsConst.CONDITIONS]:
                 if a_condition[K8SEventsConst.TYPE] == K8SEventsConst.READY:
                     ready_status = a_condition[K8SEventsConst.STATUS]
         except Exception as e:
-            Log.warn(f"Exception received during parsing {e}")
+            Log.debug(f"Exception received during parsing {e}")
 
         if ready_status is None:
-            Log.debug(f"ready_status is None for node resource {alert.resource_name}")
-            cached_state[alert.resource_name] = ready_status
-            return None
+            Log.debug(f"ready_status is None for node resource {resource_name}")
+            cached_state[resource_name] = ready_status
+            return (None, None)
 
-        if alert.event_type == EventStates.ADDED:
-            cached_state[alert.resource_name] = ready_status.lower()
+        if event_type == EventStates.ADDED:
+            cached_state[resource_name] = ready_status.lower()
             if ready_status.lower() == K8SEventsConst.true:
-                alert.event_type = AlertStates.ONLINE
-                return alert
+                event_type = AlertStates.ONLINE
+                health_alert = self._create_health_alert(resource_type, resource_name, event_type)
+                return health_alert, self.event
             else:
-                Log.debug(f"[EventStates ADDED] No change detected for node resource {alert.resource_name}")
-                return None
+                Log.debug(f"[EventStates ADDED] No change detected for node resource {resource_name}")
+                return (None, None)
 
-        if alert.event_type == EventStates.MODIFIED:
-            if alert.resource_name in cached_state:
-                if cached_state[alert.resource_name] != K8SEventsConst.true and ready_status.lower() == K8SEventsConst.true:
-                    cached_state[alert.resource_name] = ready_status.lower()
-                    alert.event_type = AlertStates.ONLINE
-                    return alert
-                elif cached_state[alert.resource_name] == K8SEventsConst.true and ready_status.lower() != K8SEventsConst.true:
-                    cached_state[alert.resource_name] = ready_status.lower()
-                    alert.event_type = AlertStates.FAILED
-                    return alert
+        if event_type == EventStates.MODIFIED:
+            if resource_name in cached_state:
+                if cached_state[resource_name] != K8SEventsConst.true and ready_status.lower() == K8SEventsConst.true:
+                    cached_state[resource_name] = ready_status.lower()
+                    event_type = AlertStates.ONLINE
+                    health_alert = self._create_health_alert(resource_type, resource_name, event_type)
+                    return health_alert, self.event
+                elif cached_state[resource_name] == K8SEventsConst.true and ready_status.lower() != K8SEventsConst.true:
+                    cached_state[resource_name] = ready_status.lower()
+                    event_type = AlertStates.FAILED
+                    health_alert = self._create_health_alert(resource_type, resource_name, event_type)
+                    return health_alert, self.event
                 else:
-                    Log.debug(f"[EventStates MODIFIED] No change detected for node resource {alert.resource_name}")
-                    return None
+                    Log.debug(f"[EventStates MODIFIED] No change detected for node resource {resource_name}")
+                    return (None, None)
             else:
-                Log.debug(f"[EventStates MODIFIED] No cached state detected for node resource {alert.resource_name}")
-                return None
+                Log.debug(f"[EventStates MODIFIED] No cached state detected for node resource {resource_name}")
+                return (None, None)
 
         # Handle DELETED event - Not required for Cortx
 
-        return None
+        return (None, None)
 
 
 class PodEventParser(ObjectParser):
@@ -105,81 +128,85 @@ class PodEventParser(ObjectParser):
         #       hence while sending alert to cortx, below type is set to 'node'.
         self._type = 'node'
 
+    def _create_health_alert(self, res_type, res_name, health_status, generation_id):
+        """
+        Instantiates Event class which creates Health event object with necessary
+        attributes to pass it for further processing.
+
+        Args:
+        res_type: resource_type for which event needs to be created. Ex: node, disk
+        res_name: actual resource name. Ex: machine_id in case of node alerts
+        health_status: health of that resource. Ex: online, failed
+        generation_id: name of the node in case of node alert
+        """
+        self.event = Event()
+        self.payload[HEALTH_ATTRIBUTES.RESOURCE_TYPE.value] = res_type
+        self.payload[HEALTH_ATTRIBUTES.RESOURCE_ID.value] = self.payload[HEALTH_ATTRIBUTES.NODE_ID.value] = res_name
+        self.payload[HEALTH_ATTRIBUTES.RESOURCE_STATUS.value] = health_status
+        self.payload[HEALTH_ATTRIBUTES.SPECIFIC_INFO.value]["generation_id"] = generation_id
+        self.event.set_payload(self.payload)
+        return self.event.ret_dict()
+
     def parse(self, an_event, cached_state):
-        alert = K8sAlert()
-        alert.resource_type = self._type
-        alert.timestamp = str(int(time.time()))
+        resource_type = self._type
+        raw_object = an_event[K8SEventsConst.RAW_OBJECT]
 
-        # Imp Note: Below logic is required only if we are getting the absolute path where the machine-id exists in the event.
-        #           i.e. metadata/podInfo/machineId so it will be parsed like [raw_object][metadata][podInfo][machineId]
-        #           because k8s event we receive is multi-level nested dict and  the key can occur at multiple places
-        #           for different reasons as other many keys getting repeated so choosing required key will be difficult.
-        #           OR if once the key is added while creating pod and the fixed exact location in the event is found then,
-        #           the changes added in /k8s_setup/ha_setup.py for this key and the below logic for parsing this key
-        #           is also not required can add constant and directly fetch the value.
-
-        # Get value of machine id key (path of the machine id in k8s event)
-        machine_id_key = Conf.get(const.HA_GLOBAL_INDEX, f"MONITOR{_DELIM}machine_id_key")
-
-        # loop over keys and check if exist, then get the value.
-        # this code is flexible can be used for any key in an event, for example
-        # if value at the place event[raw_object][metadata][name] then input key will be 'metadata/name'
-        # note if the key is fixed and cannot change, then can use constant here also instead of parsing
-        machine_id_keys = machine_id_key.split('/')
-        machine_id = an_event[K8SEventsConst.RAW_OBJECT]
-        for key in machine_id_keys:
-            if key != None and isinstance(machine_id, dict) and key in machine_id:
-                machine_id = machine_id[key]
-        if  machine_id is not None and not isinstance(machine_id, dict):
-            alert.resource_name = machine_id
-
+        labels = raw_object[K8SEventsConst.METADATA][K8SEventsConst.LABELS]
+        if K8SEventsConst.MACHINEID in labels:
+            resource_name = labels[K8SEventsConst.MACHINEID]
         if K8SEventsConst.TYPE in an_event:
-            alert.event_type = an_event[K8SEventsConst.TYPE]
-        if K8SEventsConst.NODE_NAME in an_event[K8SEventsConst.RAW_OBJECT][K8SEventsConst.SPEC]:
-            alert.node = an_event[K8SEventsConst.RAW_OBJECT][K8SEventsConst.SPEC][K8SEventsConst.NODE_NAME]
+            event_type = an_event[K8SEventsConst.TYPE]
+        # Actual physical host information is not needed now.
+        # If required, can be available in K8SEventsConst.SPEC.
+        # So, removing it from now.
+        if K8SEventsConst.NAME in raw_object[K8SEventsConst.METADATA]:
+            generation_id = raw_object[K8SEventsConst.METADATA][K8SEventsConst.NAME]
 
         ready_status = None
         try:
-            for a_condition in an_event[K8SEventsConst.RAW_OBJECT][K8SEventsConst.STATUS][K8SEventsConst.CONDITIONS]:
+            for a_condition in raw_object[K8SEventsConst.STATUS][K8SEventsConst.CONDITIONS]:
                 if a_condition[K8SEventsConst.TYPE] == K8SEventsConst.READY:
                     ready_status = a_condition[K8SEventsConst.STATUS]
         except Exception as e:
-            Log.warn(f"Exception received during parsing {e}")
+            Log.debug(f"Exception received during parsing {e}")
 
         if ready_status is None:
-            Log.debug(f"ready_status is None for pod resource {alert.resource_name}")
-            cached_state[alert.resource_name] = ready_status
-            return None
+            Log.debug(f"ready_status is None for pod resource {resource_name}")
+            cached_state[resource_name] = ready_status
+            return (None, None)
 
         if an_event[K8SEventsConst.TYPE] == EventStates.ADDED:
-            cached_state[alert.resource_name] = ready_status.lower()
+            cached_state[resource_name] = ready_status.lower()
             if ready_status.lower() != K8SEventsConst.true:
-                Log.debug(f"[EventStates ADDED] No change detected for pod resource {alert.resource_name}")
-                return None
+                Log.debug(f"[EventStates ADDED] No change detected for pod resource {resource_name}")
+                return (None, None)
             else:
-                alert.event_type = AlertStates.ONLINE
-                return alert
+                event_type = AlertStates.ONLINE
+                health_alert = self._create_health_alert(resource_type, resource_name, event_type, generation_id)
+                return health_alert, self.event
 
-        if alert.event_type == EventStates.MODIFIED:
-            if alert.resource_name in cached_state:
-                if cached_state[alert.resource_name] != K8SEventsConst.true and ready_status.lower() == K8SEventsConst.true:
-                    cached_state[alert.resource_name] = ready_status.lower()
-                    alert.event_type = AlertStates.ONLINE
-                    return alert
-                elif cached_state[alert.resource_name] == K8SEventsConst.true and ready_status.lower() != K8SEventsConst.true:
-                    cached_state[alert.resource_name] = ready_status.lower()
-                    alert.event_type = AlertStates.FAILED
-                    return alert
+        if event_type == EventStates.MODIFIED:
+            if resource_name in cached_state:
+                if cached_state[resource_name] != K8SEventsConst.true and ready_status.lower() == K8SEventsConst.true:
+                    cached_state[resource_name] = ready_status.lower()
+                    event_type = AlertStates.ONLINE
+                    health_alert = self._create_health_alert(resource_type, resource_name, event_type, generation_id)
+                    return health_alert, self.event
+                elif cached_state[resource_name] == K8SEventsConst.true and ready_status.lower() != K8SEventsConst.true:
+                    cached_state[resource_name] = ready_status.lower()
+                    event_type = AlertStates.FAILED
+                    health_alert = self._create_health_alert(resource_type, resource_name, event_type, generation_id)
+                    return health_alert, self.event
                 else:
-                    Log.debug(f"[EventStates MODIFIED] No change detected for pod resource {alert.resource_name}")
-                    return None
+                    Log.debug(f"[EventStates MODIFIED] No change detected for pod resource {resource_name}")
+                    return (None, None)
             else:
-                Log.debug(f"[EventStates MODIFIED] No cached state detected for pod resource {alert.resource_name}")
-                return None
+                Log.debug(f"[EventStates MODIFIED] No cached state detected for pod resource {resource_name}")
+                return (None, None)
 
         # Handle DELETED event - Not required for Cortx
 
-        return None
+        return (None, None)
 
 
 class EventParser:

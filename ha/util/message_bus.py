@@ -17,11 +17,14 @@
 
 import json
 from typing import Callable
-from threading import Thread
+from threading import Thread, Event
+from cortx.utils.conf_store.conf_store import Conf
 from cortx.utils.log import Log
 from cortx.utils.message_bus import MessageBusAdmin
 from cortx.utils.message_bus import MessageProducer
 from cortx.utils.message_bus import MessageConsumer
+from cortx.utils.message_bus import MessageBus as utils_message_bus
+from ha import const
 
 class MessageBusProducer:
     PRODUCER_METHOD = "sync"
@@ -77,13 +80,16 @@ class MessageBusConsumer:
             offset (str, optional): Offset for messages. Defaults to "earliest".
         """
         self.callback = callback
-        self.stop_thread = False
+        self._stop = Event()
+        self.flush_on_exit = False
         self.consumer_id = consumer_id
         self.consumer_group = consumer_group
         self.message_type = message_type
+        self.name = message_type+"-consumer-thread"
         self.auto_ack = auto_ack
         self.offset = offset
         self.timeout = timeout
+        self.consumer_thread = None
 
     def run(self):
         """
@@ -103,10 +109,15 @@ class MessageBusConsumer:
         Stop thread by completing work as per above cases.
         """
         retry = False
-        while not self.stop_thread:
+        while not self._stop.is_set():
             try:
                 if not retry:
-                    message = self.consumer.receive(timeout=0)
+                    # setting some default timeout as 0 will block the call for indefinite time
+                    message = self.consumer.receive(timeout=const.CORTX_HA_WAIT_TIMEOUT)
+                    # if no message is received and the timeout occurs then message will be set None
+                    # so lets continue wait again on message bus.
+                    if message is None:
+                        continue
                 try:
                     status = self.callback(message)
                 except Exception as e:
@@ -128,22 +139,66 @@ class MessageBusConsumer:
             except Exception as e:
                 Log.error(f"Supressing exception from message bus {e}")
                 retry = False
+        if self.flush_on_exit:
+            # we do not expect any messages to be present in the message bus at this point
+            # since previously received cluster stop would have ensured that message bus is empty
+            # here we are makeing sure that messages in message bus are flushed,
+            # so when next time consumer starts it will not read stale messages.
+            Log.info(f"flush pending messages of type {self.message_type}.")
+            while True:
+                # needs to set minimum feasible timeout but,
+                # setting 0 will block the call for indefinite time,
+                # hence setting to 1.
+                message = self.consumer.receive(timeout=1)
+                if message is None:
+                    break
+                else:
+                    Log.info(f"flushing message: {message}.")
+                    self.consumer.ack()
 
     def start(self):
+        """
+        Start the consumer
+        """
+        Log.info(f"Starting the daemon for {self.name}...")
         self.consumer = MessageConsumer(consumer_id=str(self.consumer_id),
                         consumer_group=self.consumer_group,
                         message_types=[self.message_type],
                         auto_ack=self.auto_ack, offset=self.offset)
-        self.consumer_thread = Thread(target=self.run)
+        self.consumer_thread = Thread(target=self.run, name=self.name)
         self.consumer_thread.setDaemon(True)
         self.consumer_thread.start()
+        Log.info(f"The daemon {self.name} started successfully.")
 
-    def stop(self):
-        self.stop_tread = True
-        self.consumer_thread.join()
+    def stop(self, flush=False):
+        """
+        Set the stop event so consumer thread will stop
+        """
+        Log.info(f"Stopping the daemon {self.name}...")
+        self.flush_on_exit = flush
+        self._stop.set()
+
+    def join(self):
+        """
+        Blocking call, it calls join function of message bus consumer thread
+        """
+        if self.consumer_thread is not None:
+            Log.info(f"waiting for {self.name} to exit...")
+            # wait to stop consumer thread
+            self.consumer_thread.join()
+            Log.info(f"The daemon {self.name} is stopped successfully.")
 
 class MessageBus:
     ADMIN_ID = "ha_admin"
+
+    @staticmethod
+    def init():
+        """
+        Initialize utils MessageBus Library with kafka endpoints once per service. In future utils will throw error if
+        init done multiple times. If any new service will come which uses MessageBus then init should be done there.
+        """
+        message_server_endpoints = Conf.get(const.HA_GLOBAL_INDEX, f"kafka_config{const._DELIM}endpoints")
+        utils_message_bus.init(message_server_endpoints)
 
     @staticmethod
     def get_consumer(consumer_id: int, consumer_group: str, message_type: str,

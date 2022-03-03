@@ -22,6 +22,7 @@ CORTX_VERSION_2="2"
 HA_CLUSTER_SOFTWARE="corosync"
 HACLUSTER_KEY = "cortx"
 SERVER_NODE_KEY = "server_node"
+# RA_LOG_DIR this is deprecated.[#620 PR]
 RA_LOG_DIR="/var/log/seagate/cortx/ha"
 PACEMAKER_LOG="/var/log/pacemaker.log"
 AUTH_DIR="/var/lib/pcsd"
@@ -32,6 +33,7 @@ PCSD_DIR="/var/log/pcsd"
 LOG_DIR="/var/log"
 CONFIG_DIR="/etc/cortx/ha"
 SYSTEM_DIR="/etc/systemd/system"
+# Needs to be replaced by log path defined in cluster.conf[EOS-27352].
 SUPPORT_BUNDLE_ERR="{}/support_bundle.err".format(RA_LOG_DIR)
 SUPPORT_BUNDLE_LOGS=[RA_LOG_DIR, PCSD_LOG, PACEMAKER_LOG, COROSYNC_LOG]
 CORTX_SUPPORT_BUNDLE_LOGS=[RA_LOG_DIR, PCSD_LOG, PACEMAKER_LOG, CONFIG_DIR, COROSYNC_LOG]
@@ -181,6 +183,9 @@ NODE_STOP_TIMEOUT = 300 # 300 sec to stop single node
 CLUSTER_STANDBY_UNSTANDBY_TIMEOUT = 600 # 600 sec to stop single node
 NODE_POWERON_DELAY = 300 # Delay after node is powered-on before cluster start
 
+# wait timeout in cortx ha servervices while checking for stop
+CORTX_HA_WAIT_TIMEOUT = 5
+
 # Event Analyzer
 INCLUSION = "inclusion"
 EXCLUSION = "exclusion"
@@ -203,6 +208,10 @@ MODULE = "module"
 RESOURCE_TYPE = "resource_type"
 STONITH_AUTH_TYPE = 'PASSWORD'
 logger_utility_iec_cmd="logger -i -p local3.err"
+CLUSTER_STOP_KEY = "cluster_stop_key"
+# We are using only key 'CLUSTER_STOP_KEY' and ckecking whether ths key is exist
+# not using the value anywhere but as default value for key.
+CLUSTER_STOP_VAL_ENABLE = "1"
 
 class STATUSES(Enum):
     IN_PROGRESS = "InProgress"
@@ -236,6 +245,8 @@ class COMPONENTS(Enum):
     CLUSTER = "cluster"
     AGG_SERVICE = "agg_service"
     NODE_MAP = "node_map"
+    CVG = "cvg"
+    DISK = "disk"
 
 RESOURCE_LIST = "resource_list"
 KEY = "key"
@@ -315,6 +326,7 @@ ACTUATOR_MSG_WAIT_TIME = 2
 
 # Health event attribute constants
 class EVENT_ATTRIBUTES:
+    SOURCE = "source"
     EVENT_ID = "event_id"
     EVENT_TYPE = "event_type"
     SEVERITY = "severity"
@@ -353,7 +365,12 @@ class SERVER_POWER_STATUS(Enum, metaclass=EnumListMeta):
 class K8S_ALERT_STATUS(Enum, metaclass=EnumListMeta):
     STATUS_FAILED = "failed"
     STATUS_ONLINE = "online"
+    STATUS_REPAIRING = "repairing"
+    STATUS_REPAIRED = "repaired"
+    STATUS_REBALANCING = "rebalancing"
 
 class K8S_ALERT_RESOURCE_TYPE(Enum, metaclass=EnumListMeta):
     RESOURCE_TYPE_POD = "pod"
     RESOURCE_TYPE_NODE = "node"
+    RESOURCE_TYPE_CVG = "cvg"
+    RESOURCE_TYPE_DISK = "disk"
