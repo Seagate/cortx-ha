@@ -20,7 +20,6 @@ import re
 import time
 import uuid
 from cortx.utils.log import Log
-from cortx.utils.health.const import HEALTH_EVENT_SOURCES
 from ha.core.system_health.system_health_hierarchy import HealthHierarchy
 from ha.core.config.config_manager import ConfigManager
 from ha.core.system_health.model.health_event import HealthEvent
