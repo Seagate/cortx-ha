@@ -28,7 +28,6 @@ from urllib.parse import urlparse
 
 from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
-from cortx.utils.health.const import HEALTH_EVENT_SOURCES
 
 from ha.execute import SimpleCommand
 from ha.k8s_setup import const
