@@ -20,20 +20,28 @@ Module helps in generating the mock health event and publishing it to the
 message bus
 """
 
-import sys
 import argparse
+import sys
+import pathlib
 
 from cortx.utils.conf_store import Conf
 from ha.util.conf_store import ConftStoreSearch
 
-
+docker_env_file = '/.dockerenv'
 _index = 'cortx'
 cluster_config_file = '/etc/cortx/cluster.conf'
 config_file_format = 'yaml'
 
-def get_data_nodes(conf_store: ConftStoreSearch = None) -> None:
+def is_container_env() -> bool:
+    """Returns True if environment is docker container else False"""
+    docker_env_file_path = pathlib.Path(docker_env_file)
+    if docker_env_file_path.exists():
+        return True
+    return False
+
+def get_data_nodes(conf_store: ConftStoreSearch = None) -> list:
     """
-    Fetches data node ids using HA wrapper class and displays the result
+    Fetches data node ids using HA wrapper class and displays the result.
 
     Args:
     conf_store: ConftStoreSearch object
@@ -43,19 +51,21 @@ def get_data_nodes(conf_store: ConftStoreSearch = None) -> None:
     data_node_ids = conf_store.get_data_pods(_index)
     return data_node_ids
 
-def get_server_nodes(conf_store: ConftStoreSearch = None) -> None:
+def get_server_nodes(conf_store: ConftStoreSearch = None) -> list:
     """
-    Fetches server node ids using HA wrapper class and displays the result
+    Fetches server node ids using HA wrapper class and displays the result.
 
     Args:
     conf_store: ConftStoreSearch object
+
+    Returns: list of node ids
     """
     server_node_ids = conf_store.get_server_pods(_index)
     return server_node_ids
 
 def get_disks(args, conf_store: ConftStoreSearch = None) -> None:
     """
-    Fetches disk ids using ConfStore search API and displays the result
+    Fetches disk ids using ConfStore search API and displays the result.
 
     Args:
     conf_store: ConftStoreSearch object
@@ -74,7 +84,7 @@ def get_disks(args, conf_store: ConftStoreSearch = None) -> None:
 
 def get_cvgs(args, conf_store: ConftStoreSearch = None) -> None:
     """
-    Fetches cvg ids using ConfStore search API and displays the result
+    Fetches cvg ids using ConfStore search API and displays the result.
 
     Args:
     conf_store: ConftStoreSearch object
@@ -87,7 +97,7 @@ def get_cvgs(args, conf_store: ConftStoreSearch = None) -> None:
 
 def publish(args, conf_store: ConftStoreSearch = None) -> None:
     """
-    publishes the message on the message bus
+    publishes the message on the message bus.
 
     Args:
     conf_store: ConftStoreSearch object
@@ -95,11 +105,6 @@ def publish(args, conf_store: ConftStoreSearch = None) -> None:
     config_file: config file path
     """
     print(f'inside publish, config file: {args.file}')
-
-def command_help(args, conf_store: ConftStoreSearch = None) -> None:
-    """Handler function which displays help"""
-    print(parser.parse_args([args.command, '--help']))
-
 
 FUNCTION_MAP = {
                 '-gdt' : get_data_nodes, '--get-data-nodes': get_data_nodes,
@@ -132,15 +137,13 @@ def get_args():
     parser_cvgs.add_argument('-n', '--node-id', help='Node id for which disk id is required', required=True)
     parser_cvgs.set_defaults(handler=get_cvgs)
 
-    parser_help = subparsers.add_parser('help', help='see `help -h`')
-    parser_help.add_argument('command', help='command name which help is shown')
-    parser_help.set_defaults(handler=command_help)
-
     args = my_parser.parse_args()
     return args, my_parser
 
 
 if __name__ == '__main__':
+    if not is_container_env():
+        sys.exit(f'Please use this script in containerized environment')
     option = None
     args, parser_obj = get_args()
     Conf.init()
