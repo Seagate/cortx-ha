@@ -17,7 +17,8 @@
 
 """
 Module helps in generating the mock health event and publishing it to the
-message bus
+message bus.
+
 """
 
 import argparse
@@ -33,7 +34,7 @@ cluster_config_file = '/etc/cortx/cluster.conf'
 config_file_format = 'yaml'
 
 def is_container_env() -> bool:
-    """Returns True if environment is docker container else False"""
+    """Returns True if environment is docker container else False."""
     docker_env_file_path = pathlib.Path(docker_env_file)
     if docker_env_file_path.exists():
         return True
@@ -143,7 +144,7 @@ def get_args():
 
 if __name__ == '__main__':
     if not is_container_env():
-        sys.exit(f'Please use this script in containerized environment')
+        sys.exit('Please use this script in containerized environment')
     option = None
     args, parser_obj = get_args()
     Conf.init()
