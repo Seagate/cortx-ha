@@ -41,8 +41,7 @@ def is_container_env() -> bool:
     return False
 
 def get_data_nodes(conf_store: ConftStoreSearch = None) -> list:
-    """
-    Fetches data node ids using HA wrapper class and displays the result.
+    """Fetches data node ids using HA wrapper class and displays the result.
 
     Args:
     conf_store: ConftStoreSearch object
@@ -53,8 +52,7 @@ def get_data_nodes(conf_store: ConftStoreSearch = None) -> list:
     return data_node_ids
 
 def get_server_nodes(conf_store: ConftStoreSearch = None) -> list:
-    """
-    Fetches server node ids using HA wrapper class and displays the result.
+    """Fetches server node ids using HA wrapper class and displays the result.
 
     Args:
     conf_store: ConftStoreSearch object
@@ -72,7 +70,7 @@ def get_disks(args: argparse.Namespace, conf_store: ConftStoreSearch = None) -> 
     conf_store: ConftStoreSearch object
     node_id: machine_id value
     """
-    # TODO: This is temporary code till this is avalable in HA.
+    # TODO: This is temporary code till this is available in HA.
     node_id = args.node_id
     num_of_cvgs = Conf.get(_index, f'node>{node_id}>storage>num_cvg')
     disk_ids = []
@@ -84,21 +82,19 @@ def get_disks(args: argparse.Namespace, conf_store: ConftStoreSearch = None) -> 
     print(disk_ids)
 
 def get_cvgs(args: argparse.Namespace, conf_store: ConftStoreSearch = None) -> None:
-    """
-    Fetches cvg ids using ConfStore search API and displays the result.
+    """Fetches cvg ids using ConfStore search API and displays the result.
 
     Args:
     conf_store: ConftStoreSearch object
     node_id: machine_id value
     """
     node_id = args.node_id
-    # TODO: This is temporary code till this is avalable in HA.
+    # TODO: This is temporary code till this is available in HA.
     cvg_count = Conf.get(_index, f'node>{node_id}>storage>num_cvg')
     print([Conf.get(_index, f'node>{node_id}>storage>cvg[{cvg}]>name') for cvg in range(cvg_count)])
 
 def publish(args: argparse.Namespace, conf_store: ConftStoreSearch = None) -> None:
-    """
-    publishes the message on the message bus.
+    """publishes the message on the message bus.
 
     Args:
     args: parsed argument
@@ -112,8 +108,7 @@ FUNCTION_MAP = {
                 }
 
 def get_args() -> (argparse.Namespace, argparse.ArgumentParser):
-    """
-    Configures the command line arguments.
+    """Configures the command line arguments.
 
     Returns:
     args: parsed argument object
