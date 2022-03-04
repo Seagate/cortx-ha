@@ -164,10 +164,14 @@ class ConftStoreSearch:
                                             .replace("(cvg_index)", str(cvg_index)))
                 num_of_metadata_disks = Conf.get(index, GconfKeys.METADATA_COUNT.value.replace("(node_id)", node_id)
                                                 .replace("(cvg_index)", str(cvg_index)))
-                [disk_list.append(Conf.get(index, GconfKeys.DATA_DISK.value.replace("(node_id)", node_id).
-                                            replace("(cvg_index)", str(cvg_index)).replace("(d_index)", str(d)))) for d in range(num_of_data_disks)]
-                [disk_list.append(Conf.get(index, GconfKeys.METADATA_DISK.value.replace("(node_id)", node_id).
-                                            replace("(cvg_index)", str(cvg_index)).replace("(m_index)", str(m)))) for m in range(num_of_metadata_disks)]
+
+                for d_index in range(num_of_data_disks):
+                    disk_list.append(Conf.get(index, GconfKeys.DATA_DISK.value.replace("(node_id)", node_id).
+                                              replace("(cvg_index)", str(cvg_index)).replace("(d_index)", str(d_index))))
+
+                for m_index in range(num_of_metadata_disks):
+                    disk_list.append(Conf.get(index, GconfKeys.METADATA_DISK.value.replace("(node_id)", node_id).
+                                              replace("(cvg_index)", str(cvg_index)).replace("(m_index)", str(m_index))))
             return disk_list
         except Exception as e:
             Log.error(f"Unable to fetch Disk list from GConf. Error {e}")
@@ -195,10 +199,14 @@ class ConftStoreSearch:
                                             replace("(node_id)", node_id).replace("(cvg_index)", str(cvg_index)))
                 num_of_metadata_disks = Conf.get(index, GconfKeys.METADATA_COUNT.value.
                                                 replace("(node_id)", node_id).replace("(cvg_index)", str(cvg_index)))
-                [disk_list.append(Conf.get(index, GconfKeys.DATA_DISK.value.replace("(node_id)", node_id).
-                                            replace("(cvg_index)", str(cvg_index)).replace("(d_index)", str(d)))) for d in range(num_of_data_disks)]
-                [disk_list.append(Conf.get(index, GconfKeys.METADATA_DISK.value.replace("(node_id)", node_id).
-                                            replace("(cvg_index)", str(cvg_index)).replace("(m_index)", str(m)))) for m in range(num_of_metadata_disks)]
+
+                for d_index in range(num_of_data_disks):
+                    disk_list.append(Conf.get(index, GconfKeys.DATA_DISK.value.replace("(node_id)", node_id).
+                                              replace("(cvg_index)", str(cvg_index)).replace("(d_index)", str(d_index))))
+
+                for m_index in range(num_of_metadata_disks):
+                    disk_list.append(Conf.get(index, GconfKeys.METADATA_DISK.value.replace("(node_id)", node_id).
+                                              replace("(cvg_index)", str(cvg_index)).replace("(m_index)", str(m_index))))
             return disk_list
         except Exception as e:
             Log.error(f"Unable to fetch Disk list from GConf. Error {e}")
