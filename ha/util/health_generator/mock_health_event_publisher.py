@@ -125,7 +125,7 @@ def publish(args, conf_store: ConftStoreSearch = None) -> None:
                 site_id = Conf.get(const.HA_GLOBAL_INDEX, f'COMMON_CONFIG{const._DELIM}site_id')
                 rack_id = Conf.get(const.HA_GLOBAL_INDEX, f'COMMON_CONFIG{const._DELIM}rack_id')
                 storageset_id = '1' # TODO: Read from config when available.
-                for key, value in events_dict[_events_key].items():
+                for _, value in events_dict[_events_key].items():
                     resource_type = value[_resource_type_key]
                     if resource_type not in ['node', 'cvg', 'disk']:
                         raise Exception(f'Invalid resource_type: {resource_type}')
