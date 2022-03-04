@@ -16,8 +16,7 @@
 # cortx-questions@seagate.com.
 
 
-"""Module helps in generating the mock health event and publishing it to the
-message bus."""
+"""Module helps in generating the mock health event and publishing it to the message bus."""
 
 
 import argparse
@@ -63,8 +62,7 @@ def get_server_nodes(conf_store: ConftStoreSearch = None) -> list:
     return server_node_ids
 
 def get_disks(args: argparse.Namespace, conf_store: ConftStoreSearch = None) -> None:
-    """
-    Fetches disk ids using ConfStore search API and displays the result.
+    """Fetches disk ids using ConfStore search API and displays the result.
 
     Args:
     conf_store: ConftStoreSearch object
