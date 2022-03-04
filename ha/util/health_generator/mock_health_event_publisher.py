@@ -15,11 +15,10 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-"""
-Module helps in generating the mock health event and publishing it to the
-message bus.
 
-"""
+"""Module helps in generating the mock health event and publishing it to the
+message bus."""
+
 
 import argparse
 import sys
@@ -27,6 +26,7 @@ import pathlib
 
 from cortx.utils.conf_store import Conf
 from ha.util.conf_store import ConftStoreSearch
+
 
 docker_env_file = '/.dockerenv'
 _index = 'cortx'
@@ -64,7 +64,7 @@ def get_server_nodes(conf_store: ConftStoreSearch = None) -> list:
     server_node_ids = conf_store.get_server_pods(_index)
     return server_node_ids
 
-def get_disks(args, conf_store: ConftStoreSearch = None) -> None:
+def get_disks(args: argparse.Namespace, conf_store: ConftStoreSearch = None) -> None:
     """
     Fetches disk ids using ConfStore search API and displays the result.
 
@@ -83,7 +83,7 @@ def get_disks(args, conf_store: ConftStoreSearch = None) -> None:
         [ disk_ids.append(Conf.get(_index, f'node>{node_id}>storage>cvg[{cvg}]>devices>metadata[{md_disk}]')) for md_disk in range(num_of_metadata_disks)]
     print(disk_ids)
 
-def get_cvgs(args, conf_store: ConftStoreSearch = None) -> None:
+def get_cvgs(args: argparse.Namespace, conf_store: ConftStoreSearch = None) -> None:
     """
     Fetches cvg ids using ConfStore search API and displays the result.
 
@@ -96,14 +96,13 @@ def get_cvgs(args, conf_store: ConftStoreSearch = None) -> None:
     cvg_count = Conf.get(_index, f'node>{node_id}>storage>num_cvg')
     print([Conf.get(_index, f'node>{node_id}>storage>cvg[{cvg}]>name') for cvg in range(cvg_count)])
 
-def publish(args, conf_store: ConftStoreSearch = None) -> None:
+def publish(args: argparse.Namespace, conf_store: ConftStoreSearch = None) -> None:
     """
     publishes the message on the message bus.
 
     Args:
+    args: parsed argument
     conf_store: ConftStoreSearch object
-    node_id: machine_id value
-    config_file: config file path
     """
     print(f'inside publish, config file: {args.file}')
 
@@ -112,9 +111,13 @@ FUNCTION_MAP = {
                 '-gs' : get_server_nodes, '--get-server-nodes': get_server_nodes
                 }
 
-def get_args():
+def get_args() -> (argparse.Namespace, argparse.ArgumentParser):
     """
     Configures the command line arguments.
+
+    Returns:
+    args: parsed argument object
+    my_parser: Parser object
     """
     my_parser = argparse.ArgumentParser(prog='health_event_publisher',
                                         usage='%(prog)s [options]',
@@ -162,7 +165,8 @@ if __name__ == '__main__':
 
     if hasattr(args, 'handler'):
         if hasattr(args, 'node_id') and args.node_id not in data_node_ids:
-            print('Please provide data node id to get disk and cvg id')
+            print(f'Required data is not supported for given node_id: {args.node_id}. \
+                    Please check supported node ids list: {data_node_ids}')
             sys.exit(1)
         args.handler(args, conf_store=_conf_store)
     else:
