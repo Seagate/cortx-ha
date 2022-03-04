@@ -125,15 +125,15 @@ def get_args() -> (argparse.Namespace, argparse.ArgumentParser):
     my_parser.add_argument('-gs', '--get-server-nodes', action='store_true', help='Get the list of server node ids')
 
     parser_publish = subparsers.add_parser('publish', help='Publish the message')
-    parser_publish.add_argument('-f', '--file', action='store', help='imput config file', required=True)
+    parser_publish.add_argument('-f', '--file', action='store', help='input config file', required=True)
     parser_publish.set_defaults(handler=publish)
 
-    parser_disks = subparsers.add_parser('get-disks', help='Displys the Disk Ids assosciated with the Node')
+    parser_disks = subparsers.add_parser('get-disks', help='Displays the Disk Ids associated with the Node')
     parser_disks.add_argument('-n', '--node-id', help='Node id for which disk id is required', required=True)
     parser_disks.set_defaults(handler=get_disks)
 
-    parser_cvgs = subparsers.add_parser('get-cvgs', help='Displys the CVG Ids assosciated with the Node')
-    parser_cvgs.add_argument('-n', '--node-id', help='Node id for which disk id is required', required=True)
+    parser_cvgs = subparsers.add_parser('get-cvgs', help='Displays the CVG Ids associated with the Node')
+    parser_cvgs.add_argument('-n', '--node-id', help='Node id for which cvg id is required', required=True)
     parser_cvgs.set_defaults(handler=get_cvgs)
 
     args = my_parser.parse_args()
