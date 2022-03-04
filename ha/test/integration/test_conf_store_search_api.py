@@ -38,7 +38,7 @@ if __name__ == "__main__":
         node_id = cluster_card._get_data_pods("cortx")[0]
 
         cvg_list = cluster_card.get_cvg_list("cortx", node_id)
-        print(f"\nCVG's presents under node {node_id} are : ", cvg_list)
+        print(f"\nCVGs present under node {node_id} are : ", cvg_list)
 
         disk_list = cluster_card.get_disk_list("cortx", node_id)
         print(f"\nDisks present under node {node_id} are : ", disk_list)
