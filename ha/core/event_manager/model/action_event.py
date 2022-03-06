@@ -16,9 +16,8 @@
 # cortx-questions@seagate.com.
 
 from ha.core.system_health.model.health_event import HealthEvent
-from cortx.utils.event_framework.health import HealthAttr, HealthEvent as HEvent
 
-class RecoveryActionvent:
+class RecoveryActionEvent:
     """
     Action Event. This class implements an action event object,
     that is delegated to components for taking the action.
@@ -28,7 +27,7 @@ class RecoveryActionvent:
         """
         Init method.
         """
-        self.event = HEvent()
+        from cortx.utils.event_framework.health import HealthAttr, HealthEvent as HEvent
         payload = {
             HealthAttr.SOURCE: healthevent.source,
             HealthAttr.CLUSTER_ID: healthevent.cluster_id,
@@ -40,9 +39,8 @@ class RecoveryActionvent:
             HealthAttr.RESOURCE_ID: healthevent.resource_id,
             HealthAttr.RESOURCE_STATUS: healthevent.event_type,
         }
-        self.event.set_payload(payload)
-        specific_info = {HealthAttr.SPECIFIC_INFO: healthevent.specific_info}
-        self.event.set_specific_info()
+        self.event = HEvent(**payload)
+        self.event.set_specific_info({HealthAttr.SPECIFIC_INFO: healthevent.specific_info})
 
     def get_event(self):
         return self.event

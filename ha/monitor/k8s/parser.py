@@ -31,10 +31,10 @@ from cortx.utils.event_framework.health import HealthAttr, HealthEvent
 class ObjectParser:
     def __init__(self):
         self.payload = {HealthAttr.SOURCE: HEALTH_EVENT_SOURCES.MONITOR.value, \
-                    HealthAttr.CLUSTER_ID: None, HEALTH_ATTRIBUTES.SITE_ID: None, \
-                    HealthAttr.RACK_ID: None, HEALTH_ATTRIBUTES.STORAGESET_ID: None, \
-                    HealthAttr.NODE_ID: None, HEALTH_ATTRIBUTES.RESOURCE_TYPE: None, \
-                    HealthAttr.RESOURCE_ID.value: None, HEALTH_ATTRIBUTES.RESOURCE_STATUS: None, \
+                    HealthAttr.CLUSTER_ID: None, HealthAttr.SITE_ID: None, \
+                    HealthAttr.RACK_ID: None, HealthAttr.STORAGESET_ID: None, \
+                    HealthAttr.NODE_ID: None, HealthAttr.RESOURCE_TYPE: None, \
+                    HealthAttr.RESOURCE_ID: None, HealthAttr.RESOURCE_STATUS: None, \
                     HealthAttr.SPECIFIC_INFO.value: {}}
 
     def parse(self, an_event, cached_state):
@@ -140,11 +140,11 @@ class PodEventParser(ObjectParser):
         generation_id: name of the node in case of node alert
         """
         self.event = HealthEvent()
-        self.payload[HealthAttr.RESOURCE_TYPE] = res_type
-        self.payload[HealthAttr.RESOURCE_ID] = self.payload[HealthAttr.NODE_ID] = res_name
-        self.payload[HealthAttr.RESOURCE_STATUS] = health_status
-        self.payload[HealthAttr.SPECIFIC_INFO.value]["generation_id"] = generation_id
-        self.event.set_payload(self.payload)
+        self.event.set(HealthAttr.RESOURCE_TYPE, res_type)
+        self.event.set(HealthAttr.RESOURCE_ID, res_name)
+        self.event.set(HealthAttr.NODE_ID, res_name)
+        self.event.set(HealthAttr.RESOURCE_STATUS, health_status)
+        self.event.set_specific_info({"generation_id": generation_id})
         return self.event.json
 
     def parse(self, an_event, cached_state):

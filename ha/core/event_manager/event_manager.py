@@ -384,11 +384,11 @@ class EventManager:
                     break
         return value
 
-    def publish(self, event: Event) -> None:
+    def publish(self, event: HealthEvent) -> None:
         """
         Publish event.
         Args:
-            event (Event): Action event.
+            event (HealthEvent): Action event.
         """
         try:
             #TODO: Use Transactional producer in future.
@@ -403,7 +403,7 @@ class EventManager:
             for component in component_list:
                 if component != event[EventAttr.EVENT_PAYLOAD][HealthAttr.SOURCE]:
                     message_producer = self._get_producer(component)
-                    event_to_send = event.ret_dict()
+                    event_to_send = event.json
                     Log.info(f"Sending action event {event_to_send} to component {component}")
                     message_producer.publish(event_to_send)
         except Exception as e:
