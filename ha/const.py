@@ -213,6 +213,12 @@ CLUSTER_STOP_KEY = "cluster_stop_key"
 # not using the value anywhere but as default value for key.
 CLUSTER_STOP_VAL_ENABLE = "1"
 
+# Support Bundle Default Argument Values. [#650 PR]
+_tmp_dir = 'tmp'
+_sb_default_path = f'/{_tmp_dir}/cortx/support_bundle/'
+_sb_tar_name = 'ha'
+_sb_tmp_src = f'/{_tmp_dir}/cortx/ha/'
+
 class STATUSES(Enum):
     IN_PROGRESS = "InProgress"
     SUCCEEDED = "Succeeded"

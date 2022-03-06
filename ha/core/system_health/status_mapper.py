@@ -44,11 +44,14 @@ class StatusMapper:
     }
 
     EVENT_TO_SEVERITY_MAPPING = {
-        "starting": "informational",
-        "recovering": "informational",
-        "online": "informational",
-        "degraded": "informational",
-        "failed": "error"
+        "starting"    : "informational",
+        "recovering"  : "informational",
+        "online"      : "informational",
+        "degraded"    : "informational",
+        "repairing"   : "informational",
+        "repaired"    : "informational",
+        "rebalancing" : "informational",
+        "failed"      : "error"
     }
 
     def __init__(self):
