@@ -29,7 +29,7 @@ if __name__ == "__main__":
         ConfigManager.init("test_conf_store_search_api")
         cluster_card  = ConftStoreSearch()
 
-        print("******** Testing confstore search APIs for data and server PODs ********")
+        print("\n******** Testing confstore search APIs for data and server PODs ********\n")
         cluster_card.set_cluster_cardinality("cortx")
         cc = cluster_card.get_cluster_cardinality()
         print(f"Following clsuter cardinality is set: {cc}")
@@ -37,13 +37,13 @@ if __name__ == "__main__":
         print("\n\n**************   Testing confstore APIs for CVG & disk  ***********\n")
         node_id = cluster_card._get_data_pods("cortx")[0]
 
-        cvg_list = cluster_card.get_cvg_list("cortx", node_id)
+        cvg_list = ConftStoreSearch.get_cvg_list("cortx", node_id)
         print(f"\nCVGs present under node {node_id} are : ", cvg_list)
 
-        disk_list = cluster_card.get_disk_list("cortx", node_id)
+        disk_list = ConftStoreSearch.get_disk_list("cortx", node_id)
         print(f"\nDisks present under node {node_id} are : ", disk_list)
 
-        disk_list_per_cvg = cluster_card.get_disk_list_for_cvg("cortx", node_id, cvg_id=cvg_list[0])
+        disk_list_per_cvg = ConftStoreSearch.get_disk_list_for_cvg("cortx", node_id, cvg_id=cvg_list[0])
         print(f"\nDisk present under node {node_id} & CVG {cvg_list[0]} are : ", disk_list_per_cvg)
 
     except Exception as e:
