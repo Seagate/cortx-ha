@@ -360,7 +360,7 @@ class EventManager:
         except Exception as e:
             raise UnSubscribeException(f"Failed to unsubscribe {component}. Error: {e}")
 
-    def get_events(self, component : SUBSCRIPTION_LIST) -> list:
+    def get_events(self, component: SUBSCRIPTION_LIST) -> list:
         """
         It returns list of registered events by the requested component.
 
@@ -395,7 +395,7 @@ class EventManager:
             component_list = []
             # Run through list of components subscribed for this event and send event to each of them
             component_list_key = EVENT_MANAGER_KEYS.EVENT_KEY.value.replace(
-                "<resource>", event[EventAttr.EVENT_PAYLOAD][HealthAttr.RESOURCE_TYPE]).replace("<state>", event[EventAttr.EVENT_PAYLOAD][Healthattr.RESOURCE_STATUS])
+                "<resource>", event[EventAttr.EVENT_PAYLOAD][HealthAttr.RESOURCE_TYPE]).replace("<state>", event[EventAttr.EVENT_PAYLOAD][HealthAttr.RESOURCE_STATUS])
             component_list_key_val = self._confstore.get(component_list_key)
             if component_list_key_val:
                 _, value = component_list_key_val.popitem()

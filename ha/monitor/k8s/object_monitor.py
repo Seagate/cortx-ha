@@ -27,9 +27,6 @@ from ha.monitor.k8s.const import EventStates, K8SClientConst
 from ha.monitor.k8s.const import K8SEventsConst
 from cortx.utils.log import Log
 from ha import const
-from cortx.utils.event_framework.health import HealthAttr
-from cortx.utils.event_framework.event import EventAttr
-
 
 
 class ObjectMonitor(threading.Thread):
@@ -160,7 +157,7 @@ class ObjectMonitor(threading.Thread):
                     continue
                 if self._starting_up:
                     if an_event[K8SEventsConst.TYPE] == EventStates.ADDED:
-                        spec_info = {'is_status' : True}
+                        spec_info = {'is_status': True}
                         event.set_specific_info(spec_info)
                         alert = event.json
                     else:

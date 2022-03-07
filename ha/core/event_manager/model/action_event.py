@@ -16,6 +16,7 @@
 # cortx-questions@seagate.com.
 
 from ha.core.system_health.model.health_event import HealthEvent
+from cortx.utils.event_framework.health import HealthAttr, HealthEvent as HEvent
 
 class RecoveryActionEvent:
     """
@@ -27,7 +28,6 @@ class RecoveryActionEvent:
         """
         Init method.
         """
-        from cortx.utils.event_framework.health import HealthAttr, HealthEvent as HEvent
         payload = {
             HealthAttr.SOURCE: healthevent.source,
             HealthAttr.CLUSTER_ID: healthevent.cluster_id,
