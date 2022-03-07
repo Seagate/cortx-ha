@@ -27,12 +27,11 @@ import json
 import time
 
 from cortx.utils.conf_store import Conf
+from cortx.utils.event_framework.health import HealthAttr, HealthEvent
 from ha.util.conf_store import ConftStoreSearch
 from ha.core.config.config_manager import ConfigManager
 from ha import const
 from ha.util.message_bus import MessageBus
-from ha.fault_tolerance.event import Event
-from ha.fault_tolerance.const import HEALTH_ATTRIBUTES
 from ha.core.system_health.const import HEALTH_STATUSES
 
 docker_env_file = '/.dockerenv'
@@ -138,22 +137,21 @@ def publish(args, conf_store: ConftStoreSearch = None) -> None:
                             break
                     if status_supported is False:
                         raise Exception(f'Invalid resource_status: {resource_status}')
-                    health_event = Event()
                     payload = {
-                        HEALTH_ATTRIBUTES.SOURCE.value : value[_source_key],
-                        HEALTH_ATTRIBUTES.CLUSTER_ID.value : cluster_id,
-                        HEALTH_ATTRIBUTES.SITE_ID.value : site_id,
-                        HEALTH_ATTRIBUTES.RACK_ID.value : rack_id,
-                        HEALTH_ATTRIBUTES.STORAGESET_ID.value : storageset_id,
-                        HEALTH_ATTRIBUTES.NODE_ID.value : value[_node_id_key],
-                        HEALTH_ATTRIBUTES.RESOURCE_TYPE.value : resource_type,
-                        HEALTH_ATTRIBUTES.RESOURCE_ID.value : value[_resource_id_key],
-                        HEALTH_ATTRIBUTES.RESOURCE_STATUS.value : resource_status,
-                        HEALTH_ATTRIBUTES.SPECIFIC_INFO.value : value[_specific_info_key]
+                        f'{HealthAttr.SOURCE}': value[_source_key],
+                        f'{HealthAttr.CLUSTER_ID}': cluster_id,
+                        f'{HealthAttr.SITE_ID}': site_id,
+                        f'{HealthAttr.RACK_ID}': rack_id,
+                        f'{HealthAttr.STORAGESET_ID}': storageset_id,
+                        f'{HealthAttr.NODE_ID}': value[_node_id_key],
+                        f'{HealthAttr.RESOURCE_TYPE}': resource_type,
+                        f'{HealthAttr.RESOURCE_ID}': value[_resource_id_key],
+                        f'{HealthAttr.RESOURCE_STATUS}': resource_status
                     }
-                    health_event.set_payload(payload)
-                    print(f"Publishing health event {health_event.ret_dict()}")
-                    message_producer.publish(health_event.ret_dict())
+                    health_event = HealthEvent(**payload)
+                    health_event.set_specific_info(value[_specific_info_key])
+                    print(f"Publishing health event {health_event.json}")
+                    message_producer.publish(health_event.json)
                     if _delay_key in events_dict.keys():
                         print(f"Sleeping for {events_dict[_delay_key]} seconds")
                         time.sleep(events_dict[_delay_key])
