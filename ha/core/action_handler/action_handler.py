@@ -193,3 +193,102 @@ class NodeActionHandler(ActionHandler):
         Log.info("Handling node offline event.")
         if publish:
             self.publish_event(event)
+
+class CVGActionHandler(ActionHandler):
+    """
+    CVG action handler
+    """
+
+    def __init__(self):
+        super().__init__()
+
+    def act(self, event: HealthEvent, action: list) -> None:
+        """
+        act on the event handled in default action handler
+        Args:
+            event (HealthEvent): HealthEvent object
+            action (list): Actions list.
+
+        Returns:
+            None
+        """
+        if HEALTH_MON_ACTIONS.PUBLISH_ACT.value in action:
+            self.publish_event(event)
+
+    def on_online(self, event: HealthEvent, publish: bool) -> None:
+        """
+        on online event handle
+        Args:
+            event (HealthEvent): HealthEvent object
+            publish (bool): publish bool variable
+
+        Returns:
+            None
+        """
+        Log.info("Handling node online event.")
+        if publish:
+            self.publish_event(event)
+
+    def on_offline(self, event: HealthEvent, publish: bool) -> None:
+        """
+        on offline event handle
+        Args:
+            event (HealthEvent): HealthEvent object
+            publish (bool): publish bool variable
+
+        Returns:
+            None
+        """
+        Log.info("Handling node offline event.")
+        if publish:
+            self.publish_event(event)
+
+class DiskActionHandler(ActionHandler):
+    """
+    Disk action handler
+    """
+
+    def __init__(self):
+        super().__init__()
+
+    def act(self, event: HealthEvent, action: list) -> None:
+        """
+        act on the event handled in default action handler
+        Args:
+            event (HealthEvent): HealthEvent object
+            action (list): Actions list.
+
+        Returns:
+            None
+        """
+        if HEALTH_MON_ACTIONS.PUBLISH_ACT.value in action:
+            self.publish_event(event)
+
+    def on_online(self, event: HealthEvent, publish: bool) -> None:
+        """
+        on online event handle
+        Args:
+            event (HealthEvent): HealthEvent object
+            publish (bool): publish bool variable
+
+        Returns:
+            None
+        """
+        Log.info("Handling node online event.")
+        if publish:
+            self.publish_event(event)
+
+    def on_offline(self, event: HealthEvent, publish: bool) -> None:
+        """
+        on offline event handle
+        Args:
+            event (HealthEvent): HealthEvent object
+            publish (bool): publish bool variable
+
+        Returns:
+            None
+        """
+        Log.info("Handling node offline event.")
+        if publish:
+            self.publish_event(event)
+
