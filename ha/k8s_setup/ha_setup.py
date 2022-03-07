@@ -229,7 +229,7 @@ class ConfigCmd(Cmd):
                                               'consumer_id' : '1'},
                          'CLUSTER_STOP_MON' : {'message_type' : 'cluster_stop', 'consumer_group' : 'cluster_mon',
                                               'consumer_id' : '2'},
-                         'NODE': {'resource_type': 'node'},
+                         'CLUSTER': {'resource_type': ['node', 'disk', 'cvg']},
                          'SYSTEM_HEALTH' : {'num_entity_health_events' : 2}
                          }
 
@@ -269,6 +269,10 @@ class ConfigCmd(Cmd):
             event_manager.subscribe(const.EVENT_COMPONENT, [SubscribeEvent(const.POD_EVENT, ["online", "failed"])])
             Log.info(f'event_manager subscription for {const.EVENT_COMPONENT}\
                        is successful for the event {const.POD_EVENT}')
+            event_manager.subscribe(const.EVENT_COMPONENT, [SubscribeEvent(const.DISK_EVENT, ["online", "failed"])])
+            Log.info(f'event_manager subscription for {const.EVENT_COMPONENT}\
+                       is successful for the event {const.DISK_EVENT}')
+
 
             Log.info('Creating cluster cardinality')
             self._confStoreAPI = ConftStoreSearch()
