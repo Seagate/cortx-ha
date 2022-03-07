@@ -71,15 +71,7 @@ def get_disks(args: argparse.Namespace, conf_store: ConftStoreSearch = None) -> 
     conf_store: ConftStoreSearch object
     node_id: machine_id value
     """
-    # TODO: This is temporary code till this is available in HA.
-    node_id = args.node_id
-    num_of_cvgs = Conf.get(_index, f'node>{node_id}>storage>num_cvg')
-    disk_ids = []
-    for cvg in range(num_of_cvgs):
-        num_of_data_disks = Conf.get(_index, f'node>{node_id}>storage>cvg[{cvg}]>devices>num_data')
-        num_of_metadata_disks = Conf.get(_index, f'node>{node_id}>storage>cvg[{cvg}]>devices>num_metadata')
-        [ disk_ids.append(Conf.get(_index, f'node>{node_id}>storage>cvg[{cvg}]>devices>data[{dt_disk}]')) for dt_disk in range(num_of_data_disks)]
-        [ disk_ids.append(Conf.get(_index, f'node>{node_id}>storage>cvg[{cvg}]>devices>metadata[{md_disk}]')) for md_disk in range(num_of_metadata_disks)]
+    disk_ids = ConftStoreSearch.get_disk_list(_index, args.node_id)
     print(disk_ids)
 
 def get_cvgs(args: argparse.Namespace, conf_store: ConftStoreSearch = None) -> None:
@@ -90,10 +82,8 @@ def get_cvgs(args: argparse.Namespace, conf_store: ConftStoreSearch = None) -> N
     conf_store: ConftStoreSearch object
     node_id: machine_id value
     """
-    node_id = args.node_id
-    # TODO: This is temporary code till this is available in HA.
-    cvg_count = Conf.get(_index, f'node>{node_id}>storage>num_cvg')
-    print([Conf.get(_index, f'node>{node_id}>storage>cvg[{cvg}]>name') for cvg in range(cvg_count)])
+    cvg_ids = ConftStoreSearch.get_cvg_list(_index, args.node_id)
+    print(cvg_ids)
 
 def publish(args: argparse.Namespace, conf_store: ConftStoreSearch = None) -> None:
     """
