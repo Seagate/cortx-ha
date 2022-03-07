@@ -4,7 +4,7 @@ This python script can be used for feeding mock health events to HA.
 
 # Usage
 
-usage: health_event_publisher [options]
+usage: ./mock_health_event_publisher.py [options]
 
 Helps in publishing the mock health event
 
@@ -21,6 +21,16 @@ optional arguments:
                         Get the list of data node ids
   -gs, --get-server-nodes
                         Get the list of server node ids
+
+Examples:
+[root@cortx-ha-headless-svc /]# ./mock_health_event_publisher.py -gs
+['658d34feae294a6197ec9f309dc846ef', '6b02f685e28e42ad92f1ebb434880ba8', '91c189443a6f48fcb395f9f9cac5447f']
+
+[root@cortx-ha-headless-svc /]# ./mock_health_event_publisher.py -gdt
+['6137d2e098354433a3b743ccc7737577', 'c6f34f1f5d144c4ba96463c304257ee8', 'fa583cf2324c49ec88d5557e6cdbd24a']
+
+[root@cortx-ha-headless-svc /]# ./mock_health_event_publisher.py publish -f config.json
+Publishing health event {'event': {'header': {'version': '1.0', 'timestamp': '1646628899', 'event_id': '1646628899df6b3f53931b4a209cea0da3a92d00ec'}, 'payload': {'source': 'hare', 'cluster_id': '30a58c57a8ca4c2abd55ba857bf5f026', 'site_id': '1', 'rack_id': '1', 'storageset_id': '1', 'node_id': '658d34feae294a6197ec9f309dc846ef', 'resource_type': 'node', 'resource_id': '658d34feae294a6197ec9f309dc846ef', 'resource_status': 'online', 'specific_info': {}}}}
 
 # Config file
 
@@ -40,3 +50,6 @@ The config file is a json file with following format:
     },
     "delay": xxxx # If present this will add delay of specified seconds between the events.
 }
+
+# Restrictions
+1. This script needs to be executed inside HA container.

@@ -15,8 +15,7 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-"""
-Module helps in generating the mock health event and publishing it to the
+"""Module helps in generating the mock health event and publishing it to the
 message bus.
 """
 
@@ -34,6 +33,7 @@ from ha import const
 from ha.util.message_bus import MessageBus
 from ha.fault_tolerance.event import Event
 from ha.fault_tolerance.const import HEALTH_ATTRIBUTES
+from ha.core.system_health.const import HEALTH_STATUSES
 
 docker_env_file = '/.dockerenv'
 _index = 'cortx'
@@ -127,10 +127,16 @@ def publish(args, conf_store: ConftStoreSearch = None) -> None:
                 storageset_id = '1' # TODO: Read from config when available.
                 for _, value in events_dict[_events_key].items():
                     resource_type = value[_resource_type_key]
-                    if resource_type not in ['node', 'cvg', 'disk']:
+                    resource_type_list = Conf.get(const.HA_GLOBAL_INDEX, f"CLUSTER{const._DELIM}resource_type")
+                    if resource_type not in resource_type_list:
                         raise Exception(f'Invalid resource_type: {resource_type}')
                     resource_status = value[_resource_status_key]
-                    if resource_status not in ['recovering', 'online', 'failed', 'unknown', 'degraded', 'repairing', 'repaired', 'rebalancing', 'offline']:
+                    status_supported = False
+                    for status in list(HEALTH_STATUSES):
+                        if resource_status == status.value:
+                            status_supported = True
+                            break
+                    if status_supported is False:
                         raise Exception(f'Invalid resource_status: {resource_status}')
                     health_event = Event()
                     payload = {
