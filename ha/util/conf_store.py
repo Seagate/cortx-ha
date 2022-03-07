@@ -26,19 +26,9 @@ from cortx.utils.conf_store import Conf
 from cortx.utils.cortx.const import Const
 from ha.core.config.config_manager import ConfigManager
 from ha.k8s_setup.const import CLUSTER_CARDINALITY_KEY, CLUSTER_CARDINALITY_NUM_NODES, CLUSTER_CARDINALITY_LIST_NODES
-from ha.k8s_setup.const import NODE_CONST, SERVICE_CONST
+from ha.k8s_setup.const import _DELIM, GconfKeys
 from cortx.utils.log import Log
 from ha.core.error import ClusterCardinalityError
-
-
-# Confstore keys
-class GconfKeys(enum.Enum):
-    CVG_NAME = "node>{node_id}>storage>cvg[{cvg_index}]>name"
-    CVG_COUNT = "node>{node_id}>storage>num_cvg"
-    DATA_COUNT = "node>{node_id}>storage>cvg[{cvg_index}]>devices>num_data"
-    METADATA_COUNT = "node>{node_id}>storage>cvg[{cvg_index}]>devices>num_metadata"
-    DATA_DISK = "node>{node_id}>storage>cvg[{cvg_index}]>devices>data[{d_index}]"
-    METADATA_DISK = "node>{node_id}>storage>cvg[{cvg_index}]>devices>metadata[{m_index}]"
 
 
 class ConftStoreSearch:
@@ -60,7 +50,7 @@ class ConftStoreSearch:
         # ['node>5f3dc3a153454a918277ee4a2c57f36b>components[1]>services[0]',
         # 'node>6203a14bde204e8ea798ad9d42583fb5>components[1]>services[0]', 'node>8cc8b13101e34b3ca1e51ed6e3228d5b>components[1]>services[0]']
 
-        data_pod_keys = Conf.search(index, NODE_CONST, SERVICE_CONST, Const.SERVICE_MOTR_IO.value)
+        data_pod_keys = Conf.search(index, GconfKeys.NODE_CONST.value, GconfKeys.SERVICE_CONST.value, Const.SERVICE_MOTR_IO.value)
         for key in data_pod_keys:
             machine_id = key.split('>')[1]
             # Add machine id to list
@@ -72,7 +62,7 @@ class ConftStoreSearch:
         Get machine ids for server pods: returns list of machine ids.
         """
         machine_ids = []
-        server_pod_keys = Conf.search(index, NODE_CONST, SERVICE_CONST, Const.SERVICE_S3_HAPROXY.value)
+        server_pod_keys = Conf.search(index, GconfKeys.NODE_CONST.value, GconfKeys.SERVICE_CONST.value, Const.SERVICE_S3_HAPROXY.value)
         for key in server_pod_keys:
             machine_id = key.split('>')[1]
             # Add machine id to list
@@ -123,6 +113,13 @@ class ConftStoreSearch:
         self._confstore.update(cluster_cardinality_key, json.dumps(cluster_cardinality_value))
 
     @staticmethod
+    def _get_cvg_count(index, node_id):
+        cvg_count = Conf.get(index, GconfKeys.CVG_COUNT.value.format(_DELIM=_DELIM, node_id=node_id))
+        if not cvg_count:
+            Log.warn(f"CVGs are not available for this node {node_id}")
+        return cvg_count
+
+    @staticmethod
     def get_cvg_list(index, node_id):
         """
         Return list of CVG's for any given node.
@@ -137,15 +134,36 @@ class ConftStoreSearch:
         """
         cvg_list = []
         try:
-            cvg_count = Conf.get(index, GconfKeys.CVG_COUNT.value.format(node_id=node_id))
-            if cvg_count is None:
-                raise Exception(f"CVGs are not available for this node {node_id}")
-            cvg_list = [Conf.get(index, GconfKeys.CVG_NAME.value.format
-                                 (node_id=node_id, cvg_index=cvg_index)) for cvg_index in range(cvg_count)]
+            cvg_count = ConftStoreSearch._get_cvg_count(index, node_id)
+            if cvg_count:
+                cvg_list = [Conf.get(index, GconfKeys.CVG_NAME.value.format
+                                     (_DELIM=_DELIM, node_id=node_id, cvg_index=cvg_index)) for cvg_index in range(cvg_count)]
             return cvg_list
         except Exception as e:
             Log.error(f"Unable to fetch CVG list from GConf. Error {e}")
             raise Exception(f"Unable to fetch CVG list. Error {e}")
+
+    @staticmethod
+    def _get_data_disks(index, node_id, cvg_index):
+        disk_list = []
+        num_of_data_disks = Conf.get(index, GconfKeys.DATA_COUNT.value.format
+                                     (_DELIM=_DELIM, node_id=node_id, cvg_index=cvg_index))
+        if num_of_data_disks:
+            for d_index in range(num_of_data_disks):
+                disk_list.append(Conf.get(index, GconfKeys.DATA_DISK.value.format
+                                          (_DELIM=_DELIM, node_id=node_id, cvg_index=cvg_index, d_index=d_index)))
+        return disk_list
+
+    @staticmethod
+    def _get_metadata_disks(index, node_id, cvg_index):
+        mdisk_list = []
+        num_of_metadata_disks = Conf.get(index, GconfKeys.METADATA_COUNT.value.format
+                                         (_DELIM=_DELIM, node_id=node_id, cvg_index=cvg_index))
+        if num_of_metadata_disks:
+            for m_index in range(num_of_metadata_disks):
+                mdisk_list.append(Conf.get(index, GconfKeys.METADATA_DISK.value.format
+                                           (_DELIM=_DELIM, node_id=node_id, cvg_index=cvg_index, m_index=m_index)))
+        return mdisk_list
 
     @staticmethod
     def get_disk_list(index, node_id):
@@ -162,20 +180,13 @@ class ConftStoreSearch:
         """
         disk_list = []
         try:
-            cvg_count = Conf.get(index, GconfKeys.CVG_COUNT.value.format(node_id=node_id))
-            if cvg_count is None:
-                raise Exception(f"CVGs are not available for this node {node_id}")
-            for cvg_index in range(cvg_count):
-                num_of_data_disks = Conf.get(index, GconfKeys.DATA_COUNT.value.format(node_id=node_id, cvg_index=cvg_index))
-                if num_of_data_disks:
-                    for d_index in range(num_of_data_disks):
-                        disk_list.append(Conf.get(index, GconfKeys.DATA_DISK.value.
-                                                  format(node_id=node_id, cvg_index=cvg_index, d_index=d_index)))
-                num_of_metadata_disks = Conf.get(index, GconfKeys.METADATA_COUNT.value.format(node_id=node_id, cvg_index=cvg_index))
-                if num_of_metadata_disks:
-                    for m_index in range(num_of_metadata_disks):
-                        disk_list.append(Conf.get(index, GconfKeys.METADATA_DISK.value.
-                                                  format(node_id=node_id, cvg_index=cvg_index, m_index=m_index)))
+            cvg_count = ConftStoreSearch._get_cvg_count(index, node_id)
+            if cvg_count:
+                for cvg_index in range(cvg_count):
+                    for disk in ConftStoreSearch._get_data_disks(index, node_id, cvg_index):
+                        disk_list.append(disk)
+                    for mdisk in ConftStoreSearch._get_metadata_disks(index, node_id, cvg_index):
+                        disk_list.append(mdisk)
             return disk_list
         except Exception as e:
             Log.error(f"Unable to fetch Disk list from GConf. Error {e}")
@@ -200,16 +211,10 @@ class ConftStoreSearch:
             cvg_list = ConftStoreSearch.get_cvg_list(index, node_id)
             if cvg_id in cvg_list:
                 cvg_index = cvg_list.index(cvg_id)
-                num_of_data_disks = Conf.get(index, GconfKeys.DATA_COUNT.value.format(node_id=node_id, cvg_index=cvg_index))
-                if num_of_data_disks:
-                    for d_index in range(num_of_data_disks):
-                        disk_list.append(Conf.get(index, GconfKeys.DATA_DISK.value.
-                                                  format(node_id=node_id, cvg_index=cvg_index, d_index=d_index)))
-                num_of_metadata_disks = Conf.get(index, GconfKeys.METADATA_COUNT.value.format(node_id=node_id, cvg_index=cvg_index))
-                if num_of_metadata_disks:
-                    for m_index in range(num_of_metadata_disks):
-                        disk_list.append(Conf.get(index, GconfKeys.METADATA_DISK.value.
-                                                  format(node_id=node_id, cvg_index=cvg_index, m_index=m_index)))
+                for disk in ConftStoreSearch._get_data_disks(index, node_id, cvg_index):
+                    disk_list.append(disk)
+                for mdisk in ConftStoreSearch._get_metadata_disks(index, node_id, cvg_index):
+                    disk_list.append(mdisk)
             return disk_list
         except Exception as e:
             Log.error(f"Unable to fetch Disk list from GConf. Error {e}")
