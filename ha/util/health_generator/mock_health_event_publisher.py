@@ -39,7 +39,7 @@ def is_container_env() -> bool:
         return True
     return False
 
-def get_data_nodes(conf_store: ConftStoreSearch = None) -> list:
+def get_data_nodes() -> list:
     """
     Fetches data node ids using HA wrapper class and displays the result.
 
@@ -48,10 +48,10 @@ def get_data_nodes(conf_store: ConftStoreSearch = None) -> list:
 
     Returns: list of node ids
     """
-    data_node_ids = conf_store.get_data_pods(_index)
+    data_node_ids = ConftStoreSearch.get_data_pods(_index)
     return data_node_ids
 
-def get_server_nodes(conf_store: ConftStoreSearch = None) -> list:
+def get_server_nodes() -> list:
     """
     Fetches server node ids using HA wrapper class and displays the result.
 
@@ -60,10 +60,10 @@ def get_server_nodes(conf_store: ConftStoreSearch = None) -> list:
 
     Returns: list of node ids
     """
-    server_node_ids = conf_store.get_server_pods(_index)
+    server_node_ids = ConftStoreSearch.get_server_pods(_index)
     return server_node_ids
 
-def get_disks(args: argparse.Namespace, conf_store: ConftStoreSearch = None) -> None:
+def get_disks(args: argparse.Namespace) -> None:
     """
     Fetches disk ids using ConfStore search API and displays the result.
 
@@ -74,7 +74,7 @@ def get_disks(args: argparse.Namespace, conf_store: ConftStoreSearch = None) -> 
     disk_ids = ConftStoreSearch.get_disk_list(_index, args.node_id)
     print(disk_ids)
 
-def get_cvgs(args: argparse.Namespace, conf_store: ConftStoreSearch = None) -> None:
+def get_cvgs(args: argparse.Namespace) -> None:
     """
     Fetches cvg ids using ConfStore search API and displays the result.
 
@@ -85,7 +85,7 @@ def get_cvgs(args: argparse.Namespace, conf_store: ConftStoreSearch = None) -> N
     cvg_ids = ConftStoreSearch.get_cvg_list(_index, args.node_id)
     print(cvg_ids)
 
-def publish(args: argparse.Namespace, conf_store: ConftStoreSearch = None) -> None:
+def publish(args: argparse.Namespace) -> None:
     """
     publishes the message on the message bus.
 
@@ -144,7 +144,7 @@ if __name__ == '__main__':
     Conf.load(_index, file_to_load)
     _conf_store = ConftStoreSearch(conf_store_req=False)
 
-    data_node_ids = get_data_nodes(conf_store=_conf_store)
+    data_node_ids = get_data_nodes()
 
     if len(sys.argv) > 1:
         option = sys.argv[1]
@@ -157,7 +157,7 @@ if __name__ == '__main__':
             print(f'Required data is not supported for given node_id: {args.node_id}. \
                     Please check supported node ids list: {data_node_ids}')
             sys.exit(1)
-        args.handler(args, conf_store=_conf_store)
+        args.handler(args)
     else:
-        print(FUNCTION_MAP[option](conf_store=_conf_store))
+        print(FUNCTION_MAP[option]())
 
