@@ -19,7 +19,6 @@
 Wrappeprs for using the search APIs from conf store
 """
 
-import enum
 import json
 
 from cortx.utils.conf_store import Conf
