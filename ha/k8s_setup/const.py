@@ -29,6 +29,7 @@ consul_scheme = 'http'
 
 # Event_manager keys
 POD_EVENT="node"
+DISK_EVENT="disk"
 EVENT_COMPONENT="hare"
 
 # confStore search API constants
