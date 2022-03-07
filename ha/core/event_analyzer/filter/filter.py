@@ -192,8 +192,8 @@ class ClusterResourceFilter(Filter):
             Log.debug('Received alert from fault tolerance')
             event_resource_type = message.get(EventAttr.EVENT_PAYLOAD.value).get(HealthAttr.RESOURCE_TYPE.value)
 
-            required_resource_type = Conf.get(const.HA_GLOBAL_INDEX, f"NODE{_DELIM}resource_type")
-            if event_resource_type == required_resource_type:
+            required_resource_type_list = Conf.get(const.HA_GLOBAL_INDEX, f"CLUSTER{_DELIM}resource_type")
+            if event_resource_type in required_resource_type_list:
                 resource_alert_required = True
                 Log.info(f'This alert needs an attention: resource_type: {event_resource_type}')
             return resource_alert_required

@@ -15,13 +15,15 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
 from ha.core.action_handler.error import HAActionHandlerError
-from ha.core.action_handler.action_handler import ActionHandler, NodeActionHandler, DefaultActionHandler
+from ha.core.action_handler.action_handler import ActionHandler, NodeActionHandler, DefaultActionHandler, CVGActionHandler, DiskActionHandler
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.health_monitor.const import HEALTH_MON_ACTIONS
 from ha.core.health_monitor.error import InvalidAction
 
 EVENT_ACTION_HANDLERS_MAPPING = {
-    "node": NodeActionHandler
+    "node": NodeActionHandler,
+    "cvg": CVGActionHandler,
+    "disk": DiskActionHandler
 }
 
 class ActionFactory:
