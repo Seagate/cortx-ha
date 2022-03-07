@@ -15,9 +15,11 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
+
 """Module helps in generating the mock health event and publishing it to the
 message bus.
 """
+
 
 import argparse
 import sys
