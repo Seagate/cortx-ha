@@ -30,11 +30,11 @@ from cortx.utils.event_framework.health import HealthAttr, HealthEvent
 
 class ObjectParser:
     def __init__(self):
-        self.payload = {HealthAttr.SOURCE: HEALTH_EVENT_SOURCES.MONITOR.value, \
-                    HealthAttr.CLUSTER_ID: None, HealthAttr.SITE_ID: None, \
-                    HealthAttr.RACK_ID: None, HealthAttr.STORAGESET_ID: None, \
-                    HealthAttr.NODE_ID: None, HealthAttr.RESOURCE_TYPE: None, \
-                    HealthAttr.RESOURCE_ID: None, HealthAttr.RESOURCE_STATUS: None, \
+        self.payload = {HealthAttr.SOURCE: HEALTH_EVENT_SOURCES.MONITOR.value,
+                    HealthAttr.CLUSTER_ID: None, HealthAttr.SITE_ID: None,
+                    HealthAttr.RACK_ID: None, HealthAttr.STORAGESET_ID: None,
+                    HealthAttr.NODE_ID: None, HealthAttr.RESOURCE_TYPE: None,
+                    HealthAttr.RESOURCE_ID: None, HealthAttr.RESOURCE_STATUS: None,
                     HealthAttr.SPECIFIC_INFO.value: {}}
 
     def parse(self, an_event, cached_state):
@@ -222,4 +222,3 @@ class EventParser:
             return object_event_parser.parse(an_event, cached_state)
 
         raise NotSupportedObjectError(f"object = {k_object}")
-
