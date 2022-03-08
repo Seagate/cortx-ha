@@ -40,7 +40,7 @@ class RecoveryActionEvent:
             HealthAttr.RESOURCE_STATUS.value: healthevent.event_type
         }
         self.event = HEvent(**payload)
-        self.event.set_specific_info({HealthAttr.SPECIFIC_INFO: healthevent.specific_info})
+        self.event.set_specific_info({HealthAttr.SPECIFIC_INFO.value: healthevent.specific_info})
 
     def get_event(self):
         return self.event
