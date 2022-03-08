@@ -66,7 +66,7 @@ def get_data_files() -> list:
 
 
 def get_packages() -> list:
-    ignore_list = ['pcswrap', 'test', '__pycache__']
+    ignore_list = ['health_generator', 'pcswrap', 'test', '__pycache__']
     packages = ['ha']
     package_root = 'ha'
     for root, directories, _ in os.walk(package_root):
