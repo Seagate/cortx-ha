@@ -157,7 +157,7 @@ class ObjectMonitor(threading.Thread):
                     continue
                 if self._starting_up:
                     if an_event[K8SEventsConst.TYPE] == EventStates.ADDED:
-                        spec_info = {'is_status': True}
+                        spec_info = {'is_status': 'True'}
                         event.set_specific_info(spec_info)
                         alert = event.json
                     else:

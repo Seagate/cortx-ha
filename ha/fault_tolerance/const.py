@@ -26,3 +26,5 @@ class HEALTH_EVENT_SOURCES(enum.Enum, metaclass=EnumListMeta):
 class FAULT_TOLERANCE_KEYS(enum.Enum, metaclass=EnumListMeta):
     HARE_HA_MESSAGE_TYPE = 'cortx_health_events'
     MONITOR_HA_MESSAGE_TYPE = 'cortx_health_events'
+
+NOT_DEFINED = '0xBAADFOOD'

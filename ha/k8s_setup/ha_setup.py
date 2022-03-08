@@ -40,7 +40,7 @@ from ha.core.event_manager.subscribe_event import SubscribeEvent
 from ha.util.conf_store import ConftStoreSearch
 from ha.core.system_health.const import CLUSTER_ELEMENTS, HEALTH_EVENTS, EVENT_SEVERITIES
 from ha.const import EVENT_ATTRIBUTES
-from ha.fault_tolerance.const import FAULT_TOLERANCE_KEYS, HEALTH_EVENT_SOURCES
+from ha.fault_tolerance.const import FAULT_TOLERANCE_KEYS, HEALTH_EVENT_SOURCES, NOT_DEFINED
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.system_health.system_health import SystemHealth
 
@@ -229,7 +229,7 @@ class ConfigCmd(Cmd):
                                               'consumer_id' : '1'},
                          'CLUSTER_STOP_MON' : {'message_type' : 'cluster_stop', 'consumer_group' : 'cluster_mon',
                                               'consumer_id' : '2'},
-                         'NODE': {'resource_type': 'node'},
+                         'CLUSTER': {'resource_type': ['node', 'disk', 'cvg']},
                          'SYSTEM_HEALTH' : {'num_entity_health_events' : 2}
                          }
 
@@ -252,10 +252,10 @@ class ConfigCmd(Cmd):
             # So, to get the cluster_id field from Confstore, we need machine_id
             self._cluster_id = Conf.get(self._index, f'node{_DELIM}{machine_id}{_DELIM}cluster_id')
             # site_id = Conf.get(self._index, f'node{_DELIM}{machine_id}{_DELIM}site_id')
-            self._site_id = '1'
+            self._site_id = NOT_DEFINED
             # rack_id = Conf.get(self._index, f'node{_DELIM}{machine_id}{_DELIM}rack_id')
-            self._rack_id = '1'
-            self._storageset_id = '1'
+            self._rack_id = NOT_DEFINED
+            self._storageset_id = NOT_DEFINED
             conf_file_dict.update({'COMMON_CONFIG': {'cluster_id': self._cluster_id, 'rack_id': self._rack_id, 'site_id': self._site_id}})
             # TODO: Verify whether these newly added config is avilable in the confstore or not
             with open(const.HA_CONFIG_FILE, 'w+') as conf_file:
@@ -269,6 +269,10 @@ class ConfigCmd(Cmd):
             event_manager.subscribe(const.EVENT_COMPONENT, [SubscribeEvent(const.POD_EVENT, ["online", "failed"])])
             Log.info(f'event_manager subscription for {const.EVENT_COMPONENT}\
                        is successful for the event {const.POD_EVENT}')
+            event_manager.subscribe(const.EVENT_COMPONENT, [SubscribeEvent(const.DISK_EVENT, ["online", "failed"])])
+            Log.info(f'event_manager subscription for {const.EVENT_COMPONENT}\
+                       is successful for the event {const.DISK_EVENT}')
+
 
             Log.info('Creating cluster cardinality')
             self._confStoreAPI = ConftStoreSearch()

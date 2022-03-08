@@ -395,13 +395,13 @@ class EventManager:
             component_list = []
             # Run through list of components subscribed for this event and send event to each of them
             component_list_key = EVENT_MANAGER_KEYS.EVENT_KEY.value.replace(
-                "<resource>", event[EventAttr.EVENT_PAYLOAD][HealthAttr.RESOURCE_TYPE]).replace("<state>", event[EventAttr.EVENT_PAYLOAD][HealthAttr.RESOURCE_STATUS])
+                "<resource>", event[EventAttr.EVENT_PAYLOAD.value][HealthAttr.RESOURCE_TYPE.value]).replace("<state>", event[EventAttr.EVENT_PAYLOAD.value][HealthAttr.RESOURCE_STATUS.value])
             component_list_key_val = self._confstore.get(component_list_key)
             if component_list_key_val:
                 _, value = component_list_key_val.popitem()
                 component_list = json.loads(value)
             for component in component_list:
-                if component != event[EventAttr.EVENT_PAYLOAD][HealthAttr.SOURCE]:
+                if component != event[EventAttr.EVENT_PAYLOAD.value][HealthAttr.SOURCE.value]:
                     message_producer = self._get_producer(component)
                     event_to_send = event.json
                     Log.info(f"Sending action event {event_to_send} to component {component}")

@@ -180,16 +180,16 @@ class ClusterResourceParser(Parser):
         try:
             message = json.dumps(ast.literal_eval(msg))
             cluster_resource_alert = json.loads(message)
-            timestamp = cluster_resource_alert[EventAttr.EVENT_HEADER][HealthAttr.TIMESTAMP]
-            event_id = cluster_resource_alert[EventAttr.EVENT_HEADER][HealthAttr.EVENT_ID]
-            source = cluster_resource_alert[EventAttr.EVENT_PAYLOAD][HealthAttr.SOURCE]
-            node_id = cluster_resource_alert[EventAttr.EVENT_PAYLOAD][HealthAttr.NODE_ID]
-            resource_type = cluster_resource_alert[EventAttr.EVENT_PAYLOAD][HealthAttr.RESOURCE_TYPE]
-            resource_id = cluster_resource_alert[EventAttr.EVENT_PAYLOAD][HealthAttr.RESOURCE_ID]
-            event_type = cluster_resource_alert[EventAttr.EVENT_PAYLOAD][HealthAttr.RESOURCE_STATUS]
-            specific_info = cluster_resource_alert[EventAttr.EVENT_PAYLOAD][HealthAttr.SPECIFIC_INFO]
+            timestamp = cluster_resource_alert[EventAttr.EVENT_HEADER.value][EventAttr.TIMESTAMP.value]
+            event_id = cluster_resource_alert[EventAttr.EVENT_HEADER.value][EventAttr.EVENT_ID.value]
+            source = cluster_resource_alert[EventAttr.EVENT_PAYLOAD.value][HealthAttr.SOURCE.value]
+            node_id = cluster_resource_alert[EventAttr.EVENT_PAYLOAD.value][HealthAttr.NODE_ID.value]
+            resource_type = cluster_resource_alert[EventAttr.EVENT_PAYLOAD.value][HealthAttr.RESOURCE_TYPE.value]
+            resource_id = cluster_resource_alert[EventAttr.EVENT_PAYLOAD.value][HealthAttr.RESOURCE_ID.value]
+            event_type = cluster_resource_alert[EventAttr.EVENT_PAYLOAD.value][HealthAttr.RESOURCE_STATUS.value]
+            specific_info = cluster_resource_alert[EventAttr.EVENT_PAYLOAD.value][HealthAttr.SPECIFIC_INFO.value]
             if specific_info and specific_info["generation_id"] and source == HEALTH_EVENT_SOURCES.MONITOR.value:
-                generation_id = cluster_resource_alert[EventAttr.EVENT_PAYLOAD][HealthAttr.SPECIFIC_INFO]["generation_id"]
+                generation_id = cluster_resource_alert[EventAttr.EVENT_PAYLOAD.value][HealthAttr.SPECIFIC_INFO.value]["generation_id"]
                 specific_info = {"generation_id": generation_id, "pod_restart": 0}
 
             event = {

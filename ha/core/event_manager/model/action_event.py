@@ -29,15 +29,15 @@ class RecoveryActionEvent:
         Init method.
         """
         payload = {
-            HealthAttr.SOURCE: healthevent.source,
-            HealthAttr.CLUSTER_ID: healthevent.cluster_id,
-            HealthAttr.SITE_ID: healthevent.site_id,
-            HealthAttr.RACK_ID: healthevent.rack_id,
-            HealthAttr.STORAGESET_ID: healthevent.storageset_id,
-            HealthAttr.NODE_ID: healthevent.node_id,
-            HealthAttr.RESOURCE_TYPE: healthevent.resource_type,
-            HealthAttr.RESOURCE_ID: healthevent.resource_id,
-            HealthAttr.RESOURCE_STATUS: healthevent.event_type
+            HealthAttr.SOURCE.value: healthevent.source,
+            HealthAttr.CLUSTER_ID.value: healthevent.cluster_id,
+            HealthAttr.SITE_ID.value: healthevent.site_id,
+            HealthAttr.RACK_ID.value: healthevent.rack_id,
+            HealthAttr.STORAGESET_ID.value: healthevent.storageset_id,
+            HealthAttr.NODE_ID.value: healthevent.node_id,
+            HealthAttr.RESOURCE_TYPE.value: healthevent.resource_type,
+            HealthAttr.RESOURCE_ID.value: healthevent.resource_id,
+            HealthAttr.RESOURCE_STATUS.value: healthevent.event_type
         }
         self.event = HEvent(**payload)
         self.event.set_specific_info({HealthAttr.SPECIFIC_INFO: healthevent.specific_info})

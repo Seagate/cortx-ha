@@ -30,11 +30,11 @@ from cortx.utils.event_framework.health import HealthAttr, HealthEvent
 
 class ObjectParser:
     def __init__(self):
-        self.payload = {HealthAttr.SOURCE: HEALTH_EVENT_SOURCES.MONITOR.value, \
-                    HealthAttr.CLUSTER_ID: None, HealthAttr.SITE_ID: None, \
-                    HealthAttr.RACK_ID: None, HealthAttr.STORAGESET_ID: None, \
-                    HealthAttr.NODE_ID: None, HealthAttr.RESOURCE_TYPE: None, \
-                    HealthAttr.RESOURCE_ID: None, HealthAttr.RESOURCE_STATUS: None, \
+        self.payload = {HealthAttr.SOURCE.value: HEALTH_EVENT_SOURCES.MONITOR.value,
+                    HealthAttr.CLUSTER_ID.value: None, HealthAttr.SITE_ID.value: None,
+                    HealthAttr.RACK_ID.value: None, HealthAttr.STORAGESET_ID.value: None,
+                    HealthAttr.NODE_ID.value: None, HealthAttr.RESOURCE_TYPE.value: None,
+                    HealthAttr.RESOURCE_ID.value: None, HealthAttr.RESOURCE_STATUS.value: None,
                     HealthAttr.SPECIFIC_INFO.value: {}}
 
     def parse(self, an_event, cached_state):
@@ -57,9 +57,9 @@ class NodeEventParser(ObjectParser):
         health_status: health of that resource. Ex: online, failed
         """
         self.event = HealthEvent()
-        self.payload[HealthAttr.RESOURCE_TYPE] = res_type
-        self.payload[HealthAttr.RESOURCE_ID] = self.payload[HealthAttr.NODE_ID] = res_name
-        self.payload[HealthAttr.RESOURCE_STATUS] = health_status
+        self.payload[HealthAttr.RESOURCE_TYPE.value] = res_type
+        self.payload[HealthAttr.RESOURCE_ID.value] = self.payload[HealthAttr.NODE_ID.value] = res_name
+        self.payload[HealthAttr.RESOURCE_STATUS.value] = health_status
         self.event.set_payload(self.payload)
         return self.event.json
 
@@ -140,10 +140,10 @@ class PodEventParser(ObjectParser):
         generation_id: name of the node in case of node alert
         """
         self.event = HealthEvent()
-        self.event.set(HealthAttr.RESOURCE_TYPE, res_type)
-        self.event.set(HealthAttr.RESOURCE_ID, res_name)
-        self.event.set(HealthAttr.NODE_ID, res_name)
-        self.event.set(HealthAttr.RESOURCE_STATUS, health_status)
+        self.event.set(HealthAttr.RESOURCE_TYPE.value, res_type)
+        self.event.set(HealthAttr.RESOURCE_ID.value, res_name)
+        self.event.set(HealthAttr.NODE_ID.value, res_name)
+        self.event.set(HealthAttr.RESOURCE_STATUS.value, health_status)
         self.event.set_specific_info({"generation_id": generation_id})
         return self.event.json
 
@@ -222,4 +222,3 @@ class EventParser:
             return object_event_parser.parse(an_event, cached_state)
 
         raise NotSupportedObjectError(f"object = {k_object}")
-
