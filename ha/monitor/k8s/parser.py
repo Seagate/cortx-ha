@@ -24,15 +24,17 @@ from ha.monitor.k8s.const import AlertStates
 from ha.monitor.k8s.const import EventStates
 
 from cortx.utils.log import Log
-from ha.fault_tolerance.const import HEALTH_EVENT_SOURCES
+from ha.fault_tolerance.const import HEALTH_EVENT_SOURCES, NOT_DEFINED
 from cortx.utils.event_framework.health import HealthAttr, HealthEvent
 
 
 class ObjectParser:
     def __init__(self):
         self.payload = {HealthAttr.SOURCE.value: HEALTH_EVENT_SOURCES.MONITOR.value,
-                    HealthAttr.CLUSTER_ID.value: None, HealthAttr.SITE_ID.value: None,
-                    HealthAttr.RACK_ID.value: None, HealthAttr.STORAGESET_ID.value: None,
+                    HealthAttr.CLUSTER_ID.value: None,
+                    HealthAttr.SITE_ID.value: NOT_DEFINED,
+                    HealthAttr.RACK_ID.value: NOT_DEFINED,
+                    HealthAttr.STORAGESET_ID.value: NOT_DEFINED,
                     HealthAttr.NODE_ID.value: None, HealthAttr.RESOURCE_TYPE.value: None,
                     HealthAttr.RESOURCE_ID.value: None, HealthAttr.RESOURCE_STATUS.value: None,
                     HealthAttr.SPECIFIC_INFO.value: {}}
