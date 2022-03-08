@@ -22,15 +22,30 @@
 import argparse
 import sys
 import pathlib
+import errno
+import json
+import time
 
 from cortx.utils.conf_store import Conf
+from cortx.utils.event_framework.health import HealthAttr, HealthEvent
 from ha.util.conf_store import ConftStoreSearch
-
+from ha.core.config.config_manager import ConfigManager
+from ha import const
+from ha.util.message_bus import MessageBus
+from ha.core.system_health.const import HEALTH_STATUSES
 
 docker_env_file = '/.dockerenv'
 _index = 'cortx'
 cluster_config_file = '/etc/cortx/cluster.conf'
 config_file_format = 'yaml'
+_events_key = 'events'
+_source_key = 'source'
+_node_id_key = 'node_id'
+_resource_type_key = 'resource_type'
+_resource_id_key = 'resource_id'
+_resource_status_key = 'resource_status'
+_specific_info_key = 'specific_info'
+_delay_key = 'delay'
 
 def is_container_env() -> bool:
     """Returns True if environment is docker container else False."""
@@ -93,7 +108,52 @@ def publish(args: argparse.Namespace) -> None:
     args: parsed argument
     conf_store: ConftStoreSearch object
     """
-    print(f'inside publish, config file: {args.file}')
+    try:
+        with open(args.file, 'r') as fi:
+            events_dict = json.load(fi)
+            if _events_key in events_dict.keys():
+                ConfigManager.init(None)
+                MessageBus.init()
+                message_type = Conf.get(const.HA_GLOBAL_INDEX, f'FAULT_TOLERANCE{const._DELIM}message_type')
+                message_producer = MessageBus.get_producer("health_event_generator", message_type)
+                cluster_id = Conf.get(const.HA_GLOBAL_INDEX, f'COMMON_CONFIG{const._DELIM}cluster_id')
+                site_id = Conf.get(const.HA_GLOBAL_INDEX, f'COMMON_CONFIG{const._DELIM}site_id')
+                rack_id = Conf.get(const.HA_GLOBAL_INDEX, f'COMMON_CONFIG{const._DELIM}rack_id')
+                storageset_id = '1' # TODO: Read from config when available.
+                for _, value in events_dict[_events_key].items():
+                    resource_type = value[_resource_type_key]
+                    resource_type_list = Conf.get(const.HA_GLOBAL_INDEX, f"CLUSTER{const._DELIM}resource_type")
+                    if resource_type not in resource_type_list:
+                        raise Exception(f'Invalid resource_type: {resource_type}')
+                    resource_status = value[_resource_status_key]
+                    status_supported = False
+                    for status in list(HEALTH_STATUSES):
+                        if resource_status == status.value:
+                            status_supported = True
+                            break
+                    if status_supported is False:
+                        raise Exception(f'Invalid resource_status: {resource_status}')
+                    payload = {
+                        f'{HealthAttr.SOURCE}': value[_source_key],
+                        f'{HealthAttr.CLUSTER_ID}': cluster_id,
+                        f'{HealthAttr.SITE_ID}': site_id,
+                        f'{HealthAttr.RACK_ID}': rack_id,
+                        f'{HealthAttr.STORAGESET_ID}': storageset_id,
+                        f'{HealthAttr.NODE_ID}': value[_node_id_key],
+                        f'{HealthAttr.RESOURCE_TYPE}': resource_type,
+                        f'{HealthAttr.RESOURCE_ID}': value[_resource_id_key],
+                        f'{HealthAttr.RESOURCE_STATUS}': resource_status
+                    }
+                    health_event = HealthEvent(**payload)
+                    health_event.set_specific_info(value[_specific_info_key])
+                    print(f"Publishing health event {health_event.json}")
+                    message_producer.publish(health_event.json)
+                    if _delay_key in events_dict.keys():
+                        print(f"Sleeping for {events_dict[_delay_key]} seconds")
+                        time.sleep(events_dict[_delay_key])
+    except Exception as err:
+        sys.stderr.write(f"Health event generator failed. Error: {err}\n")
+        return errno.EINVAL
 
 FUNCTION_MAP = {
                 '-gdt' : get_data_nodes, '--get-data-nodes': get_data_nodes,
@@ -160,4 +220,3 @@ if __name__ == '__main__':
         args.handler(args)
     else:
         print(FUNCTION_MAP[option]())
-
