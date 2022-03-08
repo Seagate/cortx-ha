@@ -31,8 +31,9 @@ from ha.core.system_health.const import CLUSTER_ELEMENTS, HEALTH_EVENTS, EVENT_S
 from ha.core.system_health.status_mapper import StatusMapper
 from ha.core.config.config_manager import ConfigManager
 from ha.const import PVTFQDN_TO_NODEID_KEY, ALERT_ATTRIBUTES, EVENT_ATTRIBUTES as event_attr
-from ha.fault_tolerance.const import HEALTH_ATTRIBUTES, HEALTH_EVENT_SOURCES, \
-    EVENT_ATTRIBUTES
+from ha.fault_tolerance.const import HEALTH_EVENT_SOURCES
+from cortx.utils.event_framework.health import HealthAttr
+from cortx.utils.event_framework.event import EventAttr
 
 
 class Parser(metaclass=abc.ABCMeta):
@@ -179,18 +180,17 @@ class ClusterResourceParser(Parser):
         try:
             message = json.dumps(ast.literal_eval(msg))
             cluster_resource_alert = json.loads(message)
-            timestamp = cluster_resource_alert["event"][EVENT_ATTRIBUTES.HEALTH_EVENT_HEADER.value][HEALTH_ATTRIBUTES.TIMESTAMP.value]
-            event_id = cluster_resource_alert["event"][EVENT_ATTRIBUTES.HEALTH_EVENT_HEADER.value][HEALTH_ATTRIBUTES.EVENT_ID.value]
-            source = cluster_resource_alert["event"][EVENT_ATTRIBUTES.HEALTH_EVENT_PAYLOAD.value][HEALTH_ATTRIBUTES.SOURCE.value]
-            node_id = cluster_resource_alert["event"][EVENT_ATTRIBUTES.HEALTH_EVENT_PAYLOAD.value][HEALTH_ATTRIBUTES.NODE_ID.value]
-            resource_type = cluster_resource_alert["event"][EVENT_ATTRIBUTES.HEALTH_EVENT_PAYLOAD.value][HEALTH_ATTRIBUTES.RESOURCE_TYPE.value]
-            resource_id = cluster_resource_alert["event"][EVENT_ATTRIBUTES.HEALTH_EVENT_PAYLOAD.value][HEALTH_ATTRIBUTES.RESOURCE_ID.value]
-            event_type = cluster_resource_alert["event"][EVENT_ATTRIBUTES.HEALTH_EVENT_PAYLOAD.value][HEALTH_ATTRIBUTES.RESOURCE_STATUS.value]
-            specific_info = cluster_resource_alert["event"][EVENT_ATTRIBUTES.HEALTH_EVENT_PAYLOAD.value][HEALTH_ATTRIBUTES.SPECIFIC_INFO.value]
-            if resource_type == CLUSTER_ELEMENTS.NODE.value:
-                if specific_info and specific_info.get("generation_id") and source == HEALTH_EVENT_SOURCES.MONITOR.value:
-                    generation_id = specific_info["generation_id"]
-                    specific_info = {"generation_id": generation_id, "pod_restart": 0}
+            timestamp = cluster_resource_alert[EventAttr.EVENT_HEADER.value][EventAttr.TIMESTAMP.value]
+            event_id = cluster_resource_alert[EventAttr.EVENT_HEADER.value][EventAttr.EVENT_ID.value]
+            source = cluster_resource_alert[EventAttr.EVENT_PAYLOAD.value][HealthAttr.SOURCE.value]
+            node_id = cluster_resource_alert[EventAttr.EVENT_PAYLOAD.value][HealthAttr.NODE_ID.value]
+            resource_type = cluster_resource_alert[EventAttr.EVENT_PAYLOAD.value][HealthAttr.RESOURCE_TYPE.value]
+            resource_id = cluster_resource_alert[EventAttr.EVENT_PAYLOAD.value][HealthAttr.RESOURCE_ID.value]
+            event_type = cluster_resource_alert[EventAttr.EVENT_PAYLOAD.value][HealthAttr.RESOURCE_STATUS.value]
+            specific_info = cluster_resource_alert[EventAttr.EVENT_PAYLOAD.value][HealthAttr.SPECIFIC_INFO.value]
+            if specific_info and specific_info["generation_id"] and source == HEALTH_EVENT_SOURCES.MONITOR.value:
+                generation_id = cluster_resource_alert[EventAttr.EVENT_PAYLOAD.value][HealthAttr.SPECIFIC_INFO.value]["generation_id"]
+                specific_info = {"generation_id": generation_id, "pod_restart": 0}
 
             event = {
                 event_attr.SOURCE : source,

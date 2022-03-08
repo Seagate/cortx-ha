@@ -27,23 +27,6 @@ class FAULT_TOLERANCE_KEYS(enum.Enum, metaclass=EnumListMeta):
     HARE_HA_MESSAGE_TYPE = 'cortx_health_events'
     MONITOR_HA_MESSAGE_TYPE = 'cortx_health_events'
 
-# Constants for health event creation
-class HEALTH_ATTRIBUTES(enum.Enum, metaclass=EnumListMeta):
-    VERSION = 'version'
-    TIMESTAMP = 'timestamp'
-    EVENT_ID = 'event_id'
-    SOURCE = 'source'
-    CLUSTER_ID = 'cluster_id'
-    SITE_ID = 'site_id'
-    RACK_ID = 'rack_id'
-    STORAGESET_ID = 'storageset_id'
-    NODE_ID = 'node_id'
-    RESOURCE_TYPE = 'resource_type'
-    RESOURCE_ID = 'resource_id'
-    RESOURCE_STATUS = 'resource_status'
-    SPECIFIC_INFO = 'specific_info'
-
-# Class to define constants for health event attributes
-class EVENT_ATTRIBUTES(enum.Enum, metaclass=EnumListMeta):
-    HEALTH_EVENT_HEADER = 'header'
-    HEALTH_EVENT_PAYLOAD = 'payload'
+# Used to set default value in const.HA_CONFIG_FILE
+# TODO : To be replaced by actual values when they are available in config
+NOT_DEFINED = '0xBAADFOOD'

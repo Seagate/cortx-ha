@@ -35,8 +35,8 @@ from ha.core.event_manager.resources import SUBSCRIPTION_LIST
 from ha.core.event_manager.const import EVENT_MANAGER_KEYS
 from ha.core.health_monitor.const import HEALTH_MON_ACTIONS
 from ha.core.health_monitor.monitor_rules_manager import MonitorRulesManager
-from ha.fault_tolerance.const import HEALTH_ATTRIBUTES, EVENT_ATTRIBUTES
-from ha.fault_tolerance.event import Event
+from cortx.utils.event_framework.event import EventAttr
+from cortx.utils.event_framework.health import HealthAttr, HealthEvent
 
 class EventManager:
     """
@@ -360,7 +360,7 @@ class EventManager:
         except Exception as e:
             raise UnSubscribeException(f"Failed to unsubscribe {component}. Error: {e}")
 
-    def get_events(self, component : SUBSCRIPTION_LIST) -> list:
+    def get_events(self, component: SUBSCRIPTION_LIST) -> list:
         """
         It returns list of registered events by the requested component.
 
@@ -384,26 +384,26 @@ class EventManager:
                     break
         return value
 
-    def publish(self, event: Event) -> None:
+    def publish(self, event: HealthEvent) -> None:
         """
         Publish event.
         Args:
-            event (Event): Action event.
+            event (HealthEvent): Action event.
         """
         try:
             #TODO: Use Transactional producer in future.
             component_list = []
             # Run through list of components subscribed for this event and send event to each of them
             component_list_key = EVENT_MANAGER_KEYS.EVENT_KEY.value.replace(
-                "<resource>", event.event[EVENT_ATTRIBUTES.HEALTH_EVENT_PAYLOAD.value][HEALTH_ATTRIBUTES.RESOURCE_TYPE.value]).replace("<state>", event.event[EVENT_ATTRIBUTES.HEALTH_EVENT_PAYLOAD.value][HEALTH_ATTRIBUTES.RESOURCE_STATUS.value])
+                "<resource>", event[EventAttr.EVENT_PAYLOAD.value][HealthAttr.RESOURCE_TYPE.value]).replace("<state>", event[EventAttr.EVENT_PAYLOAD.value][HealthAttr.RESOURCE_STATUS.value])
             component_list_key_val = self._confstore.get(component_list_key)
             if component_list_key_val:
                 _, value = component_list_key_val.popitem()
                 component_list = json.loads(value)
             for component in component_list:
-                if component != event.event[EVENT_ATTRIBUTES.HEALTH_EVENT_PAYLOAD.value][HEALTH_ATTRIBUTES.SOURCE.value]:
+                if component != event[EventAttr.EVENT_PAYLOAD.value][HealthAttr.SOURCE.value]:
                     message_producer = self._get_producer(component)
-                    event_to_send = event.ret_dict()
+                    event_to_send = event.json
                     Log.info(f"Sending action event {event_to_send} to component {component}")
                     message_producer.publish(event_to_send)
         except Exception as e:
