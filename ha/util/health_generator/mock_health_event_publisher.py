@@ -16,9 +16,7 @@
 # cortx-questions@seagate.com.
 
 
-"""Module helps in generating the mock health event and publishing it to the
-message bus.
-"""
+"""Module helps in generating the mock health event and publishing it to the message bus."""
 
 
 import argparse
@@ -56,63 +54,59 @@ def is_container_env() -> bool:
         return True
     return False
 
-def get_data_nodes(conf_store: ConftStoreSearch = None) -> list:
+def get_data_nodes() -> list:
     """
     Fetches data node ids using HA wrapper class and displays the result.
+
     Args:
     conf_store: ConftStoreSearch object
+
     Returns: list of node ids
     """
-    data_node_ids = conf_store.get_data_pods(_index)
+    data_node_ids = ConftStoreSearch.get_data_pods(_index)
     return data_node_ids
 
-def get_server_nodes(conf_store: ConftStoreSearch = None) -> list:
+def get_server_nodes() -> list:
     """
     Fetches server node ids using HA wrapper class and displays the result.
+
     Args:
     conf_store: ConftStoreSearch object
+
     Returns: list of node ids
     """
-    server_node_ids = conf_store.get_server_pods(_index)
+    server_node_ids = ConftStoreSearch.get_server_pods(_index)
     return server_node_ids
 
-def get_disks(args, conf_store: ConftStoreSearch = None) -> None:
+def get_disks(args: argparse.Namespace) -> None:
     """
     Fetches disk ids using ConfStore search API and displays the result.
+
     Args:
     conf_store: ConftStoreSearch object
     node_id: machine_id value
     """
-    # TODO: This is temporary code till this is avalable in HA.
-    node_id = args.node_id
-    num_of_cvgs = Conf.get(_index, f'node>{node_id}>storage>num_cvg')
-    disk_ids = []
-    for cvg in range(num_of_cvgs):
-        num_of_data_disks = Conf.get(_index, f'node>{node_id}>storage>cvg[{cvg}]>devices>num_data')
-        num_of_metadata_disks = Conf.get(_index, f'node>{node_id}>storage>cvg[{cvg}]>devices>num_metadata')
-        [ disk_ids.append(Conf.get(_index, f'node>{node_id}>storage>cvg[{cvg}]>devices>data[{dt_disk}]')) for dt_disk in range(num_of_data_disks)]
-        [ disk_ids.append(Conf.get(_index, f'node>{node_id}>storage>cvg[{cvg}]>devices>metadata[{md_disk}]')) for md_disk in range(num_of_metadata_disks)]
+    disk_ids = ConftStoreSearch.get_disk_list(_index, args.node_id)
     print(disk_ids)
 
-def get_cvgs(args, conf_store: ConftStoreSearch = None) -> None:
+def get_cvgs(args: argparse.Namespace) -> None:
     """
     Fetches cvg ids using ConfStore search API and displays the result.
+
     Args:
     conf_store: ConftStoreSearch object
     node_id: machine_id value
     """
-    node_id = args.node_id
-    # TODO: This is temporary code till this is avalable in HA.
-    cvg_count = Conf.get(_index, f'node>{node_id}>storage>num_cvg')
-    print([Conf.get(_index, f'node>{node_id}>storage>cvg[{cvg}]>name') for cvg in range(cvg_count)])
+    cvg_ids = ConftStoreSearch.get_cvg_list(_index, args.node_id)
+    print(cvg_ids)
 
-def publish(args, conf_store: ConftStoreSearch = None) -> None:
+def publish(args: argparse.Namespace) -> None:
     """
     publishes the message on the message bus.
+
     Args:
+    args: parsed argument
     conf_store: ConftStoreSearch object
-    node_id: machine_id value
-    config_file: config file path
     """
     try:
         with open(args.file, 'r') as fi:
@@ -166,9 +160,13 @@ FUNCTION_MAP = {
                 '-gs' : get_server_nodes, '--get-server-nodes': get_server_nodes
                 }
 
-def get_args():
+def get_args() -> (argparse.Namespace, argparse.ArgumentParser):
     """
     Configures the command line arguments.
+
+    Returns:
+    args: parsed argument object
+    my_parser: Parser object
     """
     my_parser = argparse.ArgumentParser(prog='health_event_publisher',
                                         usage='%(prog)s [options]',
@@ -181,15 +179,15 @@ def get_args():
     my_parser.add_argument('-gs', '--get-server-nodes', action='store_true', help='Get the list of server node ids')
 
     parser_publish = subparsers.add_parser('publish', help='Publish the message')
-    parser_publish.add_argument('-f', '--file', action='store', help='imput config file', required=True)
+    parser_publish.add_argument('-f', '--file', action='store', help='input config file', required=True)
     parser_publish.set_defaults(handler=publish)
 
-    parser_disks = subparsers.add_parser('get-disks', help='Displys the Disk Ids assosciated with the Node')
+    parser_disks = subparsers.add_parser('get-disks', help='Displays the Disk Ids associated with the Node')
     parser_disks.add_argument('-n', '--node-id', help='Node id for which disk id is required', required=True)
     parser_disks.set_defaults(handler=get_disks)
 
-    parser_cvgs = subparsers.add_parser('get-cvgs', help='Displys the CVG Ids assosciated with the Node')
-    parser_cvgs.add_argument('-n', '--node-id', help='Node id for which disk id is required', required=True)
+    parser_cvgs = subparsers.add_parser('get-cvgs', help='Displays the CVG Ids associated with the Node')
+    parser_cvgs.add_argument('-n', '--node-id', help='Node id for which cvg id is required', required=True)
     parser_cvgs.set_defaults(handler=get_cvgs)
 
     args = my_parser.parse_args()
@@ -206,7 +204,7 @@ if __name__ == '__main__':
     Conf.load(_index, file_to_load)
     _conf_store = ConftStoreSearch(conf_store_req=False)
 
-    data_node_ids = get_data_nodes(conf_store=_conf_store)
+    data_node_ids = get_data_nodes()
 
     if len(sys.argv) > 1:
         option = sys.argv[1]
@@ -216,8 +214,9 @@ if __name__ == '__main__':
 
     if hasattr(args, 'handler'):
         if hasattr(args, 'node_id') and args.node_id not in data_node_ids:
-            print('Please provide data node id to get disk and cvg id')
+            print(f'Required data is not supported for given node_id: {args.node_id}. \
+                    Please check supported node ids list: {data_node_ids}')
             sys.exit(1)
-        args.handler(args, conf_store=_conf_store)
+        args.handler(args)
     else:
-        print(FUNCTION_MAP[option](conf_store=_conf_store))
+        print(FUNCTION_MAP[option]())
