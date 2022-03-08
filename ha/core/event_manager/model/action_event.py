@@ -37,7 +37,7 @@ class RecoveryActionEvent:
             HealthAttr.NODE_ID: healthevent.node_id,
             HealthAttr.RESOURCE_TYPE: healthevent.resource_type,
             HealthAttr.RESOURCE_ID: healthevent.resource_id,
-            HealthAttr.RESOURCE_STATUS: healthevent.event_type,
+            HealthAttr.RESOURCE_STATUS: healthevent.event_type
         }
         self.event = HEvent(**payload)
         self.event.set_specific_info({HealthAttr.SPECIFIC_INFO: healthevent.specific_info})
