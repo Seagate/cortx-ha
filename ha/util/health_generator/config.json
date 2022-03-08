@@ -1,0 +1,13 @@
+{
+    "events": {
+        "1": {
+            "source": "xxxx",
+            "node_id": "xxxx",
+            "resource_type": "xxxx",
+            "resource_id": "xxxx",
+            "resource_status": "xxxx",
+            "specific_info": {}
+        }
+    },
+    "delay": xxxx
+}
