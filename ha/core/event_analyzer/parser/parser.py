@@ -188,9 +188,10 @@ class ClusterResourceParser(Parser):
             resource_id = cluster_resource_alert[EventAttr.EVENT_PAYLOAD.value][HealthAttr.RESOURCE_ID.value]
             event_type = cluster_resource_alert[EventAttr.EVENT_PAYLOAD.value][HealthAttr.RESOURCE_STATUS.value]
             specific_info = cluster_resource_alert[EventAttr.EVENT_PAYLOAD.value][HealthAttr.SPECIFIC_INFO.value]
-            if specific_info and specific_info["generation_id"] and source == HEALTH_EVENT_SOURCES.MONITOR.value:
-                generation_id = cluster_resource_alert[EventAttr.EVENT_PAYLOAD.value][HealthAttr.SPECIFIC_INFO.value]["generation_id"]
-                specific_info = {"generation_id": generation_id, "pod_restart": 0}
+            if resource_type == CLUSTER_ELEMENTS.NODE.value:
+                if specific_info and specific_info["generation_id"] and source == HEALTH_EVENT_SOURCES.MONITOR.value:
+                    generation_id = specific_info["generation_id"]
+                    specific_info = {"generation_id": generation_id, "pod_restart": 0}
 
             event = {
                 event_attr.SOURCE : source,
