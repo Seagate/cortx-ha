@@ -279,6 +279,8 @@ class ConfigCmd(Cmd):
             self._confStoreAPI.set_cluster_cardinality(self._index)
             # Init node health
             self._add_node_health()
+            # Init cvg health
+            self._add_cvg_health()
 
             Log.info("config command is successful")
             sys.stdout.write("config command is successful.\n")
@@ -319,6 +321,39 @@ class ConfigCmd(Cmd):
             health_event = HealthEvent.dict_to_object(node_health_event)
             system_health = SystemHealth(self._confstore)
             system_health.process_event(health_event)
+
+    def _add_cvg_health(self) -> None:
+        """
+        Add CVG health
+        """
+        _, nodes_list = self._confStoreAPI.get_cluster_cardinality()
+        for node in nodes_list:
+            cvg_list = ConftStoreSearch.get_cvg_list(self._index, node)
+            if cvg_list:
+                for cvg in cvg_list:
+                    timestamp = str(int(time.time()))
+                    event_id = timestamp + str(uuid.uuid4().hex)
+                    cvg_health_event = {
+                        EVENT_ATTRIBUTES.SOURCE : HEALTH_EVENT_SOURCES.HA.value,
+                        EVENT_ATTRIBUTES.EVENT_ID : event_id,
+                        EVENT_ATTRIBUTES.EVENT_TYPE : HEALTH_EVENTS.UNKNOWN.value,
+                        EVENT_ATTRIBUTES.SEVERITY : EVENT_SEVERITIES.INFORMATIONAL.value,
+                        EVENT_ATTRIBUTES.SITE_ID : self._site_id,
+                        EVENT_ATTRIBUTES.RACK_ID : self._rack_id,
+                        EVENT_ATTRIBUTES.CLUSTER_ID : self._cluster_id,
+                        EVENT_ATTRIBUTES.STORAGESET_ID : self._storageset_id,
+                        EVENT_ATTRIBUTES.NODE_ID : node,
+                        EVENT_ATTRIBUTES.HOST_ID : None,
+                        EVENT_ATTRIBUTES.RESOURCE_TYPE : CLUSTER_ELEMENTS.CVG.value,
+                        EVENT_ATTRIBUTES.TIMESTAMP : timestamp,
+                        EVENT_ATTRIBUTES.RESOURCE_ID : cvg,
+                        EVENT_ATTRIBUTES.SPECIFIC_INFO : None
+                    }
+                    Log.debug(f"Adding initial health {cvg_health_event} for CVG {cvg}\n\n\n")
+                    health_event = HealthEvent.dict_to_object(cvg_health_event)
+                    system_health = SystemHealth(self._confstore)
+                    system_health.process_event(health_event)
+
 
 class InitCmd(Cmd):
     """

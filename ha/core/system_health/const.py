@@ -78,7 +78,8 @@ class HEALTH_EVALUATOR_CLASSES:
     ELEMENT_MAP: dict = {
         CLUSTER_ELEMENTS.CLUSTER.value: f"{CLASS_MODULE}.cluster_health_evaluator.ClusterHealthEvaluator",
         CLUSTER_ELEMENTS.SITE.value: f"{CLASS_MODULE}.site_health_evaluator.SiteHealthEvaluator",
-        CLUSTER_ELEMENTS.RACK.value: f"{CLASS_MODULE}.rack_health_evaluator.RackHealthEvaluator"
+        CLUSTER_ELEMENTS.RACK.value: f"{CLASS_MODULE}.rack_health_evaluator.RackHealthEvaluator",
+        CLUSTER_ELEMENTS.NODE.value: f"{CLASS_MODULE}.node_health_evaluator.NodeHealthEvaluator"
     }
 
 # Confstore key attributes
