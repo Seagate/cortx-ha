@@ -200,13 +200,13 @@ class SystemHealth(Subscriber):
         status_key = None
         if component_id is not None:
             for key in self._status_dict:
-                if re.search(f"{component}/{component_id}/health", key):
+                if re.search(f"{component}{const.HA_DELIM}{component_id}{const.HA_DELIM}health", key):
                     status_key = key
                     break
         else:
             for key in self._status_dict:
-                if re.search(f"{component}/.+/health", key):
-                    split_key = re.split("/", key)
+                if re.search(f"{component}{const.HA_DELIM}.+{const.HA_DELIM}health", key):
+                    split_key = re.split({const.HA_DELIM}, key)
                     if component == split_key[-3]:
                         status_key = key
                         break
@@ -219,7 +219,7 @@ class SystemHealth(Subscriber):
             if key is not None:
                 entity_health = self._status_dict[key]
                 entity_health = json.loads(entity_health)
-                split_key = re.split("/", key)
+                split_key = re.split(const.HA_DELIM, key)
                 component_id = split_key[-2]
                 status = entity_health["events"][0]["status"]
                 created_timestamp = entity_health['events'][0]['created_timestamp']

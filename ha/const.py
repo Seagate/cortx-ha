@@ -16,6 +16,12 @@
 from enum import Enum
 from ha.util.enum_list import EnumListMeta
 
+#Confstore delimiter
+_DELIM=">"
+
+# Health system confstore delimiter
+HA_DELIM=_DELIM
+
 #LOGS and config
 CORTX_VERSION_1="1"
 CORTX_VERSION_2="2"
@@ -38,7 +44,7 @@ SUPPORT_BUNDLE_ERR="{}/support_bundle.err".format(RA_LOG_DIR)
 SUPPORT_BUNDLE_LOGS=[RA_LOG_DIR, PCSD_LOG, PACEMAKER_LOG, COROSYNC_LOG]
 CORTX_SUPPORT_BUNDLE_LOGS=[RA_LOG_DIR, PCSD_LOG, PACEMAKER_LOG, CONFIG_DIR, COROSYNC_LOG]
 DATASTORE_VERSION="v1"
-CLUSTER_CONFSTORE_PREFIX = "cortx/ha/{}/".format(DATASTORE_VERSION)
+CLUSTER_CONFSTORE_PREFIX = "cortx"+HA_DELIM+"ha"+HA_DELIM+DATASTORE_VERSION+HA_DELIM
 HA_INIT_DIR="/var/cortx/ha/"
 SOURCE_PATH="/opt/seagate/cortx/ha"
 SOURCE_CONFIG_PATH="{}/conf/etc".format(SOURCE_PATH)
@@ -73,9 +79,6 @@ IEM_DESCRIPTION="WS0080010001,Node, The cluster has lost $host server. System is
 
 # Mini-provisioning
 CLUSTER_CONFSTORE_NODES_KEY="nodes"
-
-#Confstore delimiter
-_DELIM=">"
 
 # Node name mapping keys
 PVTFQDN_TO_NODEID_KEY="pvtfqdn_to_nodeid"

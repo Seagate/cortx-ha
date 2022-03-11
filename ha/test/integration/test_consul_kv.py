@@ -19,7 +19,7 @@ import os
 import sys
 import pathlib
 import unittest
-
+from ha.const import HA_DELIM
 sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..', '..'))
 from ha.util.consul_kv_store import ConsulKvStore
 
@@ -32,7 +32,7 @@ class TestConsulKvStore(unittest.TestCase):
         """
         Setup consul connection.
         """
-        self.test_ha_prefix = "cortx/ha/test1"
+        self.test_ha_prefix = "cortx"+HA_DELIM+"ha"+HA_DELIM+"test1"
         self._c1 = ConsulKvStore(self.test_ha_prefix, host="localhost", port=8500)
         self._c2 = ConsulKvStore(self.test_ha_prefix)
         self._c1.delete(recurse=True)
@@ -46,20 +46,20 @@ class TestConsulKvStore(unittest.TestCase):
         self._c1.set("res")
         self._c1.set("cluster_name", "cortx_cluster")
         self._c1.set("cluster_user", "hacluster")
-        _output: dict = {f'{self.test_ha_prefix}/cluster_name': 'cortx_cluster'}
+        _output: dict = {f'{self.test_ha_prefix}{HA_DELIM}cluster_name': 'cortx_cluster'}
         self.assertEqual(self._c1.get("cluster_name"), _output)
-        _output: dict = {f'{self.test_ha_prefix}/cluster_name': 'cortx_cluster',
-                    f'{self.test_ha_prefix}/cluster_user': 'hacluster',
-                    f'{self.test_ha_prefix}/res': None}
+        _output: dict = {f'{self.test_ha_prefix}{HA_DELIM}cluster_name': 'cortx_cluster',
+                    f'{self.test_ha_prefix}{HA_DELIM}cluster_user': 'hacluster',
+                    f'{self.test_ha_prefix}{HA_DELIM}res': None}
         self.assertEqual(self._c1.get(), _output)
         self._c1.update("cluster_name", "cortx_cluster1")
         self._c1.update("cluster_user", "hacluster1")
-        _output: dict = {f'{self.test_ha_prefix}/cluster_name': 'cortx_cluster1',
-                    f'{self.test_ha_prefix}/cluster_user': 'hacluster1',
-                    f'{self.test_ha_prefix}/res': None}
+        _output: dict = {f'{self.test_ha_prefix}{HA_DELIM}cluster_name': 'cortx_cluster1',
+                    f'{self.test_ha_prefix}{HA_DELIM}cluster_user': 'hacluster1',
+                    f'{self.test_ha_prefix}{HA_DELIM}res': None}
         self.assertEqual(self._c1.get(), _output)
         self._c1.delete("cluster_name")
-        _output: dict = {f'{self.test_ha_prefix}/cluster_user': 'hacluster1', f'{self.test_ha_prefix}/res': None}
+        _output: dict = {f'{self.test_ha_prefix}{HA_DELIM}cluster_user': 'hacluster1', f'{self.test_ha_prefix}/res': None}
         self.assertEqual(self._c1.get(), _output)
         self._c1.delete(recurse=True)
         self.assertEqual(self._c1.get(), None)
@@ -72,20 +72,20 @@ class TestConsulKvStore(unittest.TestCase):
         self._c2.set("res")
         self._c2.set("cluster_name", "cortx_cluster")
         self._c2.set("cluster_user", "hacluster")
-        _output: dict = {f'{self.test_ha_prefix}/cluster_name': 'cortx_cluster'}
+        _output: dict = {f'{self.test_ha_prefix}{HA_DELIM}cluster_name': 'cortx_cluster'}
         self.assertEqual(self._c2.get("cluster_name"), _output)
-        _output: dict = {f'{self.test_ha_prefix}/cluster_name': 'cortx_cluster',
-                    f'{self.test_ha_prefix}/cluster_user': 'hacluster',
-                    f'{self.test_ha_prefix}/res': None}
+        _output: dict = {f'{self.test_ha_prefix}{HA_DELIM}cluster_name': 'cortx_cluster',
+                    f'{self.test_ha_prefix}{HA_DELIM}cluster_user': 'hacluster',
+                    f'{self.test_ha_prefix}{HA_DELIM}res': None}
         self.assertEqual(self._c2.get(), _output)
         self._c2.update("cluster_name", "cortx_cluster1")
         self._c2.update("cluster_user", "hacluster1")
-        _output: dict = {f'{self.test_ha_prefix}/cluster_name': 'cortx_cluster1',
-                    f'{self.test_ha_prefix}/cluster_user': 'hacluster1',
-                    f'{self.test_ha_prefix}/res': None}
+        _output: dict = {f'{self.test_ha_prefix}{HA_DELIM}cluster_name': 'cortx_cluster1',
+                    f'{self.test_ha_prefix}{HA_DELIM}cluster_user': 'hacluster1',
+                    f'{self.test_ha_prefix}{HA_DELIM}res': None}
         self.assertEqual(self._c2.get(), _output)
         self._c2.delete("cluster_name")
-        _output: dict = {f'{self.test_ha_prefix}/cluster_user': 'hacluster1', f'{self.test_ha_prefix}/res': None}
+        _output: dict = {f'{self.test_ha_prefix}{HA_DELIM}cluster_user': 'hacluster1', f'{self.test_ha_prefix}{HA_DELIM}res': None}
         self.assertEqual(self._c2.get(), _output)
         self._c2.delete(recurse=True)
         self.assertEqual(self._c2.get(), None)

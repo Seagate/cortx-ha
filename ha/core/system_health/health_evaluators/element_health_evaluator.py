@@ -20,6 +20,7 @@ import re
 import time
 import uuid
 from cortx.utils.log import Log
+from ha.const import HA_DELIM
 from ha.core.system_health.system_health_hierarchy import HealthHierarchy
 from ha.core.config.config_manager import ConfigManager
 from ha.core.system_health.model.health_event import HealthEvent
@@ -81,10 +82,10 @@ class ElementHealthEvaluator(metaclass=abc.ABCMeta):
         if len(children) == 0:
             return {}
         key = ElementHealthEvaluator.prepare_key(element, comp_id=element_id, **kwargs)
-        key = key.replace("/health", "").replace("/", "", 1)
+        key = key.replace(HA_DELIM+"health", "").replace(HA_DELIM, "", 1)
         data = self.healthmanager.get_key(key, just_value=False)
         for element in data.keys():
-            key_list = element.split("/")
+            key_list = element.split(HA_DELIM)
             if children[0] in key_list:
                 child_index = key_list.index(children[0])
                 element_id = key_list[child_index + 1]
