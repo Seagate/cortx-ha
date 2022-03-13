@@ -21,9 +21,8 @@ from ha.core.system_health.model.health_event import HealthEvent
 
 
 class NodeHealthEvaluator(ElementHealthEvaluator):
-    """
-    Node Health Evaluator.
-    """
+    """ Node Health Evaluator."""
+
     def __init__(self):
         """
         Initalize NodeHealthEvaluator element.
