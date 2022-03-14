@@ -105,8 +105,7 @@ class SystemHealthHierarchy:
     _server_service = [const.COMPONENTS.SERVER_SERVICE.value, const.COMPONENTS.AGG_SERVICE.value] + _server
     _server_hw = [const.COMPONENTS.SERVER_HARDWARE.value] + _server
     _storage = [const.COMPONENTS.STORAGE_COMPONENT.value,  const.COMPONENTS.STORAGE.value] + _common_hierarchy
-    _cvg = [const.COMPONENTS.CVG.value, const.COMPONENTS.RACK.value, const.COMPONENTS.SITE.value,
-            const.COMPONENTS.CLUSTER.value]
+    _cvg = [const.COMPONENTS.CVG.value]
 
     @staticmethod
     def get_hierarchy(component: str) -> dict:
