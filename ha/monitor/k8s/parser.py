@@ -26,7 +26,7 @@ from ha.monitor.k8s.const import EventStates
 from cortx.utils.log import Log
 from ha.fault_tolerance.const import HEALTH_EVENT_SOURCES, NOT_DEFINED
 from cortx.utils.event_framework.health import HealthAttr, HealthEvent
-from cortx.utils.kv_store.kv_payload import KvPayload
+
 
 class ObjectParser:
     def __init__(self):
