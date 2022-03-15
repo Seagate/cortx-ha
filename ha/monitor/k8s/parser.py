@@ -31,7 +31,7 @@ from cortx.utils.event_framework.health import HealthAttr, HealthEvent
 class ObjectParser:
     def __init__(self):
         # KvPayload supports empty strings for default value if value not set.
-        # None will decode as 'null' in json.dumps in KbPayload object
+        # None will decode as 'null' in json.dumps in KvPayload object
         # and may failed ast.literal_eval
         self.payload = {HealthAttr.SOURCE.value: HEALTH_EVENT_SOURCES.MONITOR.value,
                     HealthAttr.CLUSTER_ID.value: '',
