@@ -23,9 +23,6 @@ from ha.monitor.k8s.const import K8SEventsConst
 from ha.monitor.k8s.const import AlertStates
 from ha.monitor.k8s.const import EventStates
 
-from ha.core.config.config_manager import ConfigManager
-from ha.const import _DELIM, HA_GLOBAL_INDEX
-from cortx.utils.conf_store import Conf
 from cortx.utils.log import Log
 from ha.fault_tolerance.const import HEALTH_EVENT_SOURCES, NOT_DEFINED
 from cortx.utils.event_framework.health import HealthAttr, HealthEvent
@@ -33,15 +30,11 @@ from cortx.utils.event_framework.health import HealthAttr, HealthEvent
 
 class ObjectParser:
     def __init__(self):
-        # Load config
-        ConfigManager.init(None)
-        # TODO: Should be fetched from confstore
-        cluster_id = Conf.get(HA_GLOBAL_INDEX, f"COMMON_CONFIG{_DELIM}cluster_id")
-
-        # Default value will be ''(empty string) instead of None, as None will decode as
-        # 'null' in json.dumps and may failed ast.literal_eval
+         # KvPayload supprts empty strings for defauly value if value not set.
+         # Default value will be ''(empty string), as None will decode as
+         # 'null' in json.dumps in KbPayload object and may failed ast.literal_eval
         self.payload = {HealthAttr.SOURCE.value: HEALTH_EVENT_SOURCES.MONITOR.value,
-                    HealthAttr.CLUSTER_ID.value: cluster_id,
+                    HealthAttr.CLUSTER_ID.value: '',
                     HealthAttr.SITE_ID.value: NOT_DEFINED,
                     HealthAttr.RACK_ID.value: NOT_DEFINED,
                     HealthAttr.STORAGESET_ID.value: NOT_DEFINED,
