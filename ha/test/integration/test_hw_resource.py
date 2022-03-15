@@ -49,7 +49,7 @@ class TestHardwareResourceAgent(unittest.TestCase):
         with open(const.RESOURCE_SCHEMA, 'r') as f:
             self.schema = json.load(f)
         self.hw_agent = HardwareResourceAgent(DecisionMonitor(), self.schema)
-        self.key = "cortx"+const.HA_DELIM+"base"+const.HA_DELIM+"ha"+const.HA_DELIM+"obj"
+        self.key = f"cortx{const.HA_DELIM}base{const.HA_DELIM}ha{const.HA_DELIM}obj"
         self.filename = 'io_path_health_c1'
         self.path = 'io'
         self.local = self.schema['nodes']['local']

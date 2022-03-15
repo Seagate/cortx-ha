@@ -82,7 +82,7 @@ class ElementHealthEvaluator(metaclass=abc.ABCMeta):
         if len(children) == 0:
             return {}
         key = ElementHealthEvaluator.prepare_key(element, comp_id=element_id, **kwargs)
-        key = key.replace(HA_DELIM+"health", "").replace(HA_DELIM, "", 1)
+        key = key.replace(f"{HA_DELIM}health", "").replace(HA_DELIM, "", 1)
         data = self.healthmanager.get_key(key, just_value=False)
         for element in data.keys():
             key_list = element.split(HA_DELIM)

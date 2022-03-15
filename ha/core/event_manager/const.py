@@ -21,9 +21,9 @@ from ha.util.enum_list import EnumListMeta
 
 class EVENT_MANAGER_KEYS(enum.Enum, metaclass=EnumListMeta):
     MESSAGE_TYPE_VALUE = "ha_event_<component_id>"
-    MESSAGE_TYPE_KEY = "message_type"+HA_DELIM+"<component_id>"
-    SUBSCRIPTION_KEY = "events"+HA_DELIM+"subscribe"+HA_DELIM+"<component_id>"
-    EVENT_KEY = "events"+HA_DELIM+"<resource>"+HA_DELIM+"<state>"
+    MESSAGE_TYPE_KEY = f"message_type{HA_DELIM}<component_id>"
+    SUBSCRIPTION_KEY = f"events{HA_DELIM}subscribe{HA_DELIM}<component_id>"
+    EVENT_KEY = f"events{HA_DELIM}<resource>{HA_DELIM}<state>"
 
 ACTION_EVENT_VERSION = "2.0"
 EVENT_MANAGER_LOG="event_manager"

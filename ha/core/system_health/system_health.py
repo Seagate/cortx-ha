@@ -206,7 +206,7 @@ class SystemHealth(Subscriber):
         else:
             for key in self._status_dict:
                 if re.search(f"{component}{const.HA_DELIM}.+{const.HA_DELIM}health", key):
-                    split_key = re.split({const.HA_DELIM}, key)
+                    split_key = re.split(const.HA_DELIM, key)
                     if component == split_key[-3]:
                         status_key = key
                         break
