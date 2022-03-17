@@ -48,7 +48,11 @@ class SystemHealthComponents:
                    const.COMPONENTS.AGG_SERVICE.value: {const.RESOURCE_LIST: [],
                                                         const.KEY: "/cortx/ha/system/cluster/$cluster_id/service/$comp_type/$comp_id/aggregate"},
                    const.COMPONENTS.NODE_MAP.value: {const.RESOURCE_LIST: [],
-                                                     const.KEY: "/cortx/ha/system/cluster/node_map/$node_id"}}
+                                                     const.KEY: "/cortx/ha/system/cluster/node_map/$node_id"},
+                   const.COMPONENTS.CVG.value: {const.RESOURCE_LIST: ["cvg"],
+                                                 const.KEY: "/cortx/ha/system/cluster/$cluster_id/site/$site_id/rack/$rack_id/node/$node_id/cvg/$cvg_id/health"},
+                   const.COMPONENTS.DISK.value: {const.RESOURCE_LIST: ["disk"],
+                                                 const.KEY: "/cortx/ha/system/cluster/$cluster_id/site/$site_id/rack/$rack_id/node/$node_id/cvg/$cvg_id/disk/$disk_id/health"}}
 
     @staticmethod
     def get_component(resource_type: str) -> str:

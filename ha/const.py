@@ -213,6 +213,12 @@ CLUSTER_STOP_KEY = "cluster_stop_key"
 # not using the value anywhere but as default value for key.
 CLUSTER_STOP_VAL_ENABLE = "1"
 
+# Support Bundle Default Argument Values. [#650 PR]
+_tmp_dir = 'tmp'
+_sb_default_path = f'/{_tmp_dir}/cortx/support_bundle/'
+_sb_tar_name = 'ha'
+_sb_tmp_src = f'/{_tmp_dir}/cortx/ha/'
+
 class STATUSES(Enum):
     IN_PROGRESS = "InProgress"
     SUCCEEDED = "Succeeded"
@@ -245,6 +251,8 @@ class COMPONENTS(Enum):
     CLUSTER = "cluster"
     AGG_SERVICE = "agg_service"
     NODE_MAP = "node_map"
+    CVG = "cvg"
+    DISK = "disk"
 
 RESOURCE_LIST = "resource_list"
 KEY = "key"
@@ -324,6 +332,7 @@ ACTUATOR_MSG_WAIT_TIME = 2
 
 # Health event attribute constants
 class EVENT_ATTRIBUTES:
+    SOURCE = "source"
     EVENT_ID = "event_id"
     EVENT_TYPE = "event_type"
     SEVERITY = "severity"
@@ -362,7 +371,12 @@ class SERVER_POWER_STATUS(Enum, metaclass=EnumListMeta):
 class K8S_ALERT_STATUS(Enum, metaclass=EnumListMeta):
     STATUS_FAILED = "failed"
     STATUS_ONLINE = "online"
+    STATUS_REPAIRING = "repairing"
+    STATUS_REPAIRED = "repaired"
+    STATUS_REBALANCING = "rebalancing"
 
 class K8S_ALERT_RESOURCE_TYPE(Enum, metaclass=EnumListMeta):
     RESOURCE_TYPE_POD = "pod"
     RESOURCE_TYPE_NODE = "node"
+    RESOURCE_TYPE_CVG = "cvg"
+    RESOURCE_TYPE_DISK = "disk"

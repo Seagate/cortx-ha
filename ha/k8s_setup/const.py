@@ -13,8 +13,8 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-# Needs to be replaced by log path defined in cluster.conf[EOS-27352].
-HA_LOG_DIR="/var/log/seagate/cortx/ha"
+import enum
+
 HA_LOG_LEVEL="INFO"
 CONFIG_DIR="/etc/cortx/ha"
 HA_CONFIG_FILE="{}/ha.conf".format(CONFIG_DIR)
@@ -31,11 +31,21 @@ consul_scheme = 'http'
 
 # Event_manager keys
 POD_EVENT="node"
+DISK_EVENT="disk"
 EVENT_COMPONENT="hare"
 
-# confStore search API constants
-NODE_CONST = "node"
-SERVICE_CONST = "services"
+# Cluster Cardinality Keys
 CLUSTER_CARDINALITY_KEY = "cluster_cardinality"
 CLUSTER_CARDINALITY_NUM_NODES = "num_nodes"
 CLUSTER_CARDINALITY_LIST_NODES = "node_list"
+
+# GConf keys
+class GconfKeys(enum.Enum):
+    NODE_CONST = "node"
+    SERVICE_CONST = "services"
+    CVG_NAME = "node{_DELIM}{node_id}{_DELIM}storage{_DELIM}cvg[{cvg_index}]{_DELIM}name"
+    CVG_COUNT = "node{_DELIM}{node_id}{_DELIM}storage{_DELIM}num_cvg"
+    DATA_COUNT = "node{_DELIM}{node_id}{_DELIM}storage{_DELIM}cvg[{cvg_index}]{_DELIM}devices{_DELIM}num_data"
+    METADATA_COUNT = "node{_DELIM}{node_id}{_DELIM}storage{_DELIM}cvg[{cvg_index}]{_DELIM}devices{_DELIM}num_metadata"
+    DATA_DISK = "node{_DELIM}{node_id}{_DELIM}storage{_DELIM}cvg[{cvg_index}]{_DELIM}devices{_DELIM}data[{d_index}]"
+    METADATA_DISK = "node{_DELIM}{node_id}{_DELIM}storage{_DELIM}cvg[{cvg_index}]{_DELIM}devices{_DELIM}metadata[{m_index}]"

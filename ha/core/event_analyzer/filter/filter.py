@@ -26,6 +26,9 @@ from ha.core.config.config_manager import ConfigManager
 from ha.const import _DELIM, ALERT_ATTRIBUTES
 from ha.core.event_analyzer.event_analyzer_exceptions import EventFilterException
 from ha.core.event_analyzer.event_analyzer_exceptions import InvalidFilterRules
+from cortx.utils.event_framework.health import HealthAttr
+from cortx.utils.event_framework.event import EventAttr
+
 
 class MESSAGETYPE(Enum):
     ALERT = "ALERT"
@@ -187,10 +190,10 @@ class ClusterResourceFilter(Filter):
             message = json.loads(message)
 
             Log.debug('Received alert from fault tolerance')
-            event_resource_type = message.get("_resource_type")
+            event_resource_type = message.get(EventAttr.EVENT_PAYLOAD.value).get(HealthAttr.RESOURCE_TYPE.value)
 
-            required_resource_type = Conf.get(const.HA_GLOBAL_INDEX, f"NODE{_DELIM}resource_type")
-            if event_resource_type == required_resource_type:
+            required_resource_type_list = Conf.get(const.HA_GLOBAL_INDEX, f"CLUSTER{_DELIM}resource_type")
+            if event_resource_type in required_resource_type_list:
                 resource_alert_required = True
                 Log.info(f'This alert needs an attention: resource_type: {event_resource_type}')
             return resource_alert_required
