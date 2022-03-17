@@ -28,10 +28,8 @@ from ha.core.config.config_manager import ConfigManager
 class MockProducer:
 
     def __init__(self, producer_id: str, message_type: str, partitions: int):
-        """
-        Init method
-        """
         print(f"Producer id: {producer_id}, message_type: {message_type}, partition: {partitions}")
+        return
 
     def publish(self, message: any):
         print(f"Publishing alert..\n{message}")
