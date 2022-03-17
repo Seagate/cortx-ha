@@ -363,7 +363,7 @@ class ConfigCmd(Cmd):
             EVENT_ATTRIBUTES.RESOURCE_ID : resource_id,
             EVENT_ATTRIBUTES.SPECIFIC_INFO : specific_info
         }
-        Log.debug(f"Adding initial health {health_event} for {resource_type} : {resource_id}")
+        Log.info(f"Adding initial health {health_event} for {resource_type} : {resource_id}")
         health_event = HealthEvent.dict_to_object(health_event)
         system_health = SystemHealth(self._confstore)
         system_health.process_event(health_event)
