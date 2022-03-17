@@ -268,6 +268,7 @@ class SystemHealth(Subscriber):
         """
         pass
 
+    @classmethod
     def _is_update_required(self, current_health: str, updated_health: str, event: HealthEvent) -> HEALTH_EVENT_ACTIONS:
         """
         Check if update is needed for system health.
