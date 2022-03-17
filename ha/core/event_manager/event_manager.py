@@ -21,6 +21,7 @@
 import json
 from collections import OrderedDict
 from typing import List
+from ha.const import HA_DELIM
 from ha.core.event_manager.subscribe_event import SubscribeEvent
 from cortx.utils.log import Log
 from ha.util.message_bus import MessageBus
@@ -134,8 +135,8 @@ class EventManager:
         '''
            Perform actual confstore store operation for component keys
            Ex:
-           key: /cortx/ha/v1/events/subscribe/sspl
-           confstore value: ['enclosure:sensor:voltage/failed', ...]
+           key: cortx>ha>v1>events>subscribe>sspl
+           confstore value: ['enclosure:sensor:voltage>failed', ...]
         '''
         if self._confstore.key_exists(key):
             event_json_list = self._confstore.get(key)
@@ -145,7 +146,7 @@ class EventManager:
 
             event_list = json.loads(event_list)
             for event in val:
-                new_val = resource_type + '/' + event
+                new_val = resource_type + HA_DELIM + event
                 if new_val in event_list:
                     continue
                 # Merge the old and new component list
@@ -164,7 +165,7 @@ class EventManager:
         else:
             new_event = []
             for event in val:
-                new_val = resource_type + '/' + event
+                new_val = resource_type + HA_DELIM + event
                 new_event.append(new_val)
             # Store the key in the json string format
             event_list = json.dumps(new_event)
@@ -175,7 +176,7 @@ class EventManager:
     def _store_event_key(self, resource_type: str, states: list = None, comp: str = None) -> None:
         '''
            Perform actual confstore store operation for event keys
-           key: /cortx/ha/v1/events/enclosure:hw:disk/online
+           key: cortx>ha>v1>events>enclosure:hw:disk>online
            value: ['sspl', ...]
         '''
         if states:
@@ -210,16 +211,16 @@ class EventManager:
           Deletes the component from the event key
           Ex:
           Already existed confstore key:
-             key: cortx/ha/v1/events/subscribe/hare:
-             value: ["node:os:memory_usage/failed", "node:interface:nw/online"]
+             key: cortx>ha>v1>events>subscribe>hare:
+             value: ["node:os:memory_usage>failed", "node:interface:nw>online"]
           Request to delete:
             'hare', 'node:interface:nw'
           Stored key after deletion will be:
-            key: cortx/ha/v1/events/subscribe/hare:
-            value: ["node:os:memory_usage/failed"]
+            key: cortx>ha>v1>events>subscribe>hare:
+            value: ["node:os:memory_usage>failed"]
         '''
         for state in states:
-            delete_required_state = resource_type + '/' + state
+            delete_required_state = resource_type + HA_DELIM + state
             key = EVENT_MANAGER_KEYS.SUBSCRIPTION_KEY.value.replace("<component_id>", component)
             if self._confstore.key_exists(key):
                 comp_json_list = self._confstore.get(key)
@@ -252,9 +253,9 @@ class EventManager:
         '''
           Deletes the event from the component key
           Ex:
-          Already existed confstore key: cortx/ha/v1/events/node:os:memory_usage/failed:["motr", "hare"]
+          Already existed confstore key: cortx>ha>v1>events>node:os:memory_usage>failed:["motr", "hare"]
           Request to delete: 'hare', 'node:os:memory_usage' 'failed'
-          Stored key after deletion will be: cortx/ha/v1/events/node:os:memory_usage/failed:["motr"]
+          Stored key after deletion will be: cortx>ha>v1>events>node:os:memory_usage>failed:["motr"]
         '''
         for state in states:
             key = EVENT_MANAGER_KEYS.EVENT_KEY.value.replace("<resource>", resource_type).replace("<state>", state)
@@ -265,16 +266,16 @@ class EventManager:
                 comp_list = json.loads(comp_list)
                 # Remove component from the list
                 if component in comp_list:
-                    Log.debug(f'Deleting the key for {resource_type}/{state}. For: {component}')
+                    Log.debug(f'Deleting the key for {resource_type}{HA_DELIM}{state}. For: {component}')
                     comp_list.remove(component)
                 if comp_list:
                     # If still list is not empty, update the confstore key
                     new_comp_list = json.dumps(comp_list)
-                    Log.debug(f'Updating the key for {resource_type}/{state}. new comp list:{new_comp_list}')
+                    Log.debug(f'Updating the key for {resource_type}{HA_DELIM}{state}. new comp list:{new_comp_list}')
                     self._confstore.update(key, new_comp_list)
                 # Else delete the event from the confstore
                 else:
-                    Log.debug(f'Deleting the key for {resource_type}/{state} completely \
+                    Log.debug(f'Deleting the key for {resource_type}{HA_DELIM}{state} completely \
                                 as there are no more subscriptions')
                     self._confstore.delete(key)
             else:

@@ -17,6 +17,7 @@
 
 import consul
 import socket
+from ha.const import HA_DELIM
 
 #TODO: Update set/get/update function to provide blocking and non blocking function
 class ConsulKvStore:
@@ -32,9 +33,9 @@ class ConsulKvStore:
             port (str): consul port
 
         Example:
-            ConsulKvStore("cortx/ha", host="consul.srv", port=3000)
-            ConsulKvStore("cortx/ha")
-        Here (localhost:8500) is consul connection and cortx/ha is prefix.
+            ConsulKvStore("cortx>ha", host="consul.srv", port=3000)
+            ConsulKvStore("cortx>ha")
+        Here (localhost:8500) is consul connection and cortx>ha is prefix.
         """
         self._prefix: str = prefix
         self._verify(prefix, host, port)
@@ -84,8 +85,8 @@ class ConsulKvStore:
         Args:
             key (str): Get Key.
         """
-        key: list = [x for x in self._prefix.split("/") + key.split("/") if x != ""]
-        return "/".join(key)
+        key: list = [x for x in self._prefix.split(HA_DELIM) + key.split(HA_DELIM) if x != ""]
+        return HA_DELIM.join(key)
 
     def get_prefix(self):
         return self._prefix
