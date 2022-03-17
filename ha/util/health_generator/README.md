@@ -52,4 +52,4 @@ The config file is a json file with following format:
 }
 
 # Restrictions
-1. This script needs to be executed inside HA container.
+1. This script needs to be run inside HA container.
