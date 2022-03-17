@@ -106,6 +106,7 @@ class SystemHealthHierarchy:
     _server_service = [const.COMPONENTS.SERVER_SERVICE.value, const.COMPONENTS.AGG_SERVICE.value] + _server
     _server_hw = [const.COMPONENTS.SERVER_HARDWARE.value] + _server
     _storage = [const.COMPONENTS.STORAGE_COMPONENT.value,  const.COMPONENTS.STORAGE.value] + _common_hierarchy
+    _cvg = [const.COMPONENTS.CVG.value]
 
     @staticmethod
     def get_hierarchy(component: str) -> dict:
@@ -120,6 +121,8 @@ class SystemHealthHierarchy:
                 return SystemHealthHierarchy._server_service[SystemHealthHierarchy._server_service.index(component):]
             elif component in SystemHealthHierarchy._storage:
                 return SystemHealthHierarchy._storage[SystemHealthHierarchy._storage.index(component) : ]
+            elif component in SystemHealthHierarchy._cvg:
+                return SystemHealthHierarchy._cvg[SystemHealthHierarchy._cvg.index(component):]
             else:
                 Log.error(f"Health update hierarchy not present for component: {component}")
                 raise HaSystemHealthHierarchyException("Health update hierarchy not present for the component")
