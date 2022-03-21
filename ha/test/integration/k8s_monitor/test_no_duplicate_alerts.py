@@ -40,8 +40,7 @@ class MockAlert:
     @staticmethod
     def get_host_alert():
         # Alert without generation_id
-        return { "event": {
-                "header":{
+        return {"header":{
                     "version":"1.0",
                     "timestamp":"112255",
                     "event_id":"11225568919c5ba8f88ad24cc18f632a75de115aca"
@@ -60,12 +59,11 @@ class MockAlert:
                     }
                 }
             }
-        }
 
     @staticmethod
     def get_pod_alert():
         # Alert with generation_id
-        return { "event":{
+        return { 
                 "header":{
                     "version":"1.0",
                     "timestamp":"112233",
@@ -86,14 +84,13 @@ class MockAlert:
                     }
                 }
             }
-        }
 
     @staticmethod
     def toggle_status(alert):
-        if alert["event"]["payload"]["resource_status"] == "online":
-            alert["event"]["payload"]["resource_status"] = "offline"
+        if alert["payload"]["resource_status"] == "online":
+            alert["payload"]["resource_status"] = "offline"
         else:
-            alert["event"]["payload"]["resource_status"] = "online"
+            alert["payload"]["resource_status"] = "online"
         return alert
 
 
