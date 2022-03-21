@@ -35,6 +35,7 @@ if __name__ == '__main__':
         print("********Alert Filter********")
         resource_type = "enclosure:fru:fan"
         TestMsg = {
+        "message": {
             "sspl_ll_msg_header": {
             "msg_version": "1.0.0",
             "schema_version": "1.0.0",
@@ -51,6 +52,7 @@ if __name__ == '__main__':
                     "resource_type": resource_type,
                     "description": "The fan module is not installed."
                 },
+                "source": 'source_1',
                 "alert_type": "missing",
                 "severity": "critical",
                 "specific_info": {
@@ -68,6 +70,7 @@ if __name__ == '__main__':
                 "alert_id": "15740759091a4e14bca51d46908ac3e9102605d560",
                 "host_id": "s3node-host-1"
             }
+          }
         }
 
         Expected_result = False

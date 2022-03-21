@@ -56,6 +56,7 @@ if __name__ == '__main__':
                     ALERT_ATTRIBUTES.RESOURCE_TYPE: resource_type,
                     ALERT_ATTRIBUTES.DESCRIPTION: "The fan module is not installed."
                 },
+                ALERT_ATTRIBUTES.SOURCE: 'source_1',
                 ALERT_ATTRIBUTES.ALERT_TYPE: "missing",
                 ALERT_ATTRIBUTES.SEVERITY: "critical",
                 ALERT_ATTRIBUTES.SPECIFIC_INFO: {
@@ -79,6 +80,7 @@ if __name__ == '__main__':
     health_event = alert_parser.parse_event(json.dumps(TestAlert))
 
     if isinstance(health_event, HealthEvent):
+        print(f"{EVENT_ATTRIBUTES.SOURCE} : {health_event.source}")
         print(f"{EVENT_ATTRIBUTES.EVENT_ID} : {health_event.event_id}")
         print(f"{EVENT_ATTRIBUTES.EVENT_TYPE} : {health_event.event_type}")
         print(f"{EVENT_ATTRIBUTES.SEVERITY} : {health_event.severity}")

@@ -42,12 +42,13 @@ if __name__ == '__main__':
         iem_description = const.IEM_DESCRIPTION
         iem_description = Template(iem_description).substitute(host=host, status=status)
         TestMsg = {
-            "sspl_ll_msg_header": {
+            "message": {
+              "sspl_ll_msg_header": {
                 "msg_version": "1.0.0",
                 "schema_version": "1.0.0",
                 "sspl_version": "1.0.0"
-            },
-            "sensor_response_type": {
+             },
+             "sensor_response_type": {
                 "info": {
                     "event_time": "1574075909",
                     "resource_id": "Fan Module 4",
@@ -70,6 +71,7 @@ if __name__ == '__main__':
                 "alert_id": "15740759091a4e14bca51d46908ac3e9102605d560",
                 "host_id": "abcd.com"
             }
+          }
         }
 
         Expected_result = False
@@ -77,7 +79,7 @@ if __name__ == '__main__':
         components_types_list = Conf.get(const.ALERT_FILTER_INDEX, f"iem{_DELIM}components")
         modules_dict = Conf.get(const.ALERT_FILTER_INDEX, f"iem{_DELIM}modules")
 
-        msg_type = TestMsg[const.SENSOR_RESPONSE_TYPE]
+        msg_type = TestMsg["message"][const.SENSOR_RESPONSE_TYPE]
         _component_type = msg_type[const.SPECIFIC_INFO][const.COMPONENT]
         _module_type = msg_type[const.SPECIFIC_INFO][const.MODULE]
 

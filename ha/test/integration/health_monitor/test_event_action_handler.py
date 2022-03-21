@@ -25,6 +25,7 @@ sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..'
 from ha.core.event_manager.event_manager import EventManager
 from ha.core.event_manager.subscribe_event import SubscribeEvent
 from ha.core.system_health.model.health_event import HealthEvent
+from ha.core.system_health.const import HEALTH_STATUSES
 from ha.util.message_bus import MessageBus
 from ha.core.action_handler.action_factory import ActionFactory
 from ha.core.event_manager.resources import SUBSCRIPTION_LIST
@@ -43,7 +44,7 @@ if __name__ == '__main__':
         event_manager = EventManager.get_instance()
         component = SUBSCRIPTION_LIST.CSM
         resource_type = RESOURCE_TYPES.NODE
-        state = RESOURCE_TYPES.OFFLINE
+        state = HEALTH_STATUSES.OFFLINE
 
         actions = ["publish"]
         message_type = event_manager.subscribe(component, [SubscribeEvent(resource_type, [state])])
