@@ -279,10 +279,8 @@ class ConfigCmd(Cmd):
             self._confStoreAPI.set_cluster_cardinality(self._index)
             # Init node health
             self._add_node_health()
-            # Init cvg health
-            self._add_cvg_health()
-            # Init disk health
-            self._add_disk_health()
+            # Init cvg and disk health
+            self._add_cvg_and_disk_health()
 
             Log.info("config command is successful")
             sys.stdout.write("config command is successful.\n")
@@ -305,9 +303,9 @@ class ConfigCmd(Cmd):
                                    resource_type=CLUSTER_ELEMENTS.NODE.value,
                                    resource_id=node)
 
-    def _add_cvg_health(self) -> None:
+    def _add_cvg_and_disk_health(self) -> None:
         """
-        Add CVG health
+        Add CVG and disk health
         """
         _, nodes_list = self._confStoreAPI.get_cluster_cardinality()
         for node in nodes_list:
@@ -317,23 +315,16 @@ class ConfigCmd(Cmd):
                     self._add_health_event(node_id=node,
                                            resource_type=CLUSTER_ELEMENTS.CVG.value,
                                            resource_id=cvg)
+                    self._add_disk_health(node, cvg)
 
-    def _add_disk_health(self) -> None:
-        """
-        Add disk health
-        """
-        _, nodes_list = self._confStoreAPI.get_cluster_cardinality()
-        for node in nodes_list:
-            cvg_list = ConftStoreSearch.get_cvg_list(self._index, node)
-            if cvg_list:
-                for cvg in cvg_list:
-                    disk_list = ConftStoreSearch.get_disk_list_for_cvg(self._index, node, cvg)
-                    if disk_list:
-                        for disk in disk_list:
-                            self._add_health_event(node_id=node,
-                                                   resource_type=CLUSTER_ELEMENTS.DISK.value,
-                                                   resource_id=disk,
-                                                   specific_info={NODE_MAP_ATTRIBUTES.CVG_ID.value: cvg})
+    def _add_disk_health(self, node_id, cvg_id) -> None:
+        disk_list = ConftStoreSearch.get_disk_list_for_cvg(self._index, node_id, cvg_id)
+        if disk_list:
+            for disk in disk_list:
+                self._add_health_event(node_id=node_id,
+                                       resource_type=CLUSTER_ELEMENTS.DISK.value,
+                                       resource_id=disk,
+                                       specific_info={NODE_MAP_ATTRIBUTES.CVG_ID.value: cvg_id})
 
     def _add_health_event(self, node_id: str, resource_type: str,
                           resource_id: str, specific_info: dict=None) -> None:
