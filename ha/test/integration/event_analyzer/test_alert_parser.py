@@ -32,7 +32,7 @@ if __name__ == '__main__':
     alert_parser = ClusterResourceParser()
     print("********Alert Parser********")
     resource_type = "enclosure:fru:fan"
-    TestAlert = {
+    '''TestAlert = {
         ALERT_ATTRIBUTES.USERNAME: "sspl-ll",
         ALERT_ATTRIBUTES.DESCRIPTION: "Seagate Storage Platform Library - Sensor Response",
         ALERT_ATTRIBUTES.TITLE: "SSPL Sensor Response",
@@ -56,7 +56,6 @@ if __name__ == '__main__':
                     ALERT_ATTRIBUTES.RESOURCE_TYPE: resource_type,
                     ALERT_ATTRIBUTES.DESCRIPTION: "The fan module is not installed."
                 },
-                ALERT_ATTRIBUTES.SOURCE: 'source_1',
                 ALERT_ATTRIBUTES.ALERT_TYPE: "missing",
                 ALERT_ATTRIBUTES.SEVERITY: "critical",
                 ALERT_ATTRIBUTES.SPECIFIC_INFO: {
@@ -75,7 +74,28 @@ if __name__ == '__main__':
                 "host_id": "s3node-host-1"
             }
         }
-    }
+    }'''
+    TestAlert =  {
+             "header": {
+                    EVENT_ATTRIBUTES.EVENT_ID: "1574075909",
+                    EVENT_ATTRIBUTES.TIMESTAMP: "1574075909",
+              },
+             "payload" : {
+                    ALERT_ATTRIBUTES.SOURCE: "source_1",
+                    ALERT_ATTRIBUTES.RESOURCE_ID: "Fan Module 4",
+                    ALERT_ATTRIBUTES.SITE_ID: 1,
+                    ALERT_ATTRIBUTES.NODE_ID: 1,
+                    ALERT_ATTRIBUTES.CLUSTER_ID: 1,
+                    ALERT_ATTRIBUTES.RACK_ID: 1,
+                    ALERT_ATTRIBUTES.ALERT_TYPE: "missing",
+                    ALERT_ATTRIBUTES.RESOURCE_TYPE: resource_type,
+                    "resource_status": "failed",
+                    ALERT_ATTRIBUTES.DESCRIPTION: "The fan module is not installed.",
+                    ALERT_ATTRIBUTES.SPECIFIC_INFO: {
+                        "generation_id" : "1234690"
+                     },
+               }
+         }
 
     health_event = alert_parser.parse_event(json.dumps(TestAlert))
 
@@ -99,7 +119,7 @@ if __name__ == '__main__':
         print("Event alert parser test failed")
 
     #Delete one key of the alert msg and validate the exception handling
-    del TestAlert[ALERT_ATTRIBUTES.MESSAGE][ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.ALERT_ID]
+    del TestAlert['payload'][ALERT_ATTRIBUTES.RESOURCE_ID]
     msg_test = json.dumps(TestAlert)
     try:
         health_event = alert_parser.parse_event(json.dumps(TestAlert))

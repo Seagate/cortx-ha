@@ -22,7 +22,7 @@ import pathlib
 from string import Template
 
 sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..', '..', '..'))
-from ha.core.event_analyzer.parser.parser import ClusterResourceMParser
+from ha.core.event_analyzer.parser.parser import ClusterResourceParser
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.config.config_manager import ConfigManager
 from ha.const import IEM_DESCRIPTION, PVTFQDN_TO_NODEID_KEY, ALERT_ATTRIBUTES, EVENT_ATTRIBUTES
@@ -39,7 +39,7 @@ if __name__ == '__main__':
     status = "offline"
     iem_description = IEM_DESCRIPTION
     iem_description = Template(iem_description).substitute(host=host, status=status)
-    TestIEM = {
+    '''TestIEM = {
         ALERT_ATTRIBUTES.USERNAME: "sspl-ll",
         ALERT_ATTRIBUTES.DESCRIPTION: "Seagate Storage Platform Library - Sensor Response",
         ALERT_ATTRIBUTES.TITLE: "SSPL Sensor Response",
@@ -76,7 +76,29 @@ if __name__ == '__main__':
                 ALERT_ATTRIBUTES.HOST_ID: "abcd.com"
             }
         }
-    }
+    }'''
+    TestIEM = {
+            "header": {
+                    EVENT_ATTRIBUTES.EVENT_ID: "1574075909",
+                    EVENT_ATTRIBUTES.TIMESTAMP: "1574075909",
+              },
+             "payload" : {
+                    ALERT_ATTRIBUTES.SOURCE: "source_1",
+                    ALERT_ATTRIBUTES.RESOURCE_ID: "Fan Module 4",
+                    ALERT_ATTRIBUTES.SITE_ID: 1,
+                    ALERT_ATTRIBUTES.NODE_ID: 1,
+                    ALERT_ATTRIBUTES.CLUSTER_ID: 1,
+                    ALERT_ATTRIBUTES.RACK_ID: 1,
+                    ALERT_ATTRIBUTES.ALERT_TYPE: "get",
+                    ALERT_ATTRIBUTES.RESOURCE_TYPE: resource_type,
+                    "resource_status": "repaired",
+                    ALERT_ATTRIBUTES.DESCRIPTION: "The fan module is not installed.",
+                    ALERT_ATTRIBUTES.SPECIFIC_INFO: {
+                        "generation_id" : "1234690"
+                     },
+               }
+         }
+
 
     # Push hostname to node id mapping to confstore
     print(f"Adding hostname to node id mapping to confstore for {host}:{node_id}")
@@ -106,7 +128,7 @@ if __name__ == '__main__':
 
     try:
         # Delete one key from the IEM msg and validate the exception handling
-        del TestIEM[ALERT_ATTRIBUTES.MESSAGE][ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.ALERT_ID]
+        del TestIEM[ALERT_ATTRIBUTES.RESOURCE_ID]
         msg_test = json.dumps(TestIEM)
         health_event = iem_parser.parse_event(json.dumps(TestIEM))
         print("IEM parser negative test failed")

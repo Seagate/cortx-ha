@@ -42,13 +42,13 @@ if __name__ == '__main__':
         iem_description = const.IEM_DESCRIPTION
         iem_description = Template(iem_description).substitute(host=host, status=status)
         TestMsg = {
-            "message": {
-              "sspl_ll_msg_header": {
+          "message": {
+            "sspl_ll_msg_header": {
                 "msg_version": "1.0.0",
                 "schema_version": "1.0.0",
                 "sspl_version": "1.0.0"
-             },
-             "sensor_response_type": {
+            },
+            "sensor_response_type": {
                 "info": {
                     "event_time": "1574075909",
                     "resource_id": "Fan Module 4",
