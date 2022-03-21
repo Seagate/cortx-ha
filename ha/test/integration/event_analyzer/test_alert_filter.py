@@ -27,15 +27,14 @@ if __name__ == '__main__':
     from cortx.utils.conf_store.conf_store import Conf
     from ha import const
     from ha.core.config.config_manager import ConfigManager
-    from ha.core.event_analyzer.filter.filter import AlertFilter
+    from ha.core.event_analyzer.filter.filter import ClusterResourceFilter
     import traceback
     try:
         ConfigManager.init("test_alert_filter")
-        AlertFilter = AlertFilter()
+        AlertFilter = ClusterResourceFilter()
         print("********Alert Filter********")
         resource_type = "enclosure:fru:fan"
-        TestMsg = {
-        "message": {
+        '''TestMsg = {
             "sspl_ll_msg_header": {
             "msg_version": "1.0.0",
             "schema_version": "1.0.0",
@@ -52,7 +51,6 @@ if __name__ == '__main__':
                     "resource_type": resource_type,
                     "description": "The fan module is not installed."
                 },
-                "source": 'source_1',
                 "alert_type": "missing",
                 "severity": "critical",
                 "specific_info": {
@@ -71,7 +69,28 @@ if __name__ == '__main__':
                 "host_id": "s3node-host-1"
             }
           }
-        }
+        }'''
+        TestMsg = {
+                "header":
+                {
+                   "event_id" : "1574075909789324562",
+                   "timestamp": "1574075909",
+                },
+                "payload" :
+                {
+                    "source": "source_1",
+                    "site_id": 1,
+                    "node_id": 1,
+                    "cluster_id": 1,
+                    "rack_id": 1,
+                    "resource_id": "Fan Module 4",
+                    "resource_type": resource_type,
+                    "resource_status": "offline",
+                    "specific_info" : {
+                       "generation_id" : "1234590"
+                     }
+                }
+         }
 
         Expected_result = False
         filter_type = Conf.get(const.ALERT_FILTER_INDEX, f"alert{_DELIM}filter_type")
