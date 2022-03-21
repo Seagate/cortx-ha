@@ -21,7 +21,7 @@ import sys
 import pathlib
 
 sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..', '..', '..'))
-from ha.core.event_analyzer.parser.parser import AlertParser
+from ha.core.event_analyzer.parser.parser import ClusterResourceParser
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.config.config_manager import ConfigManager
 from ha.const import ALERT_ATTRIBUTES, EVENT_ATTRIBUTES
@@ -29,7 +29,7 @@ from ha.const import ALERT_ATTRIBUTES, EVENT_ATTRIBUTES
 # Test case for alert filter
 if __name__ == '__main__':
     ConfigManager.init("test_alert_parser")
-    alert_parser = AlertParser()
+    alert_parser = ClusterResourceParser()
     print("********Alert Parser********")
     resource_type = "enclosure:fru:fan"
     TestAlert = {

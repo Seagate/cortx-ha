@@ -22,7 +22,7 @@ import pathlib
 from string import Template
 
 sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..', '..', '..'))
-from ha.core.event_analyzer.parser.parser import IEMParser
+from ha.core.event_analyzer.parser.parser import ClusterResourceMParser
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.config.config_manager import ConfigManager
 from ha.const import IEM_DESCRIPTION, PVTFQDN_TO_NODEID_KEY, ALERT_ATTRIBUTES, EVENT_ATTRIBUTES
@@ -31,7 +31,7 @@ from ha.const import IEM_DESCRIPTION, PVTFQDN_TO_NODEID_KEY, ALERT_ATTRIBUTES, E
 if __name__ == '__main__':
     ConfigManager.init("test_iem_parser")
     confstore = ConfigManager.get_confstore()
-    iem_parser = IEMParser()
+    iem_parser = ClusterResourceParser()
     print("********iem Parser********")
     resource_type = "node"
     host = "abcd.data.private"
