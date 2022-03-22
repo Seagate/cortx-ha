@@ -38,7 +38,7 @@ from ha.k8s_setup.const import _DELIM
 from ha.core.event_manager.event_manager import EventManager
 from ha.core.event_manager.subscribe_event import SubscribeEvent
 from ha.util.conf_store import ConftStoreSearch
-from ha.core.system_health.const import CLUSTER_ELEMENTS, HEALTH_EVENTS, EVENT_SEVERITIES
+from ha.core.system_health.const import CLUSTER_ELEMENTS, HEALTH_EVENTS, EVENT_SEVERITIES, NODE_MAP_ATTRIBUTES
 from ha.const import EVENT_ATTRIBUTES
 from ha.fault_tolerance.const import FAULT_TOLERANCE_KEYS, HEALTH_EVENT_SOURCES, NOT_DEFINED
 from ha.core.system_health.model.health_event import HealthEvent
@@ -279,8 +279,8 @@ class ConfigCmd(Cmd):
             self._confStoreAPI.set_cluster_cardinality(self._index)
             # Init node health
             self._add_node_health()
-            # Init cvg health
-            self._add_cvg_health()
+            # Init cvg and disk health
+            self._add_cvg_and_disk_health()
 
             Log.info("config command is successful")
             sys.stdout.write("config command is successful.\n")
@@ -303,9 +303,9 @@ class ConfigCmd(Cmd):
                                    resource_type=CLUSTER_ELEMENTS.NODE.value,
                                    resource_id=node)
 
-    def _add_cvg_health(self) -> None:
+    def _add_cvg_and_disk_health(self) -> None:
         """
-        Add CVG health
+        Add CVG and disk health
         """
         _, nodes_list = self._confStoreAPI.get_cluster_cardinality()
         for node in nodes_list:
@@ -315,15 +315,26 @@ class ConfigCmd(Cmd):
                     self._add_health_event(node_id=node,
                                            resource_type=CLUSTER_ELEMENTS.CVG.value,
                                            resource_id=cvg)
+                    self._add_disk_health(node, cvg)
 
-    def _add_health_event(self, node_id: str, resource_type: str, resource_id: str) -> None:
+    def _add_disk_health(self, node_id, cvg_id) -> None:
+        disk_list = ConftStoreSearch.get_disk_list_for_cvg(self._index, node_id, cvg_id)
+        if disk_list:
+            for disk in disk_list:
+                self._add_health_event(node_id=node_id,
+                                       resource_type=CLUSTER_ELEMENTS.DISK.value,
+                                       resource_id=disk,
+                                       specific_info={NODE_MAP_ATTRIBUTES.CVG_ID.value: cvg_id})
+
+    def _add_health_event(self, node_id: str, resource_type: str,
+                          resource_id: str, specific_info: dict=None) -> None:
         """
         Add health events for multiple resources (e.g. Node, CVG, disk)
-
         Args:
             node_id (str): node id
             resource_type (str): Resource type will be Node, CVG, disk, etc.
             resource_id (str): Resource id
+            specific_info(dict): Ex. cvg_id for resource Disk
         """
         timestamp = str(int(time.time()))
         event_id = timestamp + str(uuid.uuid4().hex)
@@ -341,12 +352,13 @@ class ConfigCmd(Cmd):
             EVENT_ATTRIBUTES.RESOURCE_TYPE : resource_type,
             EVENT_ATTRIBUTES.TIMESTAMP : timestamp,
             EVENT_ATTRIBUTES.RESOURCE_ID : resource_id,
-            EVENT_ATTRIBUTES.SPECIFIC_INFO : None
+            EVENT_ATTRIBUTES.SPECIFIC_INFO : specific_info
         }
         Log.debug(f"Adding initial health {health_event} for {resource_type} : {resource_id}")
         health_event = HealthEvent.dict_to_object(health_event)
         system_health = SystemHealth(self._confstore)
         system_health.process_event(health_event)
+
 
 class InitCmd(Cmd):
     """

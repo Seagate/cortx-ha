@@ -200,13 +200,13 @@ class SystemHealth(Subscriber):
         status_key = None
         if component_id is not None:
             for key in self._status_dict:
-                if re.search(f"{component}/{component_id}/health", key):
+                if re.search(f"{component}{const.HA_DELIM}{component_id}{const.HA_DELIM}health", key):
                     status_key = key
                     break
         else:
             for key in self._status_dict:
-                if re.search(f"{component}/.+/health", key):
-                    split_key = re.split("/", key)
+                if re.search(f"{component}{const.HA_DELIM}.+{const.HA_DELIM}health", key):
+                    split_key = re.split(const.HA_DELIM, key)
                     if component == split_key[-3]:
                         status_key = key
                         break
@@ -219,7 +219,7 @@ class SystemHealth(Subscriber):
             if key is not None:
                 entity_health = self._status_dict[key]
                 entity_health = json.loads(entity_health)
-                split_key = re.split("/", key)
+                split_key = re.split(const.HA_DELIM, key)
                 component_id = split_key[-2]
                 status = entity_health["events"][0]["status"]
                 created_timestamp = entity_health['events'][0]['created_timestamp']
@@ -318,7 +318,7 @@ class SystemHealth(Subscriber):
         key = self._prepare_key(component, cluster_id=self.node_map['cluster_id'], site_id=self.node_map['site_id'],
                                 rack_id=self.node_map['rack_id'], storageset_id=self.node_map['storageset_id'],
                                 node_id=self.node_id, server_id=self.node_id, storage_id=self.node_id,
-                                comp_type=comp_type, comp_id=comp_id)
+                                comp_type=comp_type, comp_id=comp_id, cvg_id=self.cvg_id)
         is_key_exists = self.healthmanager.key_exists(key)
         self.healthmanager.set_key(key, healthvalue)
         if is_key_exists:
@@ -385,6 +385,7 @@ class SystemHealth(Subscriber):
 
             # Update the node map
             self.node_id = healthevent.node_id
+            self.cvg_id = healthevent.specific_info[NODE_MAP_ATTRIBUTES.CVG_ID.value] if component_type == CLUSTER_ELEMENTS.DISK.value else None
             self.node_map = {'cluster_id':healthevent.cluster_id, 'site_id':healthevent.site_id,
                              'rack_id':healthevent.rack_id, 'storageset_id':healthevent.storageset_id}
 
@@ -393,7 +394,7 @@ class SystemHealth(Subscriber):
                                         cluster_id=healthevent.cluster_id, site_id=healthevent.site_id,
                                         rack_id=healthevent.rack_id, storageset_id=healthevent.storageset_id,
                                         node_id=healthevent.node_id, server_id=healthevent.node_id,
-                                        storage_id=healthevent.node_id)
+                                        storage_id=healthevent.node_id, cvg_id=self.cvg_id)
 
             current_timestamp = str(int(time.time()))
             if current_health:
