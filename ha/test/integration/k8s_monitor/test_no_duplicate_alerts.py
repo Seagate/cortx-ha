@@ -40,7 +40,7 @@ class MockAlert:
     @staticmethod
     def get_host_alert():
         # Alert without generation_id
-        return { "event": {
+        return {
                 "header":{
                     "version":"1.0",
                     "timestamp":"112255",
@@ -60,12 +60,11 @@ class MockAlert:
                     }
                 }
             }
-        }
 
     @staticmethod
     def get_pod_alert():
         # Alert with generation_id
-        return { "event":{
+        return {
                 "header":{
                     "version":"1.0",
                     "timestamp":"112233",
@@ -86,14 +85,13 @@ class MockAlert:
                     }
                 }
             }
-        }
 
     @staticmethod
     def toggle_status(alert):
-        if alert["event"]["payload"]["resource_status"] == "online":
-            alert["event"]["payload"]["resource_status"] = "offline"
+        if alert["payload"]["resource_status"] == "online":
+            alert["payload"]["resource_status"] = "offline"
         else:
-            alert["event"]["payload"]["resource_status"] = "online"
+            alert["payload"]["resource_status"] = "online"
         return alert
 
 
@@ -101,7 +99,7 @@ class MockAlert:
 if __name__ == "__main__":
     print("******** Testing K8s Not Publishing Duplicate Alerts ********")
     try:
-        ConfigManager.init("test_k8s_resource_monitor")
+        ConfigManager.init(None)
 
         pod_labels =  ['cortx-data', 'cortx-server']
         pod_label_str = ', '.join(pod_label for pod_label in pod_labels)
