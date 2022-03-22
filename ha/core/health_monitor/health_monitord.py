@@ -38,6 +38,7 @@ from ha.util.message_bus import MessageBus
 from ha.util.message_bus import CONSUMER_STATUS
 from ha.core.config.config_manager import ConfigManager
 from ha.core.health_monitor.monitor_rules_manager import MonitorRulesManager
+from ha.util.conf_store import ConftStoreSearch
 
 class HealthMonitorService:
 
@@ -74,6 +75,8 @@ class HealthMonitorService:
         self._confstore = ConfigManager.get_confstore()
         self._rule_manager = MonitorRulesManager()
         self._event_consumer = self._get_consumer()
+        # Initialize conf store
+        ConftStoreSearch()
 
     def _get_consumer(self):
         """

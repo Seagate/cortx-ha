@@ -43,6 +43,7 @@ from ha.core.system_health.model.health_status import StatusOutput, ComponentSta
 from ha.core.system_health.system_health_hierarchy import HealthHierarchy
 from ha.core.event_manager.resources import RESOURCE_TYPES
 from ha.fault_tolerance.const import HEALTH_EVENT_SOURCES
+from ha.util.conf_store import ConftStoreSearch
 
 class SystemHealth(Subscriber):
     """
@@ -385,7 +386,14 @@ class SystemHealth(Subscriber):
 
             # Update the node map
             self.node_id = healthevent.node_id
-            self.cvg_id = healthevent.specific_info[NODE_MAP_ATTRIBUTES.CVG_ID.value] if component_type == CLUSTER_ELEMENTS.DISK.value else None
+            self.cvg_id = None
+            if component_type == CLUSTER_ELEMENTS.DISK.value:
+                if not isinstance(healthevent.specific_info, dict):
+                    healthevent.specific_info = {}
+                if not healthevent.specific_info.get(NODE_MAP_ATTRIBUTES.CVG_ID.value):
+                    self.cvg_id = ConftStoreSearch.get_cvg_for_disk(self.node_id, component_id)
+                    healthevent.specific_info[NODE_MAP_ATTRIBUTES.CVG_ID.value] = self.cvg_id
+
             self.node_map = {'cluster_id':healthevent.cluster_id, 'site_id':healthevent.site_id,
                              'rack_id':healthevent.rack_id, 'storageset_id':healthevent.storageset_id}
 

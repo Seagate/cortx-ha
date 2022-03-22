@@ -28,17 +28,23 @@ from ha.k8s_setup.const import CLUSTER_CARDINALITY_KEY, CLUSTER_CARDINALITY_NUM_
 from ha.k8s_setup.const import _DELIM, GconfKeys
 from cortx.utils.log import Log
 from ha.core.error import ClusterCardinalityError
+from ha.const import CLUSTER_GLOBAL_INDEX
+from cortx.utils.const import CLUSTER_CONF
 
 
 class ConftStoreSearch:
     """
     Wrapper class for using the confstore search APIs
     """
+    _cluster_conf_loaded = False
 
     def __init__(self, conf_store_req: bool = True):
         """Init method"""
         if conf_store_req:
             self._confstore = ConfigManager.get_confstore()
+        if not ConftStoreSearch._cluster_conf_loaded:
+            ConfigManager._safe_load(CLUSTER_GLOBAL_INDEX, CLUSTER_CONF)
+            ConftStoreSearch._cluster_conf_loaded = True
 
     @staticmethod
     def get_data_pods(index):
@@ -221,3 +227,25 @@ class ConftStoreSearch:
         except Exception as e:
             Log.error(f"Unable to fetch Disk list from GConf. Error {e}")
             raise Exception(f"Unable to fetch Disk list. Error {e}")
+
+
+    @staticmethod
+    def get_cvg_for_disk(node_id, disk_id):
+        """
+        Returns cvg id for given node_id and disk_id.
+        Args:
+            index(str): index of conf file
+            node_id (str): node id
+            disk_id (str): disk id
+        Returns:
+            cvg id in string format
+
+        >>> ConftStoreSearch.get_cvg_for_disk('21d6291109304485b3daff43a06cff77', '/dev/sdd')
+        'cvg-01'
+        """
+        cvg_id = ""
+        cvg_list = ConftStoreSearch.get_cvg_list(CLUSTER_GLOBAL_INDEX, node_id)
+        for cvg_id in cvg_list:
+            if disk_id in ConftStoreSearch.get_disk_list_for_cvg(CLUSTER_GLOBAL_INDEX, node_id, cvg_id):
+                return cvg_id
+        return cvg_id

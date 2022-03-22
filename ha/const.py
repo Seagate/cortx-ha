@@ -57,6 +57,7 @@ HA_CONFIG_FILE="{}/ha.conf".format(CONFIG_DIR)
 FIDS_CONFIG_FILE="{}/fids.json".format(CONFIG_DIR)
 HA_GLOBAL_INDEX="ha_conf"
 SOURCE_CONFIG_FILE="{}/ha.conf".format(SOURCE_CONFIG_PATH)
+CLUSTER_GLOBAL_INDEX="cluster"
 BACKUP_DEST_DIR="/opt/seagate/cortx/ha_backup"
 BACKUP_DEST_DIR_CONF = "{}/conf".format(BACKUP_DEST_DIR)
 BACKUP_CONFIG_FILE="{}/ha.conf".format(BACKUP_DEST_DIR_CONF)
