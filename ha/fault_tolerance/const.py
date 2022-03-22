@@ -29,4 +29,4 @@ class FAULT_TOLERANCE_KEYS(enum.Enum, metaclass=EnumListMeta):
 
 # Used to set default value in const.HA_CONFIG_FILE
 # TODO : To be replaced by actual values when they are available in config
-NOT_DEFINED = '0xBAADFOOD'
+NOT_DEFINED = 'NOT_DEFINED'
