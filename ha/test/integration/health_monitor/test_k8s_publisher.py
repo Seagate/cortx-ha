@@ -70,7 +70,7 @@ if __name__ == '__main__':
                    }
                }
         if cluster_resource_filter.filter_event(json.dumps(ha_event)):
-            health_event = HealthEvent("source_1", 1, "failed", EVENT_SEVERITIES.CRITICAL.value, "1", "1", "1", "1", "srvnode_1", "srvnode_1", node"", "16215909572", "cortx-data-pod", {"namespace": "cortx"})
+            health_event = HealthEvent("source_1", 1, "failed", EVENT_SEVERITIES.CRITICAL.value, "1", "1", "1", "1", "srvnode_1", "srvnode_1", "node", "16215909572", "cortx-data-pod", {"namespace": "cortx"})
             recovery_action_event = RecoveryActionEvent(health_event)
             event_manager.publish(recovery_action_event.event)
         else:
