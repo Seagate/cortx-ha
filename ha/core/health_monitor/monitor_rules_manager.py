@@ -17,6 +17,7 @@
 
 import json
 from cortx.utils.log import Log
+from ha.const import HA_DELIM
 from ha.core.health_monitor.const import HEALTH_MON_ACTIONS
 from ha.core.health_monitor.const import HEALTH_MON_KEYS
 from ha.core.system_health.model.health_event import HealthEvent
@@ -41,7 +42,7 @@ class MonitorRulesManager:
         Returns:
             str: key string
         """
-        return f"{HEALTH_MON_KEYS.ACT_RULE.value}/{resource_type}/{event_type}"
+        return f"{HEALTH_MON_KEYS.ACT_RULE.value}{HA_DELIM}{resource_type}{HA_DELIM}{event_type}"
 
     def _get_val(self, key: str) -> str:
         """

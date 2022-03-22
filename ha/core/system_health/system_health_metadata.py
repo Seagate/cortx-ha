@@ -16,6 +16,7 @@
 
 from cortx.utils.log import Log
 from ha import const
+from ha.const import HA_DELIM
 from ha.core.error import HaSystemHealthComponentsException, HaSystemHealthHierarchyException
 
 class SystemHealthComponents:
@@ -26,33 +27,33 @@ class SystemHealthComponents:
 
     # Components/resources maintained by System Health module. Note: Do not change the order.
     _components = {const.COMPONENTS.SERVER_HARDWARE.value: {const.RESOURCE_LIST: ["node:fru", "node:sensor", "node:os", "node:interface"],
-                                                            const.KEY: "/cortx/ha/system/cluster/$cluster_id/site/$site_id/rack/$rack_id/node/$node_id/server/$server_id/hw/$comp_type/$comp_id/health"},
+                                                            const.KEY: f"{HA_DELIM}cortx{HA_DELIM}ha{HA_DELIM}system{HA_DELIM}cluster{HA_DELIM}$cluster_id{HA_DELIM}site{HA_DELIM}$site_id{HA_DELIM}rack{HA_DELIM}$rack_id{HA_DELIM}node{HA_DELIM}$node_id{HA_DELIM}server{HA_DELIM}$server_id{HA_DELIM}hw{HA_DELIM}$comp_type{HA_DELIM}$comp_id{HA_DELIM}health"},
                    const.COMPONENTS.SERVER_SERVICE.value: {const.RESOURCE_LIST: ["node:sw"],
-                                                           const.KEY: "/cortx/ha/system/cluster/$cluster_id/site/$site_id/rack/$rack_id/node/$node_id/server/$server_id/service/$comp_type/$comp_id/health"},
+                                                           const.KEY: f"{HA_DELIM}cortx{HA_DELIM}ha{HA_DELIM}system{HA_DELIM}cluster{HA_DELIM}$cluster_id{HA_DELIM}site{HA_DELIM}$site_id{HA_DELIM}rack{HA_DELIM}$rack_id{HA_DELIM}node{HA_DELIM}$node_id{HA_DELIM}server{HA_DELIM}$server_id{HA_DELIM}service{HA_DELIM}$comp_type{HA_DELIM}$comp_id{HA_DELIM}health"},
                    const.COMPONENTS.SERVER.value: {const.RESOURCE_LIST: ["server"],
-                                                   const.KEY: "/cortx/ha/system/cluster/$cluster_id/site/$site_id/rack/$rack_id/node/$node_id/server/$server_id/health"},
+                                                   const.KEY: f"{HA_DELIM}cortx{HA_DELIM}ha{HA_DELIM}system{HA_DELIM}cluster{HA_DELIM}$cluster_id{HA_DELIM}site{HA_DELIM}$site_id{HA_DELIM}rack{HA_DELIM}$rack_id{HA_DELIM}node{HA_DELIM}$node_id{HA_DELIM}server{HA_DELIM}$server_id{HA_DELIM}health"},
                    const.COMPONENTS.STORAGESET.value: {const.RESOURCE_LIST: ["storageset"],
-                                                       const.KEY: "/cortx/ha/system/cluster/$cluster_id/storageset/$storageset_id/health"},
+                                                       const.KEY: f"{HA_DELIM}cortx{HA_DELIM}ha{HA_DELIM}system{HA_DELIM}cluster{HA_DELIM}$cluster_id{HA_DELIM}storageset{HA_DELIM}$storageset_id{HA_DELIM}health"},
                    const.COMPONENTS.STORAGE_COMPONENT.value: {const.RESOURCE_LIST: ["enclosure"],
-                                                              const.KEY: "/cortx/ha/system/cluster/$cluster_id/site/$site_id/rack/$rack_id/node/$node_id/storage/$storage_id/hw/$comp_type/$comp_id/health"},
+                                                              const.KEY: f"{HA_DELIM}cortx{HA_DELIM}ha{HA_DELIM}system{HA_DELIM}cluster{HA_DELIM}$cluster_id{HA_DELIM}site{HA_DELIM}$site_id{HA_DELIM}rack{HA_DELIM}$rack_id{HA_DELIM}node{HA_DELIM}$node_id{HA_DELIM}storage{HA_DELIM}$storage_id{HA_DELIM}hw{HA_DELIM}$comp_type{HA_DELIM}$comp_id{HA_DELIM}health"},
                    const.COMPONENTS.STORAGE.value: {const.RESOURCE_LIST: ["storage"],
-                                                    const.KEY: "/cortx/ha/system/cluster/$cluster_id/site/$site_id/rack/$rack_id/node/$node_id/storage/$storage_id/health"},
+                                                    const.KEY: f"{HA_DELIM}cortx{HA_DELIM}ha{HA_DELIM}system{HA_DELIM}cluster{HA_DELIM}$cluster_id{HA_DELIM}site{HA_DELIM}$site_id{HA_DELIM}rack{HA_DELIM}$rack_id{HA_DELIM}node{HA_DELIM}$node_id{HA_DELIM}storage{HA_DELIM}$storage_id{HA_DELIM}health"},
                    const.COMPONENTS.NODE.value: {const.RESOURCE_LIST: ["node"],
-                                                 const.KEY: "/cortx/ha/system/cluster/$cluster_id/site/$site_id/rack/$rack_id/node/$node_id/health"},
+                                                 const.KEY: f"{HA_DELIM}cortx{HA_DELIM}ha{HA_DELIM}system{HA_DELIM}cluster{HA_DELIM}$cluster_id{HA_DELIM}site{HA_DELIM}$site_id{HA_DELIM}rack{HA_DELIM}$rack_id{HA_DELIM}node{HA_DELIM}$node_id{HA_DELIM}health"},
                    const.COMPONENTS.RACK.value: {const.RESOURCE_LIST: ["rack"],
-                                                 const.KEY: "/cortx/ha/system/cluster/$cluster_id/site/$site_id/rack/$rack_id/health"},
+                                                 const.KEY: f"{HA_DELIM}cortx{HA_DELIM}ha{HA_DELIM}system{HA_DELIM}cluster{HA_DELIM}$cluster_id{HA_DELIM}site{HA_DELIM}$site_id{HA_DELIM}rack{HA_DELIM}$rack_id{HA_DELIM}health"},
                    const.COMPONENTS.SITE.value: {const.RESOURCE_LIST: ["site"],
-                                                 const.KEY: "/cortx/ha/system/cluster/$cluster_id/site/$site_id/health"},
+                                                 const.KEY: f"{HA_DELIM}cortx{HA_DELIM}ha{HA_DELIM}system{HA_DELIM}cluster{HA_DELIM}$cluster_id{HA_DELIM}site{HA_DELIM}$site_id{HA_DELIM}health"},
                    const.COMPONENTS.CLUSTER.value: {const.RESOURCE_LIST: ["cluster"],
-                                                    const.KEY: "/cortx/ha/system/cluster/$cluster_id/health"},
+                                                    const.KEY: f"{HA_DELIM}cortx{HA_DELIM}ha{HA_DELIM}system{HA_DELIM}cluster{HA_DELIM}$cluster_id{HA_DELIM}health"},
                    const.COMPONENTS.AGG_SERVICE.value: {const.RESOURCE_LIST: [],
-                                                        const.KEY: "/cortx/ha/system/cluster/$cluster_id/service/$comp_type/$comp_id/aggregate"},
+                                                        const.KEY: f"{HA_DELIM}cortx{HA_DELIM}ha{HA_DELIM}system{HA_DELIM}cluster{HA_DELIM}$cluster_id{HA_DELIM}service{HA_DELIM}$comp_type{HA_DELIM}$comp_id{HA_DELIM}aggregate"},
                    const.COMPONENTS.NODE_MAP.value: {const.RESOURCE_LIST: [],
-                                                     const.KEY: "/cortx/ha/system/cluster/node_map/$node_id"},
+                                                     const.KEY: f"{HA_DELIM}cortx{HA_DELIM}ha{HA_DELIM}system{HA_DELIM}cluster{HA_DELIM}node_map{HA_DELIM}$node_id"},
                    const.COMPONENTS.CVG.value: {const.RESOURCE_LIST: ["cvg"],
-                                                 const.KEY: "/cortx/ha/system/cluster/$cluster_id/site/$site_id/rack/$rack_id/node/$node_id/cvg/$cvg_id/health"},
+                                                 const.KEY: f"{HA_DELIM}cortx{HA_DELIM}ha{HA_DELIM}system{HA_DELIM}cluster{HA_DELIM}$cluster_id{HA_DELIM}site{HA_DELIM}$site_id{HA_DELIM}rack{HA_DELIM}$rack_id{HA_DELIM}node{HA_DELIM}$node_id{HA_DELIM}cvg{HA_DELIM}$cvg_id{HA_DELIM}health"},
                    const.COMPONENTS.DISK.value: {const.RESOURCE_LIST: ["disk"],
-                                                 const.KEY: "/cortx/ha/system/cluster/$cluster_id/site/$site_id/rack/$rack_id/node/$node_id/cvg/$cvg_id/disk/$disk_id/health"}}
+                                                 const.KEY: f"{HA_DELIM}cortx{HA_DELIM}ha{HA_DELIM}system{HA_DELIM}cluster{HA_DELIM}$cluster_id{HA_DELIM}site{HA_DELIM}$site_id{HA_DELIM}rack{HA_DELIM}$rack_id{HA_DELIM}node{HA_DELIM}$node_id{HA_DELIM}cvg{HA_DELIM}$cvg_id{HA_DELIM}disk{HA_DELIM}$disk_id{HA_DELIM}health"}}
 
     @staticmethod
     def get_component(resource_type: str) -> str:
@@ -106,6 +107,7 @@ class SystemHealthHierarchy:
     _server_hw = [const.COMPONENTS.SERVER_HARDWARE.value] + _server
     _storage = [const.COMPONENTS.STORAGE_COMPONENT.value,  const.COMPONENTS.STORAGE.value] + _common_hierarchy
     _cvg = [const.COMPONENTS.CVG.value]
+    _disk = [const.COMPONENTS.DISK.value]
 
     @staticmethod
     def get_hierarchy(component: str) -> dict:
@@ -122,6 +124,8 @@ class SystemHealthHierarchy:
                 return SystemHealthHierarchy._storage[SystemHealthHierarchy._storage.index(component) : ]
             elif component in SystemHealthHierarchy._cvg:
                 return SystemHealthHierarchy._cvg[SystemHealthHierarchy._cvg.index(component):]
+            elif component in SystemHealthHierarchy._disk:
+                return SystemHealthHierarchy._disk[SystemHealthHierarchy._disk.index(component):]
             else:
                 Log.error(f"Health update hierarchy not present for component: {component}")
                 raise HaSystemHealthHierarchyException("Health update hierarchy not present for the component")

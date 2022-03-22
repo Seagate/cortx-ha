@@ -64,7 +64,7 @@ class ConftStoreSearch:
         Get machine ids for server pods: returns list of machine ids.
         """
         machine_ids = []
-        server_pod_keys = Conf.search(index, GconfKeys.NODE_CONST.value, GconfKeys.SERVICE_CONST.value, Const.SERVICE_S3_HAPROXY.value)
+        server_pod_keys = Conf.search(index, GconfKeys.NODE_CONST.value, GconfKeys.NAME_CONST.value, Const.COMPONENT_RGW.value)
         for key in server_pod_keys:
             machine_id = key.split('>')[1]
             # Add machine id to list
