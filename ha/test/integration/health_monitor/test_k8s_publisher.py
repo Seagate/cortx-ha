@@ -62,7 +62,6 @@ if __name__ == '__main__':
                        'cluster_id': 1,
                        'rack_id': 1,
                        'resource_type': resource_type,
-                       'resource_id': 1,
                        'resource_status': "failed",
                        'specific_info': {
                            'generation_id': '123563',
@@ -72,7 +71,7 @@ if __name__ == '__main__':
         if cluster_resource_filter.filter_event(json.dumps(ha_event)):
             health_event = HealthEvent("source_1", 1, "failed", EVENT_SEVERITIES.CRITICAL.value, "1", "1", "1", "1", "srvnode_1", "srvnode_1", "node", "16215909572", "cortx-data-pod", {"namespace": "cortx"})
             recovery_action_event = RecoveryActionEvent(health_event)
-            event_manager.publish(recovery_action_event.event)
+            event_manager.publish(recovery_action_event.get_event())
         else:
             print("Event is dropped as it doesn't meet criteria")
             sys.exit(0)
