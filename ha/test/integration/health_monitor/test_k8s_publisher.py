@@ -51,11 +51,11 @@ if __name__ == '__main__':
         print(f"Subscribed {component}, message type is {message_type}")
         ha_event = {
                    'header': {
-                       'event_id': "123464",
-                       'timestamp': '234445ww2',
+                       'event_id': "1",
+                       'timestamp': '16215909572',
                    },
                    'payload': {
-                       'source': "source_1",
+                       'source': "hare",
                        'resource_id': "1",
                        'site_id': 1,
                        'node_id': 1,
@@ -64,12 +64,12 @@ if __name__ == '__main__':
                        'resource_type': resource_type,
                        'resource_status': "failed",
                        'specific_info': {
-                           'generation_id': '123563',
+                           'generation_id': '1114583',
                        }
                    }
                }
         if cluster_resource_filter.filter_event(json.dumps(ha_event)):
-            health_event = HealthEvent("source_1", 1, "failed", EVENT_SEVERITIES.CRITICAL.value, "1", "1", "1", "1", "srvnode_1", "srvnode_1", "node", "16215909572", "cortx-data-pod", {"namespace": "cortx"})
+            health_event = HealthEvent("hare", 1, "failed", EVENT_SEVERITIES.CRITICAL.value, "1", "1", "1", "1", "1", "1", "node", "16215909572", "1", {"generation_id": "1114583"})
             recovery_action_event = RecoveryActionEvent(health_event)
             event_manager.publish(recovery_action_event.get_event())
         else:

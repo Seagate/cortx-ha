@@ -48,7 +48,7 @@ if __name__ == '__main__':
         actions = ["publish"]
         message_type = event_manager.subscribe(component, [SubscribeEvent(resource_type, [state])])
         print(f"Subscribed {component}, message type is {message_type}")
-        health_event = HealthEvent("source_1", "event_1", "offline", "fault", "site_1", "rack_1", "cluster_1", "storageset_1", "node_1", "abcd.com", "node", "16215009572", "disk_1", None)
+        health_event = HealthEvent("csm", "1", "offline", "fault", "1", "1", "1", "1", "1", "q", "node", "16215009572", "1", None)
         action_handler_obj = ActionFactory.get_action_handler(actions=actions, event=health_event)
         action_handler_obj.act(event=health_event, action=actions)
         print("Consuming the action event")
