@@ -30,10 +30,10 @@ if __name__ == '__main__':
         from cortx.utils.conf_store.conf_store import Conf
         from ha import const
         from ha.core.config.config_manager import ConfigManager
-        from ha.core.event_analyzer.filter.filter import ClusterResourceFilter
+        from ha.core.event_analyzer.filter.filter import IEMFilter
 
         ConfigManager.init("test_iem_filter")
-        IEMFilter = ClusterResourceFilter()
+        IEMFilter = IEMFilter()
         print("********IEM Filter********")
         resource_type = "iem"
         host = "abcd.com"
@@ -41,8 +41,7 @@ if __name__ == '__main__':
         status = "offline"
         iem_description = const.IEM_DESCRIPTION
         iem_description = Template(iem_description).substitute(host=host, status=status)
-        '''TestMsg = {
-          "message": {
+        TestMsg = {
             "sspl_ll_msg_header": {
                 "msg_version": "1.0.0",
                 "schema_version": "1.0.0",
@@ -71,35 +70,27 @@ if __name__ == '__main__':
                 "alert_id": "15740759091a4e14bca51d46908ac3e9102605d560",
                 "host_id": "abcd.com"
             }
-          }
-        }'''
-        TestMsg = {
-                "header":
-                {
-                   "event_id" : "1574075909789324562",
-                   "timestamp": "1574075909",
-                },
-                "payload" :
-                {
-                    "source": "source_1",
-                    "site_id": 1,
-                    "node_id": 1,
-                    "cluster_id": 1,
-                    "rack_id": 1,
-                    "resource_id": "Fan Module 4",
-                    "resource_type": resource_type,
-                    "resource_status": "offline",
-                    "specific_info" : {
-                       "generation_id" : "1234590"
-                     }
-                }
-         }
+        }
 
         Expected_result = False
         filter_type = Conf.get(const.ALERT_FILTER_INDEX, f"iem{_DELIM}filter_type")
         components_types_list = Conf.get(const.ALERT_FILTER_INDEX, f"iem{_DELIM}components")
         modules_dict = Conf.get(const.ALERT_FILTER_INDEX, f"iem{_DELIM}modules")
 
+        msg_type = TestMsg[const.SENSOR_RESPONSE_TYPE]
+        _component_type = msg_type[const.SPECIFIC_INFO][const.COMPONENT]
+        _module_type = msg_type[const.SPECIFIC_INFO][const.MODULE]
+
+        if const.ACTUATOR_RESPONSE_TYPE not in TestMsg.keys():
+            if filter_type == const.INCLUSION:
+                if _component_type in components_types_list and _module_type in modules_dict.get(_component_type):
+                    Expected_result = True
+            elif filter_type == const.EXCLUSION:
+                if _component_type not in components_types_list or _module_type not in modules_dict.get(
+                        _component_type):
+                    Expected_result = True
+            else:
+                print("Invalid filter type")
 
         if Expected_result == IEMFilter.filter_event(json.dumps(TestMsg)):
             print(Expected_result)

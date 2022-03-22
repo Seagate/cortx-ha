@@ -25,7 +25,7 @@ sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..'
 from ha.core.event_manager.event_manager import EventManager
 from ha.core.event_manager.subscribe_event import SubscribeEvent
 from ha.core.system_health.model.health_event import HealthEvent
-from cortx.utils.event_framework.health import HealthEvent as HEvent
+from ha.core.event_manager.model.action_event import RecoveryActionEvent
 from ha.util.message_bus import MessageBus, CONSUMER_STATUS
 
 MSG = False
@@ -45,13 +45,9 @@ if __name__ == '__main__':
         state = "failed"
         message_type = event_manager.subscribe('csm', [SubscribeEvent(resource_type, [state])])
         print(f"Subscribed {component}, message type is {message_type}")
-        payload = {"source": "monitor", 'site_id': 'site_1', 'rack_id': "rack_1",
-                   'cluster_id': 'cluster_1', 'storageset_id' : 'storageset_1',
-                   'node_id' : 'node_1', 'resource_id': 'resource_1',
-                   'resource_status': 'failed', 'resource_type' : 'node:fru:disk',
-                   'specific_info': {'generation_id': '16215009572' }}
-        action_event = HEvent(**payload)
-        event_manager.publish(action_event)
+        health_event = HealthEvent("source_1", "event_1", "failed", "fault", "site_1", "rack_1", "cluster_1", "storageset_1", "node_1", "abcd.com", "node:fru:disk", "16215009572", "disk_1", None)
+        action_event = RecoveryActionEvent(health_event)
+        event_manager.publish(action_event.event)
         print("Consuming the action event")
         message_consumer = MessageBus.get_consumer(consumer_id="1",
                             consumer_group='test_publisher',

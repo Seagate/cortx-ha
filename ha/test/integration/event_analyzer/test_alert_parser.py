@@ -21,7 +21,7 @@ import sys
 import pathlib
 
 sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..', '..', '..'))
-from ha.core.event_analyzer.parser.parser import ClusterResourceParser
+from ha.core.event_analyzer.parser.parser import AlertParser
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.config.config_manager import ConfigManager
 from ha.const import ALERT_ATTRIBUTES, EVENT_ATTRIBUTES
@@ -29,10 +29,10 @@ from ha.const import ALERT_ATTRIBUTES, EVENT_ATTRIBUTES
 # Test case for alert filter
 if __name__ == '__main__':
     ConfigManager.init("test_alert_parser")
-    alert_parser = ClusterResourceParser()
+    alert_parser = AlertParser()
     print("********Alert Parser********")
     resource_type = "enclosure:fru:fan"
-    '''TestAlert = {
+    TestAlert = {
         ALERT_ATTRIBUTES.USERNAME: "sspl-ll",
         ALERT_ATTRIBUTES.DESCRIPTION: "Seagate Storage Platform Library - Sensor Response",
         ALERT_ATTRIBUTES.TITLE: "SSPL Sensor Response",
@@ -74,33 +74,11 @@ if __name__ == '__main__':
                 "host_id": "s3node-host-1"
             }
         }
-    }'''
-    TestAlert =  {
-             "header": {
-                    EVENT_ATTRIBUTES.EVENT_ID: "1574075909",
-                    EVENT_ATTRIBUTES.TIMESTAMP: "1574075909",
-              },
-             "payload" : {
-                    ALERT_ATTRIBUTES.SOURCE: "source_1",
-                    ALERT_ATTRIBUTES.RESOURCE_ID: "Fan Module 4",
-                    ALERT_ATTRIBUTES.SITE_ID: 1,
-                    ALERT_ATTRIBUTES.NODE_ID: 1,
-                    ALERT_ATTRIBUTES.CLUSTER_ID: 1,
-                    ALERT_ATTRIBUTES.RACK_ID: 1,
-                    ALERT_ATTRIBUTES.ALERT_TYPE: "missing",
-                    ALERT_ATTRIBUTES.RESOURCE_TYPE: resource_type,
-                    "resource_status": "failed",
-                    ALERT_ATTRIBUTES.DESCRIPTION: "The fan module is not installed.",
-                    ALERT_ATTRIBUTES.SPECIFIC_INFO: {
-                        "generation_id" : "1234690"
-                     },
-               }
-         }
+    }
 
     health_event = alert_parser.parse_event(json.dumps(TestAlert))
 
     if isinstance(health_event, HealthEvent):
-        print(f"{EVENT_ATTRIBUTES.SOURCE} : {health_event.source}")
         print(f"{EVENT_ATTRIBUTES.EVENT_ID} : {health_event.event_id}")
         print(f"{EVENT_ATTRIBUTES.EVENT_TYPE} : {health_event.event_type}")
         print(f"{EVENT_ATTRIBUTES.SEVERITY} : {health_event.severity}")
@@ -119,7 +97,7 @@ if __name__ == '__main__':
         print("Event alert parser test failed")
 
     #Delete one key of the alert msg and validate the exception handling
-    del TestAlert['payload'][ALERT_ATTRIBUTES.RESOURCE_ID]
+    del TestAlert[ALERT_ATTRIBUTES.MESSAGE][ALERT_ATTRIBUTES.SENSOR_RESPONSE_TYPE][ALERT_ATTRIBUTES.ALERT_ID]
     msg_test = json.dumps(TestAlert)
     try:
         health_event = alert_parser.parse_event(json.dumps(TestAlert))

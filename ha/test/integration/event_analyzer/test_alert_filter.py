@@ -27,14 +27,14 @@ if __name__ == '__main__':
     from cortx.utils.conf_store.conf_store import Conf
     from ha import const
     from ha.core.config.config_manager import ConfigManager
-    from ha.core.event_analyzer.filter.filter import ClusterResourceFilter
+    from ha.core.event_analyzer.filter.filter import AlertFilter
     import traceback
     try:
         ConfigManager.init("test_alert_filter")
-        AlertFilter = ClusterResourceFilter()
+        AlertFilter = AlertFilter()
         print("********Alert Filter********")
         resource_type = "enclosure:fru:fan"
-        '''TestMsg = {
+        TestMsg = {
             "sspl_ll_msg_header": {
             "msg_version": "1.0.0",
             "schema_version": "1.0.0",
@@ -68,29 +68,7 @@ if __name__ == '__main__':
                 "alert_id": "15740759091a4e14bca51d46908ac3e9102605d560",
                 "host_id": "s3node-host-1"
             }
-          }
-        }'''
-        TestMsg = {
-                "header":
-                {
-                   "event_id" : "1574075909789324562",
-                   "timestamp": "1574075909",
-                },
-                "payload" :
-                {
-                    "source": "source_1",
-                    "site_id": 1,
-                    "node_id": 1,
-                    "cluster_id": 1,
-                    "rack_id": 1,
-                    "resource_id": "Fan Module 4",
-                    "resource_type": resource_type,
-                    "resource_status": "offline",
-                    "specific_info" : {
-                       "generation_id" : "1234590"
-                     }
-                }
-         }
+        }
 
         Expected_result = False
         filter_type = Conf.get(const.ALERT_FILTER_INDEX, f"alert{_DELIM}filter_type")
