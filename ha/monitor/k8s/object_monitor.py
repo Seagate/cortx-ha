@@ -190,6 +190,10 @@ class ObjectMonitor(threading.Thread):
         if isinstance(alert, str):
             alert = json.loads(alert)
 
+        # Validation expects dictionary data type of alert
+        if not isinstance(alert, dict):
+            return False
+
         incoming_alert = copy.deepcopy(alert)
 
         try:
