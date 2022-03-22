@@ -28,7 +28,7 @@ from ha.core.system_health.model.health_event import HealthEvent
 from ha.util.message_bus import MessageBus
 from ha.core.action_handler.action_factory import ActionFactory
 from ha.core.event_manager.resources import SUBSCRIPTION_LIST
-from ha.core.event_manager.resources import RESOURCE_TYPES
+from ha.core.event_manager.resources import RESOURCE_TYPES, RESOURCE_STATUS
 
 MSG = False
 
@@ -43,13 +43,12 @@ if __name__ == '__main__':
         event_manager = EventManager.get_instance()
         component = SUBSCRIPTION_LIST.CSM
         resource_type = RESOURCE_TYPES.NODE
-        state = RESOURCE_TYPES.OFFLINE
+        state = RESOURCE_STATUS.FAILED
 
         actions = ["publish"]
         message_type = event_manager.subscribe(component, [SubscribeEvent(resource_type, [state])])
         print(f"Subscribed {component}, message type is {message_type}")
-        health_event = HealthEvent("event_1", "offline", "fault", "site_1", "rack_1", "cluster_1", "storageset_1",
-                                   "node_1", "abcd.com", "node", "16215009572", "disk_1", None)
+        health_event = HealthEvent("source_1", "event_1", "offline", "fault", "site_1", "rack_1", "cluster_1", "storageset_1", "node_1", "abcd.com", "node", "16215009572", "disk_1", None)
         action_handler_obj = ActionFactory.get_action_handler(actions=actions, event=health_event)
         action_handler_obj.act(event=health_event, action=actions)
         print("Consuming the action event")

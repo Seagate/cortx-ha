@@ -45,10 +45,9 @@ if __name__ == '__main__':
         state = "failed"
         message_type = event_manager.subscribe('csm', [SubscribeEvent(resource_type, [state])])
         print(f"Subscribed {component}, message type is {message_type}")
-        health_event = HealthEvent("event_1", "failed", "fault", "site_1", "rack_1", "cluster_1", "storageset_1",
-                        "node_1", "abcd.com", "node:fru:disk", "16215009572", "disk_1", None)
+        health_event = HealthEvent("source_1", "event_1", "failed", "fault", "site_1", "rack_1", "cluster_1", "storageset_1", "node_1", "abcd.com", "node:fru:disk", "16215009572", "disk_1", None)
         action_event = RecoveryActionEvent(health_event)
-        event_manager.publish(action_event)
+        event_manager.publish(action_event.event)
         print("Consuming the action event")
         message_consumer = MessageBus.get_consumer(consumer_id="1",
                             consumer_group='test_publisher',
