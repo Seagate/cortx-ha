@@ -21,15 +21,13 @@ import pathlib
 import time
 import uuid
 
-from ha.alert.K8s_alert import K8SAlert
 from ha.core.event_manager.model.action_event import RecoveryActionEvent
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.event_manager.event_manager import EventManager
 from ha.core.event_manager.subscribe_event import SubscribeEvent
 from ha.util.message_bus import MessageBus, CONSUMER_STATUS
-from ha.const import K8S_ALERT_RESOURCE_TYPE, K8S_ALERT_STATUS
 from ha.core.system_health.const import EVENT_SEVERITIES
-from ha.core.event_analyzer.filter.filter import K8SFilter
+from ha.core.event_analyzer.filter.filter import ClusterResourceFilter
 
 sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..', '..'))
 
@@ -45,22 +43,35 @@ if __name__ == '__main__':
     try:
         print("********Event Publisher********")
         event_manager = EventManager.get_instance()
-        k8s_filter = K8SFilter()
+        cluster_resource_filter = ClusterResourceFilter()
         component = "hare"
-        resource_type = K8S_ALERT_RESOURCE_TYPE.RESOURCE_TYPE_POD.value
-        state = K8S_ALERT_STATUS.STATUS_FAILED.value
+        resource_type = "node"
+        state = "failed"
         message_type = event_manager.subscribe('hare', [SubscribeEvent(resource_type, [state])])
         print(f"Subscribed {component}, message type is {message_type}")
-        k8s_event = K8SAlert("cortx", "node2", "cortx-data123", K8S_ALERT_STATUS.STATUS_FAILED.value, K8S_ALERT_RESOURCE_TYPE.RESOURCE_TYPE_POD.value, "16215909572")
-
-        timestamp = str(int(time.time()))
-        event_id = timestamp + str(uuid.uuid4().hex)
-        event_type = k8s_event.status
-        if k8s_filter.filter_event(json.dumps(k8s_event.__dict__)):
-            health_event = HealthEvent(event_id, event_type, EVENT_SEVERITIES.CRITICAL.value, "1", "1", "1", "1",
-                            "srvnode_1", "srvnode_1", "pod", "16215909572", "cortx-data-pod", {"namespace": "cortx"})
+        ha_event = {
+                   'header': {
+                       'event_id': "1",
+                       'timestamp': '16215909572',
+                   },
+                   'payload': {
+                       'source': "hare",
+                       'resource_id': "1",
+                       'site_id': 1,
+                       'node_id': 1,
+                       'cluster_id': 1,
+                       'rack_id': 1,
+                       'resource_type': resource_type,
+                       'resource_status': "failed",
+                       'specific_info': {
+                           'generation_id': '1114583',
+                       }
+                   }
+               }
+        if cluster_resource_filter.filter_event(json.dumps(ha_event)):
+            health_event = HealthEvent("hare", 1, "failed", EVENT_SEVERITIES.CRITICAL.value, "1", "1", "1", "1", "1", "1", "node", "16215909572", "1", {"generation_id": "1114583"})
             recovery_action_event = RecoveryActionEvent(health_event)
-            event_manager.publish(recovery_action_event)
+            event_manager.publish(recovery_action_event.get_event())
         else:
             print("Event is dropped as it doesn't meet criteria")
             sys.exit(0)
