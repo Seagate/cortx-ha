@@ -393,6 +393,8 @@ class SystemHealth(Subscriber):
                 if not healthevent.specific_info.get(NODE_MAP_ATTRIBUTES.CVG_ID.value):
                     self.cvg_id = ConftStoreSearch.get_cvg_for_disk(self.node_id, component_id)
                     healthevent.specific_info[NODE_MAP_ATTRIBUTES.CVG_ID.value] = self.cvg_id
+                else:
+                    self.cvg_id = healthevent.specific_info.get(NODE_MAP_ATTRIBUTES.CVG_ID.value)
 
             self.node_map = {'cluster_id':healthevent.cluster_id, 'site_id':healthevent.site_id,
                              'rack_id':healthevent.rack_id, 'storageset_id':healthevent.storageset_id}

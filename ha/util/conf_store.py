@@ -36,15 +36,13 @@ class ConftStoreSearch:
     """
     Wrapper class for using the confstore search APIs
     """
-    _cluster_conf_loaded = False
 
     def __init__(self, conf_store_req: bool = True):
         """Init method"""
         if conf_store_req:
             self._confstore = ConfigManager.get_confstore()
-        if not ConftStoreSearch._cluster_conf_loaded:
-            ConfigManager._safe_load(CLUSTER_GLOBAL_INDEX, CLUSTER_CONF)
-            ConftStoreSearch._cluster_conf_loaded = True
+        # Load cluster config
+        ConfigManager._safe_load(CLUSTER_GLOBAL_INDEX, CLUSTER_CONF)
 
     @staticmethod
     def get_data_pods(index):
@@ -234,7 +232,6 @@ class ConftStoreSearch:
         """
         Returns cvg id for given node_id and disk_id.
         Args:
-            index(str): index of conf file
             node_id (str): node id
             disk_id (str): disk id
         Returns:
