@@ -243,9 +243,8 @@ class ConftStoreSearch:
         >>> ConftStoreSearch.get_cvg_for_disk('21d6291109304485b3daff43a06cff77', '/dev/sdd')
         'cvg-01'
         """
-        cvg_id = ""
         cvg_list = ConftStoreSearch.get_cvg_list(CLUSTER_GLOBAL_INDEX, node_id)
         for cvg_id in cvg_list:
             if disk_id in ConftStoreSearch.get_disk_list_for_cvg(CLUSTER_GLOBAL_INDEX, node_id, cvg_id):
                 return cvg_id
-        return cvg_id
+        return

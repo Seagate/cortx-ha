@@ -65,7 +65,7 @@ class StatusMapper:
     def map_event(self, event: HealthEvent) -> str:
         """Returns the status by mapping it against the source and event type."""
         try:
-            component_type = event.resource_type.split(':')[-1]
+            component_type = event.resource_type
             if event.source == HEALTH_EVENT_SOURCES.MONITOR.value and event.event_type == HEALTH_EVENTS.ONLINE.value and \
                 component_type in [CLUSTER_ELEMENTS.NODE.value]:
                 status = HEALTH_STATUSES.STARTING.value
