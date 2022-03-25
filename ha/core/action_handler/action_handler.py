@@ -225,7 +225,7 @@ class CVGActionHandler(ActionHandler):
         Returns:
             None
         """
-        Log.info("Handling node online event.")
+        Log.info("Handling cvg online event.")
         if publish:
             self.publish_event(event)
 
@@ -239,7 +239,21 @@ class CVGActionHandler(ActionHandler):
         Returns:
             None
         """
-        Log.info("Handling node offline event.")
+        Log.info("Handling cvg offline event.")
+        if publish:
+            self.publish_event(event)
+
+    def on_failure(self, event: HealthEvent, publish: bool) -> None:
+        """
+        on failure event handle
+        Args:
+            event (HealthEvent): HealthEvent object
+            publish (bool): publish bool variable
+
+        Returns:
+            None
+        """
+        Log.info("Handling cvg failure event.")
         if publish:
             self.publish_event(event)
 
@@ -274,7 +288,7 @@ class DiskActionHandler(ActionHandler):
         Returns:
             None
         """
-        Log.info("Handling node online event.")
+        Log.info("Handling disk online event.")
         if publish:
             self.publish_event(event)
 
@@ -288,7 +302,20 @@ class DiskActionHandler(ActionHandler):
         Returns:
             None
         """
-        Log.info("Handling node offline event.")
+        Log.info("Handling disk offline event.")
         if publish:
             self.publish_event(event)
 
+    def on_failure(self, event: HealthEvent, publish: bool) -> None:
+        """
+        on failure event handle
+        Args:
+            event (HealthEvent): HealthEvent object
+            publish (bool): publish bool variable
+
+        Returns:
+            None
+        """
+        Log.info("Handling disk failure event.")
+        if publish:
+            self.publish_event(event)
