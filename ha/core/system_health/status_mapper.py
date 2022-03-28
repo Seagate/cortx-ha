@@ -19,6 +19,7 @@ from ha.fault_tolerance.const import HEALTH_EVENT_SOURCES
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.system_health.const import HEALTH_EVENTS, HEALTH_STATUSES
 from ha.core.error import HaStatusMapperException
+from ha.core.system_health.const import CLUSTER_ELEMENTS
 
 class StatusMapper:
     """
@@ -51,7 +52,8 @@ class StatusMapper:
         "repairing"   : "informational",
         "repaired"    : "informational",
         "rebalancing" : "informational",
-        "failed"      : "error"
+        "failed"      : "error",
+        "offline"     : "informational"
     }
 
     def __init__(self):
@@ -63,7 +65,9 @@ class StatusMapper:
     def map_event(self, event: HealthEvent) -> str:
         """Returns the status by mapping it against the source and event type."""
         try:
-            if event.source == HEALTH_EVENT_SOURCES.MONITOR.value and event.event_type == HEALTH_EVENTS.ONLINE.value:
+            component_type = event.resource_type
+            if event.source == HEALTH_EVENT_SOURCES.MONITOR.value and event.event_type == HEALTH_EVENTS.ONLINE.value and \
+                component_type in [CLUSTER_ELEMENTS.NODE.value]:
                 status = HEALTH_STATUSES.STARTING.value
             else:
                 status = self.EVENT_TO_STATUS_MAPPING[event.event_type]
