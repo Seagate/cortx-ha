@@ -50,6 +50,15 @@ def start_driver_process():
     driver_process = Popen(['/usr/bin/python3', service_entry_mapping[args.services]], shell=False, stdout=PIPE, stderr=STDOUT) # nosec
     print(f"The driver process with pid {driver_process.pid}, and args {driver_process.args} started successfully.", flush=True)
 
+def is_debug_build():
+    # TODO: find out if it is debug build
+    return False
+
+def handle_debug_option():
+    if((args.debug&AUTO_RESTART)!=0):
+        print(f'Warning: Driver \'{args.services}\' exited with return code: {driver_process.poll()}, restarting again.', flush=True)
+        start_driver_process()
+
 def main(argv: list):
     try:
         print(str(args))
@@ -74,17 +83,15 @@ def main(argv: list):
         # Poll process.stdout to show stdout live
         while True:
             output = driver_process.stdout.readline()
-            if driver_process.poll() is not None:
-                if((args.debug&AUTO_RESTART)!=0):
-                    if output:
-                        print(output.strip().decode("utf-8"), flush=True)
-                    print(f'Warning: Driver \'{args.services}\' exited with return code: {driver_process.poll()}, restarting again.', flush=True)
-                    start_driver_process()
-
-                else:
-                    break
             if output:
                 print(output.strip().decode("utf-8"), flush=True)
+
+            if driver_process.poll() is not None:
+                if is_debug_build():
+                    handle_debug_option()
+                else:
+                    break
+
         exit(driver_process.poll())
     except Exception as proc_err:
         print(f'Driver execution stopped because of some reason: {proc_err}', file=sys.stderr, flush=True)
