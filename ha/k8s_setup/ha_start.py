@@ -9,6 +9,10 @@ AUTO_RESTART = 1
 
 driver_process = None
 
+def is_debug_build():
+    # TODO: find out if it is debug build
+    return False
+
 my_parser = argparse.ArgumentParser(prog="ha_start",
                                     description='Entrypoint for HA containerization',
                                     epilog='Fault tolerance is containerized! :)'
@@ -16,7 +20,8 @@ my_parser = argparse.ArgumentParser(prog="ha_start",
 
 my_parser.add_argument('--services', '-s', help='service_name', required=True, action='store')
 my_parser.add_argument('--config', '-c', help='config file url', required=False, action='store')
-my_parser.add_argument('--debug', '-d', help='debug level {0|1}', type=int, nargs='?', const=1, default=0, required=False, action='store')
+if is_debug_build():
+    my_parser.add_argument('--debug', '-d', help='debug level {0|1}', type=int, nargs='?', const=1, default=0, required=False, action='store')
 args = my_parser.parse_args()
 
 service_entry_mapping = {
@@ -33,9 +38,11 @@ def usage(prog: str):
             f"usage: {prog} [-h] <-s/--services service to start> <-c/--config url> [-d/--debug [0|1]]...\n"
             f"where:\n"
             f"-s --services health_monitor, fault_tolerance, k8s_monitor\n"
-            f"[-c --config   Config file URL : yaml://<file_path>] E.g. yaml:///etc/cortx/cluster.conf\n"
-            f"[-d --debug   [level]] (if level is not provided, then it considered as 1)"
-            f"\n\t\t0 : No debug.\n\t\t1 : Auto restarts child process if it dia.", file=sys.stderr, flush=True)
+            f"[-c --config   Config file URL : yaml://<file_path>] E.g. yaml:///etc/cortx/cluster.conf", file=sys.stderr, flush=True)
+
+        if is_debug_build():
+            print("[-d --debug   [level]] (if level is not provided, then it considered as 1)"
+                  "\n\t\t0 : No debug.\n\t\t1 : Auto restarts child process if it dia.", file=sys.stderr, flush=True)
 
 def handle_signal(signum, frame):
     """
@@ -49,10 +56,6 @@ def start_driver_process():
     global driver_process
     driver_process = Popen(['/usr/bin/python3', service_entry_mapping[args.services]], shell=False, stdout=PIPE, stderr=STDOUT) # nosec
     print(f"The driver process with pid {driver_process.pid}, and args {driver_process.args} started successfully.", flush=True)
-
-def is_debug_build():
-    # TODO: find out if it is debug build
-    return False
 
 def handle_debug_option():
     if((args.debug&AUTO_RESTART)!=0):
