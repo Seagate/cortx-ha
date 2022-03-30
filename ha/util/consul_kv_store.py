@@ -18,6 +18,7 @@
 import consul
 import socket
 from ha.const import HA_DELIM
+from cortx.utils.log import Log
 
 #TODO: Update set/get/update function to provide blocking and non blocking function
 class ConsulKvStore:
@@ -101,7 +102,10 @@ class ConsulKvStore:
         Return:
             bool: True if key exists else False.
         """
-        _, data = self._consul.kv.get(self._prepare_key(key), recurse=True)
+        k = self._prepare_key(key)
+        Log.info(f"*** is key exist: {k}")
+        _, data = self._consul.kv.get(k, recurse=True)
+        Log.info(f"key value: {data}")
         if data is None:
             return False
         return True
@@ -120,7 +124,10 @@ class ConsulKvStore:
         self._verify_data(key)
         if self.key_exists(key):
             raise Exception(f"Key {key} already exists in kv store.")
-        self._consul.kv.put(self._prepare_key(key), val)
+        k = self._prepare_key(key)
+        Log.info(f"*** Putting key value: {k}")
+        self._consul.kv.put(k, val)
+        Log.info(f"put Key value: {val}")
         return val
 
     def update(self, key: str, new_val: str):
@@ -136,7 +143,10 @@ class ConsulKvStore:
             str: Return value.
         """
         self._verify_data(key)
-        self._consul.kv.put(self._prepare_key(key), new_val)
+        k = self._prepare_key(key)
+        Log.info(f"*** Putting key value: {k}")
+        self._consul.kv.put(k, new_val)
+        Log.info(f"put new Key value: {new_val}")
         return new_val
 
     # TODO : Currently all keys with the matching prefix "key" are returned
@@ -152,7 +162,10 @@ class ConsulKvStore:
         Return:
             str: Return dictionary of all key val pair.
         """
-        _, data = self._consul.kv.get(self._prepare_key(key), recurse=True)
+        k = self._prepare_key(key)
+        Log.info(f"*** getting key value: {k}")
+        _, data = self._consul.kv.get(k, recurse=True)
+        Log.info(f"get Key value: {data}")
         if data is None:
             return data
         key_val: dict = {}
@@ -174,5 +187,8 @@ class ConsulKvStore:
             str: Return dictionary of all key val pair.
         """
         data = self.get(key)
-        self._consul.kv.delete(self._prepare_key(key), recurse=recurse)
+        k = self._prepare_key(key)
+        Log.info(f"*** delling key value: {k}")
+        self._consul.kv.delete(k, recurse=recurse)
+        Log.info(f"delete Key value: {data}")
         return data
