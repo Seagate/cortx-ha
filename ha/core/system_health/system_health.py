@@ -43,6 +43,7 @@ from ha.core.system_health.model.health_status import StatusOutput, ComponentSta
 from ha.core.system_health.system_health_hierarchy import HealthHierarchy
 from ha.core.event_manager.resources import RESOURCE_TYPES
 from ha.fault_tolerance.const import HEALTH_EVENT_SOURCES
+from ha.util.conf_store import ConftStoreSearch
 
 class SystemHealth(Subscriber):
     """
@@ -318,7 +319,7 @@ class SystemHealth(Subscriber):
         key = self._prepare_key(component, cluster_id=self.node_map['cluster_id'], site_id=self.node_map['site_id'],
                                 rack_id=self.node_map['rack_id'], storageset_id=self.node_map['storageset_id'],
                                 node_id=self.node_id, server_id=self.node_id, storage_id=self.node_id,
-                                comp_type=comp_type, comp_id=comp_id)
+                                comp_type=comp_type, comp_id=comp_id, cvg_id=self.cvg_id)
         is_key_exists = self.healthmanager.key_exists(key)
         self.healthmanager.set_key(key, healthvalue)
         if is_key_exists:
@@ -385,6 +386,16 @@ class SystemHealth(Subscriber):
 
             # Update the node map
             self.node_id = healthevent.node_id
+            self.cvg_id = None
+            if component_type == CLUSTER_ELEMENTS.DISK.value:
+                if not isinstance(healthevent.specific_info, dict):
+                    healthevent.specific_info = {}
+                if not healthevent.specific_info.get(NODE_MAP_ATTRIBUTES.CVG_ID.value):
+                    self.cvg_id = ConftStoreSearch.get_cvg_for_disk(self.node_id, component_id)
+                    healthevent.specific_info[NODE_MAP_ATTRIBUTES.CVG_ID.value] = self.cvg_id
+                else:
+                    self.cvg_id = healthevent.specific_info.get(NODE_MAP_ATTRIBUTES.CVG_ID.value)
+
             self.node_map = {'cluster_id':healthevent.cluster_id, 'site_id':healthevent.site_id,
                              'rack_id':healthevent.rack_id, 'storageset_id':healthevent.storageset_id}
 
@@ -393,7 +404,7 @@ class SystemHealth(Subscriber):
                                         cluster_id=healthevent.cluster_id, site_id=healthevent.site_id,
                                         rack_id=healthevent.rack_id, storageset_id=healthevent.storageset_id,
                                         node_id=healthevent.node_id, server_id=healthevent.node_id,
-                                        storage_id=healthevent.node_id)
+                                        storage_id=healthevent.node_id, cvg_id=self.cvg_id)
 
             current_timestamp = str(int(time.time()))
             if current_health:
