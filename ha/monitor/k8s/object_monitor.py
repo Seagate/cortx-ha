@@ -187,36 +187,45 @@ class ObjectMonitor(threading.Thread):
             True if it is published already
             False if it is a new alert
         """
+        if isinstance(alert, str):
+            alert = json.loads(alert)
+
+        # Validation expects dictionary data type of alert
         if not isinstance(alert, dict):
             return False
 
         incoming_alert = copy.deepcopy(alert)
 
-        header = incoming_alert["event"]["header"]
-        payload = incoming_alert["event"]["payload"]
+        try:
+            header = incoming_alert["header"]
+            payload = incoming_alert["payload"]
 
-        if payload["specific_info"].get("generation_id"):
-            alert_key = "%s_%s_%s" % (payload["node_id"],
-                                      payload["resource_type"],
-                                      payload["specific_info"]["generation_id"])
+            if payload["specific_info"].get("generation_id"):
+                alert_key = "%s_%s_%s" % (payload["node_id"],
+                                        payload["resource_type"],
+                                        payload["specific_info"]["generation_id"])
+            else:
+                alert_key = "%s_%s_%s" % (payload["node_id"],
+                                        payload["resource_type"],
+                                        payload["resource_id"])
+
+            # Alert which is getting repeated also has new timestamp.
+            # So timestamp field should be ignored for validation.
+            if "timestamp" in header.keys():
+                del incoming_alert["header"]["timestamp"]
+
+        except KeyError as err:
+            Log.error(f"Alert validation failed as key {err} not found")
+
         else:
-            alert_key = "%s_%s_%s" % (payload["node_id"],
-                                      payload["resource_type"],
-                                      payload["resource_id"])
+            incoming_alert_msg = json.dumps(payload, sort_keys=True)
+            published_alert = self._published_alerts.get(alert_key)
 
-        # Alert which is getting repeated also has new timestamp.
-        # So timestamp field should be ignored for validation.
-        if "timestamp" in header.keys():
-            del incoming_alert["event"]["header"]["timestamp"]
-
-        incoming_alert_msg = json.dumps(payload, sort_keys=True)
-        published_alert = self._published_alerts.get(alert_key)
-
-        if incoming_alert_msg == published_alert:
-            # Published already
-            return True
-        else:
-            # New alert
-            self._published_alerts[alert_key] = incoming_alert_msg
+            if incoming_alert_msg == published_alert:
+                # Published already
+                return True
+            else:
+                # New alert
+                self._published_alerts[alert_key] = incoming_alert_msg
 
         return False
