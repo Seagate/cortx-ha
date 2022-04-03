@@ -14,6 +14,9 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
+import re
+from ha.const import _DELIM
+
 class SystemHealthManager:
     """
     System Health Manager. This class provides low level get/put methods
@@ -57,3 +60,21 @@ class SystemHealthManager:
         if self._store.key_exists(key):
             return True
         return False
+
+    def parse_key(self, lookup, match_with, prefix):
+        """
+        lookup: cvg
+        match_with: {"node": "1", "device": "/dev/sdd"}
+        prefix: cluster_key
+        """
+        match_str = [ _DELIM.join(i) for i in match_with.items() ]
+        values = []
+        keys = self._store.get_keys(prefix)
+        for key in keys:
+            if all(x in key for x in match_str):
+                pattern = f".*{lookup}{_DELIM}(.*){_DELIM}.*"
+                matched_key = re.search(r"%s" % pattern, key)
+                if matched_key:
+                    matched = matched_key.groups()[0].split(_DELIM)[0]
+                    values.append(matched)
+        return list(set(values))

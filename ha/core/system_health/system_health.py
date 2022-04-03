@@ -25,7 +25,7 @@ from cortx.utils.log import Log
 from ha import const
 from ha.util.message_bus import MessageBus
 from cortx.utils.conf_store.conf_store import Conf
-from ha.const import _DELIM
+from ha.const import _DELIM, CLUSTER_CONFSTORE_PREFIX
 from ha.core.config.config_manager import ConfigManager
 from ha.core.system_health.health_evaluators.element_health_evaluator import ElementHealthEvaluator
 from ha.core.system_health.const import EVENT_SEVERITIES, NODE_MAP_ATTRIBUTES
@@ -43,7 +43,6 @@ from ha.core.system_health.model.health_status import StatusOutput, ComponentSta
 from ha.core.system_health.system_health_hierarchy import HealthHierarchy
 from ha.core.event_manager.resources import RESOURCE_TYPES
 from ha.fault_tolerance.const import HEALTH_EVENT_SOURCES
-from ha.util.conf_store import ConftStoreSearch
 
 class SystemHealth(Subscriber):
     """
@@ -362,6 +361,18 @@ class SystemHealth(Subscriber):
         if update_action != HEALTH_EVENT_ACTIONS.IGNORE.value:
             self._update(healthevent, updated_health, next_component=next_component)
 
+    def _get_cvg_list(self, healthevent, match_with):
+        cvg_list = []
+        cluster_prefix = self._prepare_key(CLUSTER_ELEMENTS.CLUSTER.value,
+                                           cluster_id=healthevent.cluster_id)
+        cluster_key = _DELIM.join(cluster_prefix.split(_DELIM)[:-1])
+        key_prefix = f"{CLUSTER_CONFSTORE_PREFIX.strip(_DELIM)}{cluster_key}"
+        cvg_list = self.healthmanager.parse_key(CLUSTER_ELEMENTS.CVG.value,
+                                                match_with, key_prefix)
+        if not cvg_list:
+            Log.error(f"Failed to get cvg_id for {healthevent.resource_id} of node {self.node_id}")
+        return cvg_list
+
     def process_event(self, healthevent: HealthEvent):
         """
         Process Event method. This method could be called for updating the health status.
@@ -390,14 +401,17 @@ class SystemHealth(Subscriber):
             if component_type == CLUSTER_ELEMENTS.DISK.value:
                 if not isinstance(healthevent.specific_info, dict):
                     healthevent.specific_info = {}
-                if not healthevent.specific_info.get(NODE_MAP_ATTRIBUTES.CVG_ID.value):
-                    self.cvg_id = ConftStoreSearch.get_cvg_for_disk(self.node_id, component_id)
-                    healthevent.specific_info[NODE_MAP_ATTRIBUTES.CVG_ID.value] = self.cvg_id
+                if healthevent.specific_info.get(NODE_MAP_ATTRIBUTES.CVG_ID.value):
+                    self.cvg_id = healthevent.specific_info[NODE_MAP_ATTRIBUTES.CVG_ID.value]
                 else:
-                    self.cvg_id = healthevent.specific_info.get(NODE_MAP_ATTRIBUTES.CVG_ID.value)
+                    match_criteria = {CLUSTER_ELEMENTS.NODE.value: self.node_id,
+                                      component_type: component_id}
+                    cvg_list = self._get_cvg_list(healthevent, match_criteria)
+                    self.cvg_id = cvg_list[0] if cvg_list else None
+                    healthevent.specific_info[NODE_MAP_ATTRIBUTES.CVG_ID.value] = self.cvg_id
 
             self.node_map = {'cluster_id':healthevent.cluster_id, 'site_id':healthevent.site_id,
-                             'rack_id':healthevent.rack_id, 'storageset_id':healthevent.storageset_id}
+                    'rack_id':healthevent.rack_id, 'storageset_id':healthevent.storageset_id}
 
             # Read the currently stored health value
             current_health = self.get_status_raw(component, component_id, comp_type=component_type,

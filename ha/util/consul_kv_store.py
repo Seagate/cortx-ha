@@ -23,6 +23,8 @@ from ha.const import HA_DELIM
 class ConsulKvStore:
     """ Represents a Consul kv Store """
 
+    _keys = {}
+
     def __init__(self, prefix: str, host: str="localhost", port: int=8500):
         """
         Consul KV store.
@@ -176,3 +178,8 @@ class ConsulKvStore:
         data = self.get(key)
         self._consul.kv.delete(self._prepare_key(key), recurse=recurse)
         return data
+
+    def get_keys(self, prefix):
+        if not ConsulKvStore._keys.get(prefix):
+            ConsulKvStore._keys[prefix] = self._consul.kv.get(prefix, keys=True)[1]
+        return ConsulKvStore._keys[prefix]
