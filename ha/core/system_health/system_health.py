@@ -362,6 +362,14 @@ class SystemHealth(Subscriber):
             self._update(healthevent, updated_health, next_component=next_component)
 
     def _get_cvg_list(self, healthevent, match_with):
+        """
+        Parse system health key and get cvg id for matching criteria.
+        Args:
+            healthevent: health event of resource
+            match_with : Additional resource information to be matched with expecting key
+        Returns:
+            List of cvg ids.
+        """
         cvg_list = []
         cluster_prefix = self._prepare_key(CLUSTER_ELEMENTS.CLUSTER.value,
                                            cluster_id=healthevent.cluster_id)

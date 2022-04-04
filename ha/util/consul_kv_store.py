@@ -180,6 +180,14 @@ class ConsulKvStore:
         return data
 
     def get_keys(self, prefix):
+        """
+        Get list of values match with given prefix.
+        The requested keys will be stored with prefix for reference.
+        Args:
+            prefix(str): Prefix that matches with keys
+        Return:
+            List of keys
+        """
         if not ConsulKvStore._keys.get(prefix):
             ConsulKvStore._keys[prefix] = self._consul.kv.get(prefix, keys=True)[1]
         return ConsulKvStore._keys[prefix]
