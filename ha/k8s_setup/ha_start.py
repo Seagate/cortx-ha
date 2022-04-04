@@ -65,7 +65,6 @@ def handle_debug_option():
 def main(argv: list):
     try:
         print(str(args))
-
         if is_debug_build() and args.debug not in [0,1]:
             sys.stderr.write('Please provide a valid debug value.')
             usage('ha_start')
