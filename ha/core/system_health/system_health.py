@@ -415,6 +415,8 @@ class SystemHealth(Subscriber):
                     match_criteria = {CLUSTER_ELEMENTS.NODE.value: self.node_id,
                                       component_type: component_id}
                     cvg_list = self._get_cvg_list(healthevent, match_criteria)
+                    if len(cvg_list) > 1:
+                        Log.error(f"Expected only 1 cvg_id, but received {len(cvg_list)}")
                     self.cvg_id = cvg_list[0] if cvg_list else None
                     healthevent.specific_info[NODE_MAP_ATTRIBUTES.CVG_ID.value] = self.cvg_id
 
