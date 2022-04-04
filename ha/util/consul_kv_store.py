@@ -24,6 +24,8 @@ from cortx.utils.log import Log
 class ConsulKvStore:
     """ Represents a Consul kv Store """
 
+    _keys = {}
+
     def __init__(self, prefix: str, host: str="localhost", port: int=8500):
         """
         Consul KV store.
@@ -192,3 +194,16 @@ class ConsulKvStore:
         self._consul.kv.delete(k, recurse=recurse)
         Log.info(f"delete Key value: {data}")
         return data
+
+    def get_keys(self, prefix):
+        """
+        Get list of values match with given prefix.
+        The requested keys will be stored with prefix for reference.
+        Args:
+            prefix(str): Prefix that matches with keys
+        Return:
+            List of keys
+        """
+        if not ConsulKvStore._keys.get(prefix):
+            ConsulKvStore._keys[prefix] = self._consul.kv.get(prefix, keys=True)[1]
+        return ConsulKvStore._keys[prefix]
