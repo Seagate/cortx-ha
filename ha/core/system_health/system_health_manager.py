@@ -63,9 +63,24 @@ class SystemHealthManager:
 
     def parse_key(self, lookup, match_with, prefix):
         """
-        lookup: cvg
-        match_with: {"node": "1", "device": "/dev/sdd"}
-        prefix: cluster_key
+        Parse the matching key and return values for the lookup(resource).
+        Args:
+            lookup: resource for that value to be parsed
+            match_with: {"node": "1", "device": "/dev/sdd"}
+            prefix: keys starts with this prefix.
+        Return:
+            List of values parsed from matching keys.
+
+        Example:
+            matched_keys = [
+                "cortx>ha>v1>cortx>ha>system>cluster>c01>site>1>rack>1>node>100>cvg>cvg-01>disk>/dev/sdd>health",
+                "cortx>ha>v1>cortx>ha>system>cluster>c01>site>1>rack>1>node>100>cvg>cvg-01>disk>/dev/sde>health"
+                ]
+            lookup: cvg
+            match_with: {"node": "100", "device": "/dev/sdd"}
+            prefix: "cortx>ha>v1>cortx>ha>system>cluster>c01"
+
+            Returns, values = ["cvg-01"]
         """
         match_str = [ _DELIM.join(i) for i in match_with.items() ]
         values = []
