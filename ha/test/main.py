@@ -25,9 +25,12 @@
 import os
 import pathlib
 import sys
-import pytest
+import unittest
 
 if __name__ == '__main__':
+    loader = unittest.TestLoader()
     sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..'))
     path = sys.argv[1] if len(sys.argv) == 2 else os.path.join(os.path.dirname(pathlib.Path(__file__)), '.')
-    pytest.main(['-v', path])
+    test_suite = loader.discover(path)
+    runner = unittest.TextTestRunner()
+    runner.run(test_suite)
