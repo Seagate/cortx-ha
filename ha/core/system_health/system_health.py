@@ -426,6 +426,7 @@ class SystemHealth(Subscriber):
                             # System health is expected to update the failed event first, then online event.
                             # If incoming is online event, change the stored event type to failed.
                             # Update the failed event in system health and followed by incoming online event.
+                            # If stored_status is set as failed, then no need to send alert, as its replicaset pod down.
                             healthevent.specific_info = {"generation_id": stored_genration_id, "pod_restart": 1}
                             healthevent.event_type = "failed"
                             updated_health = SystemHealth.create_updated_event_object(healthevent.timestamp, current_timestamp, healthevent.event_type, healthevent.specific_info, latest_health)
