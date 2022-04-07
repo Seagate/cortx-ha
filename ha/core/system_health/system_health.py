@@ -414,13 +414,14 @@ class SystemHealth(Subscriber):
                     and healthevent.source == HEALTH_EVENT_SOURCES.MONITOR.value:
                     # If health is already stored and its a node_health, check further
                     stored_genration_id = current_health_dict["events"][0]["specific_info"]["generation_id"]
+                    stored_status = current_health_dict["events"][0]["status"]
                     incoming_generation_id = healthevent.specific_info["generation_id"]
                     incoming_health_status = healthevent.event_type
                     pod_restart_val = current_health_dict["events"][0]["specific_info"]["pod_restart"]
                     # Update the current health value itself.
                     latest_health = EntityHealth.read(current_health)
                     if stored_genration_id and (stored_genration_id != incoming_generation_id):
-                        if incoming_health_status in [HEALTH_EVENTS.ONLINE.value, status]:
+                        if (incoming_health_status == HEALTH_EVENTS.ONLINE.value) and (stored_status != HEALTH_EVENTS.FAILED.value):
                             # In delete scenario, online event comes first, followed by failed event.
                             # System health is expected to update the failed event first, then online event.
                             # If incoming is online event, change the stored event type to failed.
