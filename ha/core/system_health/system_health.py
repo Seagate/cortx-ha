@@ -421,6 +421,7 @@ class SystemHealth(Subscriber):
                     # Update the current health value itself.
                     latest_health = EntityHealth.read(current_health)
                     if stored_genration_id and (stored_genration_id != incoming_generation_id):
+                        # TODO: Add stored_status != offline. 
                         if (incoming_health_status == HEALTH_EVENTS.ONLINE.value) and (stored_status != HEALTH_EVENTS.FAILED.value):
                             # In delete scenario, online event comes first, followed by failed event.
                             # System health is expected to update the failed event first, then online event.
