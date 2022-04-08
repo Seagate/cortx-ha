@@ -18,6 +18,7 @@ import enum
 from ha.util.enum_list import EnumListMeta
 
 class HEALTH_EVENT_SOURCES(enum.Enum, metaclass=EnumListMeta):
+    CSM = 'csm'
     HA = 'ha'
     HARE = 'hare'
     MONITOR = 'monitor'

@@ -478,7 +478,10 @@ class SystemHealth(Subscriber):
                         updated_health = SystemHealth.create_updated_event_object(healthevent.timestamp, current_timestamp, status, healthevent.specific_info, latest_health)
                         self._check_and_update(current_health, updated_health, healthevent, next_component)
                 else:
-                    # Update hierarchical components. such as site, rack
+                    # Update hierarchical components. such as node, site, rack
+                    if component_type == CLUSTER_ELEMENTS.NODE.value and healthevent.source == HEALTH_EVENT_SOURCES.CSM.value:
+                        generation_id = current_health_dict["events"][0]["specific_info"]["generation_id"]
+                        healthevent.specific_info = {"generation_id": generation_id, "pod_restart": 0}
                     latest_health = EntityHealth.read(current_health)
                     updated_health = SystemHealth.create_updated_event_object(healthevent.timestamp, current_timestamp, status, healthevent.specific_info, latest_health)
                     self._check_and_update(current_health, updated_health, healthevent, next_component)
