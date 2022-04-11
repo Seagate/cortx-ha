@@ -98,9 +98,10 @@ class ConftStoreSearch:
 
         data_pods = ConftStoreSearch.get_data_pods(index)
         server_pods = ConftStoreSearch.get_server_pods(index)
+        control_pods = ConftStoreSearch.get_control_pods(index)
 
         # Combine the lists data_pods, server_pod and find unique machine ids
-        watch_pods = data_pods + server_pods
+        watch_pods = data_pods + server_pods + control_pods
         watch_pods = list(set(watch_pods))
         num_pods = len(watch_pods)
 
@@ -221,3 +222,30 @@ class ConftStoreSearch:
         except Exception as e:
             Log.error(f"Unable to fetch Disk list from GConf. Error {e}")
             raise Exception(f"Unable to fetch Disk list. Error {e}")
+
+    @staticmethod
+    def get_control_pods(index):
+        """
+        Returns machine_id for control-node pod.
+        Args:
+            index(str): index of conf file
+            parent key : node
+            search key: type
+            search val: control_node
+        Returns:
+            list: list of node_ids
+
+        >>> Conf.search("cortx", 'node', 'type', 'control_node')
+        ['node>a3710eee36644f2fb60ba19486664495>type']
+        """
+        node_id = []
+        try:
+            node_key = Conf.search(index, GconfKeys.NODE_CONST.value,
+                                   GconfKeys.TYPE_CONST.value, GconfKeys.CONTROL_NODE.value)
+            for key in node_key:
+                value = key.split('>')[1]
+                node_id.append(value)
+            Log.info(f"Fetched control node machine-id: {node_id}")
+        except Exception as e:
+            Log.error(f"Unable to fetch control node machine-id. Error:{e}")
+        return node_id
