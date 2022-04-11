@@ -422,12 +422,15 @@ class SystemHealth(Subscriber):
                     latest_health = EntityHealth.read(current_health)
                     # TODO: Add stored_status != offline.
                     if stored_genration_id and (stored_genration_id != incoming_generation_id) and (stored_status != HEALTH_EVENTS.FAILED.value):
+                        # If stored_generation_id and incoming_generation_id is not same means,
+                        # pod has been restarted, but for replicaset pod down/up,
+                        # stored_status is already set as failed, no need to count pod_restart,
+                        # in this case it will go to else part.
                         if (incoming_health_status == HEALTH_EVENTS.ONLINE.value):
                             # In delete scenario, online event comes first, followed by failed event.
                             # System health is expected to update the failed event first, then online event.
                             # If incoming is online event, change the stored event type to failed.
                             # Update the failed event in system health and followed by incoming online event.
-                            # If stored_status is set as failed, then no need to send alert, as its replicaset pod down.
                             healthevent.specific_info = {"generation_id": stored_genration_id, "pod_restart": 1}
                             healthevent.event_type = "failed"
                             updated_health = SystemHealth.create_updated_event_object(healthevent.timestamp, current_timestamp, healthevent.event_type, healthevent.specific_info, latest_health)
