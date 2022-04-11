@@ -224,18 +224,28 @@ class ConftStoreSearch:
             raise Exception(f"Unable to fetch Disk list. Error {e}")
 
     @staticmethod
-    def get_control_node_id(index):
+    def get_control_pods(index):
         """
-        Get machine_id for control-node pod.
+        Returns machine_id for control-node pod.
+        Args:
+            index(str): index of conf file
+            parent key : node
+            search key: type
+            search val: control_node
+        Returns:
+            list: list of node_ids
+
+        >>> Conf.search("cortx", 'node', 'type', 'control_node')
+        ['node>a3710eee36644f2fb60ba19486664495>type']
         """
-        node_id = ''
+        node_ids = []
         try:
             node_key = Conf.search(index, GconfKeys.NODE_CONST.value,
                                    GconfKeys.TYPE_CONST.value, GconfKeys.CONTROL_NODE.value)
             for key in node_key:
-                node_id = key.split('>')[1]
-            Log.info(f"Fetched control node machine-id: {node_id}")
-            return node_id
+                value = key.split('>')[1]
+                node_ids.append(value)
+            Log.info(f"Fetched control node machine-id: {node_ids}")
         except Exception as e:
             Log.error(f"Unable to fetch control node machine-id. Error:{e}")
-
+        return node_ids
