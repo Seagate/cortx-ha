@@ -27,6 +27,7 @@ class HEALTH_EVENT_SOURCES(enum.Enum, metaclass=EnumListMeta):
 class FAULT_TOLERANCE_KEYS(enum.Enum, metaclass=EnumListMeta):
     HARE_HA_MESSAGE_TYPE = 'cortx_health_events'
     MONITOR_HA_MESSAGE_TYPE = 'cortx_health_events'
+    CSM_HA_MESSAGE_TYPE = 'cortx_health_events'
 
 # Used to set default value in const.HA_CONFIG_FILE
 # TODO : To be replaced by actual values when they are available in config
