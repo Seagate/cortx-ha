@@ -398,6 +398,9 @@ class SystemHealth(Subscriber):
             else:
                 next_component = None
 
+            # Disabling the hierarchical updates in HA
+            next_component = None
+
             # Get the component type and id received in the event.
             component_type = healthevent.resource_type.split(':')[-1]
             component_id = healthevent.resource_id
