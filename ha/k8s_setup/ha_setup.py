@@ -306,7 +306,6 @@ class ConfigCmd(Cmd):
         self._add_health_event(node_id="",
                                    resource_type=CLUSTER_ELEMENTS.SITE.value,
                                    resource_id=self._site_id)
-
         self._add_health_event(node_id="",
                                    resource_type=CLUSTER_ELEMENTS.RACK.value,
                                    resource_id=self._rack_id)
