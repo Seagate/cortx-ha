@@ -277,6 +277,9 @@ class ConfigCmd(Cmd):
             Log.info('Creating cluster cardinality')
             self._confStoreAPI = ConftStoreSearch()
             self._confStoreAPI.set_cluster_cardinality(self._index)
+
+            # Init cluster,site,rack health
+            self._add_cluster_component_health()
             # Init node health
             self._add_node_health()
             # Init cvg and disk health
@@ -292,6 +295,21 @@ class ConfigCmd(Cmd):
             sys.stderr.write(f'HA Config failed. OS_error: {os_err}.\n')
         except Exception as c_err:
             sys.stderr.write(f'HA config command failed: {c_err}.\n')
+
+    def _add_cluster_component_health(self) -> None:
+        """
+        Add cluster, site ,rack health
+        """
+        self._add_health_event(node_id="",
+                                   resource_type=CLUSTER_ELEMENTS.CLUSTER.value,
+                                   resource_id=self._cluster_id)
+        self._add_health_event(node_id="",
+                                   resource_type=CLUSTER_ELEMENTS.SITE.value,
+                                   resource_id=self._site_id)
+        self._add_health_event(node_id="",
+                                   resource_type=CLUSTER_ELEMENTS.RACK.value,
+                                   resource_id=self._rack_id)
+
 
     def _add_node_health(self) -> None:
         """
