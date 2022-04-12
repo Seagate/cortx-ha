@@ -43,7 +43,6 @@ CLUSTER_CARDINALITY_LIST_NODES = "node_list"
 class GconfKeys(enum.Enum):
     NODE_CONST = "node"
     SERVICE_CONST = "services"
-    TYPE_CONST = "type"
     NAME_CONST = "name"
     CVG_NAME = "node{_DELIM}{node_id}{_DELIM}storage{_DELIM}cvg[{cvg_index}]{_DELIM}name"
     CVG_COUNT = "node{_DELIM}{node_id}{_DELIM}storage{_DELIM}num_cvg"
@@ -51,4 +50,3 @@ class GconfKeys(enum.Enum):
     METADATA_COUNT = "node{_DELIM}{node_id}{_DELIM}storage{_DELIM}cvg[{cvg_index}]{_DELIM}devices{_DELIM}num_metadata"
     DATA_DISK = "node{_DELIM}{node_id}{_DELIM}storage{_DELIM}cvg[{cvg_index}]{_DELIM}devices{_DELIM}data[{d_index}]"
     METADATA_DISK = "node{_DELIM}{node_id}{_DELIM}storage{_DELIM}cvg[{cvg_index}]{_DELIM}devices{_DELIM}metadata[{m_index}]"
-    CONTROL_NODE = "control_node"
