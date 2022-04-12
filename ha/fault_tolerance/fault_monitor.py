@@ -71,7 +71,7 @@ class FaultMonitor:
 class HealthStatusMonitor(FaultMonitor):
     """
     Module responsible for:
-    -  consuming node messages from k8s monitor that come on message bus
+    -  consuming node messages from k8s monitor & csm that come on message bus
     -  analyzing the message and and publishing alert if required
     """
     def __init__(self):
