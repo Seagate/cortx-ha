@@ -25,7 +25,6 @@ from cortx.utils.log import Log
 from ha.core.config.config_manager import ConfigManager
 from ha.fault_tolerance.fault_monitor import HealthStatusMonitor
 from ha.fault_tolerance.cluster_stop_monitor import ClusterStopMonitor
-from ha.util.conf_store import ConftStoreSearch
 
 class FaultTolerance:
     """
@@ -41,7 +40,6 @@ class FaultTolerance:
         ConfigManager.init("fault_tolerance")
         self.node_fault_monitor = HealthStatusMonitor()
         self.cluster_stop_monitor = ClusterStopMonitor()
-        ConftStoreSearch()
 
     def set_sigterm(self, signum, frame):
         """
