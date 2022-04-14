@@ -291,6 +291,13 @@ class SystemHealth(Subscriber):
         if old_status == new_status:
             event_action = HEALTH_EVENT_ACTIONS.IGNORE.value
 
+        # specific cases
+        # 1. Do not overwrite node status to offline if failed already
+        if event.resource_type == RESOURCE_TYPES.NODE.value and \
+            old_status == HEALTH_STATUSES.FAILED.value and new_status == HEALTH_STATUSES.OFFLINE.value:
+            Log.info(f"Updating is not needed node is in {old_status} and received {new_status}")
+            event_action = HEALTH_EVENT_ACTIONS.IGNORE.value
+
         return event_action
 
     def publish_event(self, healthevent: HealthEvent):
@@ -441,10 +448,10 @@ class SystemHealth(Subscriber):
                     pod_restart_val = current_health_dict["events"][0]["specific_info"]["pod_restart"]
                     # Update the current health value itself.
                     latest_health = EntityHealth.read(current_health)
-                    if stored_genration_id and (stored_genration_id != incoming_generation_id) and (stored_status != HEALTH_EVENTS.OFFLINE.value):
+                    if stored_genration_id and (stored_genration_id != incoming_generation_id) and stored_status not in [HEALTH_EVENTS.OFFLINE.value, HEALTH_EVENTS.FAILED.value]:
                         # If stored_generation_id and incoming_generation_id is not same means,
                         # pod has been restarted, but for replicaset pod down/up,
-                        # stored_status is already set as offline, no need to count pod_restart,
+                        # stored_status is already set as offline/failed, no need to count pod_restart,
                         # in this case it will go to else part.
                         if (incoming_health_status == HEALTH_EVENTS.ONLINE.value):
                             # In delete scenario, online event comes first, followed by offline event.
