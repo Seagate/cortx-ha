@@ -41,17 +41,18 @@ class SubscribeEvent:
             st = state.value if isinstance(state, RESOURCE_STATUS) else state
             self.states.append(st)
 
-        try:
-            resource_func_types = FUNCTIONAL_TYPES[self.resource_type.upper()]
-        except KeyError as err:
-            raise Exception(f"{err} is not a valid FUNCTIONAL_TYPE of {self.resource_type}")
-
         if functional_types:
+            try:
+                resource_func_types = FUNCTIONAL_TYPES[self.resource_type.upper()]
+            except KeyError as err:
+                raise Exception(f"Unsupported resource type '{err}'")
+
             for func_type in functional_types:
                 func_type = func_type.lower()
                 func_type = resource_func_types.value(func_type).value
                 self.functional_types.append(func_type)
+
         # else:
-        #     # TODO: Need to add all if functional type is not specified?
+        #     # TODO: Need to subscribe all if functional type is not specified?
         #     for func_type in resource_func_types.value:
         #         self.functional_types.append(func_type.value)
