@@ -135,8 +135,8 @@ class EventManager:
         '''
            Perform actual confstore store operation for component keys
            Ex:
-           key: cortx>ha>v1>events>subscribe>sspl
-           confstore value: ['enclosure:sensor:voltage>failed', ...]
+           key: cortx>ha>v1>events>subscribe>hare
+           confstore value: ['node>server>failed', 'disk>online' ...]
         '''
         if self._confstore.key_exists(key):
             event_json_list = self._confstore.get(key)
@@ -173,11 +173,11 @@ class EventManager:
                        Key is: {key}')
             self._confstore.set(f'{key}', event_list)
 
-    def _store_event_key(self, resource_type: str, states: list = None, comp: str = None) -> None:
+    def _store_event_key(self, resource_type: str, states: list, comp: str = None) -> None:
         '''
            Perform actual confstore store operation for event keys
-           key: cortx>ha>v1>events>enclosure:hw:disk>online
-           value: ['sspl', ...]
+           key: cortx>ha>v1>events>node>server>online
+           value: ['hare', ...]
         '''
         if states:
             for state in states:
@@ -317,10 +317,18 @@ class EventManager:
             message_type = self._create_message_type(component)
             for event in events:
                 subscription_key = EVENT_MANAGER_KEYS.SUBSCRIPTION_KEY.value.replace("<component_id>", component)
-                self._store_component_key(subscription_key, event.resource_type, event.states)
-                self._store_event_key(event.resource_type, event.states, comp=component)
-                for state in event.states:
-                    self._monitor_rule.add_rule(event.resource_type, state, self._default_action)
+                if event.functional_types:
+                    for func_type in event.functional_types:
+                        resource_type = event.resource_type + HA_DELIM + func_type
+                        self._store_component_key(subscription_key, resource_type, event.states)
+                        self._store_event_key(resource_type, event.states, comp=component)
+                        for state in event.states:
+                            self._monitor_rule.add_rule(resource_type, state, self._default_action)
+                else:
+                    self._store_component_key(subscription_key, event.resource_type, event.states)
+                    self._store_event_key(event.resource_type, event.states, comp=component)
+                    for state in event.states:
+                        self._monitor_rule.add_rule(event.resource_type, state, self._default_action)
             Log.info(f"Successfully Subscribed component {component} with message_type {message_type}")
             return message_type
         except Exception as e:

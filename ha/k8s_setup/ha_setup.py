@@ -267,7 +267,8 @@ class ConfigCmd(Cmd):
 
             Log.info('Performing event_manager subscription')
             event_manager = EventManager.get_instance()
-            event_manager.subscribe(const.EVENT_COMPONENT, [SubscribeEvent(const.POD_EVENT, ["online", "offline", "failed"])])
+            event_manager.subscribe(const.EVENT_COMPONENT,
+                                    [SubscribeEvent(const.POD_EVENT, ["online", "failed"], ["server", "data"])])
             Log.info(f'event_manager subscription for {const.EVENT_COMPONENT}\
                        is successful for the event {const.POD_EVENT}')
             event_manager.subscribe(const.EVENT_COMPONENT, [SubscribeEvent(const.DISK_EVENT, ["online", "failed"])])

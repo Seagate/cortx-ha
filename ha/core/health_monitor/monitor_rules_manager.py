@@ -31,7 +31,7 @@ class MonitorRulesManager:
 
         self._confstore = ConfigManager.get_confstore()
 
-    def _prepare_key(self, resource_type: str, event_type: str) -> str:
+    def _prepare_key(self, resource_type: str, event_type: str, functional_type: str) -> str:
         """
         Prepare a key for the health monitor rules lookup, using HEALTH_MON_KEYS
 
@@ -42,6 +42,8 @@ class MonitorRulesManager:
         Returns:
             str: key string
         """
+        if functional_type:
+            resource_type = f"{resource_type}{HA_DELIM}{functional_type}"
         return f"{HEALTH_MON_KEYS.ACT_RULE.value}{HA_DELIM}{resource_type}{HA_DELIM}{event_type}"
 
     def _get_val(self, key: str) -> str:
@@ -97,7 +99,8 @@ class MonitorRulesManager:
             list: actions configured for the rule
         """
         val = []
-        key = self._prepare_key(event.resource_type, event.event_type)
+        functional_type = event.specific_info.get("type")
+        key = self._prepare_key(event.resource_type, event.event_type, functional_type)
         Log.debug(f"Evaluating rule for {key}")
         kv = self._get_val(key)
         if kv:
