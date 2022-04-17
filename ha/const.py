@@ -383,3 +383,8 @@ class K8S_ALERT_RESOURCE_TYPE(Enum, metaclass=EnumListMeta):
     RESOURCE_TYPE_NODE = "node"
     RESOURCE_TYPE_CVG = "cvg"
     RESOURCE_TYPE_DISK = "disk"
+
+class NODE_TYPE(Enum, metaclass=EnumListMeta):
+    CONTROL = 'control'
+    DATA = 'data'
+    SERVER = 'server'

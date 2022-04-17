@@ -442,6 +442,7 @@ class SystemHealth(Subscriber):
                     # If health is already stored and its a node_health, check further
                     stored_genration_id = current_health_dict["events"][0]["specific_info"]["generation_id"]
                     stored_status = current_health_dict["events"][0]["status"]
+                    stored_node_type = current_health_dict["events"][0]["specific_info"]["type"]
                     incoming_generation_id = healthevent.specific_info["generation_id"]
                     incoming_health_status = healthevent.event_type
                     pod_restart_val = current_health_dict["events"][0]["specific_info"]["pod_restart"]
@@ -458,14 +459,14 @@ class SystemHealth(Subscriber):
                             # System health is expected to update the failed event first, then online event.
                             # If incoming is online event, change the stored event type to failed.
                             # Update the failed event in system health and followed by incoming online event.
-                            healthevent.specific_info = {"generation_id": stored_genration_id, "pod_restart": 1}
+                            healthevent.specific_info = {"generation_id": stored_genration_id, "pod_restart": 1, "type": stored_node_type}
                             healthevent.event_type = "failed"
                             updated_health = SystemHealth.create_updated_event_object(healthevent.timestamp, current_timestamp, healthevent.event_type, healthevent.specific_info, latest_health)
                             # Create a "failed" event and update it in system health and publish
                             self._check_and_update(current_health, updated_health, healthevent, next_component)
                             current_health = updated_health
                             # Now create an "online" event and update it in system health and publish
-                            healthevent.specific_info = {"generation_id": incoming_generation_id, "pod_restart": 1}
+                            healthevent.specific_info = {"generation_id": incoming_generation_id, "pod_restart": 1, "type": stored_node_type}
                             healthevent.event_type = "online"
                             updated_health = SystemHealth.create_updated_event_object(healthevent.timestamp, current_timestamp, healthevent.event_type, healthevent.specific_info, latest_health)
                             self._check_and_update(current_health, updated_health, healthevent, next_component)
@@ -477,7 +478,8 @@ class SystemHealth(Subscriber):
                                 site_id=self.node_map['site_id'], rack_id=self.node_map['rack_id'], \
                                 node_id=self.node_id)
                             latest_health_dict = json.loads(current_health)
-                            new_spec_info = {"generation_id": stored_genration_id, "pod_restart": 0}
+                            new_spec_info = {"generation_id": stored_genration_id, "pod_restart": 0,
+ "type": stored_node_type}
                             latest_health_dict["events"][0]["specific_info"] = new_spec_info
                             updated_health = EntityHealth.write(latest_health_dict)
                             self.healthmanager.set_key(key, updated_health)
