@@ -479,7 +479,7 @@ class SystemHealth(Subscriber):
                                 node_id=self.node_id)
                             latest_health_dict = json.loads(current_health)
                             new_spec_info = {"generation_id": stored_genration_id, "pod_restart": 0,
- "stored_functional_type": stored_functional_type}
+ "functional_type": stored_functional_type}
                             latest_health_dict["events"][0]["specific_info"] = new_spec_info
                             updated_health = EntityHealth.write(latest_health_dict)
                             self.healthmanager.set_key(key, updated_health)
