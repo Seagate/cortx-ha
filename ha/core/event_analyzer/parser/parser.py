@@ -169,12 +169,12 @@ class ClusterResourceParser(Parser):
         self.cluster_id = Conf.get(const.HA_GLOBAL_INDEX, f"COMMON_CONFIG{_DELIM}cluster_id")
         self.site_id = Conf.get(const.HA_GLOBAL_INDEX, f"COMMON_CONFIG{_DELIM}site_id")
         self.rack_id = Conf.get(const.HA_GLOBAL_INDEX, f"COMMON_CONFIG{_DELIM}rack_id")
-    
+
         #from ha.core.config.config_manager import ConfigManager
         #ConfigManager._safe_load("cortx", "yaml:///etc/cortx/cluster.conf")
         #ConfigManager.init(None)
         _index = 'cortx'
-    
+
         self.data_node_ids = ConftStoreSearch.get_data_pods(_index)
         self.server_node_ids = ConftStoreSearch.get_server_pods(_index)
         self.control_node_ids = ConftStoreSearch.get_control_nodes(_index)
@@ -204,7 +204,7 @@ class ClusterResourceParser(Parser):
                 elif node_id in self.control_node_ids:
                     node_type = NODE_TYPE.CONTROL.value
                 elif node_id in self.server_node_ids:
-                    node_type = NODE_TYPE.SERVER.value 
+                    node_type = NODE_TYPE.SERVER.value
                 if specific_info and specific_info["generation_id"]:
                     generation_id = specific_info["generation_id"]
                     specific_info = {"generation_id": generation_id,
