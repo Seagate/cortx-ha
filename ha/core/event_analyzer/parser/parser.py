@@ -30,7 +30,8 @@ from ha.core.event_analyzer.event_analyzer_exceptions import EventParserExceptio
 from ha.core.system_health.const import CLUSTER_ELEMENTS, HEALTH_EVENTS, EVENT_SEVERITIES
 from ha.core.system_health.status_mapper import StatusMapper
 from ha.core.config.config_manager import ConfigManager
-from ha.const import PVTFQDN_TO_NODEID_KEY, NODE_TYPE, ALERT_ATTRIBUTES, EVENT_ATTRIBUTES as event_attr
+from ha.const import PVTFQDN_TO_NODEID_KEY, ALERT_ATTRIBUTES, EVENT_ATTRIBUTES as event_attr
+from ha.core.event_manager.resources import NODE_FUNCTIONAL_TYPES
 from ha.util.conf_store import ConftStoreSearch
 from cortx.utils.event_framework.health import HealthAttr
 from cortx.utils.event_framework.event import EventAttr
@@ -170,15 +171,24 @@ class ClusterResourceParser(Parser):
         self.site_id = Conf.get(const.HA_GLOBAL_INDEX, f"COMMON_CONFIG{_DELIM}site_id")
         self.rack_id = Conf.get(const.HA_GLOBAL_INDEX, f"COMMON_CONFIG{_DELIM}rack_id")
 
-        #from ha.core.config.config_manager import ConfigManager
-        #ConfigManager._safe_load("cortx", "yaml:///etc/cortx/cluster.conf")
-        #ConfigManager.init(None)
         _index = 'cortx'
+        ConfigManager._safe_load(_index, "yaml:///etc/cortx/cluster.conf")
+        ConfigManager.init(None)
 
         self.data_node_ids = ConftStoreSearch.get_data_pods(_index)
         self.server_node_ids = ConftStoreSearch.get_server_pods(_index)
         self.control_node_ids = ConftStoreSearch.get_control_nodes(_index)
         Log.info("ClusterResource Parser is initialized ...")
+
+    def get_functional_type(self, node_id):
+        functional_type = None
+        if node_id in self.data_node_ids:
+            functional_type = NODE_FUNCTIONAL_TYPES.DATA.value
+        elif node_id in self.control_node_ids:
+            functional_type = NODE_FUNCTIONAL_TYPES.CONTROL.value
+        elif node_id in self.server_node_ids:
+            functional_type = NODE_FUNCTIONAL_TYPES.SERVER.value
+        return functional_type
 
     def parse_event(self, msg: str) -> HealthEvent:
         """
@@ -198,18 +208,12 @@ class ClusterResourceParser(Parser):
             event_type = cluster_resource_alert[EventAttr.EVENT_PAYLOAD.value][HealthAttr.RESOURCE_STATUS.value]
             specific_info = cluster_resource_alert[EventAttr.EVENT_PAYLOAD.value][HealthAttr.SPECIFIC_INFO.value]
             if resource_type == CLUSTER_ELEMENTS.NODE.value:
-                node_type = None
-                if node_id in self.data_node_ids:
-                    node_type = NODE_TYPE.DATA.value
-                elif node_id in self.control_node_ids:
-                    node_type = NODE_TYPE.CONTROL.value
-                elif node_id in self.server_node_ids:
-                    node_type = NODE_TYPE.SERVER.value
                 if specific_info and specific_info["generation_id"]:
                     generation_id = specific_info["generation_id"]
-                    specific_info = {"generation_id": generation_id,
-                                     "pod_restart": 0,
-                                     "type": node_type}
+                    specific_info = {"generation_id": generation_id, "pod_restart": 0}
+                elif not specific_info:
+                    specific_info = {}
+                specific_info['functional_type'] = self.get_functional_type(node_id)
 
             event = {
                 event_attr.SOURCE : source,
