@@ -294,7 +294,8 @@ class SystemHealth(Subscriber):
         # specific cases
         # 1. Failed status can be overwritten only by online event
         if event.resource_type == RESOURCE_TYPES.NODE.value and \
-            old_status == HEALTH_STATUSES.FAILED.value and new_status != HEALTH_STATUSES.ONLINE.value:
+            old_status == HEALTH_STATUSES.FAILED.value and \
+            new_status in [HEALTH_STATUSES.OFFLINE.value, HEALTH_STATUSES.DEGRADED.value, HEALTH_STATUSES.RECOVERING.value]:
             Log.info(f"Updating is not needed node is in {old_status} state and received {new_status} state")
             event_action = HEALTH_EVENT_ACTIONS.IGNORE.value
 
