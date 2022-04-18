@@ -292,11 +292,13 @@ class SystemHealth(Subscriber):
             event_action = HEALTH_EVENT_ACTIONS.IGNORE.value
 
         # specific cases
-        # 1. Do not overwrite node status to failed if offline already
+        # TODO : CORTX-30819 : Decide when to mark resource as "online" after permanent failure.
+        # 1. Failed status can be overwritten only by starting event
         if event.resource_type == RESOURCE_TYPES.NODE.value and \
-            old_status == HEALTH_STATUSES.OFFLINE.value and new_status == HEALTH_STATUSES.FAILED.value:
-            Log.info(f"Updating is not needed node is in {old_status} and received {new_status}")
+            old_status == HEALTH_STATUSES.FAILED.value and new_status != HEALTH_STATUSES.STARTING.value:
+            Log.info(f"Updating is not needed node is in {old_status} state and received {new_status} state")
             event_action = HEALTH_EVENT_ACTIONS.IGNORE.value
+
         return event_action
 
     def publish_event(self, healthevent: HealthEvent):
@@ -448,11 +450,10 @@ class SystemHealth(Subscriber):
                     pod_restart_val = current_health_dict["events"][0]["specific_info"]["pod_restart"]
                     # Update the current health value itself.
                     latest_health = EntityHealth.read(current_health)
-                    # TODO: Add stored_status != offline.
-                    if stored_genration_id and (stored_genration_id != incoming_generation_id) and (stored_status != HEALTH_EVENTS.FAILED.value):
+                    if stored_genration_id and (stored_genration_id != incoming_generation_id) and stored_status not in [HEALTH_EVENTS.OFFLINE.value, HEALTH_EVENTS.FAILED.value]:
                         # If stored_generation_id and incoming_generation_id is not same means,
                         # pod has been restarted, but for replicaset pod down/up,
-                        # stored_status is already set as failed, no need to count pod_restart,
+                        # stored_status is already set as offline/failed, no need to count pod_restart,
                         # in this case it will go to else part.
                         if (incoming_health_status == HEALTH_EVENTS.ONLINE.value):
                             # In delete scenario, online event comes first, followed by failed event.
@@ -460,9 +461,9 @@ class SystemHealth(Subscriber):
                             # If incoming is online event, change the stored event type to failed.
                             # Update the failed event in system health and followed by incoming online event.
                             healthevent.specific_info = {"generation_id": stored_genration_id, "pod_restart": 1, "functional_type": stored_functional_type}
-                            healthevent.event_type = "failed"
+                            healthevent.event_type = "offline"
                             updated_health = SystemHealth.create_updated_event_object(healthevent.timestamp, current_timestamp, healthevent.event_type, healthevent.specific_info, latest_health)
-                            # Create a "failed" event and update it in system health and publish
+                            # Create a "offline" event and update it in system health and publish
                             self._check_and_update(current_health, updated_health, healthevent, next_component)
                             current_health = updated_health
                             # Now create an "online" event and update it in system health and publish
