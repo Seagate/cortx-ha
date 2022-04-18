@@ -206,22 +206,14 @@ if __name__ == '__main__':
     _conf_store = ConftStoreSearch(conf_store_req=False)
 
     data_node_ids = get_data_nodes()
-<<<<<<< HEAD
     options_regex = re.compile('(-gdt$)|(-gs$)|(--get-data-nodes$)|(--get-server-nodes$)')
-=======
-    options_regex = re.compile('(-gdt$)|(-gs$)')
->>>>>>> CORTX-29708: Add proper validation of args in mock_health_event_publisher.py file
 
     if len(sys.argv) > 1:
         option = sys.argv[1]
         if not options_regex.match(option):
             print(f"Error: Invalid Argument: {option}\n"
-<<<<<<< HEAD
                   f"Please check supported args list:"
                   "['-gdt|--get-data-nodes', '-gs|--get-server-nodes']")
-=======
-                  f"Please check supported args list: ['-gdt', '-gs']")
->>>>>>> CORTX-29708: Add proper validation of args in mock_health_event_publisher.py file
             sys.exit(1)
     else:
         parser_obj.print_help()
