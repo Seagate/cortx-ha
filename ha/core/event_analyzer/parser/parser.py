@@ -181,6 +181,13 @@ class ClusterResourceParser(Parser):
         Log.info("ClusterResource Parser is initialized ...")
 
     def get_functional_type(self, node_id):
+        """
+        Get node type (data/server/control)
+        Args:
+            node_id = Node ID of node
+        Returns:
+            functional_type = 'node'/'data'/'control'
+        """
         functional_type = None
         if node_id in self.data_node_ids:
             functional_type = NODE_FUNCTIONAL_TYPES.DATA.value
