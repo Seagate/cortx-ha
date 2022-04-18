@@ -180,23 +180,6 @@ class ClusterResourceParser(Parser):
         self.control_node_ids = ConftStoreSearch.get_control_nodes(_index)
         Log.info("ClusterResource Parser is initialized ...")
 
-    def get_functional_type(self, node_id):
-        """
-        Get node type (data/server/control)
-        Args:
-            node_id = Node ID of node
-        Returns:
-            functional_type = 'node'/'data'/'control'
-        """
-        functional_type = None
-        if node_id in self.data_node_ids:
-            functional_type = NODE_FUNCTIONAL_TYPES.DATA.value
-        elif node_id in self.control_node_ids:
-            functional_type = NODE_FUNCTIONAL_TYPES.CONTROL.value
-        elif node_id in self.server_node_ids:
-            functional_type = NODE_FUNCTIONAL_TYPES.SERVER.value
-        return functional_type
-
     def parse_event(self, msg: str) -> HealthEvent:
         """
         Parse event.
@@ -218,9 +201,6 @@ class ClusterResourceParser(Parser):
                 if specific_info and specific_info["generation_id"]:
                     generation_id = specific_info["generation_id"]
                     specific_info = {"generation_id": generation_id, "pod_restart": 0}
-                elif not specific_info:
-                    specific_info = {}
-                specific_info['functional_type'] = self.get_functional_type(node_id)
 
             event = {
                 event_attr.SOURCE : source,

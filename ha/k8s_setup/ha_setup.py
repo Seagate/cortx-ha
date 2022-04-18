@@ -37,8 +37,9 @@ from ha.core.error import SetupError
 from ha.k8s_setup.const import _DELIM
 from ha.core.event_manager.event_manager import EventManager
 from ha.core.event_manager.subscribe_event import SubscribeEvent
+from ha.core.event_manager.resources import NODE_FUNCTIONAL_TYPES
 from ha.util.conf_store import ConftStoreSearch
-from ha.core.system_health.const import CLUSTER_ELEMENTS, HEALTH_EVENTS, EVENT_SEVERITIES, NODE_MAP_ATTRIBUTES
+from ha.core.system_health.const import CLUSTER_ELEMENTS, HEALTH_EVENTS, EVENT_SEVERITIES, NODE_MAP_ATTRIBUTES, SPECIFIC_INFO_ATTRIBUTES
 from ha.const import EVENT_ATTRIBUTES
 from ha.fault_tolerance.const import FAULT_TOLERANCE_KEYS, HEALTH_EVENT_SOURCES, NOT_DEFINED
 from ha.core.system_health.model.health_event import HealthEvent
@@ -316,10 +317,22 @@ class ConfigCmd(Cmd):
         Add node health
         """
         _, nodes_list = self._confStoreAPI.get_cluster_cardinality()
+        data_node_ids = self._confStoreAPI.get_data_pods(self._index)
+        server_node_ids = self._confStoreAPI.get_server_pods(self._index)
+        control_node_ids = self._confStoreAPI.get_control_nodes(self._index)
         for node in nodes_list:
+            functional_type = ''
+            if node in data_node_ids:
+                functional_type = NODE_FUNCTIONAL_TYPES.DATA.value
+            elif node in server_node_ids:
+                functional_type = NODE_FUNCTIONAL_TYPES.SERVER.value
+            elif node in control_node_ids:
+                functional_type = NODE_FUNCTIONAL_TYPES.CONTROL.value
+            specific_info = {SPECIFIC_INFO_ATTRIBUTES.FUNCTIONAL_TYPE.value: functional_type}
             self._add_health_event(node_id=node,
                                    resource_type=CLUSTER_ELEMENTS.NODE.value,
-                                   resource_id=node)
+                                   resource_id=node,
+                                   specific_info=specific_info)        
 
     def _add_cvg_and_disk_health(self) -> None:
         """
