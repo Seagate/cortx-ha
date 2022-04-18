@@ -49,6 +49,7 @@ class HEALTH_EVENTS(Enum):
     RECOVERING = "recovering"
     ONLINE = "online"
     FAILED = "failed"
+    OFFLINE = "offline"
     DEGRADED = "degraded"
     THRESHOLD_BREACHED_LOW = "threshold_breached:low"
     THRESHOLD_BREACHED_HIGH = "threshold_breached:high"
