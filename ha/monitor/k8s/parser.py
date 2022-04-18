@@ -59,7 +59,7 @@ class NodeEventParser(ObjectParser):
         Args:
         res_type: resource_type for which event needs to be created. Ex: node, disk
         res_name: actual resource name. Ex: machine_id in case of node alerts
-        health_status: health of that resource. Ex: online, failed
+        health_status: health of that resource. Ex: online, offline
         """
         self.payload[HealthAttr.RESOURCE_TYPE.value] = res_type
         self.payload[HealthAttr.RESOURCE_ID.value] = self.payload[HealthAttr.NODE_ID.value] = res_name
@@ -111,7 +111,7 @@ class NodeEventParser(ObjectParser):
                     return health_alert, self.event
                 elif cached_state[resource_name] == K8SEventsConst.true and ready_status.lower() != K8SEventsConst.true:
                     cached_state[resource_name] = ready_status.lower()
-                    event_type = AlertStates.FAILED
+                    event_type = AlertStates.OFFLINE
                     health_alert = self._create_health_alert(resource_type, resource_name, event_type)
                     return health_alert, self.event
                 else:
@@ -143,7 +143,7 @@ class PodEventParser(ObjectParser):
         Args:
         res_type: resource_type for which event needs to be created. Ex: node, disk
         res_name: actual resource name. Ex: machine_id in case of node alerts
-        health_status: health of that resource. Ex: online, failed
+        health_status: health of that resource. Ex: online, offline
         generation_id: name of the node in case of node alert
         """
         self.payload[HealthAttr.RESOURCE_TYPE.value] = res_type
@@ -203,7 +203,7 @@ class PodEventParser(ObjectParser):
                     return health_alert, self.event
                 elif cached_state[resource_name] == K8SEventsConst.true and ready_status.lower() != K8SEventsConst.true:
                     cached_state[resource_name] = ready_status.lower()
-                    event_type = AlertStates.FAILED
+                    event_type = AlertStates.OFFLINE
                     health_alert = self._create_health_alert(resource_type, resource_name, event_type, generation_id)
                     return health_alert, self.event
                 else:
