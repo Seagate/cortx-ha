@@ -292,6 +292,7 @@ class SystemHealth(Subscriber):
             event_action = HEALTH_EVENT_ACTIONS.IGNORE.value
 
         # specific cases
+        # TODO : CORTX-30819 : Decide when to mark resource as "online" after permanent failure.
         # 1. Failed status can be overwritten only by online event
         if event.resource_type == RESOURCE_TYPES.NODE.value and \
             old_status == HEALTH_STATUSES.FAILED.value and \
