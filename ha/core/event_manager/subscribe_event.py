@@ -16,11 +16,13 @@
 # cortx-questions@seagate.com.
 
 from typing import List
+from ha.k8s_setup import const
 from ha.core.event_manager.resources import RESOURCE_STATUS
-from ha.core.event_manager.resources import RESOURCE_TYPES
+from ha.core.event_manager.resources import RESOURCE_TYPES, FUNCTIONAL_TYPES
 
 class SubscribeEvent:
-    def __init__(self, resource_type : RESOURCE_TYPES, states : List[RESOURCE_STATUS]):
+    def __init__(self, resource_type : RESOURCE_TYPES, states : List[RESOURCE_STATUS],
+                 functional_types: List[FUNCTIONAL_TYPES] = []):
         """
         Subscribe event object.
         For HA state will be dict of {state: actions}
@@ -29,11 +31,26 @@ class SubscribeEvent:
         Args:
             resource_type (str): Type of resource.
             states (list): States
+            functional_types(list): Functional types of resource
         """
         self.states = []
+        self.functional_types = []
         self.resource_type = resource_type.value \
             if isinstance(resource_type, RESOURCE_TYPES) \
                 else resource_type
         for state in states:
             st = state.value if isinstance(state, RESOURCE_STATUS) else state
             self.states.append(st)
+
+        if functional_types:
+            try:
+                resource_func_types = FUNCTIONAL_TYPES[self.resource_type.upper()]
+            except KeyError as err:
+                raise Exception(f"Unsupported resource type '{err}'")
+
+            for func_type in functional_types:
+                func_type = func_type.lower()
+                func_type = resource_func_types.value(func_type).value
+                self.functional_types.append(func_type)
+
+        # TODO: (CORTX-30826) Need to subscribe all if functional type is not specified
