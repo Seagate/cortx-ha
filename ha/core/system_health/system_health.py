@@ -456,18 +456,24 @@ class SystemHealth(Subscriber):
                         # stored_status is already set as offline/failed, no need to count pod_restart,
                         # in this case it will go to else part.
                         if (incoming_health_status == HEALTH_EVENTS.ONLINE.value):
-                            # In delete scenario, online event comes first, followed by offline event.
-                            # System health is expected to update the offline event first, then online event.
-                            # If incoming is online event, change the stored event type to offline.
-                            # Update the offline event in system health and followed by incoming online event.
-                            healthevent.specific_info = {"generation_id": stored_genration_id, "pod_restart": 1}
+                            # In delete scenario, online event comes first, followed by failed event.
+                            # System health is expected to update the failed event first, then online event.
+                            # If incoming is online event, change the stored event type to failed.
+                            # Update the failed event in system health and followed by incoming online event.
+
+                            # TODO: (CORTX-29987) Need to check specific_info is having all expected attributes
+                            # functional_type should be present in node specific_info
+                            healthevent.specific_info.update({"generation_id": stored_genration_id, "pod_restart": 1})
                             healthevent.event_type = "offline"
                             updated_health = SystemHealth.create_updated_event_object(healthevent.timestamp, current_timestamp, healthevent.event_type, healthevent.specific_info, latest_health)
                             # Create a "offline" event and update it in system health and publish
                             self._check_and_update(current_health, updated_health, healthevent, next_component)
                             current_health = updated_health
                             # Now create an "online" event and update it in system health and publish
-                            healthevent.specific_info = {"generation_id": incoming_generation_id, "pod_restart": 1}
+
+                            # TODO: (CORTX-29987) Need to check specific_info is having all expected attributes
+                            # functional_type should be present in node specific_info
+                            healthevent.specific_info.update({"generation_id": incoming_generation_id, "pod_restart": 1})
                             healthevent.event_type = "online"
                             updated_health = SystemHealth.create_updated_event_object(healthevent.timestamp, current_timestamp, healthevent.event_type, healthevent.specific_info, latest_health)
                             self._check_and_update(current_health, updated_health, healthevent, next_component)
@@ -479,8 +485,11 @@ class SystemHealth(Subscriber):
                                 site_id=self.node_map['site_id'], rack_id=self.node_map['rack_id'], \
                                 node_id=self.node_id)
                             latest_health_dict = json.loads(current_health)
+
+                            # TODO: (CORTX-29987) Need to check specific_info is having all expected attributes
+                            # functional_type should be present in node specific_info
                             new_spec_info = {"generation_id": stored_genration_id, "pod_restart": 0}
-                            latest_health_dict["events"][0]["specific_info"] = new_spec_info
+                            latest_health_dict["events"][0]["specific_info"].update(new_spec_info)
                             updated_health = EntityHealth.write(latest_health_dict)
                             self.healthmanager.set_key(key, updated_health)
                     else:
