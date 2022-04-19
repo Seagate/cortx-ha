@@ -93,3 +93,8 @@ class HEALTH_EVENT_ACTIONS(Enum):
     UPDATE = "update"
     UPDATEPUBLISH = "updatepublish"
     PUBLISH = "publish"
+
+# Specific_info attributes
+class SPECIFIC_INFO_ATTRIBUTES(Enum):
+    GENERATION_ID = 'generation_id'
+    FUNCTIONAL_TYPE = 'functional_type'
