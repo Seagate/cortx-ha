@@ -22,7 +22,7 @@ from ha.core.event_manager.resources import RESOURCE_TYPES, FUNCTIONAL_TYPES
 
 class SubscribeEvent:
     def __init__(self, resource_type : RESOURCE_TYPES, states : List[RESOURCE_STATUS],
-                 functional_types: list = []):
+                 functional_types: List[FUNCTIONAL_TYPES] = []):
         """
         Subscribe event object.
         For HA state will be dict of {state: actions}
@@ -31,6 +31,7 @@ class SubscribeEvent:
         Args:
             resource_type (str): Type of resource.
             states (list): States
+            functional_types(list): Functional types of resource
         """
         self.states = []
         self.functional_types = []
@@ -52,7 +53,4 @@ class SubscribeEvent:
                 func_type = resource_func_types.value(func_type).value
                 self.functional_types.append(func_type)
 
-        # else:
-        #     # TODO: Need to subscribe all if functional type is not specified?
-        #     for func_type in resource_func_types.value:
-        #         self.functional_types.append(func_type.value)
+        # TODO: (CORTX-30826) Need to subscribe all if functional type is not specified

@@ -22,7 +22,7 @@ from ha.core.health_monitor.const import HEALTH_MON_ACTIONS
 from ha.core.health_monitor.const import HEALTH_MON_KEYS
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.config.config_manager import ConfigManager
-from ha.core.system_health.const import HEALTH_STATUSES
+from ha.core.system_health.const import HEALTH_STATUSES, FUNCTIONAL_TYPE
 from ha.core.health_monitor.error import InvalidAction
 
 class MonitorRulesManager:
@@ -38,9 +38,16 @@ class MonitorRulesManager:
         Args:
             resource_type(str)
             event_type(str)
+            functional_type(str)
 
         Returns:
             str: key string
+
+            Example:
+                If functional_type specified on node resource type, returns
+                    action>node>server>online
+                Otherwise,
+                    action>node>online
         """
         resource = f"{resource_type}{HA_DELIM}{functional_type}" if functional_type else resource_type
         return f"{HEALTH_MON_KEYS.ACT_RULE.value}{HA_DELIM}{resource}{HA_DELIM}{event_type}"
@@ -98,8 +105,11 @@ class MonitorRulesManager:
             list: actions configured for the rule
         """
         val = []
-        functional_type = event.specific_info.get("type")
-        key = self._prepare_key(event.resource_type, event.event_type, functional_type)
+        if event.specific_info and event.specific_info.get(FUNCTIONAL_TYPE):
+            key = self._prepare_key(event.resource_type, event.event_type,
+                                    event.specific_info.get(FUNCTIONAL_TYPE))
+        else:
+            key = self._prepare_key(event.resource_type, event.event_type)
         Log.debug(f"Evaluating rule for {key}")
         kv = self._get_val(key)
         if kv:

@@ -36,6 +36,7 @@ from ha.core.event_manager.resources import SUBSCRIPTION_LIST
 from ha.core.event_manager.const import EVENT_MANAGER_KEYS
 from ha.core.health_monitor.const import HEALTH_MON_ACTIONS
 from ha.core.health_monitor.monitor_rules_manager import MonitorRulesManager
+from ha.core.system_health.const import FUNCTIONAL_TYPE
 from cortx.utils.event_framework.event import EventAttr
 from cortx.utils.event_framework.health import HealthAttr, HealthEvent
 
@@ -319,11 +320,11 @@ class EventManager:
                 subscription_key = EVENT_MANAGER_KEYS.SUBSCRIPTION_KEY.value.replace("<component_id>", component)
                 if event.functional_types:
                     for func_type in event.functional_types:
-                        resource_type = event.resource_type + HA_DELIM + func_type
-                        self._store_component_key(subscription_key, resource_type, event.states)
-                        self._store_event_key(resource_type, event.states, comp=component)
+                        resource = event.resource_type + HA_DELIM + func_type       # Example: resource = node>server
+                        self._store_component_key(subscription_key, resource, event.states)
+                        self._store_event_key(resource, event.states, comp=component)
                         for state in event.states:
-                            self._monitor_rule.add_rule(resource_type, state, self._default_action)
+                            self._monitor_rule.add_rule(resource, state, self._default_action)
                 else:
                     self._store_component_key(subscription_key, event.resource_type, event.states)
                     self._store_event_key(event.resource_type, event.states, comp=component)
@@ -356,13 +357,24 @@ class EventManager:
             if not action:
                 action = HEALTH_MON_ACTIONS.PUBLISH_ACT.value
             for event in events:
-                self._delete_component_key(component, event.resource_type, event.states)
-                self._delete_event_key(component, event.resource_type, event.states)
-                for state in event.states:
-                    key = EVENT_MANAGER_KEYS.EVENT_KEY.value.replace(
-                        "<resource>", event.resource_type).replace("<state>", state)
-                    if not self._confstore.key_exists(key):
-                        self._monitor_rule.remove_rule(event.resource_type, state, self._default_action)
+                if event.functional_types:
+                    for func_type in event.functional_types:
+                        resource = event.resource_type + HA_DELIM + func_type       # Example: resource = node>server
+                        self._delete_component_key(component, resource, event.states)
+                        self._delete_event_key(component, resource, event.states)
+                        for state in event.states:
+                            key = EVENT_MANAGER_KEYS.EVENT_KEY.value.replace(
+                                "<resource>", resource).replace("<state>", state)
+                            if not self._confstore.key_exists(key):
+                                self._monitor_rule.remove_rule(resource, state, self._default_action)
+                else:
+                    self._delete_component_key(component, event.resource_type, event.states)
+                    self._delete_event_key(component, event.resource_type, event.states)
+                    for state in event.states:
+                        key = EVENT_MANAGER_KEYS.EVENT_KEY.value.replace(
+                            "<resource>", event.resource_type).replace("<state>", state)
+                        if not self._confstore.key_exists(key):
+                            self._monitor_rule.remove_rule(event.resource_type, state, self._default_action)
             Log.info(f"Successfully UnSubscribed component {component}")
         except InvalidComponent:
             raise
@@ -402,9 +414,15 @@ class EventManager:
         try:
             #TODO: Use Transactional producer in future.
             component_list = []
+            resource_type = event[EventAttr.EVENT_PAYLOAD.value][HealthAttr.RESOURCE_TYPE.value]
+            specific_info = event[EventAttr.EVENT_PAYLOAD.value][HealthAttr.SPECIFIC_INFO.value]
+            if specific_info and specific_info.get(FUNCTIONAL_TYPE):
+                resource = f'{resource_type}{HA_DELIM}{specific_info.get(FUNCTIONAL_TYPE)}'
+            else:
+                resource = resource_type
             # Run through list of components subscribed for this event and send event to each of them
             component_list_key = EVENT_MANAGER_KEYS.EVENT_KEY.value.replace(
-                "<resource>", event[EventAttr.EVENT_PAYLOAD.value][HealthAttr.RESOURCE_TYPE.value]).replace("<state>", event[EventAttr.EVENT_PAYLOAD.value][HealthAttr.RESOURCE_STATUS.value])
+                "<resource>", resource).replace("<state>", event[EventAttr.EVENT_PAYLOAD.value][HealthAttr.RESOURCE_STATUS.value])
             component_list_key_val = self._confstore.get(component_list_key)
             if component_list_key_val:
                 _, value = component_list_key_val.popitem()
