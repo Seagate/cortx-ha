@@ -440,6 +440,7 @@ class SystemHealth(Subscriber):
                 current_health_dict = json.loads(current_health)
                 specific_info = current_health_dict["events"][0]["specific_info"]
                 if (component_type == CLUSTER_ELEMENTS.NODE.value) and specific_info \
+                    and specific_info.get('generation_id', None) \
                     and healthevent.source == HEALTH_EVENT_SOURCES.MONITOR.value:
                     # If health is already stored and its a node_health, check further
                     stored_genration_id = current_health_dict["events"][0]["specific_info"]["generation_id"]
