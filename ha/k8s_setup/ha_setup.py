@@ -44,7 +44,6 @@ from ha.const import EVENT_ATTRIBUTES
 from ha.fault_tolerance.const import FAULT_TOLERANCE_KEYS, HEALTH_EVENT_SOURCES, NOT_DEFINED
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.system_health.system_health import SystemHealth
-from ha.core.event_manager.resources import NODE_FUNCTIONAL_TYPES
 
 class Cmd:
     """
@@ -269,8 +268,11 @@ class ConfigCmd(Cmd):
             Log.info('Performing event_manager subscription')
             event_manager = EventManager.get_instance()
             event_manager.subscribe(const.EVENT_COMPONENT,
-                                    [SubscribeEvent(const.POD_EVENT, ["online", "offline", "failed"], [
-                                        NODE_FUNCTIONAL_TYPES.SERVER.value, NODE_FUNCTIONAL_TYPES.DATA.value])])
+                                    [SubscribeEvent(const.POD_EVENT, ["online", "offline", "failed"])])
+            # TODO: (CORTX-29991) Need to allow component to subscribe at functional_type level
+            # event_manager.subscribe(const.EVENT_COMPONENT,
+            #                         [SubscribeEvent(const.POD_EVENT, ["online", "offline", "failed"], [
+            #                             NODE_FUNCTIONAL_TYPES.SERVER.value, NODE_FUNCTIONAL_TYPES.DATA.value])])
             Log.info(f'event_manager subscription for {const.EVENT_COMPONENT}\
                        is successful for the event {const.POD_EVENT}')
             event_manager.subscribe(const.EVENT_COMPONENT, [SubscribeEvent(const.DISK_EVENT, ["online", "failed"])])

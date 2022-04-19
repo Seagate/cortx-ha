@@ -22,7 +22,7 @@ from ha.core.health_monitor.const import HEALTH_MON_ACTIONS
 from ha.core.health_monitor.const import HEALTH_MON_KEYS
 from ha.core.system_health.model.health_event import HealthEvent
 from ha.core.config.config_manager import ConfigManager
-from ha.core.system_health.const import HEALTH_STATUSES, FUNCTIONAL_TYPE
+from ha.core.system_health.const import HEALTH_STATUSES, SPECIFIC_INFO_ATTRIBUTES
 from ha.core.health_monitor.error import InvalidAction
 
 class MonitorRulesManager:
@@ -105,9 +105,9 @@ class MonitorRulesManager:
             list: actions configured for the rule
         """
         val = []
-        if event.specific_info and event.specific_info.get(FUNCTIONAL_TYPE):
+        if event.specific_info and event.specific_info.get(SPECIFIC_INFO_ATTRIBUTES.FUNCTIONAL_TYPE):
             key = self._prepare_key(event.resource_type, event.event_type,
-                                    event.specific_info.get(FUNCTIONAL_TYPE))
+                                    event.specific_info.get(SPECIFIC_INFO_ATTRIBUTES.FUNCTIONAL_TYPE))
         else:
             key = self._prepare_key(event.resource_type, event.event_type)
         Log.debug(f"Evaluating rule for {key}")

@@ -36,7 +36,7 @@ from ha.core.event_manager.resources import SUBSCRIPTION_LIST
 from ha.core.event_manager.const import EVENT_MANAGER_KEYS
 from ha.core.health_monitor.const import HEALTH_MON_ACTIONS
 from ha.core.health_monitor.monitor_rules_manager import MonitorRulesManager
-from ha.core.system_health.const import FUNCTIONAL_TYPE
+from ha.core.system_health.const import SPECIFIC_INFO_ATTRIBUTES
 from cortx.utils.event_framework.event import EventAttr
 from cortx.utils.event_framework.health import HealthAttr, HealthEvent
 
@@ -174,7 +174,7 @@ class EventManager:
                        Key is: {key}')
             self._confstore.set(f'{key}', event_list)
 
-    def _store_event_key(self, resource_type: str, states: list, comp: str = None) -> None:
+    def _store_event_key(self, resource_type: str, states: list = None, comp: str = None) -> None:
         '''
            Perform actual confstore store operation for event keys
            key: cortx>ha>v1>events>node>server>online
@@ -416,8 +416,8 @@ class EventManager:
             component_list = []
             resource_type = event[EventAttr.EVENT_PAYLOAD.value][HealthAttr.RESOURCE_TYPE.value]
             specific_info = event[EventAttr.EVENT_PAYLOAD.value][HealthAttr.SPECIFIC_INFO.value]
-            if specific_info and specific_info.get(FUNCTIONAL_TYPE):
-                resource = f'{resource_type}{HA_DELIM}{specific_info.get(FUNCTIONAL_TYPE)}'
+            if specific_info and specific_info.get(SPECIFIC_INFO_ATTRIBUTES.FUNCTIONAL_TYPE.value):
+                resource = f'{resource_type}{HA_DELIM}{specific_info.get(SPECIFIC_INFO_ATTRIBUTES.FUNCTIONAL_TYPE.value)}'
             else:
                 resource = resource_type
             # Run through list of components subscribed for this event and send event to each of them

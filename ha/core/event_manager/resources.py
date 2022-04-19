@@ -70,7 +70,7 @@ class RESOURCE_TYPES(enum.Enum, metaclass=EnumListMeta):
 class NODE_FUNCTIONAL_TYPES(enum.Enum):
     SERVER = "server"
     DATA = "data"
-    CONTROl = "control"
+    CONTROL = "control"
 
 class DISK_FUNCTIONAL_TYPES(enum.Enum):
     DATA = "data"

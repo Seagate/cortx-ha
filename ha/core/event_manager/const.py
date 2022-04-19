@@ -28,4 +28,3 @@ class EVENT_MANAGER_KEYS(enum.Enum, metaclass=EnumListMeta):
 ACTION_EVENT_VERSION = "2.0"
 EVENT_MANAGER_LOG="event_manager"
 EVENT_MGR_PRODUCER_ID = "ha_event_manager_<component_id>"
-FUNCTIONAL_TYPE = "functional_type"
