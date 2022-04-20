@@ -424,6 +424,12 @@ class EventManager:
             component_list_key = EVENT_MANAGER_KEYS.EVENT_KEY.value.replace(
                 "<resource>", resource).replace("<state>", event[EventAttr.EVENT_PAYLOAD.value][HealthAttr.RESOURCE_STATUS.value])
             component_list_key_val = self._confstore.get(component_list_key)
+            # If component list key not found, try check for actual resource type
+            if not component_list_key_val:
+                component_list_key = EVENT_MANAGER_KEYS.EVENT_KEY.value.replace(
+                    "<resource>", resource_type).replace(
+                        "<state>", event[EventAttr.EVENT_PAYLOAD.value][HealthAttr.RESOURCE_STATUS.value])
+                component_list_key_val = self._confstore.get(component_list_key)
             if component_list_key_val:
                 _, value = component_list_key_val.popitem()
                 component_list = json.loads(value)
