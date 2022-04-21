@@ -1,4 +1,3 @@
-from cgitb import handler
 import os
 import signal
 import ssl
@@ -37,24 +36,24 @@ class CcRestApi(ABC):
         # Note: Adding route '/' just to check whether CC REST API server is alive
         CcRestApi._app.router.add_get('/', CcRestApi.handler_check_alive)
 
-        # TODO: Add routers
+        # TODO: CORTX-30932 Add routs using view classes
 
         CcRestApi._app.on_startup.append(CcRestApi._on_startup)
         CcRestApi._app.on_shutdown.append(CcRestApi._on_shutdown)
 
     @classmethod
     async def check_for_unsupported_endpoint(cls, request):
-        # TODO: implement
+        # TODO: CORTX-30931 implement
         pass
 
     @staticmethod
     def json_response(resp_obj, status=200):
-        # TODO: Implement
+        # TODO: CORTX-30931 Implement
         pass
 
     @staticmethod
     def error_response(err: Exception, **kwargs):
-        # TODO: Implement
+        # TODO: CORTX-30931 Implement
         pass
 
     @staticmethod
@@ -62,7 +61,7 @@ class CcRestApi(ABC):
     async def rest_middleware(request, handler):
         Log.debug(f"Rest middleware is called: request = {request} handler = {handler}")
         if CcRestApi.__is_shutting_down:
-            # TODO : return json response status = 503
+            # TODO : CORTX-30931 return json proper response with HTTP status = 503
             return CcRestApi.json_response("CC is shutting down", status=503)
         try:
             request_id = int(time.time())
@@ -71,7 +70,8 @@ class CcRestApi(ABC):
                 await CcRestApi.check_for_unsupported_endpoint(request)
             except Exception as e:
                 Log.warn(f"Exception: {e}")
-                # send proper JSON response
+                # TODO:
+                CcRestApi.error_response(Exception("Invalid endpoint."))
 
             resp = await handler(request)
 
@@ -92,15 +92,15 @@ class CcRestApi(ABC):
 
             return CcRestApi.json_response(resp_obj, status)
 
-        # TODO: Handle exceptions, below is the just 1 placeholder
+        # TODO: CORTX-30931 Handle multiple exceptions, below is the just 1 added
         except (ConcurrentCancelledError, AsyncioCancelledError) as e:
             Log.warn(f"Client cancelled call for {request.method} {request.path}")
-            # TODO use CcRequestCancelled
+            # TODO: CORTX-30931 use CcRequestCancelled return proper response
             return CcRestApi.json_response(CcRestApi.error_response(Exception("Call cancelled by client"),
                                             request = request, request_id = request_id), status=499)
 
     @staticmethod
-    async def _shut_down():#loop, site):
+    async def _shut_down():
         Log.info('CC Rest API Server is shutting down.')
         CcRestApi.__is_shutting_down = True
         for task in asyncio.Task.all_tasks():
@@ -118,12 +118,12 @@ class CcRestApi(ABC):
     @staticmethod
     async def _on_startup(app):
         Log.debug('REST API server startup')
-        # Add the calls that need to execute on startup of Rest server
+        # Note: Additional calls needs to be added to execute on startup of CC Rest API Server
 
     @staticmethod
     async def _on_shutdown(app):
         Log.debug('REST API server shutdown')
-        # Add the calls that need to execute on startup of Rest server
+        # Note: Additional calls needs to be added to execute on shutdown of CC Rest API Server
 
     @staticmethod
     def _start_server(app, host=None, port=None, ssl_context=None, access_log=None):
