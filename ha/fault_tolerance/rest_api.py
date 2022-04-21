@@ -1,0 +1,173 @@
+from cgitb import handler
+import os
+import signal
+import ssl
+import time
+import asyncio
+from abc import ABC
+from aiohttp import web
+
+from concurrent.futures import CancelledError as ConcurrentCancelledError
+from asyncio import CancelledError as AsyncioCancelledError
+from cortx.utils.log import Log
+
+class Response:
+    pass
+
+class CcRestApi(ABC):
+
+    _app = None
+    _loop = None
+    _site = None
+    __is_shutting_down = False
+    _singals = ('SIGINT', 'SIGTERM')
+
+    # Test function just to check whether CC REST API server is alive
+    @staticmethod
+    async def handler_check_alive(request):
+        return web.Response(text="CORTX CC REST API server is alive.")
+
+    @staticmethod
+    def init() -> None:
+
+        # Create Rest Application object and set middleware coroutine to it.
+        # A middleware is a coroutine that can modify either the request or response.
+        CcRestApi._app = web.Application(middlewares=[CcRestApi.rest_middleware])
+
+        # Note: Adding route '/' just to check whether CC REST API server is alive
+        CcRestApi._app.router.add_get('/', CcRestApi.handler_check_alive)
+
+        # TODO: Add routers
+
+        CcRestApi._app.on_startup.append(CcRestApi._on_startup)
+        CcRestApi._app.on_shutdown.append(CcRestApi._on_shutdown)
+
+    @classmethod
+    async def check_for_unsupported_endpoint(cls, request):
+        # TODO: implement
+        pass
+
+    @staticmethod
+    def json_response(resp_obj, status=200):
+        # TODO: Implement
+        pass
+
+    @staticmethod
+    def error_response(err: Exception, **kwargs):
+        # TODO: Implement
+        pass
+
+    @staticmethod
+    @web.middleware
+    async def rest_middleware(request, handler):
+        Log.debug(f"Rest middleware is called: request = {request} handler = {handler}")
+        if CcRestApi.__is_shutting_down:
+            # TODO : return json response status = 503
+            return CcRestApi.json_response("CC is shutting down", status=503)
+        try:
+            request_id = int(time.time())
+
+            try:
+                await CcRestApi.check_for_unsupported_endpoint(request)
+            except Exception as e:
+                Log.warn(f"Exception: {e}")
+                # send proper JSON response
+
+            resp = await handler(request)
+
+            if isinstance(resp, web.StreamResponse):
+                return resp
+
+            status = 200
+            if isinstance(resp, Response):
+                status = resp.rc()
+                resp_obj = {'response_body': resp.output(), 'status_code': status}
+                Log.info(f"Response = {resp_obj}")
+
+                if not 200 <= status <= 299:
+                    Log.error(f"Error: ({status}):{resp_obj['response_body']}")
+            else:
+                resp_obj = resp
+                Log.info(f"Response = {resp_obj}")
+
+            return CcRestApi.json_response(resp_obj, status)
+
+        # TODO: Handle exceptions, below is the just 1 placeholder
+        except (ConcurrentCancelledError, AsyncioCancelledError) as e:
+            Log.warn(f"Client cancelled call for {request.method} {request.path}")
+            # TODO use CcRequestCancelled
+            return CcRestApi.json_response(CcRestApi.error_response(Exception("Call cancelled by client"),
+                                            request = request, request_id = request_id), status=499)
+
+    @staticmethod
+    async def _shut_down():#loop, site):
+        Log.info('CC Rest API Server is shutting down.')
+        CcRestApi.__is_shutting_down = True
+        for task in asyncio.Task.all_tasks():
+            if task != asyncio.Task.current_task():
+                task.cancel()
+        await CcRestApi._site.stop()
+        CcRestApi._loop.stop()
+
+
+    @staticmethod
+    async def handle_signal(signame: str):
+        Log.info(f'Received signal: {signame}: {getattr(signal, signame)}')
+        await CcRestApi._shut_down()
+
+    @staticmethod
+    async def _on_startup(app):
+        Log.debug('REST API server startup')
+        # Add the calls that need to execute on startup of Rest server
+
+    @staticmethod
+    async def _on_shutdown(app):
+        Log.debug('REST API server shutdown')
+        # Add the calls that need to execute on startup of Rest server
+
+    @staticmethod
+    def _start_server(app, host=None, port=None, ssl_context=None, access_log=None):
+        CcRestApi._loop = asyncio.get_event_loop()
+        runner = web.AppRunner(app, access_log=access_log)
+        CcRestApi._loop.run_until_complete(runner.setup())
+        CcRestApi._site = web.TCPSite(runner, host=host, port=port, ssl_context=ssl_context)
+        CcRestApi._loop.run_until_complete(CcRestApi._site.start())
+        print(f'======== CC REST API Server is running on {CcRestApi._site.name} ========')
+        print('(Press CTRL+C to quit)', flush=True)
+
+        # Add signal handlers
+        for signame in  CcRestApi._signals:
+            CcRestApi._loop.add_signal_handler(getattr(signal, signame),
+                                lambda signame=signame: asyncio.ensure_future(CcRestApi.handle_signal(signame)))
+
+    @staticmethod
+    def start(host: str, port: int, https_port: int=None, certificate_path: str=None, private_key_path: str=None, https=False):
+        if https:
+            port = https_port
+            ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+            if not all(map(os.path.exists,(certificate_path, private_key_path))):
+                raise Exception("Invalid path to SSL certificate/private key")
+            ssl_context.load_cert_chain(certificate_path, private_key_path)
+        else:
+            ssl_context = None
+
+        CcRestApi._start_server(CcRestApi._app, host=host, port=port, ssl_context=ssl_context, access_log=None)
+
+    @staticmethod
+    def join():
+        try:
+            CcRestApi._loop.run_forever()
+        finally:
+            CcRestApi._loop.close()
+
+# if __name__ == '__main__':
+
+#     # testing
+#     Log.info = print
+#     Log.error = print
+#     Log.warn = print
+#     Log.debug = print
+
+#     CcRestApi.init()
+#     CcRestApi.start(host=None, port=8080)
+#     CcRestApi.join()

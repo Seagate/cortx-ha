@@ -25,6 +25,7 @@ from cortx.utils.log import Log
 from ha.core.config.config_manager import ConfigManager
 from ha.fault_tolerance.fault_monitor import HealthStatusMonitor
 from ha.fault_tolerance.cluster_stop_monitor import ClusterStopMonitor
+from ha.fault_tolerance.rest_api import CcRestApi
 
 class FaultTolerance:
     """
@@ -40,6 +41,7 @@ class FaultTolerance:
         ConfigManager.init("fault_tolerance")
         self.node_fault_monitor = HealthStatusMonitor()
         self.cluster_stop_monitor = ClusterStopMonitor()
+        CcRestApi.init()
 
     def set_sigterm(self, signum, frame):
         """
@@ -56,11 +58,13 @@ class FaultTolerance:
         """
         self.node_fault_monitor.start()
         self.cluster_stop_monitor.start()
+        CcRestApi.start(host=None, port=8080)
 
     def wait_for_exit(self):
         """
         join and wait for monitor threads to exit
         """
+        CcRestApi.join()
         self.node_fault_monitor.join()
         self.cluster_stop_monitor.join()
 
