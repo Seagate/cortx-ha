@@ -2,13 +2,16 @@ import os
 import signal
 import ssl
 import time
-import asyncio
 from abc import ABC
 from aiohttp import web
-
-from concurrent.futures import CancelledError as ConcurrentCancelledError
+import asyncio
 from asyncio import CancelledError as AsyncioCancelledError
+from concurrent.futures import CancelledError as ConcurrentCancelledError
+
 from cortx.utils.log import Log
+from cortx.utils.conf_store import Conf
+from ha import const
+from ha.core import error
 
 class Response:
     pass
@@ -141,15 +144,44 @@ class CcRestApi(ABC):
                                 lambda signame=signame: asyncio.ensure_future(CcRestApi.handle_signal(signame)))
 
     @staticmethod
-    def start(host: str, port: int, https_port: int=None, certificate_path: str=None, private_key_path: str=None, https=False):
-        if https:
-            port = https_port
-            ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+    def get_ssl_context(https_conf: dict) -> ssl.SSLContext:
+        try:
+            certificate_path = https_conf['certificate_path']
+            private_key_path = https_conf['private_key_path']
+
             if not all(map(os.path.exists,(certificate_path, private_key_path))):
-                raise Exception("Invalid path to SSL certificate/private key")
-            ssl_context.load_cert_chain(certificate_path, private_key_path)
-        else:
-            ssl_context = None
+                Log.info("Creating SSL context.")
+                ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+                ssl_context.load_cert_chain(certificate_path, private_key_path)
+                return ssl_context
+            return None
+        except ssl.SSLError as se:
+            raise error.HAError(rc=se.errno, desc=se.strerror, message_id=se.reason, args=se.args)
+
+
+
+    @staticmethod
+    def start():
+
+        # TODO: get configured host and port
+        try:
+            host = Conf.get(const.HA_GLOBAL_INDEX, f'CC_WEB>host')
+            port = Conf.get(const.HA_GLOBAL_INDEX, f'CC_WEB>port')
+        except error.ConfError as ce:
+            Log.debug(f"Failed to get host and port for CC REST API, error: {ce}.")
+            host=None
+            port=8080
+
+        ssl_context = None
+        # TODO: get 'HTTPS' configuration to create SSL context
+        try:
+            https_conf = Conf.get(const.HA_GLOBAL_INDEX, "HTTPS")
+            if https_conf is not None:
+                ssl_context = CcRestApi.get_ssl_context(https_conf)
+                port = https_conf["port"]
+        except error.ConfError as ce:
+            Log.debug(f"Failed to get SSL context for CC REST API, error: {ce}.")
+            ssl_context=None
 
         CcRestApi._start_server(CcRestApi._app, host=host, port=port, ssl_context=ssl_context, access_log=None)
 

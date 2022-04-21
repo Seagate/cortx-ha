@@ -58,12 +58,15 @@ class FaultTolerance:
         """
         self.node_fault_monitor.start()
         self.cluster_stop_monitor.start()
-        CcRestApi.start(host=None, port=8080)
+        CcRestApi.start()
 
     def wait_for_exit(self):
         """
         join and wait for monitor threads to exit
         """
+        # TODO: CORTX-27291 handle all joins so
+        # in case if any one of the threads stop
+        # it should take care of other threads
         CcRestApi.join()
         self.node_fault_monitor.join()
         self.cluster_stop_monitor.join()
