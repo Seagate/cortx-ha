@@ -1,4 +1,3 @@
-import os
 import signal
 import ssl
 import time
@@ -11,7 +10,6 @@ from concurrent.futures import CancelledError as ConcurrentCancelledError
 from cortx.utils.log import Log
 from cortx.utils.conf_store import Conf
 from ha import const
-from ha.core import error
 
 class Response:
     pass
