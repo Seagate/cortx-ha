@@ -213,6 +213,10 @@ class ConfigCmd(Cmd):
             consul_endpoint = filtered_consul_endpoints[0]
 
             ha_endpoints = Conf.get(self._index, f'cortx{_DELIM}ha{_DELIM}service{_DELIM}endpoints')
+
+            # TODO : remove below line once get added in cluster config by provisioner 'CORTX-30791'
+            ha_endpoints = ['http://cortx-ha-svc:23501']
+
             #========================================================#
             # ha Service endpoints from cluster.conf                 #
             #____________________ cluster.conf ______________________#
@@ -224,9 +228,6 @@ class ConfigCmd(Cmd):
             # in the future if support for 'https' required additional tasks like
             # certificate and private key etc. needs to be added
             filtered_ha_endpoints = list(filter(lambda x: isinstance(x, str) and urlparse(x).scheme == const.ha_scheme, ha_endpoints))
-
-            # TODO : remove below line once get added in cluster config by provisioner 'CORTX-30791'
-            filtered_ha_endpoints = 'http://cortx-ha-svc:23501'
 
             if not filtered_ha_endpoints:
                 sys.stderr.write(f'Failed to get ha config. ha_config: {filtered_ha_endpoints}. \n')

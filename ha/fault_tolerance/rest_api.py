@@ -22,7 +22,7 @@ class CcRestApi(ABC):
     _loop = None
     _site = None
     __is_shutting_down = False
-    _singals = ('SIGINT', 'SIGTERM')
+    _signals = ('SIGINT', 'SIGTERM')
 
     # Test function just to check whether CC REST API server is alive
     # TODO: to be removed CORTX-30932
