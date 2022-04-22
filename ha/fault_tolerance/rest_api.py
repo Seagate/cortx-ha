@@ -152,7 +152,6 @@ class CcRestApi(ABC):
         This function stops the REST Server.
         cancels all the running tasks, stops site and event loop
         """
-        Log.info('CC Rest API Server is shutting down.')
         CcRestApi.__is_shutting_down = True
         for task in asyncio.Task.all_tasks():
             if task != asyncio.Task.current_task():
@@ -183,7 +182,7 @@ class CcRestApi(ABC):
         Args:
             app (web.Application): web Application object which is starting.
         """
-        Log.info('REST API server startup')
+        Log.info(f'REST API server {CcRestApi._site.name} startup')
         # Note: Additional calls needs to be added to execute on startup of CC Rest API Server
 
     @staticmethod
@@ -193,7 +192,7 @@ class CcRestApi(ABC):
         Args:
             app (web.Application): web Application object which is shuting down.
         """
-        Log.info('REST API server shutdown')
+        Log.info(f'REST API server {CcRestApi._site.name} shutdown')
         # Note: Additional calls needs to be added to execute on shutdown of CC Rest API Server
 
     @staticmethod
@@ -227,7 +226,8 @@ class CcRestApi(ABC):
         Stops REST API server.
         Warpper to call async coroutine CcRestApi._stop().
         """
-        asyncio.run(CcRestApi._stop())
+        Log.info(f'CC Rest API Server {CcRestApi._site.name} is stopping.')
+        CcRestApi._loop().run_until_complete(CcRestApi._stop())
 
     @staticmethod
     def start():

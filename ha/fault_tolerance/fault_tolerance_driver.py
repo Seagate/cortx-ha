@@ -54,6 +54,7 @@ class FaultTolerance:
         self.cluster_stop_monitor.stop(flush=True)
         CcRestApi.stop()
 
+
     def start(self):
         """
         start the threads
