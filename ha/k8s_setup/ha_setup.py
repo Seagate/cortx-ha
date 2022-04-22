@@ -220,13 +220,13 @@ class ConfigCmd(Cmd):
             # - http://cortx-ha-svc:23501                            #
             #========================================================#
             # search for supported ha endpoint url from list of configured consul endpoints
+            # Note: Currently CC/HA supports 'http' for HA REST APIs
+            # in the future if support for 'https' required additional tasks like
+            # certificate and private key etc. needs to be added
             filtered_ha_endpoints = list(filter(lambda x: isinstance(x, str) and urlparse(x).scheme == const.ha_scheme, ha_endpoints))
 
             # TODO : remove below line once get added in cluster config by provisioner 'CORTX-30791'
             filtered_ha_endpoints = 'http://cortx-ha-svc:23501'
-            # TODO : in case if we need to use https scheme need to get below information
-            certificate_path = ''
-            private_key_path = ''
 
             if not filtered_ha_endpoints:
                 sys.stderr.write(f'Failed to get ha config. ha_config: {filtered_ha_endpoints}. \n')
@@ -241,7 +241,7 @@ class ConfigCmd(Cmd):
             health_comm_msg_type = FAULT_TOLERANCE_KEYS.MONITOR_HA_MESSAGE_TYPE.value
 
             conf_file_dict = {'LOG' : {'path' : ha_log_path, 'level' : const.HA_LOG_LEVEL},
-                         'service_config' : {'endpoint' : ha_endpoint, 'certificate_path': certificate_path, 'private_key_path': private_key_path},
+                         'service_config' : {'endpoint' : ha_endpoint},
                          'consul_config' : {'endpoint' : consul_endpoint},
                          'kafka_config' : {'endpoints': kafka_endpoint},
                          'event_topic' : 'hare',

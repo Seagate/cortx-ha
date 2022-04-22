@@ -25,6 +25,7 @@ class CcRestApi(ABC):
     _singals = ('SIGINT', 'SIGTERM')
 
     # Test function just to check whether CC REST API server is alive
+    # TODO: to be removed CORTX-30932
     @staticmethod
     async def handler_check_alive(request):
         return web.Response(text="CORTX CC REST API server is alive.")
@@ -36,10 +37,9 @@ class CcRestApi(ABC):
         # A middleware is a coroutine that can modify either the request or response.
         CcRestApi._app = web.Application(middlewares=[CcRestApi.rest_middleware])
 
-        # Note: Adding route '/' just to check whether CC REST API server is alive
+        # TODO: CORTX-30932 Add routs using view classes and remove below placeholder
+        # Note: Adding route '/' just to test
         CcRestApi._app.router.add_get('/', CcRestApi.handler_check_alive)
-
-        # TODO: CORTX-30932 Add routs using view classes
 
         CcRestApi._app.on_startup.append(CcRestApi._on_startup)
         CcRestApi._app.on_shutdown.append(CcRestApi._on_shutdown)
@@ -135,8 +135,7 @@ class CcRestApi(ABC):
         CcRestApi._loop.run_until_complete(runner.setup())
         CcRestApi._site = web.TCPSite(runner, host=host, port=port, ssl_context=ssl_context)
         CcRestApi._loop.run_until_complete(CcRestApi._site.start())
-        print(f'======== CC REST API Server is running on {CcRestApi._site.name} ========')
-        print('(Press CTRL+C to quit)', flush=True)
+        Log.info(f'======== CC REST API Server is running on {CcRestApi._site.name} ========')
 
         # Add signal handlers
         for signame in  CcRestApi._signals:
@@ -144,38 +143,16 @@ class CcRestApi(ABC):
                                 lambda signame=signame: asyncio.ensure_future(CcRestApi.handle_signal(signame)))
 
     @staticmethod
-    def get_ssl_context(certificate_path: str, private_key_path: str) -> ssl.SSLContext:
-        try:
-            if not all(map(os.path.exists,(certificate_path, private_key_path))):
-                Log.info("Creating SSL context.")
-                ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-                ssl_context.load_cert_chain(certificate_path, private_key_path)
-                return ssl_context
-            return None
-        except ssl.SSLError as se:
-            raise error.HAError(rc=se.errno, desc=se.strerror, message_id=se.reason, args=se.args)
-
-
-
-    @staticmethod
     def start():
 
         host = None
         ha_endpoint = Conf.get(const.HA_GLOBAL_INDEX, f'service_config{const.HA_DELIM}endpoint')
         if ha_endpoint:
-            scheme = ha_endpoint.split("//")[0].strip(':')
             port = ha_endpoint.split(":")[-1]
         else:
-            scheme = 'http'
             port = 23501
 
-        ssl_context = None
-        if scheme == 'https':
-            certificate_path = Conf.get(const.HA_GLOBAL_INDEX, f'service_config{const.HA_DELIM}certificate_path')
-            private_key_path = Conf.get(const.HA_GLOBAL_INDEX, f'service_config{const.HA_DELIM}private_key_path')
-            ssl_context = CcRestApi.get_ssl_context(certificate_path, private_key_path)
-
-        CcRestApi._start_server(CcRestApi._app, host=host, port=port, ssl_context=ssl_context, access_log=None)
+        CcRestApi._start_server(CcRestApi._app, host=host, port=port, ssl_context=None, access_log=None)
 
     @staticmethod
     def join():
@@ -183,15 +160,3 @@ class CcRestApi(ABC):
             CcRestApi._loop.run_forever()
         finally:
             CcRestApi._loop.close()
-
-# if __name__ == '__main__':
-
-#     # testing
-#     Log.info = print
-#     Log.error = print
-#     Log.warn = print
-#     Log.debug = print
-
-#     CcRestApi.init()
-#     CcRestApi.start(host=None, port=8080)
-#     CcRestApi.join()
