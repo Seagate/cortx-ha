@@ -11,6 +11,7 @@ from cortx.utils.log import Log
 from cortx.utils.conf_store import Conf
 from ha import const
 
+# TODO : CORTX-30931 to be replace with full definition
 class Response:
     pass
 
@@ -31,7 +32,7 @@ class CcRestApi(ABC):
         Test Handler function is added for testing purpose.
         it returns test "CORTX CC REST API server is alive."
         Args:
-            request (_type_): Request object
+            request (web.Request): Request object
         Returns:
             web.Response: response object that to be sent to client
         """
@@ -107,7 +108,7 @@ class CcRestApi(ABC):
         Log.debug(f"Rest middleware is called: request = {request} handler = {handler}")
         if CcRestApi.__is_shutting_down:
             # TODO : CORTX-30931 return json proper response with HTTP status = 503
-            return CcRestApi.json_response("CC is shutting down", status=503)
+            return CcRestApi.json_response("CC REST Server is shutting down", status=503)
         try:
             request_id = int(time.time())
 
@@ -237,8 +238,6 @@ class CcRestApi(ABC):
         ha_endpoint = Conf.get(const.HA_GLOBAL_INDEX, f'service_config{const.HA_DELIM}endpoint')
         if ha_endpoint:
             port = ha_endpoint.split(":")[-1]
-        else:
-            port = 23501
 
         CcRestApi._start_server(CcRestApi._app, host=host, port=port, ssl_context=None, access_log=None)
 
