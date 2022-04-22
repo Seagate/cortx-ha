@@ -187,6 +187,8 @@ class ClusterResourceParser(Parser):
             resource_id = cluster_resource_alert[EventAttr.EVENT_PAYLOAD.value][HealthAttr.RESOURCE_ID.value]
             event_type = cluster_resource_alert[EventAttr.EVENT_PAYLOAD.value][HealthAttr.RESOURCE_STATUS.value]
             specific_info = cluster_resource_alert[EventAttr.EVENT_PAYLOAD.value][HealthAttr.SPECIFIC_INFO.value]
+
+            # Doesnot should be overwrite specific_info
             if resource_type == CLUSTER_ELEMENTS.NODE.value:
                 if specific_info and specific_info["generation_id"]:
                     specific_info.update({"pod_restart": 0})
