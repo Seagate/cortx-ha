@@ -22,7 +22,7 @@ from ha.core.event_manager.resources import RESOURCE_TYPES, FUNCTIONAL_TYPES
 
 class SubscribeEvent:
     def __init__(self, resource_type : RESOURCE_TYPES, states : List[RESOURCE_STATUS],
-                 functional_types: List[FUNCTIONAL_TYPES] = []):
+                 functional_types: List[FUNCTIONAL_TYPES] = ["ALL"]):
         """
         Subscribe event object.
         For HA state will be dict of {state: actions}
@@ -31,7 +31,7 @@ class SubscribeEvent:
         Args:
             resource_type (str): Type of resource.
             states (list): States
-            functional_types(list): Functional types of resource
+            functional_types(list): Functional types of resource (Default value is ALL)
         """
         self.states = []
         self.functional_types = []
@@ -49,8 +49,9 @@ class SubscribeEvent:
                 raise Exception(f"Unsupported resource type '{err}'")
 
             for func_type in functional_types:
-                func_type = func_type.lower()
-                func_type = resource_func_types.value(func_type).value
-                self.functional_types.append(func_type)
-
-        # TODO: (CORTX-30826) Need to subscribe all if functional type is not specified
+                if func_type.upper() == "ALL":
+                    self.functional_types = [fn_type.value for fn_type in resource_func_types.value]
+                else:
+                    func_type = func_type.lower()
+                    func_type = resource_func_types.value(func_type).value
+                    self.functional_types.append(func_type)
