@@ -41,7 +41,8 @@ class FaultTolerance:
         ConfigManager.init("fault_tolerance")
         self.node_fault_monitor = HealthStatusMonitor()
         self.cluster_stop_monitor = ClusterStopMonitor()
-        CcRestApi.init()
+        # Note: signal handler is setting False otherwise it will overwrite above handler.
+        CcRestApi.init(handle_signals=False)
 
     def set_sigterm(self, signum, frame):
         """
@@ -51,6 +52,7 @@ class FaultTolerance:
         Log.debug(f"Stopping the Fault Tolerance Monitor received a signal: {signum} during execution of frame: {frame}")
         self.node_fault_monitor.stop(flush=True)
         self.cluster_stop_monitor.stop(flush=True)
+        CcRestApi.stop()
 
     def start(self):
         """

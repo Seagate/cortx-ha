@@ -22,16 +22,35 @@ class CcRestApi(ABC):
     _loop = None
     _site = None
     __is_shutting_down = False
+    _handle_signals = True
     _signals = ('SIGINT', 'SIGTERM')
 
     # Test function just to check whether CC REST API server is alive
     # TODO: to be removed CORTX-30932
     @staticmethod
     async def handler_check_alive(request):
+        """
+        Test Handler function is added for testing purpose.
+        it returns test "CORTX CC REST API server is alive."
+        Args:
+            request (_type_): Request object
+        Returns:
+            web.Response: response object that to be sent to client
+        """
         return web.Response(text="CORTX CC REST API server is alive.")
 
     @staticmethod
-    def init() -> None:
+    def init(handle_signals=True) -> None:
+        """
+        Initialize web application ans set supported routes, middlewares, etc.
+        Args:
+            handle_signals (bool, optional): Defaults to True.
+            If handle_signals is True then signal handler will be set.
+            if it is false then caller should handle the signals.
+            and needs to call CcRestApi.stop() before application terminates
+        """
+
+        CcRestApi._handle_signals = handle_signals
 
         # Create Rest Application object and set middleware coroutine to it.
         # A middleware is a coroutine that can modify either the request or response.
@@ -46,22 +65,47 @@ class CcRestApi(ABC):
 
     @classmethod
     async def check_for_unsupported_endpoint(cls, request):
+        """
+        Check unsupported endpoints.
+        Note: this function is expected to be call from middleware.
+        Args:
+            request (web.Request): Request object
+        """
         # TODO: CORTX-30931 implement
         pass
 
     @staticmethod
     def json_response(resp_obj, status=200):
+        """
+        Returns the the provided response object to client.
+        Args:
+            resp_obj (web.Response): Response object that to be sent to client.
+            status (int, optional): HTTP status code. Defaults to 200.
+        """
         # TODO: CORTX-30931 Implement
         pass
 
     @staticmethod
     def error_response(err: Exception, **kwargs):
+        """
+        Create response object from input exception object.
+        Args:
+            err (Exception): exception object for that error response sent to be client.
+        """
         # TODO: CORTX-30931 Implement
         pass
 
     @staticmethod
     @web.middleware
     async def rest_middleware(request, handler):
+        """
+        The 'middleware' coroutine which get called when Request is received to the server.
+        Args:
+            request (web.Request): Request object
+            handler (handler): handler coroutine
+        Returns:
+            Json object: return json object that to be sent to client, ref: CcRestApi.json_response
+        """
         Log.debug(f"Rest middleware is called: request = {request} handler = {handler}")
         if CcRestApi.__is_shutting_down:
             # TODO : CORTX-30931 return json proper response with HTTP status = 503
@@ -103,7 +147,11 @@ class CcRestApi(ABC):
                                             request = request, request_id = request_id), status=499)
 
     @staticmethod
-    async def _shut_down():
+    async def _stop():
+        """
+        This function stops the REST Server.
+        cancels all the running tasks, stops site and event loop
+        """
         Log.info('CC Rest API Server is shutting down.')
         CcRestApi.__is_shutting_down = True
         for task in asyncio.Task.all_tasks():
@@ -115,36 +163,78 @@ class CcRestApi(ABC):
 
     @staticmethod
     async def handle_signal(signame: str):
+        """
+        Signal handler callback function.
+        if SIGTERM, SIGINT is received it stops the REST server.
+        other all are logged and ignored.
+        Args:
+            signame (str): Singal name which is getting handled.
+        """
         Log.info(f'Received signal: {signame}: {getattr(signal, signame)}')
-        await CcRestApi._shut_down()
+        if signame in ('SIGTERM', 'SIGINT'):
+            await CcRestApi._stop()
+        else:
+            Log.info(f'Signal: {signame}: {getattr(signal, signame)} is ignored.')
 
     @staticmethod
     async def _on_startup(app):
-        Log.debug('REST API server startup')
+        """
+        This function is executes on startup of CC Rest API Server.
+        Args:
+            app (web.Application): web Application object which is starting.
+        """
+        Log.info('REST API server startup')
         # Note: Additional calls needs to be added to execute on startup of CC Rest API Server
 
     @staticmethod
     async def _on_shutdown(app):
-        Log.debug('REST API server shutdown')
+        """
+        This function is executes on shutdown of CC Rest API Server.
+        Args:
+            app (web.Application): web Application object which is shuting down.
+        """
+        Log.info('REST API server shutdown')
         # Note: Additional calls needs to be added to execute on shutdown of CC Rest API Server
 
     @staticmethod
-    def _start_server(app, host=None, port=None, ssl_context=None, access_log=None):
+    def _start_server(app, host: str=None, port: int=None, ssl_context: ssl.SSLContext=None, access_log=None):
+        """
+        Starts CC REST Application server.
+        Sets the signal_handler if CcRestApi._handle_signal is set to true in init().
+        Args:
+            app (web.Application): web Application object which is starting.
+            host (str, optional): CC REST API server host. Defaults to None.
+            port (int, optional): CC REST API server port. Defaults to None.
+            ssl_context (ssl.SSLContext, optional): SSL context object for 'https' protocol. Defaults to None.
+            access_log (any, optional): access log. Defaults to None.
+        """
         CcRestApi._loop = asyncio.get_event_loop()
-        runner = web.AppRunner(app, access_log=access_log)
+        runner = web.AppRunner(app, handle_signals=CcRestApi._handle_signals, access_log=access_log)
         CcRestApi._loop.run_until_complete(runner.setup())
         CcRestApi._site = web.TCPSite(runner, host=host, port=port, ssl_context=ssl_context)
         CcRestApi._loop.run_until_complete(CcRestApi._site.start())
         Log.info(f'======== CC REST API Server is running on {CcRestApi._site.name} ========')
 
         # Add signal handlers
-        for signame in  CcRestApi._signals:
-            CcRestApi._loop.add_signal_handler(getattr(signal, signame),
-                                lambda signame=signame: asyncio.ensure_future(CcRestApi.handle_signal(signame)))
+        if CcRestApi._handle_signals:
+            for signame in  CcRestApi._signals:
+                CcRestApi._loop.add_signal_handler(getattr(signal, signame),
+                                    lambda signame=signame: asyncio.ensure_future(CcRestApi.handle_signal(signame)))
+
+    @staticmethod
+    def stop():
+        """
+        Stops REST API server.
+        Warpper to call async coroutine CcRestApi._stop().
+        """
+        asyncio.run(CcRestApi._stop())
 
     @staticmethod
     def start():
-
+        """
+        Starts CC REST API server.
+        fetches the configuration from conf and starts server.
+        """
         host = None
         ha_endpoint = Conf.get(const.HA_GLOBAL_INDEX, f'service_config{const.HA_DELIM}endpoint')
         if ha_endpoint:
@@ -156,6 +246,12 @@ class CcRestApi(ABC):
 
     @staticmethod
     def join():
+        """
+        This is blocking call similar to thread.join() function.
+        It waits on event loop forever unless someone like signal handler function calls loop.stops().
+        from another thread you can call loop.stop() to get out of this loop.
+        You can stop this loop also by pressing <Ctrl+c> if you running this application from terminal.
+        """
         try:
             CcRestApi._loop.run_forever()
         finally:
