@@ -212,6 +212,27 @@ class ConfigCmd(Cmd):
             # discussed and confirmed to select the first hhtp endpoint
             consul_endpoint = filtered_consul_endpoints[0]
 
+            ha_endpoints = Conf.get(self._index, f'cortx{_DELIM}ha{_DELIM}service{_DELIM}endpoints')
+            #========================================================#
+            # ha Service endpoints from cluster.conf                 #
+            #____________________ cluster.conf ______________________#
+            # endpoints:                                             #
+            # - http://cortx-ha-svc:23501                            #
+            #========================================================#
+            # search for supported ha endpoint url from list of configured consul endpoints
+            filtered_ha_endpoints = list(filter(lambda x: isinstance(x, str) and urlparse(x).scheme == const.ha_scheme, ha_endpoints))
+
+            # TODO : remove below line once get added in cluster config by provisioner 'CORTX-30791'
+            filtered_ha_endpoints = 'http://cortx-ha-svc:23501'
+            # TODO : in case if we need to use https scheme need to get below information
+            certificate_path = ''
+            private_key_path = ''
+
+            if not filtered_ha_endpoints:
+                sys.stderr.write(f'Failed to get ha config. ha_config: {filtered_ha_endpoints}. \n')
+                sys.exit(1)
+            ha_endpoint = filtered_ha_endpoints[0]
+
             kafka_endpoint = Conf.get(self._index, f'cortx{_DELIM}external{_DELIM}kafka{_DELIM}endpoints')
             if not kafka_endpoint:
                 sys.stderr.write(f'Failed to get kafka config. kafka_config: {kafka_endpoint}. \n')
@@ -220,6 +241,7 @@ class ConfigCmd(Cmd):
             health_comm_msg_type = FAULT_TOLERANCE_KEYS.MONITOR_HA_MESSAGE_TYPE.value
 
             conf_file_dict = {'LOG' : {'path' : ha_log_path, 'level' : const.HA_LOG_LEVEL},
+                         'service_config' : {'endpoint' : ha_endpoint, 'certificate_path': certificate_path, 'private_key_path': private_key_path},
                          'consul_config' : {'endpoint' : consul_endpoint},
                          'kafka_config' : {'endpoints': kafka_endpoint},
                          'event_topic' : 'hare',

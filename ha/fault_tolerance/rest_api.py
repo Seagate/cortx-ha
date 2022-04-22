@@ -144,11 +144,8 @@ class CcRestApi(ABC):
                                 lambda signame=signame: asyncio.ensure_future(CcRestApi.handle_signal(signame)))
 
     @staticmethod
-    def get_ssl_context(https_conf: dict) -> ssl.SSLContext:
+    def get_ssl_context(certificate_path: str, private_key_path: str) -> ssl.SSLContext:
         try:
-            certificate_path = https_conf['certificate_path']
-            private_key_path = https_conf['private_key_path']
-
             if not all(map(os.path.exists,(certificate_path, private_key_path))):
                 Log.info("Creating SSL context.")
                 ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
@@ -163,25 +160,20 @@ class CcRestApi(ABC):
     @staticmethod
     def start():
 
-        # TODO: get configured host and port
-        try:
-            host = Conf.get(const.HA_GLOBAL_INDEX, f'CC_WEB>host')
-            port = Conf.get(const.HA_GLOBAL_INDEX, f'CC_WEB>port')
-        except error.ConfError as ce:
-            Log.debug(f"Failed to get host and port for CC REST API, error: {ce}.")
-            host=None
-            port=8080
+        host = None
+        ha_endpoint = Conf.get(const.HA_GLOBAL_INDEX, f'service_config{const.HA_DELIM}endpoint')
+        if ha_endpoint:
+            scheme = ha_endpoint.split("//")[0].strip(':')
+            port = ha_endpoint.split(":")[-1]
+        else:
+            scheme = 'http'
+            port = 23501
 
         ssl_context = None
-        # TODO: get 'HTTPS' configuration to create SSL context
-        try:
-            https_conf = Conf.get(const.HA_GLOBAL_INDEX, "HTTPS")
-            if https_conf is not None:
-                ssl_context = CcRestApi.get_ssl_context(https_conf)
-                port = https_conf["port"]
-        except error.ConfError as ce:
-            Log.debug(f"Failed to get SSL context for CC REST API, error: {ce}.")
-            ssl_context=None
+        if scheme == 'https':
+            certificate_path = Conf.get(const.HA_GLOBAL_INDEX, f'service_config{const.HA_DELIM}certificate_path')
+            private_key_path = Conf.get(const.HA_GLOBAL_INDEX, f'service_config{const.HA_DELIM}private_key_path')
+            ssl_context = CcRestApi.get_ssl_context(certificate_path, private_key_path)
 
         CcRestApi._start_server(CcRestApi._app, host=host, port=port, ssl_context=ssl_context, access_log=None)
 
