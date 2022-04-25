@@ -32,7 +32,7 @@ from ha.core.event_manager.error import InvalidEvent
 from ha.core.event_manager.error import SubscribeException
 from ha.core.event_manager.error import UnSubscribeException
 from ha.core.event_manager.error import PublishException
-from ha.core.event_manager.resources import SUBSCRIPTION_LIST
+from ha.core.event_manager.resources import SUBSCRIPTION_LIST, FUNCTIONAL_TYPES
 from ha.core.event_manager.const import EVENT_MANAGER_KEYS
 from ha.core.health_monitor.const import HEALTH_MON_ACTIONS
 from ha.core.health_monitor.monitor_rules_manager import MonitorRulesManager
@@ -413,9 +413,9 @@ class EventManager:
             resource_type = event[EventAttr.EVENT_PAYLOAD.value][HealthAttr.RESOURCE_TYPE.value]
             specific_info = event[EventAttr.EVENT_PAYLOAD.value][HealthAttr.SPECIFIC_INFO.value]
             if specific_info and specific_info.get(SPECIFIC_INFO_ATTRIBUTES.FUNCTIONAL_TYPE.value):
-                functional_type = f'{resource_type}{HA_DELIM}{specific_info.get(SPECIFIC_INFO_ATTRIBUTES.FUNCTIONAL_TYPE.value)}'
+                functional_type = specific_info.get(SPECIFIC_INFO_ATTRIBUTES.FUNCTIONAL_TYPE.value)
             else:
-                functional_type = "all"
+                functional_type = FUNCTIONAL_TYPES.ALL.value
             # Run through list of components subscribed for this event and send event to each of them
             component_list_key = EVENT_MANAGER_KEYS.EVENT_KEY.value.replace(
                 "<resource>", resource_type).replace(
