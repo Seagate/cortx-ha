@@ -28,6 +28,7 @@ _DELIM=">"
 
 # consul endpoint scheme: http
 consul_scheme = 'http'
+ha_scheme = 'http'
 
 # Event_manager keys
 POD_EVENT="node"
