@@ -25,6 +25,8 @@ from ha.core.event_manager.subscribe_event import SubscribeEvent
 from ha.core.event_manager.resources import SUBSCRIPTION_LIST
 from ha.core.event_manager.resources import RESOURCE_STATUS
 from ha.core.event_manager.resources import RESOURCE_TYPES
+from ha.k8s_setup import const
+from ha.core.event_manager.resources import NODE_FUNCTIONAL_TYPES, FUNCTIONAL_TYPES
 
 class TestEventManager(unittest.TestCase):
     """
@@ -34,15 +36,39 @@ class TestEventManager(unittest.TestCase):
     def setUp(self):
         self.event_manager = EventManager.get_instance()
         self.component = SUBSCRIPTION_LIST.TEST
-        self.event = SubscribeEvent(RESOURCE_TYPES.NODE,
-            [RESOURCE_STATUS.FAILED, RESOURCE_STATUS.ONLINE, RESOURCE_STATUS.DEGRADED, RESOURCE_STATUS.OFFLINE])
+        self.pod_event_with_func_type = SubscribeEvent(const.POD_EVENT, [
+            RESOURCE_STATUS.FAILED, RESOURCE_STATUS.ONLINE, RESOURCE_STATUS.DEGRADED, RESOURCE_STATUS.OFFLINE], [
+                NODE_FUNCTIONAL_TYPES.SERVER.value, NODE_FUNCTIONAL_TYPES.DATA.value])
+        self.pod_event_without_func_type = SubscribeEvent(const.POD_EVENT, [
+            RESOURCE_STATUS.FAILED, RESOURCE_STATUS.ONLINE, RESOURCE_STATUS.DEGRADED, RESOURCE_STATUS.OFFLINE])
+        self.disk_event_without_func_type = SubscribeEvent(const.DISK_EVENT, [
+            RESOURCE_STATUS.FAILED, RESOURCE_STATUS.ONLINE, RESOURCE_STATUS.OFFLINE])
+        self.pod_event_with_func_type_all = SubscribeEvent(const.POD_EVENT, [
+            RESOURCE_STATUS.FAILED, RESOURCE_STATUS.ONLINE, RESOURCE_STATUS.DEGRADED, RESOURCE_STATUS.OFFLINE],
+            [FUNCTIONAL_TYPES.ALL.value])
 
     def tearDown(self):
         pass
 
-    def test_subscriber(self):
-        self.event_manager.subscribe(self.component, [self.event])
-        self.event_manager.unsubscribe(self.component, [self.event])
+    def test_subscriber_with_functional_type(self):
+        # pod event with functional type
+        self.event_manager.subscribe(self.component, [self.pod_event_with_func_type])
+        #self.event_manager.unsubscribe(self.component, [self.pod_event_with_func_type])
+
+    def test_subscriber_without_functional_type(self):
+        # pod event without functional type
+        self.event_manager.subscribe(self.component, [self.pod_event_without_func_type])
+        #self.event_manager.unsubscribe(self.component, [self.pod_event_without_func_type])
+
+        # disk event without functional type
+        self.event_manager.subscribe(self.component, [self.disk_event_without_func_type])
+        #self.event_manager.unsubscribe(self.component, [self.disk_event_without_func_type])
+
+    def test_subscriber_with_functional_type_all(self):
+        # pod event without functional type
+        self.event_manager.subscribe(self.component, [self.pod_event_with_func_type_all])
+        #self.event_manager.unsubscribe(self.component, [self.pod_event_with_func_type_all])
+
 
 if __name__ == "__main__":
     unittest.main()
