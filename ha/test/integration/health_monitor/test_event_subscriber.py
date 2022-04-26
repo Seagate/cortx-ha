@@ -53,20 +53,24 @@ class TestEventManager(unittest.TestCase):
     def test_subscriber_with_functional_type(self):
         # pod event with functional type
         self.event_manager.subscribe(self.component, [self.pod_event_with_func_type])
+        # TODO: CORTX-29991 will validate unsubscribe
         #self.event_manager.unsubscribe(self.component, [self.pod_event_with_func_type])
 
     def test_subscriber_without_functional_type(self):
         # pod event without functional type
         self.event_manager.subscribe(self.component, [self.pod_event_without_func_type])
+        # TODO: CORTX-29991 will validate unsubscribe
         #self.event_manager.unsubscribe(self.component, [self.pod_event_without_func_type])
 
         # disk event without functional type
         self.event_manager.subscribe(self.component, [self.disk_event_without_func_type])
+        # TODO: CORTX-29991 will validate unsubscribe
         #self.event_manager.unsubscribe(self.component, [self.disk_event_without_func_type])
 
     def test_subscriber_with_functional_type_all(self):
         # pod event without functional type
         self.event_manager.subscribe(self.component, [self.pod_event_with_func_type_all])
+        # TODO: CORTX-29991 will validate unsubscribe
         #self.event_manager.unsubscribe(self.component, [self.pod_event_with_func_type_all])
 
 

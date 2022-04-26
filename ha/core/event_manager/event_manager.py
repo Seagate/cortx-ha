@@ -320,12 +320,11 @@ class EventManager:
             message_type = self._create_message_type(component)
             for event in events:
                 subscription_key = EVENT_MANAGER_KEYS.SUBSCRIPTION_KEY.value.replace("<component_id>", component)
-                if event.functional_types:
-                    for func_type in event.functional_types:
-                        self._store_component_key(subscription_key, event.resource_type, func_type, event.states)
-                        self._store_event_key(event.resource_type, func_type, event.states, comp=component)
-                        for state in event.states:
-                            self._monitor_rule.add_rule(event.resource_type, func_type, state, self._default_action)
+                for func_type in event.functional_types:
+                    self._store_component_key(subscription_key, event.resource_type, func_type, event.states)
+                    self._store_event_key(event.resource_type, func_type, event.states, comp=component)
+                    for state in event.states:
+                        self._monitor_rule.add_rule(event.resource_type, func_type, state, self._default_action)
             Log.info(f"Successfully Subscribed component {component} with message_type {message_type}")
             return message_type
         except Exception as e:
