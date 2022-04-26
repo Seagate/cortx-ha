@@ -303,15 +303,19 @@ class ConfigCmd(Cmd):
         """
         Add cluster, site ,rack health
         """
+        specific_info={}
         self._add_health_event(node_id="",
                                    resource_type=CLUSTER_ELEMENTS.CLUSTER.value,
-                                   resource_id=self._cluster_id)
+                                   resource_id=self._cluster_id,
+                                   specific_info=specific_info)
         self._add_health_event(node_id="",
                                    resource_type=CLUSTER_ELEMENTS.SITE.value,
-                                   resource_id=self._site_id)
+                                   resource_id=self._site_id,
+                                   specific_info=specific_info)
         self._add_health_event(node_id="",
                                    resource_type=CLUSTER_ELEMENTS.RACK.value,
-                                   resource_id=self._rack_id)
+                                   resource_id=self._rack_id,
+                                   specific_info=specific_info)
 
 
     def _add_node_health(self) -> None:
