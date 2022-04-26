@@ -29,6 +29,29 @@ class FAULT_TOLERANCE_KEYS(enum.Enum, metaclass=EnumListMeta):
     MONITOR_HA_MESSAGE_TYPE = 'cortx_health_events'
     CSM_HA_MESSAGE_TYPE = 'cortx_health_events'
 
+
+class ERROR_CODES(enum.Enum, metaclass=EnumListMeta):
+    INVALID_REQUEST         = 'MalformedRequest'
+    UNKNOWN_ERROR           = 'UnknownError'
+    RESOURCE_EXISTS         = 'ResourceExist'
+    INTERNAL_ERROR          = 'InternalError'
+    NOT_FOUND_ERROR         = 'NotFoundError'
+    PERMISSION_DENIED_ERROR = 'PermissionDenied'
+    UNAUTHORISED            = 'Unauthorized'
+    RESOURCE_NOT_AVAILABLE  = 'ResourceNotAvailable'
+    TYPE_ERROR              = 'TypeError'
+    NOT_IMPLEMENTED         = 'NotImplemented'
+    SERVICE_CONFLICT        = 'ServiceConflict'
+    GATEWAY_TIMEOUT         = 'GatewayTimeout'
+    REQUEST_TIMEOUT         = 'RequestTimeout'
+    UNAUTHORIZED_ERROR      = 'UnauthorizedError'
+    SERVICE_NOT_AVAILABLE   = 'ServiceNotAvailable'
+    REQUEST_CANCELLED       = 'RequestCancelled'
+    SETUP_ERROR             = 'SetupError'
+    HTTP_ERROR              = 'HttpError'
+    UN_SUPPORTED_CONTENT_TYPE  = 'UnsupportedContenttType'
+    TOO_MANY_REQUESTS       = 'TooManyRequests'
+
 # Used to set default value in const.HA_CONFIG_FILE
 # TODO : To be replaced by actual values when they are available in config
 NOT_DEFINED = 'NOT_DEFINED'
