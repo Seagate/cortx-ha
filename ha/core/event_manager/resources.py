@@ -73,9 +73,9 @@ class NODE_FUNCTIONAL_TYPES(enum.Enum):
     CONTROL = "control"
 
 class DISK_FUNCTIONAL_TYPES(enum.Enum):
-    DATA = "data"
-    METADATA = "metadata"
+    ALL = "all"
 
 class FUNCTIONAL_TYPES(enum.Enum):
     NODE = NODE_FUNCTIONAL_TYPES
     DISK = DISK_FUNCTIONAL_TYPES
+    ALL = "all"

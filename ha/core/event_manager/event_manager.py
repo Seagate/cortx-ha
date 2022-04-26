@@ -32,7 +32,7 @@ from ha.core.event_manager.error import InvalidEvent
 from ha.core.event_manager.error import SubscribeException
 from ha.core.event_manager.error import UnSubscribeException
 from ha.core.event_manager.error import PublishException
-from ha.core.event_manager.resources import SUBSCRIPTION_LIST
+from ha.core.event_manager.resources import SUBSCRIPTION_LIST, FUNCTIONAL_TYPES
 from ha.core.event_manager.const import EVENT_MANAGER_KEYS
 from ha.core.health_monitor.const import HEALTH_MON_ACTIONS
 from ha.core.health_monitor.monitor_rules_manager import MonitorRulesManager
@@ -132,7 +132,7 @@ class EventManager:
             self._confstore.delete(message_type_key)
         Log.info(f"Unsubscribed component {component} from message_type {message_type}")
 
-    def _store_component_key(self, key: str, resource_type: str, val: list) -> None:
+    def _store_component_key(self, key: str, resource_type: str, functional_type: str, val: list) -> None:
         '''
            Perform actual confstore store operation for component keys
            Ex:
@@ -147,7 +147,7 @@ class EventManager:
 
             event_list = json.loads(event_list)
             for event in val:
-                new_val = resource_type + HA_DELIM + event
+                new_val = resource_type + HA_DELIM + functional_type + HA_DELIM + event
                 if new_val in event_list:
                     continue
                 # Merge the old and new component list
@@ -166,7 +166,7 @@ class EventManager:
         else:
             new_event = []
             for event in val:
-                new_val = resource_type + HA_DELIM + event
+                new_val = resource_type + HA_DELIM + functional_type + HA_DELIM + event
                 new_event.append(new_val)
             # Store the key in the json string format
             event_list = json.dumps(new_event)
@@ -174,7 +174,7 @@ class EventManager:
                        Key is: {key}')
             self._confstore.set(f'{key}', event_list)
 
-    def _store_event_key(self, resource_type: str, states: list = None, comp: str = None) -> None:
+    def _store_event_key(self, resource_type: str, functional_type: str, states: list = None, comp: str = None) -> None:
         '''
            Perform actual confstore store operation for event keys
            key: cortx>ha>v1>events>node>server>online
@@ -182,7 +182,9 @@ class EventManager:
         '''
         if states:
             for state in states:
-                new_key = EVENT_MANAGER_KEYS.EVENT_KEY.value.replace("<resource>", resource_type).replace("<state>", state)
+                new_key = EVENT_MANAGER_KEYS.EVENT_KEY.value.replace(
+                    "<resource>", resource_type).replace(
+                        "<functional_type>", functional_type).replace("<state>", state)
                 if self._confstore.key_exists(new_key):
                     comp_json_list = self._confstore.get(new_key)
 
@@ -318,18 +320,11 @@ class EventManager:
             message_type = self._create_message_type(component)
             for event in events:
                 subscription_key = EVENT_MANAGER_KEYS.SUBSCRIPTION_KEY.value.replace("<component_id>", component)
-                if event.functional_types:
-                    for func_type in event.functional_types:
-                        resource = event.resource_type + HA_DELIM + func_type       # Example: resource = node>server
-                        self._store_component_key(subscription_key, resource, event.states)
-                        self._store_event_key(resource, event.states, comp=component)
-                        for state in event.states:
-                            self._monitor_rule.add_rule(resource, state, self._default_action)
-                else:
-                    self._store_component_key(subscription_key, event.resource_type, event.states)
-                    self._store_event_key(event.resource_type, event.states, comp=component)
+                for func_type in event.functional_types:
+                    self._store_component_key(subscription_key, event.resource_type, func_type, event.states)
+                    self._store_event_key(event.resource_type, func_type, event.states, comp=component)
                     for state in event.states:
-                        self._monitor_rule.add_rule(event.resource_type, state, self._default_action)
+                        self._monitor_rule.add_rule(event.resource_type, func_type, state, self._default_action)
             Log.info(f"Successfully Subscribed component {component} with message_type {message_type}")
             return message_type
         except Exception as e:
@@ -417,12 +412,14 @@ class EventManager:
             resource_type = event[EventAttr.EVENT_PAYLOAD.value][HealthAttr.RESOURCE_TYPE.value]
             specific_info = event[EventAttr.EVENT_PAYLOAD.value][HealthAttr.SPECIFIC_INFO.value]
             if specific_info and specific_info.get(SPECIFIC_INFO_ATTRIBUTES.FUNCTIONAL_TYPE.value):
-                resource = f'{resource_type}{HA_DELIM}{specific_info.get(SPECIFIC_INFO_ATTRIBUTES.FUNCTIONAL_TYPE.value)}'
+                functional_type = specific_info.get(SPECIFIC_INFO_ATTRIBUTES.FUNCTIONAL_TYPE.value)
             else:
-                resource = resource_type
+                functional_type = FUNCTIONAL_TYPES.ALL.value
             # Run through list of components subscribed for this event and send event to each of them
             component_list_key = EVENT_MANAGER_KEYS.EVENT_KEY.value.replace(
-                "<resource>", resource).replace("<state>", event[EventAttr.EVENT_PAYLOAD.value][HealthAttr.RESOURCE_STATUS.value])
+                "<resource>", resource_type).replace(
+                    "<functional_type>", functional_type).replace(
+                        "<state>", event[EventAttr.EVENT_PAYLOAD.value][HealthAttr.RESOURCE_STATUS.value])
             component_list_key_val = self._confstore.get(component_list_key)
             if component_list_key_val:
                 _, value = component_list_key_val.popitem()

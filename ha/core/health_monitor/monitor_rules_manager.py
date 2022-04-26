@@ -31,7 +31,7 @@ class MonitorRulesManager:
 
         self._confstore = ConfigManager.get_confstore()
 
-    def _prepare_key(self, resource_type: str, event_type: str, functional_type: str = None) -> str:
+    def _prepare_key(self, resource_type: str, event_type: str, functional_type: str = "all") -> str:
         """
         Prepare a key for the health monitor rules lookup, using HEALTH_MON_KEYS
 
@@ -49,8 +49,7 @@ class MonitorRulesManager:
                 Otherwise,
                     action>node>online
         """
-        resource = f"{resource_type}{HA_DELIM}{functional_type}" if functional_type else resource_type
-        return f"{HEALTH_MON_KEYS.ACT_RULE.value}{HA_DELIM}{resource}{HA_DELIM}{event_type}"
+        return f"{HEALTH_MON_KEYS.ACT_RULE.value}{HA_DELIM}{resource_type}{HA_DELIM}{functional_type}{HA_DELIM}{event_type}"
 
     def _get_val(self, key: str) -> str:
         """
@@ -105,9 +104,10 @@ class MonitorRulesManager:
             list: actions configured for the rule
         """
         val = []
-        if event.specific_info and event.specific_info.get(SPECIFIC_INFO_ATTRIBUTES.FUNCTIONAL_TYPE):
-            key = self._prepare_key(event.resource_type, event.event_type,
-                                    event.specific_info.get(SPECIFIC_INFO_ATTRIBUTES.FUNCTIONAL_TYPE))
+        if event.specific_info and event.specific_info.get(SPECIFIC_INFO_ATTRIBUTES.FUNCTIONAL_TYPE.value):
+            key = self._prepare_key(event.resource_type,
+                                    event.event_type,
+                                    event.specific_info.get(SPECIFIC_INFO_ATTRIBUTES.FUNCTIONAL_TYPE.value))
         else:
             key = self._prepare_key(event.resource_type, event.event_type)
         Log.debug(f"Evaluating rule for {key}")
@@ -117,7 +117,7 @@ class MonitorRulesManager:
         Log.info(f"Evaluated action {val} for key {key}")
         return val
 
-    def add_rule(self, resource: str, event: HEALTH_STATUSES , action: HEALTH_MON_ACTIONS):
+    def add_rule(self, resource: str, functional_type: str, event: HEALTH_STATUSES , action: HEALTH_MON_ACTIONS):
         """
         Add rule to confstore for resource/event.
         If rule exists, append the "action" to same rule
@@ -128,7 +128,7 @@ class MonitorRulesManager:
             action(str): action to be added
         """
         self._validate_action(action)
-        key = self._prepare_key(resource, event)
+        key = self._prepare_key(resource, event, functional_type)
         val = []
         Log.info(f"Adding rule for key: {key} ,value: {action}")
         kv = self._get_val(key)
