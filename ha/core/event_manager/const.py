@@ -23,7 +23,7 @@ class EVENT_MANAGER_KEYS(enum.Enum, metaclass=EnumListMeta):
     MESSAGE_TYPE_VALUE = "ha_event_<component_id>"
     MESSAGE_TYPE_KEY = f"message_type{HA_DELIM}<component_id>"
     SUBSCRIPTION_KEY = f"events{HA_DELIM}subscribe{HA_DELIM}<component_id>"
-    EVENT_KEY = f"events{HA_DELIM}<resource>{HA_DELIM}<state>"
+    EVENT_KEY = f"events{HA_DELIM}<resource>{HA_DELIM}<functional_type>{HA_DELIM}<state>"
 
 ACTION_EVENT_VERSION = "2.0"
 EVENT_MANAGER_LOG="event_manager"
