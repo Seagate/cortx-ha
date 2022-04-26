@@ -42,12 +42,12 @@ CC_TOO_MANY_REQUESTS       = 0x1014
 
 
 class CcError(BaseError):
-    """ Parent class for the REST API error classes """
+    """
+    Parent class for the REST API error classes
+    """
 
     def __init__(self, rc=0, desc=None, message_id=None, message_args=None):
-        """
-        Instantiation Method for CcError class
-        """
+        """ Instantiation Method for CcError class. """
         super(CcError, self).__init__(rc=rc, desc=desc, message_id=message_id,
                                        message_args=message_args)
 
@@ -75,6 +75,7 @@ class CcNotFoundError(CcError):
     """
     This error is raised for all cases when an resource was not found
     """
+
     _desc = "An resource was not found."
 
     def __init__(self, _desc=None, message_id=ERROR_CODES.NOT_FOUND_ERROR.value, message_args=None):
@@ -101,7 +102,6 @@ class CcPermissionDenied(CcError):
             message_id, message_args)
 
 class CcRequestTimeout(CcError):
-
     """
     This error indicates that the server did not receive a complete request message
     within the time that it was prepared to wait
@@ -133,9 +133,10 @@ class CcUnsupportedContentTypeError(CcError):
             message_id, message_args)
 
 class CcTooManyRequestsError(CcError):
-
-    """This error represents the user has sent too many requests in a given
-    amount of time (“rate limiting”)."""
+    """
+    This error represents the user has sent too many requests in a given
+    amount of time (“rate limiting”).
+    """
 
     _desc = "Too many requests."
 
@@ -143,7 +144,7 @@ class CcTooManyRequestsError(CcError):
         """
         Instantiation Method for CcNotImplemented class
         """
-        super(CcNotImplemented, self).__init__(
+        super(CcTooManyRequestsError, self).__init__(
             CC_TOO_MANY_REQUESTS, _desc,
             message_id, message_args)
 
@@ -163,8 +164,9 @@ class CcInternalError(CcError):
             message_id, message_args)
 
 class CcNotImplemented(CcError):
-
-    """This error represents HTTP 501 Not Implemented Error"""
+    """
+    This error represents HTTP 501 Not Implemented Error
+    """
 
     _desc = "Not Implemented."
 
@@ -177,8 +179,9 @@ class CcNotImplemented(CcError):
             message_id, message_args)
 
 class CcServiceNotAvailable(CcError):
-
-    """This  error represents Cc service is Not Available."""
+    """
+    This  error represents Cc service is Not Available.
+    """
 
     _desc = "The service is not available at the moment."
 

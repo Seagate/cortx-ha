@@ -14,17 +14,19 @@ from cortx.utils.log import Log
 from cortx.utils.conf_store import Conf
 from ha import const
 from ha.fault_tolerance.const import ERROR_CODES
-from ha.fault_tolerance.rest_api_errors import CcError
 from ha.fault_tolerance.rest_api_errors import (CcError, CcNotFoundError, CcPermissionDenied,
-                               CcInternalError, InvalidRequest, CcNotImplemented,
-                               CcGatewayTimeout, CC_UNKNOWN_ERROR, CC_HTTP_ERROR)
+                                                CcInternalError, InvalidRequest, CcNotImplemented,
+                                                CcGatewayTimeout)
 
 
 class Response(object):
-    """ Represents a response after processing of a request """
-    # This class is used for raising the error.
+    """
+    Represents a response after processing of a request.
+    This class is used for raising the error.
+    """
 
     def __init__(self, rc=0, output=''):
+        """ Instantiation Method for Response class. """
         self._rc = int(rc)
         self._output = output
 
@@ -35,6 +37,7 @@ class Response(object):
         return self._rc
 
     def __str__(self):
+        """ Returns the string representation of the object. """
         return '%d: %s' % (self._rc, self._output)
 
 class CcRestApi(ABC):
@@ -53,6 +56,7 @@ class CcRestApi(ABC):
         """
         Test Handler function is added for testing purpose.
         it returns test "CORTX CC REST API server is alive."
+
         Args:
             request (web.Request): Request object
         Returns:
@@ -104,7 +108,6 @@ class CcRestApi(ABC):
         Args:
             err (Exception): exception object for that error response sent to be client.
         """
-        Log.info("error resp")
         resp = {
             "error_id": None,
             "error_message": None
@@ -150,7 +153,6 @@ class CcRestApi(ABC):
         """
         Log.debug(f"Rest middleware is called: request = {request} handler = {handler}")
         if CcRestApi.__is_shutting_down:
-            # TODO : CORTX-30931 return json proper response with HTTP status = 503
             return CcRestApi.json_response("CC REST Server is shutting down", status=503)
         try:
             request_id = int(time.time())
@@ -181,7 +183,7 @@ class CcRestApi(ABC):
             return CcRestApi.json_response(resp_obj, status)
 
         except (ConcurrentCancelledError, AsyncioCancelledError) as e:
-            Log.warn(f"Client cancelled call for {request.method} {request.path}")
+            Log.warn(f"Client cancelled call for {request.method} {request.path}. Error : {e}")
             return CcRestApi.json_response(CcRestApi.error_response(Exception("Call cancelled by client"),
                                             request = request, request_id = request_id), status=499)
         # TODO : Add common REST API error structure in view.py
@@ -201,7 +203,7 @@ class CcRestApi(ABC):
             return CcRestApi.json_response(CcRestApi.error_response(e, request = request, request_id = request_id), status=501)
         except CcGatewayTimeout as e:
             return CcRestApi.json_response(CcRestApi.error_response(e, request = request, request_id = request_id), status=504)
-        except (CcError, InvalidRequest) as e:
+        except CcError as e:
             return CcRestApi.json_response(CcRestApi.error_response(e, request = request, request_id = request_id), status=400)
         except KeyError as e:
             Log.error(f"Error: {e} \n {traceback.format_exc()}")
