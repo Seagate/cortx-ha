@@ -42,12 +42,10 @@ CC_TOO_MANY_REQUESTS       = 0x1014
 
 
 class CcError(BaseError):
-    """
-    Parent class for the REST API error classes
-    """
+    """Parent class for the REST API error classes"""
 
     def __init__(self, rc=0, desc=None, message_id=None, message_args=None):
-        """ Instantiation Method for CcError class. """
+        """Instantiation Method for CcError class."""
         super(CcError, self).__init__(rc=rc, desc=desc, message_id=message_id,
                                        message_args=message_args)
 

@@ -52,6 +52,9 @@ class ERROR_CODES(enum.Enum, metaclass=EnumListMeta):
     UN_SUPPORTED_CONTENT_TYPE  = 'UnsupportedContenttType'
     TOO_MANY_REQUESTS       = 'TooManyRequests'
 
+# Success status response code
+SUCCESS_CODE = 200
+
 # Used to set default value in const.HA_CONFIG_FILE
 # TODO : To be replaced by actual values when they are available in config
 NOT_DEFINED = 'NOT_DEFINED'

@@ -13,20 +13,17 @@ from concurrent.futures import CancelledError as ConcurrentCancelledError, Timeo
 from cortx.utils.log import Log
 from cortx.utils.conf_store import Conf
 from ha import const
-from ha.fault_tolerance.const import ERROR_CODES
+from ha.fault_tolerance.const import ERROR_CODES, SUCCESS_CODE
 from ha.fault_tolerance.rest_api_errors import (CcError, CcNotFoundError, CcPermissionDenied,
                                                 CcInternalError, InvalidRequest, CcNotImplemented,
                                                 CcGatewayTimeout)
 
 
 class Response(object):
-    """
-    Represents a response after processing of a request.
-    This class is used for raising the error.
-    """
+    """Represents a response after processing of a request, Used for raising the error."""
 
     def __init__(self, rc=0, output=''):
-        """ Instantiation Method for Response class. """
+        """Instantiation Method for Response class."""
         self._rc = int(rc)
         self._output = output
 
@@ -37,7 +34,7 @@ class Response(object):
         return self._rc
 
     def __str__(self):
-        """ Returns the string representation of the object. """
+        """Returns the string representation of the object."""
         return '%d: %s' % (self._rc, self._output)
 
 class CcRestApi(ABC):
@@ -69,7 +66,7 @@ class CcRestApi(ABC):
     @staticmethod
     def init(handle_signals=True) -> None:
         """
-        Initialize web application ans set supported routes, middlewares, etc.
+        Initialize web application and set supported routes, middlewares, etc.
         Args:
             handle_signals (bool, optional): Defaults to True.
             If handle_signals is True then signal handler will be set.
@@ -168,7 +165,7 @@ class CcRestApi(ABC):
             if isinstance(resp, web.StreamResponse):
                 return resp
 
-            status = 200
+            status = SUCCESS_CODE
             if isinstance(resp, Response):
                 status = resp.rc()
                 resp_obj = {'response_body': resp.output(), 'status_code': status}
@@ -260,7 +257,6 @@ class CcRestApi(ABC):
         Args:
             app (web.Application): web Application object which is shuting down.
         """
-        Log.info(f'REST API server {CcRestApi._site.name} shutdown')
         # Note: Additional calls needs to be added to execute on shutdown of CC Rest API Server
 
     @staticmethod
