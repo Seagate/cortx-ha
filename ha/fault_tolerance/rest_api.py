@@ -51,8 +51,7 @@ class CcRestApi(ABC):
     @staticmethod
     async def handler_check_alive(request):
         """
-        Test Handler function is added for testing purpose.
-        it returns test "CORTX CC REST API server is alive."
+        Test Handler function is added for testing purpose.It returns test "CORTX CC REST API server is alive."
 
         Args:
             request (web.Request): Request object
@@ -67,6 +66,7 @@ class CcRestApi(ABC):
     def init(handle_signals=True) -> None:
         """
         Initialize web application and set supported routes, middlewares, etc.
+
         Args:
             handle_signals (bool, optional): Defaults to True.
             If handle_signals is True then signal handler will be set.

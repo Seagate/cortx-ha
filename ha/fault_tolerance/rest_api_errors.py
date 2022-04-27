@@ -54,10 +54,7 @@ class CcError(BaseError):
 
 
 class InvalidRequest(CcError):
-    """
-    This error will be raised when an invalid response
-    message is received for any of the cli commands.
-    """
+    """This error will be raised when an invalid response message is received for any of the cli commands."""
 
     _err = CC_INVALID_REQUEST
     _desc = "Invalid request."
@@ -70,9 +67,7 @@ class InvalidRequest(CcError):
             CC_INVALID_REQUEST, _desc, message_id, message_args)
 
 class CcNotFoundError(CcError):
-    """
-    This error is raised for all cases when an resource was not found
-    """
+    """This error is raised for all cases when an resource was not found."""
 
     _desc = "An resource was not found."
 
@@ -85,9 +80,7 @@ class CcNotFoundError(CcError):
             message_id, message_args)
 
 class CcPermissionDenied(CcError):
-    """
-    This error is raised for all cases when we don't have permissions
-    """
+    """This error is raised for all cases when we don't have permissions."""
 
     _desc = "Access to the requested resource is forbidden."
 
@@ -100,9 +93,8 @@ class CcPermissionDenied(CcError):
             message_id, message_args)
 
 class CcRequestTimeout(CcError):
-    """
-    This error indicates that the server did not receive a complete request message
-    within the time that it was prepared to wait
+    """This error indicates that the server did not receive a complete request message
+    within the time that it was prepared to wait.
     """
 
     _desc = "Failed to receive the request in time."
@@ -116,9 +108,7 @@ class CcRequestTimeout(CcError):
             message_id, message_args)
 
 class CcUnsupportedContentTypeError(CcError):
-    """
-    Server refuses to accept the request because the payload format is in an unsupported format.
-    """
+    """Server refuses to accept the request because the payload format is in an unsupported format."""
 
     _desc = "The Requested content type is not supported."
 
@@ -131,10 +121,7 @@ class CcUnsupportedContentTypeError(CcError):
             message_id, message_args)
 
 class CcTooManyRequestsError(CcError):
-    """
-    This error represents the user has sent too many requests in a given
-    amount of time (“rate limiting”).
-    """
+    """This error represents the user has sent too many requests in a given amount of time (“rate limiting”)."""
 
     _desc = "Too many requests."
 
@@ -147,9 +134,7 @@ class CcTooManyRequestsError(CcError):
             message_id, message_args)
 
 class CcInternalError(CcError):
-    """
-    This error is raised by CLI for all unknown internal errors
-    """
+    """This error is raised by CLI for all unknown internal errors."""
 
     _desc = "Internal Error."
 
@@ -162,9 +147,7 @@ class CcInternalError(CcError):
             message_id, message_args)
 
 class CcNotImplemented(CcError):
-    """
-    This error represents HTTP 501 Not Implemented Error
-    """
+    """This error represents HTTP 501 Not Implemented Error."""
 
     _desc = "Not Implemented."
 
@@ -177,9 +160,7 @@ class CcNotImplemented(CcError):
             message_id, message_args)
 
 class CcServiceNotAvailable(CcError):
-    """
-    This  error represents Cc service is Not Available.
-    """
+    """This error represents Cc service is Not Available."""
 
     _desc = "The service is not available at the moment."
 
@@ -192,9 +173,7 @@ class CcServiceNotAvailable(CcError):
             message_id, message_args)
 
 class CcGatewayTimeout(CcError):
-
-    """
-    This error represents a scenario where Cc was acting as a gateway or proxy and did not receive
+    """This error represents a scenario where Cc was acting as a gateway or proxy and did not receive
     a timely response from the upstream server.
     """
 
