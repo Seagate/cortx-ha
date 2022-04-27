@@ -32,7 +32,7 @@ from ha.core.event_manager.error import InvalidEvent
 from ha.core.event_manager.error import SubscribeException
 from ha.core.event_manager.error import UnSubscribeException
 from ha.core.event_manager.error import PublishException
-from ha.core.event_manager.resources import SUBSCRIPTION_LIST, FUNCTIONAL_TYPES
+from ha.core.event_manager.resources import SUBSCRIPTION_LIST, FUNCTIONAL_TYPES, NODE_FUNCTIONAL_TYPES
 from ha.core.event_manager.const import EVENT_MANAGER_KEYS
 from ha.core.health_monitor.const import HEALTH_MON_ACTIONS
 from ha.core.health_monitor.monitor_rules_manager import MonitorRulesManager
@@ -209,7 +209,7 @@ class EventManager:
                                 Key is: {new_key}')
                     self._confstore.set(f'{new_key}', comp_list)
 
-    def _delete_component_key(self, component: str, resource_type: str, states: list = None) -> None:
+    def _delete_component_key(self, component: str, resource_type: str, func_type: str, states: list = None) -> None:
         '''
           Deletes the component from the event key
           Ex:
@@ -223,7 +223,7 @@ class EventManager:
             value: ["node:os:memory_usage>failed"]
         '''
         for state in states:
-            delete_required_state = resource_type + HA_DELIM + state
+            delete_required_state = resource_type + HA_DELIM + func_type + HA_DELIM + state
             key = EVENT_MANAGER_KEYS.SUBSCRIPTION_KEY.value.replace("<component_id>", component)
             if self._confstore.key_exists(key):
                 comp_json_list = self._confstore.get(key)
@@ -252,7 +252,7 @@ class EventManager:
                 # hence safely raise exception here so that _delete_event_key will not be called
                 raise InvalidComponent(f"Can not unsubscribe the component: {component} as it was not registered earlier")
 
-    def _delete_event_key(self, component: str, resource_type: str, states: list = None):
+    def _delete_event_key(self, component: str, resource_type: str, func_type: str, states: list = None):
         '''
           Deletes the event from the component key
           Ex:
@@ -261,7 +261,10 @@ class EventManager:
           Stored key after deletion will be: cortx>ha>v1>events>node:os:memory_usage>failed:["motr"]
         '''
         for state in states:
-            key = EVENT_MANAGER_KEYS.EVENT_KEY.value.replace("<resource>", resource_type).replace("<state>", state)
+            key = EVENT_MANAGER_KEYS.EVENT_KEY.value.replace(
+                        "<resource>", resource_type).replace(
+                            "<functional_type>", func_type).replace(
+                                "<state>", state)
             if self._confstore.key_exists(key):
                 comp_json_list = self._confstore.get(key)
                 # Get the component list
@@ -269,16 +272,16 @@ class EventManager:
                 comp_list = json.loads(comp_list)
                 # Remove component from the list
                 if component in comp_list:
-                    Log.debug(f'Deleting the key for {resource_type}{HA_DELIM}{state}. For: {component}')
+                    Log.debug(f'Deleting the key for {resource_type}{HA_DELIM}{func_type}{HA_DELIM}{state}. For: {component}')
                     comp_list.remove(component)
                 if comp_list:
                     # If still list is not empty, update the confstore key
                     new_comp_list = json.dumps(comp_list)
-                    Log.debug(f'Updating the key for {resource_type}{HA_DELIM}{state}. new comp list:{new_comp_list}')
+                    Log.debug(f'Updating the key for {resource_type}{HA_DELIM}{func_type}{HA_DELIM}{state}. new comp list:{new_comp_list}')
                     self._confstore.update(key, new_comp_list)
                 # Else delete the event from the confstore
                 else:
-                    Log.debug(f'Deleting the key for {resource_type}{HA_DELIM}{state} completely \
+                    Log.debug(f'Deleting the key for {resource_type}{HA_DELIM}{func_type}{HA_DELIM}{state} completely \
                                 as there are no more subscriptions')
                     self._confstore.delete(key)
             else:
@@ -352,24 +355,18 @@ class EventManager:
             if not action:
                 action = HEALTH_MON_ACTIONS.PUBLISH_ACT.value
             for event in events:
-                if event.functional_types:
-                    for func_type in event.functional_types:
-                        resource = event.resource_type + HA_DELIM + func_type       # Example: resource = node>server
-                        self._delete_component_key(component, resource, event.states)
-                        self._delete_event_key(component, resource, event.states)
-                        for state in event.states:
-                            key = EVENT_MANAGER_KEYS.EVENT_KEY.value.replace(
-                                "<resource>", resource).replace("<state>", state)
-                            if not self._confstore.key_exists(key):
-                                self._monitor_rule.remove_rule(resource, state, self._default_action)
-                else:
-                    self._delete_component_key(component, event.resource_type, event.states)
-                    self._delete_event_key(component, event.resource_type, event.states)
+                for func_type in event.functional_types:
+                    Log.error(f'{event.resource_type}')
+                    self._delete_component_key(component, event.resource_type, func_type, event.states)
+                    self._delete_event_key(component, event.resource_type, func_type, event.states)
                     for state in event.states:
+                        Log.error(f'{state}')
                         key = EVENT_MANAGER_KEYS.EVENT_KEY.value.replace(
-                            "<resource>", event.resource_type).replace("<state>", state)
+                            "<resource>", event.resource_type).replace(
+                                "<functional_type>", func_type).replace(
+                                    "<state>", state)
                         if not self._confstore.key_exists(key):
-                            self._monitor_rule.remove_rule(event.resource_type, state, self._default_action)
+                            self._monitor_rule.remove_rule(event.resource_type, func_type, state, self._default_action)
             Log.info(f"Successfully UnSubscribed component {component}")
         except InvalidComponent:
             raise
