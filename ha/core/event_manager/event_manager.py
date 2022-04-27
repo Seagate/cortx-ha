@@ -32,7 +32,7 @@ from ha.core.event_manager.error import InvalidEvent
 from ha.core.event_manager.error import SubscribeException
 from ha.core.event_manager.error import UnSubscribeException
 from ha.core.event_manager.error import PublishException
-from ha.core.event_manager.resources import SUBSCRIPTION_LIST, FUNCTIONAL_TYPES, NODE_FUNCTIONAL_TYPES
+from ha.core.event_manager.resources import SUBSCRIPTION_LIST, FUNCTIONAL_TYPES
 from ha.core.event_manager.const import EVENT_MANAGER_KEYS
 from ha.core.health_monitor.const import HEALTH_MON_ACTIONS
 from ha.core.health_monitor.monitor_rules_manager import MonitorRulesManager
