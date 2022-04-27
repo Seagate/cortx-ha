@@ -356,7 +356,6 @@ class EventManager:
                 action = HEALTH_MON_ACTIONS.PUBLISH_ACT.value
             for event in events:
                 for func_type in event.functional_types:
-                    Log.error(f'{event.resource_type}')
                     self._delete_component_key(component, event.resource_type, func_type, event.states)
                     self._delete_event_key(component, event.resource_type, func_type, event.states)
                     for state in event.states:
