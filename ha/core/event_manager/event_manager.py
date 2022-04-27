@@ -359,7 +359,6 @@ class EventManager:
                     self._delete_component_key(component, event.resource_type, func_type, event.states)
                     self._delete_event_key(component, event.resource_type, func_type, event.states)
                     for state in event.states:
-                        Log.error(f'{state}')
                         key = EVENT_MANAGER_KEYS.EVENT_KEY.value.replace(
                             "<resource>", event.resource_type).replace(
                                 "<functional_type>", func_type).replace(
