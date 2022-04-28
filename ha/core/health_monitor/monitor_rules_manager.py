@@ -146,7 +146,7 @@ class MonitorRulesManager:
             val = json.dumps(val)
             self._confstore.set(key, val)
 
-    def remove_rule(self, resource: str, event: HEALTH_STATUSES , action: HEALTH_MON_ACTIONS):
+    def remove_rule(self, resource: str, func_type: str, event: HEALTH_STATUSES , action: HEALTH_MON_ACTIONS):
         """
         For the rule resource/event  remove "action" from confstore.
         If actions list becomes empty, delete the rule
@@ -157,7 +157,7 @@ class MonitorRulesManager:
             action(str): action to be removed
         """
         self._validate_action(action)
-        key = self._prepare_key(resource, event)
+        key = self._prepare_key(resource, event, func_type)
         val = []
         Log.info(f"Removing rule for key: {key} ,value: {action}")
         kv = self._get_val(key)
