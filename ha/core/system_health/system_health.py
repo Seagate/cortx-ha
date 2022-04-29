@@ -439,6 +439,11 @@ class SystemHealth(Subscriber):
             if current_health:
                 current_health_dict = json.loads(current_health)
                 specific_info = current_health_dict["events"][0]["specific_info"]
+                # specific info is data from consul, current_health[event][0][specific_info],
+                # There is no override of healthevent data, only adding extra data to
+                # healthevent is functional_type
+                if specific_info and specific_info.get('functional_type'):
+                   healthevent.specific_info['functional_type'] = specific_info.get('functional_type')
                 if (component_type == CLUSTER_ELEMENTS.NODE.value) and specific_info \
                     and specific_info.get('generation_id', None) \
                     and healthevent.source == HEALTH_EVENT_SOURCES.MONITOR.value:
