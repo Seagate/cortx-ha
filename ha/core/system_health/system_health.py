@@ -427,13 +427,13 @@ class SystemHealth(Subscriber):
                     'rack_id':healthevent.rack_id, 'storageset_id':healthevent.storageset_id}
 
 
+            # Read the currently stored health value
             current_health = self.get_status_raw(component, component_id, comp_type=component_type,
                                         cluster_id=healthevent.cluster_id, site_id=healthevent.site_id,
                                         rack_id=healthevent.rack_id, storageset_id=healthevent.storageset_id,
                                         node_id=healthevent.node_id, server_id=healthevent.node_id,
                                         storage_id=healthevent.node_id, cvg_id=self.cvg_id)
 
-            # Read the currently stored health value
             if current_health:
                 current_health_dict = json.loads(current_health)
                 specific_info = current_health_dict["events"][0]["specific_info"]
