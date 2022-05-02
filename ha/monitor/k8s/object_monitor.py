@@ -213,6 +213,10 @@ class ObjectMonitor(threading.Thread):
             # So timestamp field should be ignored for validation.
             if "timestamp" in header.keys():
                 del incoming_alert["header"]["timestamp"]
+            # "is_status" field should be ignored as it is added during very first event.
+            # for further event this field is not present in event.
+            if "is_status" in payload["specific_info"].keys():
+                del incoming_alert["payload"]["specific_info"]["is_status"]
 
         except KeyError as err:
             Log.error(f"Alert validation failed as key {err} not found")
