@@ -390,7 +390,6 @@ class SystemHealth(Subscriber):
 
         # TODO: Check the user and see if allowed to update the system health.
         try:
-            status = self.statusmapper.map_event(healthevent)
             component = SystemHealthComponents.get_component(healthevent.resource_type)
 
             # Get the health update hierarchy
@@ -406,7 +405,6 @@ class SystemHealth(Subscriber):
             # Get the component type and id received in the event.
             component_type = healthevent.resource_type.split(':')[-1]
             component_id = healthevent.resource_id
-            Log.info(f"SystemHealth: Processing {component}:{component_type}:{component_id} with status {status}")
 
             # Update the node map
             self.node_id = healthevent.node_id
@@ -428,6 +426,7 @@ class SystemHealth(Subscriber):
             self.node_map = {'cluster_id':healthevent.cluster_id, 'site_id':healthevent.site_id,
                     'rack_id':healthevent.rack_id, 'storageset_id':healthevent.storageset_id}
 
+
             # Read the currently stored health value
             current_health = self.get_status_raw(component, component_id, comp_type=component_type,
                                         cluster_id=healthevent.cluster_id, site_id=healthevent.site_id,
@@ -435,7 +434,6 @@ class SystemHealth(Subscriber):
                                         node_id=healthevent.node_id, server_id=healthevent.node_id,
                                         storage_id=healthevent.node_id, cvg_id=self.cvg_id)
 
-            current_timestamp = str(int(time.time()))
             if current_health:
                 current_health_dict = json.loads(current_health)
                 specific_info = current_health_dict["events"][0]["specific_info"]
@@ -444,6 +442,12 @@ class SystemHealth(Subscriber):
                 # healthevent is functional_type
                 if specific_info and specific_info.get('functional_type'):
                    healthevent.specific_info['functional_type'] = specific_info.get('functional_type')
+
+            status = self.statusmapper.map_event(healthevent)
+            Log.info(f"SystemHealth: Processing {component}:{component_type}:{component_id} with status {status}")
+
+            current_timestamp = str(int(time.time()))
+            if current_health:
                 if (component_type == CLUSTER_ELEMENTS.NODE.value) and specific_info \
                     and specific_info.get('generation_id', None) \
                     and healthevent.source == HEALTH_EVENT_SOURCES.MONITOR.value:
