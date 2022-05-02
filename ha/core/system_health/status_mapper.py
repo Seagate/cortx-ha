@@ -17,7 +17,8 @@
 from cortx.utils.log import Log
 from ha.fault_tolerance.const import HEALTH_EVENT_SOURCES
 from ha.core.system_health.model.health_event import HealthEvent
-from ha.core.system_health.const import HEALTH_EVENTS, HEALTH_STATUSES
+from ha.core.system_health.const import HEALTH_EVENTS, HEALTH_STATUSES, SPECIFIC_INFO_ATTRIBUTES
+from ha.core.event_manager.resources import NODE_FUNCTIONAL_TYPES
 from ha.core.error import HaStatusMapperException
 from ha.core.system_health.const import CLUSTER_ELEMENTS
 
@@ -65,12 +66,15 @@ class StatusMapper:
     def map_event(self, event: HealthEvent) -> str:
         """Returns the status by mapping it against the source and event type."""
         try:
+            status = self.EVENT_TO_STATUS_MAPPING[event.event_type]
+            if event.specific_info and event.specific_info.get(SPECIFIC_INFO_ATTRIBUTES.FUNCTIONAL_TYPE.value) and \
+                (event.specific_info.get(SPECIFIC_INFO_ATTRIBUTES.FUNCTIONAL_TYPE.value).upper() == \
+                    NODE_FUNCTIONAL_TYPES.CONTROL.value.upper()):
+                return status
             component_type = event.resource_type
             if event.source == HEALTH_EVENT_SOURCES.MONITOR.value and event.event_type == HEALTH_EVENTS.ONLINE.value and \
                 component_type in [CLUSTER_ELEMENTS.NODE.value]:
                 status = HEALTH_STATUSES.STARTING.value
-            else:
-                status = self.EVENT_TO_STATUS_MAPPING[event.event_type]
             return status
         except KeyError as e:
             Log.error(f"StatusMapper, map_event, No equivalent event type found: {e}")
