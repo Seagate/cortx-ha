@@ -273,7 +273,7 @@ class ConfigCmd(Cmd):
             Log.info(f'event_manager subscription for {const.EVENT_COMPONENT}\
                        is successful for the event {const.POD_EVENT}')
             # Stopped disk event subscribption to reduce consul accesses
-            # till CORTX-29667i gets resolved
+            # till CORTX-29667 gets resolved
             #event_manager.subscribe(const.EVENT_COMPONENT, [SubscribeEvent(const.DISK_EVENT, ["online", "failed"])])
             #Log.info(f'event_manager subscription for {const.EVENT_COMPONENT}\
             #           is successful for the event {const.DISK_EVENT}')
