@@ -272,9 +272,11 @@ class ConfigCmd(Cmd):
                                         NODE_FUNCTIONAL_TYPES.SERVER.value, NODE_FUNCTIONAL_TYPES.DATA.value])])
             Log.info(f'event_manager subscription for {const.EVENT_COMPONENT}\
                        is successful for the event {const.POD_EVENT}')
-            event_manager.subscribe(const.EVENT_COMPONENT, [SubscribeEvent(const.DISK_EVENT, ["online", "failed"])])
-            Log.info(f'event_manager subscription for {const.EVENT_COMPONENT}\
-                       is successful for the event {const.DISK_EVENT}')
+            # Stopped disk event subscribption to reduce consul accesses
+            # till CORTX-29667 gets resolved
+            #event_manager.subscribe(const.EVENT_COMPONENT, [SubscribeEvent(const.DISK_EVENT, ["online", "failed"])])
+            #Log.info(f'event_manager subscription for {const.EVENT_COMPONENT}\
+            #           is successful for the event {const.DISK_EVENT}')
 
 
             Log.info('Creating cluster cardinality')
@@ -286,7 +288,9 @@ class ConfigCmd(Cmd):
             # Init node health
             self._add_node_health()
             # Init cvg and disk health
-            self._add_cvg_and_disk_health()
+            # Stopped disk, cvg resource key addition to consul to reduce consul accesses
+            # till CORTX-29667 gets resolved
+            #self._add_cvg_and_disk_health()
 
             Log.info("config command is successful")
             sys.stdout.write("config command is successful.\n")
