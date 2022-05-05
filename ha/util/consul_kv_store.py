@@ -15,10 +15,19 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
+from base64 import b64encode
 import consul
+from consul import ConsulException
+from consul.base import ClientError
+from requests.exceptions import RequestException
+from urllib3.exceptions import HTTPError
 import socket
 from ha.const import HA_DELIM
 from cortx.utils.log import Log
+from typing import Any, Dict, List, NamedTuple, Optional, Tuple
+
+TxPutKV = NamedTuple('TxPutKV', [('key', str), ('value', str),
+                                 ('cas', Optional[Any])])
 
 #TODO: Update set/get/update function to provide blocking and non blocking function
 class ConsulKvStore:
@@ -26,7 +35,7 @@ class ConsulKvStore:
 
     _keys = {}
 
-    def __init__(self, prefix: str, host: str="localhost", port: int=8500):
+    def __init__(self, prefix: str, host: str="localhost", port: int=8500, enable_batch: bool=False):
         """
         Consul KV store.
 
@@ -44,6 +53,9 @@ class ConsulKvStore:
         self._verify(prefix, host, port)
         self._consul = self._get_connection(prefix, host, port)
         self._consul.kv.put(self._prepare_key(""), None)
+        self._enable_batch_put = enable_batch
+        if self._enable_batch_put:
+            self._payload = {}
 
     def _verify(self, prefix: str, host: str, port: int):
         """
@@ -105,12 +117,19 @@ class ConsulKvStore:
             bool: True if key exists else False.
         """
         k = self._prepare_key(key)
-        Log.info(f"*** is key exist: {k}")
+
+        # First find in cache if batch put is enabled
+        Log.debug(f"[consul-op] is key exist in cache: {k}")
+        if self._enable_batch_put and [key for key in self._payload if key.startswith(k)]:
+            Log.debug(f"[consul-op] key {k} found in cache: True")
+            return True
+
+        # find in consul and check if exists
+        Log.debug(f"[consul-op] is key exist: {k}")
         _, data = self._consul.kv.get(k, recurse=True)
-        Log.info(f"key value: {data}")
-        if data is None:
-            return False
-        return True
+        Log.debug(f"[consul-op] key {k} found in consul: True")
+
+        return True if data else False
 
     def set(self, key: str, val: str=None):
         """
@@ -124,12 +143,20 @@ class ConsulKvStore:
             str: Return value.
         """
         self._verify_data(key)
+
         if self.key_exists(key):
             raise Exception(f"Key {key} already exists in kv store.")
+
         k = self._prepare_key(key)
-        Log.info(f"*** Putting key value: {k}")
+
+        if self._enable_batch_put:
+            Log.debug(f"[consul-op] Putting key value in cache for key: {k}")
+            self._payload[k] = val
+            return val
+
+        Log.debug(f"[consul-op] Putting key value: {k}")
         self._consul.kv.put(k, val)
-        Log.info(f"put Key value: {val}")
+        Log.debug(f"[consul-op] put Key value: {val}")
         return val
 
     def update(self, key: str, new_val: str):
@@ -146,9 +173,15 @@ class ConsulKvStore:
         """
         self._verify_data(key)
         k = self._prepare_key(key)
-        Log.info(f"*** Putting key value: {k}")
+
+        if self._enable_batch_put:
+            Log.debug(f"[consul-op] Putting value in cache for key: {k}")
+            self._payload[k] = new_val
+            return new_val
+
+        Log.debug(f"[consul-op] Putting value for key: {k}")
         self._consul.kv.put(k, new_val)
-        Log.info(f"put new Key value: {new_val}")
+        Log.debug(f"[consul-op] put new value for Key: {k}")
         return new_val
 
     # TODO : Currently all keys with the matching prefix "key" are returned
@@ -165,15 +198,30 @@ class ConsulKvStore:
             str: Return dictionary of all key val pair.
         """
         k = self._prepare_key(key)
-        Log.info(f"*** getting key value: {k}")
+
+        # simulating consul kv get operation for _payload dict
+        payload_data = None
+        if self._enable_batch_put:
+            # Using dictionary comprehension + startswith()
+            # Prefix key match in dictionary
+            Log.debug(f"[consul-op] searching key in cache: {k}")
+            payload_data = {key:val for key, val in self._payload.items() if key.startswith(k)}
+
+        Log.debug(f"[consul-op] getting the value for key: {k}")
         _, data = self._consul.kv.get(k, recurse=True)
-        Log.info(f"get Key value: {data}")
-        if data is None:
-            return data
+        Log.debug(f"[consul-op] got the value for Key: {k}")
+
         key_val: dict = {}
-        for key in data:
-            key_val[key['Key']] = key['Value'].decode("utf-8") if isinstance(key['Value'], bytes) else key['Value']
-        return key_val
+        if data:
+            for key in data:
+                key_val[key['Key']] = key['Value'].decode("utf-8") if isinstance(key['Value'], bytes) else key['Value']
+
+        # merge and/or overwrite the values from _payload with received data from consul kv store
+        if payload_data:
+            for key, val in payload_data.items():
+                key_val[key] = val.decode("utf-8") if isinstance(val, bytes) else val
+
+        return key_val if key_val else None
 
     def delete(self, key: str = "", recurse: bool = False):
         """
@@ -190,9 +238,26 @@ class ConsulKvStore:
         """
         data = self.get(key)
         k = self._prepare_key(key)
-        Log.info(f"*** delling key value: {k}")
+
+        # if enabled batch put then delete from payload if any new value exist
+        # then continue to delete from consul as old value may exist same prefix.
+        if self._enable_batch_put:
+            Log.debug(f"[consul-op] deleting value for key: {k} from cache, recursively : {recurse}.")
+            if recurse:
+                for key in list(self._payload.keys()):
+                    if key.startswith(k):
+                        Log.debug(f"[consul-op] deleting key: {key} from cache.")
+                        del self._payload[key]
+                # let it continue to delete all the matching keys from consul also
+            else:
+                 if k in self._payload:
+                     Log.debug(f"[consul-op] deleting key: {k} from cache.")
+                     del self._payload[k]
+                # let it continue to delete the same key from consul if exist.
+
+        Log.debug(f"[consul-op] deleting key value: {k}")
         self._consul.kv.delete(k, recurse=recurse)
-        Log.info(f"delete Key value: {data}")
+        Log.debug(f"[consul-op] deleted Key value: {data}")
         return data
 
     def get_keys(self, prefix):
@@ -205,5 +270,80 @@ class ConsulKvStore:
             List of keys
         """
         if not ConsulKvStore._keys.get(prefix):
+
+            # get cached keys if batch put is enabled
+            payload_keys = None
+            if self._enable_batch_put:
+                # Using dictionary comprehension + startswith()
+                # Prefix key match in dictionary
+                payload_keys = [key for key in self._payload if key.startswith(prefix)]
+
             ConsulKvStore._keys[prefix] = self._consul.kv.get(prefix, keys=True)[1]
+
+            # Merge lists with unique values
+            if payload_keys:
+                ConsulKvStore._keys[prefix] = list(set(payload_keys + ConsulKvStore._keys[prefix]))
+
         return ConsulKvStore._keys[prefix]
+
+    def _kv_put_in_transaction(self, tx_payload: List[TxPutKV]):
+        """
+         This function put all the values from provided tuple list to consul server
+
+        Args:
+            tx_payload (List[TxPutKV]): list of Tuple that needs to put in consul server see definition 'TxPutKV'.
+        """
+        def to_payload(v: TxPutKV) -> Dict[str, Any]:
+            """
+            Converted input tuple object to dict that consul transaction can understand.
+
+            Args:
+                v (TxPutKV): input tuple that to be converted refer definition of TxPutKV
+
+            Returns:
+                Dict[str, Any]: consul transaction understandable dict contains inout values.
+            """
+            b64: bytes = b64encode(v.value.encode())
+            b64_str = b64.decode()
+
+            if v.cas:
+                return {
+                    'KV': {
+                        'Key': v.key,
+                        'Value': b64_str,
+                        'Verb': 'cas',
+                        'Index': v.cas
+                    }
+                }
+            return {'KV': {'Key': v.key, 'Value': b64_str, 'Verb': 'set'}}
+
+        try:
+            self._consul.txn.put([to_payload(i) for i in tx_payload])
+        except ClientError as e:
+            # If a transaction fails, Consul returns HTTP 409 with the
+            # JSON payload describing the reason why the transaction
+            # was rejected.
+            # The library transforms HTTP 409 into generic ClientException.
+            # Unfortunately, we can't easily extract the payload from it.
+            raise Exception('Consul transaction failed for putting values in consul KV.') from e
+        except (ConsulException, HTTPError, RequestException) as e:
+            raise Exception('Failed to put values in consul KV.') from e
+
+    def commit(self):
+        """
+        In case if _enable_batch_put is set to True
+        This function put all the values from local dict to consul store
+        through transaction in one call
+
+        Raises:
+            Exception: If batch put is not enabled or failed to put key, value in consul
+        """
+        if not self._enable_batch_put:
+            raise Exception("Batch put is not enabled.")
+        tx_payload = []
+        for key, val in self._payload.items():
+            tx_payload.append(TxPutKV(key=key, value=val, cas=None))
+
+        Log.debug(f"putting data in consul, key and values: {tx_payload}")
+        self._kv_put_in_transaction(tx_payload)
+        self._payload.clear()

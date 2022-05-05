@@ -72,16 +72,16 @@ class ConfigManager:
         ConfigManager._safe_load(const.HA_GLOBAL_INDEX, config_file)
 
     @staticmethod
-    def get_confstore():
+    def get_confstore(kv_enable_batch = False):
         """
-        Initalize and get confstore if not _cluster_confstore is None.
-        Used by config manager methods to check and initalize confstore if needed.
+        Initialize and get confstore if _cluster_confstore is None.
+        Used by config manager methods to check and initialize confstore if needed.
         """
         if ConfigManager._cluster_confstore is None:
             consul_endpoint = Conf.get(const.HA_GLOBAL_INDEX, f'consul_config{_DELIM}endpoint')
             consul_host = consul_endpoint.split(":")[1].strip("//")
             consul_port = consul_endpoint.split(":")[-1]
-            ConfigManager._cluster_confstore = ConsulKvStore(prefix=const.CLUSTER_CONFSTORE_PREFIX, host=consul_host, port=consul_port)
+            ConfigManager._cluster_confstore = ConsulKvStore(prefix=const.CLUSTER_CONFSTORE_PREFIX, host=consul_host, port=consul_port, enable_batch=kv_enable_batch)
         return ConfigManager._cluster_confstore
 
     @staticmethod
