@@ -289,7 +289,7 @@ class ConfigCmd(Cmd):
             self._add_node_health()
             # Init cvg and disk health
             # Stopped disk, cvg resource key addition to consul to reduce consul accesses
-            # till CORTX-29667i gets resolved
+            # till CORTX-29667 gets resolved
             #self._add_cvg_and_disk_health()
 
             Log.info("config command is successful")
