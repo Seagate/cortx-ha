@@ -286,7 +286,7 @@ class ConfigCmd(Cmd):
             # Init cluster,site,rack health
             self._add_cluster_component_health()
             # Init node health
-            self._add_node_health(data_pods, server_pods, control_pods, num_pods, watch_pods)
+            self._add_node_health(data_pods, server_pods, control_pods, watch_pods)
             # Init cvg and disk health
             # Stopped disk, cvg resource key addition to consul to reduce consul accesses
             # till CORTX-29667 gets resolved
@@ -322,7 +322,7 @@ class ConfigCmd(Cmd):
                                    specific_info=specific_info)
 
 
-    def _add_node_health(self, data_node_ids, server_node_ids, control_node_ids, num_pods, nodes_list) -> None:
+    def _add_node_health(self, data_node_ids, server_node_ids, control_node_ids, nodes_list) -> None:
         """
         Add node health
         """
