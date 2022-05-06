@@ -281,7 +281,7 @@ class ConfigCmd(Cmd):
 
             Log.info('Creating cluster cardinality')
             self._confStoreAPI = ConftStoreSearch()
-            data_pods, server_pods, control_pods, num_pods, watch_pods = self._confStoreAPI.set_cluster_cardinality(self._index)
+            data_pods, server_pods, control_pods, _, watch_pods = self._confStoreAPI.set_cluster_cardinality(self._index)
 
             # Init cluster,site,rack health
             self._add_cluster_component_health()
