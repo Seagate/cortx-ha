@@ -24,7 +24,7 @@ from urllib3.exceptions import HTTPError
 import socket
 from ha.const import HA_DELIM
 from cortx.utils.log import Log
-from typing import Any, Dict, List, NamedTuple, Optional, Tuple
+from typing import Any, Dict, List, NamedTuple, Optional
 
 TxPutKV = NamedTuple('TxPutKV', [('key', str), ('value', str),
                                  ('cas', Optional[Any])])
@@ -143,10 +143,8 @@ class ConsulKvStore:
             str: Return value.
         """
         self._verify_data(key)
-
         if self.key_exists(key):
             raise Exception(f"Key {key} already exists in kv store.")
-
         k = self._prepare_key(key)
 
         if self._enable_batch_put:
