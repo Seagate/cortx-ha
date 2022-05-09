@@ -66,3 +66,16 @@ class RESOURCE_TYPES(enum.Enum, metaclass=EnumListMeta):
     NODE_SW_OS_SERVICE = "node:sw:os:service"
     CVG = "cvg"
     DISK = "disk"
+
+class NODE_FUNCTIONAL_TYPES(enum.Enum):
+    SERVER = "server"
+    DATA = "data"
+    CONTROL = "control"
+
+class DISK_FUNCTIONAL_TYPES(enum.Enum):
+    ALL = "all"
+
+class FUNCTIONAL_TYPES(enum.Enum):
+    NODE = NODE_FUNCTIONAL_TYPES
+    DISK = DISK_FUNCTIONAL_TYPES
+    ALL = "all"

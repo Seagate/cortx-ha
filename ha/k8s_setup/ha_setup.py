@@ -37,8 +37,9 @@ from ha.core.error import SetupError
 from ha.k8s_setup.const import _DELIM
 from ha.core.event_manager.event_manager import EventManager
 from ha.core.event_manager.subscribe_event import SubscribeEvent
+from ha.core.event_manager.resources import NODE_FUNCTIONAL_TYPES
 from ha.util.conf_store import ConftStoreSearch
-from ha.core.system_health.const import CLUSTER_ELEMENTS, HEALTH_EVENTS, EVENT_SEVERITIES, NODE_MAP_ATTRIBUTES
+from ha.core.system_health.const import CLUSTER_ELEMENTS, HEALTH_EVENTS, EVENT_SEVERITIES, NODE_MAP_ATTRIBUTES, SPECIFIC_INFO_ATTRIBUTES
 from ha.const import EVENT_ATTRIBUTES
 from ha.fault_tolerance.const import FAULT_TOLERANCE_KEYS, HEALTH_EVENT_SOURCES, NOT_DEFINED
 from ha.core.system_health.model.health_event import HealthEvent
@@ -266,24 +267,30 @@ class ConfigCmd(Cmd):
 
             Log.info('Performing event_manager subscription')
             event_manager = EventManager.get_instance()
-            event_manager.subscribe(const.EVENT_COMPONENT, [SubscribeEvent(const.POD_EVENT, ["online", "failed"])])
+            event_manager.subscribe(const.EVENT_COMPONENT,
+                                    [SubscribeEvent(const.POD_EVENT, ["online", "offline", "failed"], [
+                                        NODE_FUNCTIONAL_TYPES.SERVER.value, NODE_FUNCTIONAL_TYPES.DATA.value])])
             Log.info(f'event_manager subscription for {const.EVENT_COMPONENT}\
                        is successful for the event {const.POD_EVENT}')
-            event_manager.subscribe(const.EVENT_COMPONENT, [SubscribeEvent(const.DISK_EVENT, ["online", "failed"])])
-            Log.info(f'event_manager subscription for {const.EVENT_COMPONENT}\
-                       is successful for the event {const.DISK_EVENT}')
+            # Stopped disk event subscribption to reduce consul accesses
+            # till CORTX-29667 gets resolved
+            #event_manager.subscribe(const.EVENT_COMPONENT, [SubscribeEvent(const.DISK_EVENT, ["online", "failed"])])
+            #Log.info(f'event_manager subscription for {const.EVENT_COMPONENT}\
+            #           is successful for the event {const.DISK_EVENT}')
 
 
             Log.info('Creating cluster cardinality')
             self._confStoreAPI = ConftStoreSearch()
-            self._confStoreAPI.set_cluster_cardinality(self._index)
+            data_pods, server_pods, control_pods, _, watch_pods = self._confStoreAPI.set_cluster_cardinality(self._index)
 
             # Init cluster,site,rack health
             self._add_cluster_component_health()
             # Init node health
-            self._add_node_health()
+            self._add_node_health(data_pods, server_pods, control_pods, watch_pods)
             # Init cvg and disk health
-            self._add_cvg_and_disk_health()
+            # Stopped disk, cvg resource key addition to consul to reduce consul accesses
+            # till CORTX-29667 gets resolved
+            #self._add_cvg_and_disk_health()
 
             Log.info("config command is successful")
             sys.stdout.write("config command is successful.\n")
@@ -300,26 +307,38 @@ class ConfigCmd(Cmd):
         """
         Add cluster, site ,rack health
         """
+        specific_info={}
         self._add_health_event(node_id="",
                                    resource_type=CLUSTER_ELEMENTS.CLUSTER.value,
-                                   resource_id=self._cluster_id)
+                                   resource_id=self._cluster_id,
+                                   specific_info=specific_info)
         self._add_health_event(node_id="",
                                    resource_type=CLUSTER_ELEMENTS.SITE.value,
-                                   resource_id=self._site_id)
+                                   resource_id=self._site_id,
+                                   specific_info=specific_info)
         self._add_health_event(node_id="",
                                    resource_type=CLUSTER_ELEMENTS.RACK.value,
-                                   resource_id=self._rack_id)
+                                   resource_id=self._rack_id,
+                                   specific_info=specific_info)
 
 
-    def _add_node_health(self) -> None:
+    def _add_node_health(self, data_node_ids, server_node_ids, control_node_ids, nodes_list) -> None:
         """
         Add node health
         """
-        _, nodes_list = self._confStoreAPI.get_cluster_cardinality()
         for node in nodes_list:
+            functional_type = None
+            if node in data_node_ids:
+                functional_type = NODE_FUNCTIONAL_TYPES.DATA.value
+            elif node in server_node_ids:
+                functional_type = NODE_FUNCTIONAL_TYPES.SERVER.value
+            elif node in control_node_ids:
+                functional_type = NODE_FUNCTIONAL_TYPES.CONTROL.value
+            specific_info = {SPECIFIC_INFO_ATTRIBUTES.FUNCTIONAL_TYPE.value: functional_type}
             self._add_health_event(node_id=node,
                                    resource_type=CLUSTER_ELEMENTS.NODE.value,
-                                   resource_id=node)
+                                   resource_id=node,
+                                   specific_info=specific_info)
 
     def _add_cvg_and_disk_health(self) -> None:
         """
