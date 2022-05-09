@@ -21,6 +21,7 @@
 
 import argparse
 import sys
+import re
 import pathlib
 import errno
 import json
@@ -205,9 +206,15 @@ if __name__ == '__main__':
     _conf_store = ConftStoreSearch(conf_store_req=False)
 
     data_node_ids = get_data_nodes()
+    options_regex = re.compile('(-gdt$)|(-gs$)|(--get-data-nodes$)|(--get-server-nodes$)\
+                               |(publish$)|(get-disks$)|(get-cvgs$)')
 
     if len(sys.argv) > 1:
         option = sys.argv[1]
+        if not options_regex.match(option):
+            print(f"Error: Invalid Argument: {option}\n")
+            parser_obj.print_help()
+            sys.exit(1)
     else:
         parser_obj.print_help()
         sys.exit(0)
