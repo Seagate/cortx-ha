@@ -261,7 +261,10 @@ class ConfigCmd(Cmd):
             # TODO: Verify whether these newly added config is avilable in the confstore or not
             with open(const.HA_CONFIG_FILE, 'w+') as conf_file:
                 yaml.dump(conf_file_dict, conf_file, default_flow_style=False)
-            self._confstore = ConfigManager.get_confstore()
+            # Note: kv_enable_batch is setting True to commit all the kv keys in 1 time for time optimization.
+            # if kv_enable_batch set to true then commit operation needs to run to put all the key values in store.
+            kv_enable_batch_put = True
+            self._confstore = ConfigManager.get_confstore(kv_enable_batch=kv_enable_batch_put)
 
             Log.info(f'Populating the ha config file with consul_endpoint: {consul_endpoint}')
 
@@ -291,6 +294,11 @@ class ConfigCmd(Cmd):
             # Stopped disk, cvg resource key addition to consul to reduce consul accesses
             # till CORTX-29667 gets resolved
             #self._add_cvg_and_disk_health()
+
+            # Note: if batch put is enabled needs to commit
+            # to push all the local cashed values to consul server
+            if kv_enable_batch_put:
+                self._confstore.commit()
 
             Log.info("config command is successful")
             sys.stdout.write("config command is successful.\n")

@@ -62,6 +62,7 @@ class MonitorRulesManager:
             val(str): Returns KV
         """
         val = None
+        # TODO: please check if key_exists() can be skipped here.
         if self._confstore.key_exists(key):
             val = self._confstore.get(key)
         return val
