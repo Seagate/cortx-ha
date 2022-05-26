@@ -24,7 +24,9 @@ import json
 from cortx.utils.conf_store import Conf
 from cortx.utils.cortx.const import Const
 from ha.core.config.config_manager import ConfigManager
-from ha.k8s_setup.const import CLUSTER_CARDINALITY_KEY, CLUSTER_CARDINALITY_NUM_NODES, CLUSTER_CARDINALITY_LIST_NODES
+from ha.k8s_setup.const import CLUSTER_CARDINALITY_KEY, \
+        CLUSTER_CARDINALITY_NUM_NODES, CLUSTER_CARDINALITY_LIST_NODES, \
+        CLUSTER_CARDINALITY_NODE_MAPPING
 from ha.k8s_setup.const import _DELIM, GconfKeys
 from cortx.utils.log import Log
 from ha.core.error import ClusterCardinalityError
@@ -71,29 +73,64 @@ class ConftStoreSearch:
             machine_ids.append(machine_id)
         return machine_ids
 
-    def get_cluster_cardinality(self):
+    def get_matched_labels(index: str, machine_ids: list = None) -> list:
+        """
+        Get IDs from GConf using the key node_id which gets matched with
+        cortx.io/machine-id label in
+        Args:
+        index: str = GConf index
+        machine_ids: str = list of machine ids
+        >>> Conf.get('cluster_conf', 'node>be47198d5e9191b586f9319a67dd0769>node_id')
+        '92cc6308571c4f28b7709eeca57f7352'
+        """
+        node_id_list = []
+        for machine_id in machine_ids:
+            node_id = Conf.get(index, f'node{_DELIM}{machine_id}{_DELIM}node_id')
+            node_id_list.append(node_id)
+        return node_id_list
+
+    def get_node_name_to_machine_id_mapping(index: str, machine_ids: list = None) -> dict:
+        """
+        Get names of the Node using Gconf name field which will map to
+        cortx.io/pod-name label and then map it to actual machine-id
+        Args:
+        index: str = GConf index
+        machine_ids: str = list of machine ids
+        Ex:
+        >>> Conf.get('cluster_conf', 'node>be47198d5e9191b586f9319a67dd0769>name')
+        'cortx-data-headless-svc-ssc-vm-g4-rhev4-1599'
+        """
+        name_to_macine_id_mapping = {}
+        for machine_id in machine_ids:
+            name = Conf.get(index, f'node{_DELIM}{machine_id}{_DELIM}name')
+            name_to_macine_id_mapping[name] = machine_id
+        return name_to_macine_id_mapping
+
+    def get_cluster_cardinality(self) -> (int, list, dict):
         """
         Get number of nodes(pods) and their machine ids from confstore
         """
-
         cluster_cardinality_key = CLUSTER_CARDINALITY_KEY
         if self._confstore.key_exists(cluster_cardinality_key):
             cluster_cardinality = self._confstore.get(cluster_cardinality_key)
-            _, nodes_list = cluster_cardinality.popitem()
-            nodes_dict = json.loads(nodes_list)
+            _, nodes_info = cluster_cardinality.popitem()
+            nodes_dict = json.loads(nodes_info)
 
             #Get  number of nodes and the node list
             num_nodes = nodes_dict[CLUSTER_CARDINALITY_NUM_NODES]
             nodes_list = nodes_dict[CLUSTER_CARDINALITY_LIST_NODES]
-            return num_nodes, nodes_list
+            node_map = nodes_dict[CLUSTER_CARDINALITY_NODE_MAPPING]
+            return num_nodes, nodes_list, node_map
 
         else:
             Log.error(f"Unable to get cluster cardinality. Key {CLUSTER_CARDINALITY_KEY} does not exist")
             raise ClusterCardinalityError("Unable to get cluster cardinality")
 
-    def set_cluster_cardinality(self, index):
+    def set_cluster_cardinality(self, index: str) -> None:
         """
         Set number of nodes(pods) and their machine ids in confstore used by HA
+        Args:
+        index: Conf index to load
         """
 
         data_pods = ConftStoreSearch.get_data_pods(index)
@@ -103,6 +140,8 @@ class ConftStoreSearch:
         # Combine the lists data_pods, server_pod, control_pods and find unique machine ids
         watch_pods = data_pods + server_pods + control_pods
         watch_pods = list(set(watch_pods))
+        matched_node_ids = ConftStoreSearch.get_matched_labels(index, watch_pods)
+        node_id_name_mapping_dict = ConftStoreSearch.get_node_name_to_machine_id_mapping(index, watch_pods)
         num_pods = len(watch_pods)
 
         Log.info(f"Cluster cardinality: number of nodes {num_pods}, machine ids for nodes {watch_pods} ")
@@ -112,7 +151,20 @@ class ConftStoreSearch:
 
         # Update the same to consul; if KV already present, it will be modified.
         cluster_cardinality_key = CLUSTER_CARDINALITY_KEY
-        cluster_cardinality_value = {CLUSTER_CARDINALITY_NUM_NODES: num_pods, CLUSTER_CARDINALITY_LIST_NODES : watch_pods }
+        # create consul kv with three kv inside. 1 for number of nodes to be watced. 2nd for list of
+        # nodes that will be labeled with cortx.io/machine-id and 3rd for hashmap with node name to
+        # machine-id mapping
+        # Ex:
+        # cortx>ha>v2>cluster_cardinality:{"num_nodes": 3,
+        # "node_list": ["4ac362bd64744d8ba8bc91430b44dcf3", "92cc6308571c4f28b7709eeca57f7352",
+        # "35b6b405691042a7942b20fe7701a763"], "node_name_to_id_map":
+        # {"cortx-control": "3be49f88873cdbf0a46099a6be68ebf3",
+        # "cortx-data-headless-svc-ssc-vm-g4-rhev4-1599": "be47198d5e9191b586f9319a67dd0769",
+        # "cortx-server-headless-svc-ssc-vm-g4-rhev4-1599": "e820cb0dbc87cadcfc9448ea96095468"}}
+
+        cluster_cardinality_value = {CLUSTER_CARDINALITY_NUM_NODES: num_pods, \
+            CLUSTER_CARDINALITY_LIST_NODES : matched_node_ids, \
+                CLUSTER_CARDINALITY_NODE_MAPPING: node_id_name_mapping_dict}
         self._confstore.update(cluster_cardinality_key, json.dumps(cluster_cardinality_value))
 
         return data_pods, server_pods, control_pods, num_pods, watch_pods

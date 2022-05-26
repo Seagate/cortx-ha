@@ -284,12 +284,12 @@ class ConfigCmd(Cmd):
 
             Log.info('Creating cluster cardinality')
             self._confStoreAPI = ConftStoreSearch()
-            data_pods, server_pods, control_pods, _, watch_pods = self._confStoreAPI.set_cluster_cardinality(self._index)
+            data_pods, server_pods, control_pods, _, _ = self._confStoreAPI.set_cluster_cardinality(self._index)
 
             # Init cluster,site,rack health
             self._add_cluster_component_health()
             # Init node health
-            self._add_node_health(data_pods, server_pods, control_pods, watch_pods)
+            self._add_node_health(data_pods, server_pods, control_pods)
             # Init cvg and disk health
             # Stopped disk, cvg resource key addition to consul to reduce consul accesses
             # till CORTX-29667 gets resolved
@@ -330,37 +330,43 @@ class ConfigCmd(Cmd):
                                    specific_info=specific_info)
 
 
-    def _add_node_health(self, data_node_ids, server_node_ids, control_node_ids, nodes_list) -> None:
+    def _add_node_health(self, data_node_ids, server_node_ids, control_node_ids) -> None:
         """
         Add node health
         """
-        for node in nodes_list:
+        _, _, node_map = self._confStoreAPI.get_cluster_cardinality()
+        # cluster cardinality node_to_name mapping will have actual machine-ids
+        # If that is part of one of the list from data, server or control node
+        # list, then mark the respective functional type and update the specific info
+        for node_id in node_map.values():
             functional_type = None
-            if node in data_node_ids:
+            if node_id in data_node_ids:
                 functional_type = NODE_FUNCTIONAL_TYPES.DATA.value
-            elif node in server_node_ids:
+            elif node_id in server_node_ids:
                 functional_type = NODE_FUNCTIONAL_TYPES.SERVER.value
-            elif node in control_node_ids:
+            elif node_id in control_node_ids:
                 functional_type = NODE_FUNCTIONAL_TYPES.CONTROL.value
             specific_info = {SPECIFIC_INFO_ATTRIBUTES.FUNCTIONAL_TYPE.value: functional_type}
-            self._add_health_event(node_id=node,
+            self._add_health_event(node_id=node_id,
                                    resource_type=CLUSTER_ELEMENTS.NODE.value,
-                                   resource_id=node,
+                                   resource_id=node_id,
                                    specific_info=specific_info)
 
     def _add_cvg_and_disk_health(self) -> None:
         """
         Add CVG and disk health
         """
-        _, nodes_list = self._confStoreAPI.get_cluster_cardinality()
-        for node in nodes_list:
-            cvg_list = ConftStoreSearch.get_cvg_list(self._index, node)
+        _, _, node_map = self._confStoreAPI.get_cluster_cardinality()
+        # Actual machine-ids will be part of node map. Hence iterate over the values
+        # of that dictionary
+        for node_id in node_map.values():
+            cvg_list = ConftStoreSearch.get_cvg_list(self._index, node_id)
             if cvg_list:
                 for cvg in cvg_list:
-                    self._add_health_event(node_id=node,
+                    self._add_health_event(node_id=node_id,
                                            resource_type=CLUSTER_ELEMENTS.CVG.value,
                                            resource_id=cvg)
-                    self._add_disk_health(node, cvg)
+                    self._add_disk_health(node_id, cvg)
 
     def _add_disk_health(self, node_id, cvg_id) -> None:
         disk_list = ConftStoreSearch.get_disk_list_for_cvg(self._index, node_id, cvg_id)

@@ -70,7 +70,7 @@ class ResourceMonitor:
             node_monitor = ObjectMonitor(producer, K8SClientConst.NODE, **kwargs)
             self.monitors.append(node_monitor)
 
-            _, nodes_list = _conf_stor_search.get_cluster_cardinality()
+            _, nodes_list, node_map = _conf_stor_search.get_cluster_cardinality()
             if not nodes_list:
                 Log.warn(f"No nodes in the cluster to watch for nodes_list: {nodes_list}")
             else:

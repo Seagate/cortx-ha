@@ -38,6 +38,7 @@ EVENT_COMPONENT="hare"
 CLUSTER_CARDINALITY_KEY = "cluster_cardinality"
 CLUSTER_CARDINALITY_NUM_NODES = "num_nodes"
 CLUSTER_CARDINALITY_LIST_NODES = "node_list"
+CLUSTER_CARDINALITY_NODE_MAPPING = "node_name_to_id_map"
 
 # GConf keys
 class GconfKeys(enum.Enum):
