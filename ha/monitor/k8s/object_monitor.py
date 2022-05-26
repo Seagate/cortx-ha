@@ -30,16 +30,25 @@ from ha import const
 
 
 class ObjectMonitor(threading.Thread):
+
     def __init__(self, producer, k_object, **kwargs):
         """
-        Init method
-        Initialization of member objects, and Thread super calss
+        Init method.
+        Initialization of member objects, and Thread super class.
+
+        Args:
+            producer (MessageBusProducer): to publish alert
+            k_object (str): Monitor type 'pod' or 'node'
+            kwargs (dict): dict for other optional values
+                key 'watch_args' [required]: kwargs for Kubernetes.Watch.stream()
+                key 'resource_id_map' [optional]: mapping of resource id and machine ids
         """
+
         super().__init__()
         self._publish_alert = True
         self._object = k_object
         self.name = f"Monitor-{k_object}-Thread"
-        self._args = kwargs
+        self._kwargs = copy.deepcopy(kwargs)
         self._starting_up = True
         self._object_state = {}
         self._sigterm_received = threading.Event()
@@ -139,7 +148,7 @@ class ObjectMonitor(threading.Thread):
         # While True loop to restart the watch.Watch.stream() after specified timeout
         while True:
             # create a object of Watch.stream generator loop on it.
-            k8s_watch_stream =  k8s_watch.stream(self._object_function, **self._args)
+            k8s_watch_stream =  k8s_watch.stream(self._object_function, **self._kwargs['watch_args'])
             # Start watching events corresponding to self._object
             for an_event in k8s_watch_stream:
 
@@ -152,7 +161,8 @@ class ObjectMonitor(threading.Thread):
                     break
 
                 Log.debug(f"Received event {an_event}")
-                alert, event = EventParser.parse(self._object, an_event, self._object_state)
+                alert, event = EventParser.parse(self._object, an_event, self._object_state, \
+                    self._kwargs.get('resource_id_map', None))
                 if alert is None:
                     continue
                 if self._starting_up:
@@ -172,7 +182,7 @@ class ObjectMonitor(threading.Thread):
             # If stop processing events is set then no need to retry just break the loop
             # If we don't specify timeout no need to restart the loop it will happen internally
             # as Watch.stream will be blocking call which has while True loop so no need a loop for it.
-            if self._stop_event_processing or K8SClientConst.TIMEOUT_SECONDS not in self._args:
+            if self._stop_event_processing or K8SClientConst.TIMEOUT_SECONDS not in self._kwargs['watch_args']:
                 break
         Log.info(f"Stopping the {self.name}...")
 

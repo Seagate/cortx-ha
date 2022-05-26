@@ -30,7 +30,7 @@ from ha.core.config.config_manager import ConfigManager
 from ha.util.message_bus import MessageBus
 from ha.util.conf_store import ConftStoreSearch
 from ha.monitor.k8s.object_monitor import ObjectMonitor
-from ha.monitor.k8s.const import K8SClientConst
+from ha.monitor.k8s.const import K8SClientConst, K8SEventsConst
 
 class ResourceMonitor:
     """
@@ -51,36 +51,60 @@ class ResourceMonitor:
             _conf_stor_search = ConftStoreSearch()
 
             self.monitors = []
+            monitor_args = {}
 
             # event output in pretty format
-            kwargs = {K8SClientConst.PRETTY : True}
+            monitor_args['watch_args'] = {K8SClientConst.PRETTY : True}
 
-            # Seting a timeout value, 'timout_seconds', for the stream.
+            # Setting a timeout value, 'timeout_seconds', for the stream.
             # timeout value for connection to the server
             # If do not set then we will not able to stop immediately,
-            # becuase synchronus function watch.stream() will not come back
+            # because synchronous function watch.stream() will not come back
             # until catch any event on which it is waiting.
-            kwargs[K8SClientConst.TIMEOUT_SECONDS] = K8SClientConst.VAL_WATCH_TIMEOUT_DEFAULT
+            monitor_args['watch_args'][K8SClientConst.TIMEOUT_SECONDS] = wait_time
 
             # Get MessageBus producer object for all monitor threads
             producer = self._get_producer()
 
             # Change to multiprocessing
             # Creating NODE monitor object
-            node_monitor = ObjectMonitor(producer, K8SClientConst.NODE, **kwargs)
+            Log.info("Instantiating monitor for all the nodes in cluster.")
+            node_monitor = ObjectMonitor(producer, K8SClientConst.NODE, **monitor_args)
             self.monitors.append(node_monitor)
 
-            _, nodes_list = _conf_stor_search.get_cluster_cardinality()
-            if not nodes_list:
-                Log.warn(f"No nodes in the cluster to watch for nodes_list: {nodes_list}")
-            else:
-                Log.info(f"Starting watch for: nodes_list: {nodes_list}")
-            watcher_node_ids = ', '.join(node_id for node_id in nodes_list)
-            kwargs[K8SClientConst.LABEL_SELECTOR] = f'cortx.io/machine-id in ({watcher_node_ids})'
+            _, label_id_map, resource_id_map = _conf_stor_search.get_cluster_cardinality()
+            Log.debug(f"label id map: {label_id_map}, resource id map: {resource_id_map}")
 
-            # Creating POD monitor object
-            pod_monitor = ObjectMonitor(producer, K8SClientConst.POD, **kwargs)
-            self.monitors.append(pod_monitor)
+            # NOTE: Currently running two pod monitors with the label 'cortx.io/machine-id' and
+            #  'statefulset.kubernetes.io/pod-name'. in any deployment, both labels will not co-exist,
+            #  so either one pod monitor will not be receiving any events.
+            # TODO: CORTX-31875 So once the label 'statefulset.kubernetes.io/pod-name' is available,
+            #  the pod monitor with the label 'cortx.io/machine-id' needs to be removed as,
+            #  it is running only for backward compatibility.
+            # 1. pod monitor for pods with 'cortx.io/machine-id' labels
+            if label_id_map:
+                Log.info(f"Instantiating monitor for pods with 'cortx.io/machine-id' labels: {label_id_map.keys()}")
+                label_ids = ', '.join(label_id for label_id in label_id_map.keys())
+                monitor_args['watch_args'][K8SClientConst.LABEL_SELECTOR] = \
+                    f'{K8SEventsConst.LABEL_MACHINEID} in ({label_ids})'
+                monitor_args['resource_id_map'] = label_id_map
+                # Creating POD monitor object watching on label machine id
+                pod_monitor_for_machineids = ObjectMonitor(producer, K8SClientConst.POD, **monitor_args)
+                self.monitors.append(pod_monitor_for_machineids)
+            # 2. pod monitor for pods with 'statefulset.kubernetes.io/pod-name' labels
+            elif resource_id_map:
+                Log.info(f"Instantiating monitor for pods with names: {resource_id_map.keys()}")
+                pod_names = ', '.join(pod_name for pod_name in resource_id_map.keys())
+                monitor_args['watch_args'][K8SClientConst.LABEL_SELECTOR] = \
+                    f'{K8SEventsConst.LABEL_PODNAME} in ({pod_names})'
+                monitor_args['resource_id_map'] = resource_id_map
+                # Creating POD monitor object watching on label pod name
+                pod_monitor_for_podnames = ObjectMonitor(producer, K8SClientConst.POD, **monitor_args)
+                self.monitors.append(pod_monitor_for_podnames)
+            else:
+                Log.warn(f"No pods found to monitor in resource id map: {resource_id_map}"\
+                    " and machine id map {label_id_map} ")
+
         except Exception as err:
             Log.error(f'Monitor failed to start watchers: {err}')
 
@@ -118,7 +142,7 @@ class ResourceMonitor:
             monitor.join()
 
 if __name__ == "__main__":
-    monitor = ResourceMonitor()
+    monitor = ResourceMonitor(K8SClientConst.VAL_WATCH_TIMEOUT_DEFAULT)
     Log.info(f"Starting the k8s Monitor with PID {os.getpid()}...")
     monitor.start()
     monitor.wait_for_exit()
