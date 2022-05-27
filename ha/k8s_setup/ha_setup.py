@@ -334,11 +334,11 @@ class ConfigCmd(Cmd):
         """
         Add node health
         """
-        _, _, node_map = self._confStoreAPI.get_cluster_cardinality()
+        _, _, node_mapping = self._confStoreAPI.get_cluster_cardinality()
         # cluster cardinality node_to_name mapping will have actual machine-ids
         # If that is part of one of the list from data, server or control node
         # list, then mark the respective functional type and update the specific info
-        for node_id in node_map.values():
+        for node_id in node_mapping.values():
             functional_type = None
             if node_id in data_node_ids:
                 functional_type = NODE_FUNCTIONAL_TYPES.DATA.value
@@ -356,7 +356,7 @@ class ConfigCmd(Cmd):
         """
         Add CVG and disk health
         """
-        _, _, node_map = self._confStoreAPI.get_cluster_cardinality()
+        _, _, node_mapping = self._confStoreAPI.get_cluster_cardinality()
         # Actual machine-ids will be part of node map. Hence iterate over the values
         # of that dictionary
         for node_id in node_map.values():

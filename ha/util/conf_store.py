@@ -25,7 +25,7 @@ from cortx.utils.conf_store import Conf
 from cortx.utils.cortx.const import Const
 from ha.core.config.config_manager import ConfigManager
 from ha.k8s_setup.const import CLUSTER_CARDINALITY_KEY, \
-        CLUSTER_CARDINALITY_NUM_NODES, CLUSTER_CARDINALITY_LIST_NODES, \
+        CLUSTER_CARDINALITY_NUM_NODES, CLUSTER_CARDINALITY_NODES, \
         CLUSTER_CARDINALITY_NODE_MAPPING
 from ha.k8s_setup.const import _DELIM, GconfKeys
 from cortx.utils.log import Log
@@ -73,7 +73,7 @@ class ConftStoreSearch:
             machine_ids.append(machine_id)
         return machine_ids
 
-    def get_matched_labels(index: str, machine_ids: list = None) -> list:
+    def get_matched_labels(index: str, machine_ids: list = None) -> dict:
         """
         Get IDs from GConf using the key node_id which gets matched with
         cortx.io/machine-id label in
@@ -83,11 +83,14 @@ class ConftStoreSearch:
         >>> Conf.get('cluster_conf', 'node>be47198d5e9191b586f9319a67dd0769>node_id')
         '92cc6308571c4f28b7709eeca57f7352'
         """
-        node_id_list = []
+        node_label_to_machine_id_map = {}
         for machine_id in machine_ids:
             node_id = Conf.get(index, f'node{_DELIM}{machine_id}{_DELIM}node_id')
-            node_id_list.append(node_id)
-        return node_id_list
+            # create a mapping between ID(matched with cortx.io/machine-id) and
+            # machine-id which is required for k8s monitor alert processing and alert
+            # creation.
+            node_label_to_machine_id_map[machine_id] = node_id
+        return node_label_to_machine_id_map
 
     def get_node_name_to_machine_id_mapping(index: str, machine_ids: list = None) -> dict:
         """
@@ -118,9 +121,9 @@ class ConftStoreSearch:
 
             #Get  number of nodes and the node list
             num_nodes = nodes_dict[CLUSTER_CARDINALITY_NUM_NODES]
-            nodes_list = nodes_dict[CLUSTER_CARDINALITY_LIST_NODES]
-            node_map = nodes_dict[CLUSTER_CARDINALITY_NODE_MAPPING]
-            return num_nodes, nodes_list, node_map
+            label_node_dict = nodes_dict[CLUSTER_CARDINALITY_NODES]
+            node_mapping = nodes_dict[CLUSTER_CARDINALITY_NODE_MAPPING]
+            return num_nodes, label_node_dict, node_mapping
 
         else:
             Log.error(f"Unable to get cluster cardinality. Key {CLUSTER_CARDINALITY_KEY} does not exist")
@@ -140,7 +143,7 @@ class ConftStoreSearch:
         # Combine the lists data_pods, server_pod, control_pods and find unique machine ids
         watch_pods = data_pods + server_pods + control_pods
         watch_pods = list(set(watch_pods))
-        matched_node_ids = ConftStoreSearch.get_matched_labels(index, watch_pods)
+        matched_node_labeled_dict = ConftStoreSearch.get_matched_labels(index, watch_pods)
         node_id_name_mapping_dict = ConftStoreSearch.get_node_name_to_machine_id_mapping(index, watch_pods)
         num_pods = len(watch_pods)
 
@@ -151,19 +154,23 @@ class ConftStoreSearch:
 
         # Update the same to consul; if KV already present, it will be modified.
         cluster_cardinality_key = CLUSTER_CARDINALITY_KEY
-        # create consul kv with three kv inside. 1 for number of nodes to be watced. 2nd for list of
-        # nodes that will be labeled with cortx.io/machine-id and 3rd for hashmap with node name to
-        # machine-id mapping
+        # create consul kv with three kv inside. 1 for number of nodes to be watced.
+        # 2nd for dict of nodes with machine-id mapped with ids labeled with
+        # cortx.io/machine-id and 3rd for dict with node name to machine-id mapping
+
         # Ex:
         # cortx>ha>v2>cluster_cardinality:{"num_nodes": 3,
-        # "node_list": ["4ac362bd64744d8ba8bc91430b44dcf3", "92cc6308571c4f28b7709eeca57f7352",
-        # "35b6b405691042a7942b20fe7701a763"], "node_name_to_id_map":
+        # "node_id_dict": {"3be49f88873cdbf0a46099a6be68ebf3": "4ac362bd64744d8ba8bc91430b44dcf3",
+        # "be47198d5e9191b586f9319a67dd0769": "92cc6308571c4f28b7709eeca57f7352",
+        # "e820cb0dbc87cadcfc9448ea96095468": "35b6b405691042a7942b20fe7701a763"},, "node_name_to_id_map":
         # {"cortx-control": "3be49f88873cdbf0a46099a6be68ebf3",
         # "cortx-data-headless-svc-ssc-vm-g4-rhev4-1599": "be47198d5e9191b586f9319a67dd0769",
         # "cortx-server-headless-svc-ssc-vm-g4-rhev4-1599": "e820cb0dbc87cadcfc9448ea96095468"}}
 
+        # TODO: Remove CLUSTER_CARDINALITY_NODES kv once cortx.io/pod_name label will be
+        # available
         cluster_cardinality_value = {CLUSTER_CARDINALITY_NUM_NODES: num_pods, \
-            CLUSTER_CARDINALITY_LIST_NODES : matched_node_ids, \
+            CLUSTER_CARDINALITY_NODES: matched_node_labeled_dict, \
                 CLUSTER_CARDINALITY_NODE_MAPPING: node_id_name_mapping_dict}
         self._confstore.update(cluster_cardinality_key, json.dumps(cluster_cardinality_value))
 
