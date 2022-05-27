@@ -359,7 +359,7 @@ class ConfigCmd(Cmd):
         _, _, node_mapping = self._confStoreAPI.get_cluster_cardinality()
         # Actual machine-ids will be part of node map. Hence iterate over the values
         # of that dictionary
-        for node_id in node_map.values():
+        for node_id in node_mapping.values():
             cvg_list = ConftStoreSearch.get_cvg_list(self._index, node_id)
             if cvg_list:
                 for cvg in cvg_list:
