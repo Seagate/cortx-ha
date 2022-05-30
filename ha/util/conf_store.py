@@ -89,7 +89,7 @@ class ConftStoreSearch:
             # create a mapping between ID(matched with cortx.io/machine-id) and
             # machine-id which is required for k8s monitor alert processing and alert
             # creation.
-            node_label_to_machine_id_map[machine_id] = node_id
+            node_label_to_machine_id_map[node_id] = machine_id
         return node_label_to_machine_id_map
 
     def get_node_name_to_machine_id_mapping(index: str, machine_ids: list = None) -> dict:
@@ -160,9 +160,9 @@ class ConftStoreSearch:
 
         # Ex:
         # cortx>ha>v2>cluster_cardinality:{"num_nodes": 3,
-        # "node_id_dict": {"3be49f88873cdbf0a46099a6be68ebf3": "4ac362bd64744d8ba8bc91430b44dcf3",
-        # "be47198d5e9191b586f9319a67dd0769": "92cc6308571c4f28b7709eeca57f7352",
-        # "e820cb0dbc87cadcfc9448ea96095468": "35b6b405691042a7942b20fe7701a763"},, "node_name_to_id_map":
+        # "node_id_dict": {"4ac362bd64744d8ba8bc91430b44dcf3": "3be49f88873cdbf0a46099a6be68ebf3",
+        # "92cc6308571c4f28b7709eeca57f7352": "be47198d5e9191b586f9319a67dd0769",
+        # "35b6b405691042a7942b20fe7701a763": "e820cb0dbc87cadcfc9448ea96095468"},"node_name_to_id_map":
         # {"cortx-control": "3be49f88873cdbf0a46099a6be68ebf3",
         # "cortx-data-headless-svc-ssc-vm-g4-rhev4-1599": "be47198d5e9191b586f9319a67dd0769",
         # "cortx-server-headless-svc-ssc-vm-g4-rhev4-1599": "e820cb0dbc87cadcfc9448ea96095468"}}
