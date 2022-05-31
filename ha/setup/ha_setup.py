@@ -130,7 +130,7 @@ class Cmd:
         setup_arg_parser.add_argument('--pre-factory', action='store_true', help='Pre-factory check')
         setup_arg_parser.add_argument('args', nargs='*', default=[], help='args')
         setup_arg_parser.set_defaults(command=cls)
-        setup_arg_parser.add_argument('--changeset', help=' changed keys in Gconf', default='yaml:///etc/cortx/changeset.conf')
+        setup_arg_parser.add_argument('--changeset', help='Changeset URL', default='yaml:///etc/cortx/changeset.conf')
 
     @staticmethod
     def remove_file(file: str):
