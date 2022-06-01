@@ -95,7 +95,7 @@ class ConftStoreSearch:
     def get_node_name_to_machine_id_mapping(index: str, machine_ids: list = None) -> dict:
         """
         Get names of the Node using Gconf name field which will map to
-        cortx.io/pod-name label and then map it to actual machine-id
+        statefulset.kubernetes.io/pod-name label and then map it to actual machine-id
         Args:
         index: str = GConf index
         machine_ids: str = list of machine ids
@@ -103,13 +103,13 @@ class ConftStoreSearch:
         >>> Conf.get('cluster_conf', 'node>be47198d5e9191b586f9319a67dd0769>name')
         'cortx-data-headless-svc-ssc-vm-g4-rhev4-1599'
         """
-        name_to_macine_id_mapping = {}
+        name_to_machine_id_mapping = {}
         for machine_id in machine_ids:
             name = Conf.get(index, f'node{_DELIM}{machine_id}{_DELIM}name')
-            name_to_macine_id_mapping[name] = machine_id
-        return name_to_macine_id_mapping
+            name_to_machine_id_mapping[name] = machine_id
+        return name_to_machine_id_mapping
 
-    def get_cluster_cardinality(self) -> (int, list, dict):
+    def get_cluster_cardinality(self) -> (int, dict, dict):
         """
         Get number of nodes(pods) and their machine ids from confstore
         """
@@ -167,7 +167,7 @@ class ConftStoreSearch:
         # "cortx-data-headless-svc-ssc-vm-g4-rhev4-1599": "be47198d5e9191b586f9319a67dd0769",
         # "cortx-server-headless-svc-ssc-vm-g4-rhev4-1599": "e820cb0dbc87cadcfc9448ea96095468"}}
 
-        # TODO: Remove CLUSTER_CARDINALITY_NODES kv once cortx.io/pod_name label will be
+        # TODO: Remove CLUSTER_CARDINALITY_NODES kv once statefulset.kubernetes.io/pod_name label will be
         # available
         cluster_cardinality_value = {CLUSTER_CARDINALITY_NUM_NODES: num_pods, \
             CLUSTER_CARDINALITY_NODES: matched_node_labeled_dict, \
