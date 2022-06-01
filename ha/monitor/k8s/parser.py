@@ -174,18 +174,18 @@ class PodEventParser(ObjectParser):
             str: resource id which is nothing but actual machine id
                 inside pod in file '/etc/machine-id'
         """
-        resource_id = None
+
+        pod_name = labels.get(K8SEventsConst.LABEL_PODNAME, None)
+        resource_id = resource_id_map.get(pod_name, None)
+        Log.debug(f"pod name {pod_name} resource id: {resource_id}")
         # NOTE: All the cortx pods from the deployment that are being watched
         # will have either label 'cortx.io/machine-id' or 'statefulset.kubernetes.io/pod-name'
         # both label will not co-exist in a deployment
         # TODO: CORTX-31875 remove check for label 'cortx.io/machine-id'
-        if K8SEventsConst.LABEL_PODNAME in labels:
-            resource_id = resource_id_map.get(labels[K8SEventsConst.LABEL_PODNAME], None)
-            Log.debug(f"pod name {labels[K8SEventsConst.LABEL_PODNAME]} resource id: {resource_id}")
-        # Check pod id label
-        if K8SEventsConst.LABEL_MACHINEID in labels:
-            resource_id = resource_id_map.get(labels[K8SEventsConst.LABEL_MACHINEID], None)
-            Log.debug(f"pod m-id {labels[K8SEventsConst.LABEL_MACHINEID]} resource id: {resource_id}")
+        if not resource_id:
+            machine_id = labels.get(K8SEventsConst.LABEL_MACHINEID, None)
+            resource_id = resource_id_map.get(machine_id, None)
+            Log.debug(f"pod m-id {machine_id} resource id: {resource_id}")
 
         return resource_id
 

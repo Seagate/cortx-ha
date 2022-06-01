@@ -261,7 +261,10 @@ class ConfigCmd(Cmd):
             # TODO: Verify whether these newly added config is avilable in the confstore or not
             with open(const.HA_CONFIG_FILE, 'w+') as conf_file:
                 yaml.dump(conf_file_dict, conf_file, default_flow_style=False)
-            self._confstore = ConfigManager.get_confstore()
+            # Note: kv_enable_batch is setting True to commit all the kv keys in 1 time for time optimization.
+            # if kv_enable_batch set to true then commit operation needs to run to put all the key values in store.
+            kv_enable_batch_put = True
+            self._confstore = ConfigManager.get_confstore(kv_enable_batch=kv_enable_batch_put)
 
             Log.info(f'Populating the ha config file with consul_endpoint: {consul_endpoint}')
 
@@ -281,16 +284,21 @@ class ConfigCmd(Cmd):
 
             Log.info('Creating cluster cardinality')
             self._confStoreAPI = ConftStoreSearch()
-            self._confStoreAPI.set_cluster_cardinality(self._index)
+            data_pods, server_pods, control_pods, _, watch_pods = self._confStoreAPI.set_cluster_cardinality(self._index)
 
             # Init cluster,site,rack health
             self._add_cluster_component_health()
             # Init node health
-            self._add_node_health()
+            self._add_node_health(data_pods, server_pods, control_pods, watch_pods)
             # Init cvg and disk health
             # Stopped disk, cvg resource key addition to consul to reduce consul accesses
             # till CORTX-29667 gets resolved
             #self._add_cvg_and_disk_health()
+
+            # Note: if batch put is enabled needs to commit
+            # to push all the local cashed values to consul server
+            if kv_enable_batch_put:
+                self._confstore.commit()
 
             Log.info("config command is successful")
             sys.stdout.write("config command is successful.\n")
@@ -322,14 +330,10 @@ class ConfigCmd(Cmd):
                                    specific_info=specific_info)
 
 
-    def _add_node_health(self) -> None:
+    def _add_node_health(self, data_node_ids, server_node_ids, control_node_ids, nodes_list) -> None:
         """
         Add node health
         """
-        _, nodes_list = self._confStoreAPI.get_cluster_cardinality()
-        data_node_ids = self._confStoreAPI.get_data_pods(self._index)
-        server_node_ids = self._confStoreAPI.get_server_pods(self._index)
-        control_node_ids = self._confStoreAPI.get_control_nodes(self._index)
         for node in nodes_list:
             functional_type = None
             if node in data_node_ids:

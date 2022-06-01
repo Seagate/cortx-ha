@@ -16,7 +16,6 @@
 # cortx-questions@seagate.com.
 
 from typing import List
-from ha.k8s_setup import const
 from ha.core.event_manager.resources import RESOURCE_STATUS
 from ha.core.event_manager.resources import RESOURCE_TYPES, FUNCTIONAL_TYPES
 
