@@ -91,8 +91,11 @@ class ResourceMonitor:
                 # Creating POD monitor object watching on label machine id
                 pod_monitor_for_machineids = ObjectMonitor(producer, K8SClientConst.POD, **monitor_args)
                 self.monitors.append(pod_monitor_for_machineids)
+            else:
+                Log.warn(f"No pods found to monitor in machine id map {label_id_map}.")
+
             # 2. pod monitor for pods with 'statefulset.kubernetes.io/pod-name' labels
-            elif resource_id_map:
+            if resource_id_map:
                 Log.info(f"Instantiating monitor for pods with names: {resource_id_map.keys()}")
                 pod_names = ', '.join(pod_name for pod_name in resource_id_map.keys())
                 monitor_args['watch_args'][K8SClientConst.LABEL_SELECTOR] = \
@@ -102,8 +105,7 @@ class ResourceMonitor:
                 pod_monitor_for_podnames = ObjectMonitor(producer, K8SClientConst.POD, **monitor_args)
                 self.monitors.append(pod_monitor_for_podnames)
             else:
-                Log.warn(f"No pods found to monitor in resource id map: {resource_id_map}"\
-                    " and machine id map {label_id_map} ")
+                Log.warn(f"No pods found to monitor in resource id map: {resource_id_map}")
 
         except Exception as err:
             Log.error(f'Monitor failed to start watchers: {err}')

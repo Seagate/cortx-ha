@@ -115,6 +115,8 @@ class ConftStoreSearch:
         cluster_cardinality_value = {CLUSTER_CARDINALITY_NUM_NODES: num_pods, CLUSTER_CARDINALITY_LIST_NODES : watch_pods }
         self._confstore.update(cluster_cardinality_key, json.dumps(cluster_cardinality_value))
 
+        return data_pods, server_pods, control_pods, num_pods, watch_pods
+
     @staticmethod
     def _get_cvg_count(index, node_id):
         cvg_count = Conf.get(index, GconfKeys.CVG_COUNT.value.format(_DELIM=_DELIM, node_id=node_id))
