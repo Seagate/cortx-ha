@@ -101,6 +101,7 @@ class ResourceMonitor:
                 # Creating POD monitor object watching on label pod name
                 pod_monitor_for_podnames = ObjectMonitor(producer, K8SClientConst.POD, **monitor_args)
                 self.monitors.append(pod_monitor_for_podnames)
+
             else:
                 Log.warn(f"No pods found to monitor in resource id map: {resource_id_map}"\
                     " and machine id map {label_id_map} ")
