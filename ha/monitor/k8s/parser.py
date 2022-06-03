@@ -15,9 +15,6 @@
 # about this software or licensing, please email opensource@seagate.com or
 # cortx-questions@seagate.com.
 
-
-import time
-
 from ha.monitor.k8s.error import NotSupportedObjectError
 from ha.monitor.k8s.const import K8SEventsConst
 from ha.monitor.k8s.const import AlertStates
@@ -42,7 +39,7 @@ class ObjectParser:
                     HealthAttr.RESOURCE_ID.value: '', HealthAttr.RESOURCE_STATUS.value: '',
                     HealthAttr.SPECIFIC_INFO.value: {}}
 
-    def parse(self, an_event, cached_state):
+    def parse(self, an_event, cached_state, resource_id_map):
         pass
 
 
@@ -70,7 +67,7 @@ class NodeEventParser(ObjectParser):
         self.event = HealthEvent(**self.payload)
         return self.event.json
 
-    def parse(self, an_event, cached_state):
+    def parse(self, an_event, cached_state, resource_id_map):
         resource_type = self._type
         raw_object = an_event[K8SEventsConst.RAW_OBJECT]
 
@@ -156,13 +153,49 @@ class PodEventParser(ObjectParser):
         self.event.set_specific_info({"generation_id": generation_id})
         return self.event.json
 
-    def parse(self, an_event, cached_state):
+    @staticmethod
+    def _get_resource_id(labels: dict, resource_id_map: dict) -> str:
+        """
+        get resource id
+
+        Check if pod name label exist if yes then check if resource map contains it
+        if resource id doesn't found then check if machine id label is exists if yes
+        then find resource id for same.
+
+        Note: machine id in label is different from the actual machine id inside pod
+        in file '/etc/machine-id' and the actual machine id is resource id.
+
+        Args:
+            labels (dict): pod labels with values
+            resource_id_map (dict): map of label (name/machine-id) with actual machine id
+            label 'statefulset.kubernetes.io/pod-name' : pod fqdn, key in resource map
+            label 'cortx.io/machine-id' : uniq id, key in resource map
+        Returns:
+            str: resource id which is nothing but actual machine id
+                inside pod in file '/etc/machine-id'
+        """
+
+        pod_name = labels.get(K8SEventsConst.LABEL_PODNAME, None)
+        resource_id = resource_id_map.get(pod_name, None)
+        Log.debug(f"pod name {pod_name} resource id: {resource_id}")
+        # NOTE: All the cortx pods from the deployment that are being watched
+        # will have either label 'cortx.io/machine-id' or 'statefulset.kubernetes.io/pod-name'
+        # both label will not co-exist in a deployment
+        # TODO: CORTX-31875 remove check for label 'cortx.io/machine-id'
+        if not resource_id:
+            machine_id = labels.get(K8SEventsConst.LABEL_MACHINEID, None)
+            resource_id = resource_id_map.get(machine_id, None)
+            Log.debug(f"pod m-id {machine_id} resource id: {resource_id}")
+
+        return resource_id
+
+    def parse(self, an_event, cached_state, resource_id_map):
         resource_type = self._type
         raw_object = an_event[K8SEventsConst.RAW_OBJECT]
 
-        labels = raw_object[K8SEventsConst.METADATA][K8SEventsConst.LABELS]
-        if K8SEventsConst.MACHINEID in labels:
-            resource_name = labels[K8SEventsConst.MACHINEID]
+        resource_id = PodEventParser._get_resource_id(raw_object[K8SEventsConst.METADATA][K8SEventsConst.LABELS],\
+            resource_id_map)
+
         if K8SEventsConst.TYPE in an_event:
             event_type = an_event[K8SEventsConst.TYPE]
         # Actual physical host information is not needed now.
@@ -180,37 +213,37 @@ class PodEventParser(ObjectParser):
             Log.debug(f"Exception received during parsing {e}")
 
         if ready_status is None:
-            Log.debug(f"ready_status is None for pod resource {resource_name}")
-            cached_state[resource_name] = ready_status
+            Log.debug(f"ready_status is None for pod resource {resource_id}")
+            cached_state[resource_id] = ready_status
             return (None, None)
 
         if an_event[K8SEventsConst.TYPE] == EventStates.ADDED:
-            cached_state[resource_name] = ready_status.lower()
+            cached_state[resource_id] = ready_status.lower()
             if ready_status.lower() != K8SEventsConst.true:
-                Log.debug(f"[EventStates ADDED] No change detected for pod resource {resource_name}")
+                Log.debug(f"[EventStates ADDED] No change detected for pod resource {resource_id}")
                 return (None, None)
             else:
                 event_type = AlertStates.ONLINE
-                health_alert = self._create_health_alert(resource_type, resource_name, event_type, generation_id)
+                health_alert = self._create_health_alert(resource_type, resource_id, event_type, generation_id)
                 return health_alert, self.event
 
         if event_type == EventStates.MODIFIED:
-            if resource_name in cached_state:
-                if cached_state[resource_name] != K8SEventsConst.true and ready_status.lower() == K8SEventsConst.true:
-                    cached_state[resource_name] = ready_status.lower()
+            if resource_id in cached_state:
+                if cached_state[resource_id] != K8SEventsConst.true and ready_status.lower() == K8SEventsConst.true:
+                    cached_state[resource_id] = ready_status.lower()
                     event_type = AlertStates.ONLINE
-                    health_alert = self._create_health_alert(resource_type, resource_name, event_type, generation_id)
+                    health_alert = self._create_health_alert(resource_type, resource_id, event_type, generation_id)
                     return health_alert, self.event
-                elif cached_state[resource_name] == K8SEventsConst.true and ready_status.lower() != K8SEventsConst.true:
-                    cached_state[resource_name] = ready_status.lower()
+                elif cached_state[resource_id] == K8SEventsConst.true and ready_status.lower() != K8SEventsConst.true:
+                    cached_state[resource_id] = ready_status.lower()
                     event_type = AlertStates.OFFLINE
-                    health_alert = self._create_health_alert(resource_type, resource_name, event_type, generation_id)
+                    health_alert = self._create_health_alert(resource_type, resource_id, event_type, generation_id)
                     return health_alert, self.event
                 else:
-                    Log.debug(f"[EventStates MODIFIED] No change detected for pod resource {resource_name}")
+                    Log.debug(f"[EventStates MODIFIED] No change detected for pod resource {resource_id}")
                     return (None, None)
             else:
-                Log.debug(f"[EventStates MODIFIED] No cached state detected for pod resource {resource_name}")
+                Log.debug(f"[EventStates MODIFIED] No cached state detected for pod resource {resource_id}")
                 return (None, None)
 
         # Handle DELETED event - Not required for Cortx
@@ -225,9 +258,9 @@ class EventParser:
     }
 
     @staticmethod
-    def parse(k_object, an_event, cached_state):
+    def parse(k_object, an_event, cached_state, resource_id_map):
         if k_object in EventParser.parser_map:
             object_event_parser = EventParser.parser_map[k_object]
-            return object_event_parser.parse(an_event, cached_state)
+            return object_event_parser.parse(an_event, cached_state, resource_id_map)
 
         raise NotSupportedObjectError(f"object = {k_object}")

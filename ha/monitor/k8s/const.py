@@ -24,7 +24,10 @@ class K8SEventsConst:
     LABELS ='labels'
     # cortx specific key for fetching machine id from event.
     # k8s event: ['raw_object']['metadata']['labels']['cortx.io/machine-id']
-    MACHINEID = 'cortx.io/machine-id'
+    LABEL_MACHINEID = 'cortx.io/machine-id'
+    # TODO: CORTX-31875: check if pod has same label 'statefulset.kubernetes.io/pod-name'
+    # k8s event: ['raw_object']['metadata']['labels']['statefulset.kubernetes.io/pod-name']
+    LABEL_PODNAME = 'statefulset.kubernetes.io/pod-name'
     SPEC = 'spec'
     NODE_NAME = 'nodeName'
     PHASE = 'phase'
