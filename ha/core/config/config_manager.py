@@ -39,9 +39,10 @@ class ConfigManager:
     _cluster_confstore = None
 
     @staticmethod
-    def init(log_name, log_path=None, level="INFO",
+    def init(log_name, log_path=None, level=None,
             backup_count=5, file_size_in_mb=10, syslog_server=None,
-            syslog_port=None, console_output=True, config_file=None):
+            syslog_port=None, console_output=True, config_file=None,
+            skip_load=False, initialize_log=True):
         """
         Initialize ha conf and log
         Args:
@@ -49,11 +50,17 @@ class ConfigManager:
         """
         # log_path will be piked from cluster config only
         # log_path can be updated for testing only
-        ConfigManager._conf_init(config_file)
+        if not skip_load:
+            ConfigManager._conf_init(config_file)
+        if not initialize_log:
+            return
         if log_name:
             if not log_path:
                 log_path = Conf.get(const.HA_GLOBAL_INDEX, f"LOG{_DELIM}path")
-            level = Conf.get(const.HA_GLOBAL_INDEX, f"LOG{_DELIM}level")
+            if level is not None:
+                level = level
+            else:
+                level = Conf.get(const.HA_GLOBAL_INDEX, f"LOG{_DELIM}level")
             # console_output=True will redirect all log to console and log file both
             # TODO: CORTX-28795 filter redirect log for console and file
             Log.init(service_name=log_name, log_path=log_path, level=level,

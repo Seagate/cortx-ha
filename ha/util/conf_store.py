@@ -53,7 +53,7 @@ class ConftStoreSearch:
         # ['node>5f3dc3a153454a918277ee4a2c57f36b>components[1]>services[0]',
         # 'node>6203a14bde204e8ea798ad9d42583fb5>components[1]>services[0]', 'node>8cc8b13101e34b3ca1e51ed6e3228d5b>components[1]>services[0]']
 
-        data_pod_keys = Conf.search(index, GconfKeys.NODE_CONST.value, GconfKeys.SERVICE_CONST.value, Const.SERVICE_MOTR_IO.value)
+        data_pod_keys = Conf.search(index, GconfKeys.NODE_CONST.value, GconfKeys.NUM_CVG.value)
         for key in data_pod_keys:
             machine_id = key.split('>')[1]
             # Add machine id to list
