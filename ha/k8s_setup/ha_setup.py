@@ -191,8 +191,8 @@ class ConfigCmd(Cmd):
         ep = None
         num_endpoints = Conf.get(self._index, num_endpoints_key.format(_DELIM=_DELIM))
         if num_endpoints is None:
-            Log.error(f"number of endpoints found: {num_endpoints}")
-            raise SetupError(f"number of endpoints found: {num_endpoints}")
+            Log.error(f"Could not fetch configured number of endpoints: {num_endpoints}")
+            raise SetupError(f"could not fetch configured number of endpoints: {num_endpoints}")
         try:
             for num in range(int(num_endpoints)):
                 endpoint = Conf.get(self._index, endpoint_key.format(_DELIM=_DELIM, endpoint_index=num))
@@ -234,7 +234,7 @@ class ConfigCmd(Cmd):
             # - http://consul-server.default.svc.cluster.local:8500  #
             #========================================================#
             if not consul_endpoint:
-                sys.stderr.write(f'Failed to get consul config. consul_config: {filtered_consul_endpoints}. \n')
+                sys.stderr.write(f'Failed to get consul config. consul_config: {consul_endpoint}. \n')
                 sys.exit(1)
             # discussed and confirmed to select the http endpoint
 
