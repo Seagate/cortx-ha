@@ -34,7 +34,7 @@ from ha.k8s_setup import const
 from ha.core.config.config_manager import ConfigManager
 from ha.core.error import HaCleanupException
 from ha.core.error import SetupError
-from ha.k8s_setup.const import _DELIM
+from ha.k8s_setup.const import _DELIM, GconfKeys
 from ha.core.event_manager.event_manager import EventManager
 from ha.core.event_manager.subscribe_event import SubscribeEvent
 from ha.core.event_manager.resources import NODE_FUNCTIONAL_TYPES
@@ -186,6 +186,31 @@ class ConfigCmd(Cmd):
         """
         super().__init__(args)
 
+    def _get_endpoints(self, num_endpoints_key: str, endpoint_key: str, scheme: str) -> str:
+        """Get endpoints"""
+        ep = None
+        num_endpoints = Conf.get(self._index, num_endpoints_key.format(_DELIM=_DELIM))
+        if num_endpoints is None:
+            Log.error(f"Could not fetch configured number of endpoints: {num_endpoints}")
+            raise SetupError(f"could not fetch configured number of endpoints: {num_endpoints}")
+        try:
+            for num in range(int(num_endpoints)):
+                endpoint = Conf.get(self._index, endpoint_key.format(_DELIM=_DELIM, endpoint_index=num))
+                if endpoint is None:
+                    continue
+                ep = ' '.join((filter(lambda x: isinstance(x, str) and \
+                        urlparse(x).scheme == scheme, endpoint.split())))
+                if ep: break
+            if ep is None:
+                Log.error("No endpoints are configured")
+                raise SetupError("No endpoints are configured")
+        except Exception as err:
+            Log.error(f"Problem occured while fetcting the endpoint for consul or \
+                        kakfa service: {err}")
+            raise SetupError(f"Problem occured while fecting the endpoint for consul or \
+                        fakfa service: {err}")
+        return ep
+
     def process(self):
         """
         Process config command.
@@ -196,7 +221,11 @@ class ConfigCmd(Cmd):
             machine_id = Conf.machine_id
             ha_log_path = os.path.join(log_path, f'ha/{machine_id}')
 
-            consul_endpoints = Conf.get(self._index, f'cortx{_DELIM}external{_DELIM}consul{_DELIM}endpoints')
+            ConfigManager.init("ha_setup", log_path=ha_log_path, level="INFO", skip_load=True)
+            # With new changes in GConf, consul http endpoint will be available at
+            # cortx>external>consul>endpoints[1] key
+            consul_endpoint = self._get_endpoints(GconfKeys.CONSUL_ENDPOINTS_NUM_KEY.value, \
+                                GconfKeys.CONSUL_ENDPOINT_KEY.value, const.consul_scheme)
             #========================================================#
             # consul Service endpoints from cluster.conf             #
             #____________________ cluster.conf ______________________#
@@ -204,24 +233,26 @@ class ConfigCmd(Cmd):
             # - tcp://consul-server.default.svc.cluster.local:8301   #
             # - http://consul-server.default.svc.cluster.local:8500  #
             #========================================================#
-            # search for supported consul endpoint url from list of configured consul endpoints
-            filtered_consul_endpoints = list(filter(lambda x: isinstance(x, str) and urlparse(x).scheme == const.consul_scheme, consul_endpoints))
-            if not filtered_consul_endpoints:
-                sys.stderr.write(f'Failed to get consul config. consul_config: {filtered_consul_endpoints}. \n')
+            if not consul_endpoint:
+                sys.stderr.write(f'Failed to get consul config. consul_config: {consul_endpoint}. \n')
                 sys.exit(1)
-            # discussed and confirmed to select the first hhtp endpoint
-            consul_endpoint = filtered_consul_endpoints[0]
+            # discussed and confirmed to select the http endpoint
 
-            kafka_endpoint = Conf.get(self._index, f'cortx{_DELIM}external{_DELIM}kafka{_DELIM}endpoints')
+            kafka_endpoints = []
+            # With new changes in GConf, kafka endpoint will be available at
+            # cortx>external>kafka>endpoints[0] key
+            kafka_endpoint = self._get_endpoints(GconfKeys.KAFKA_ENDPOINTS_NUM_KEY.value, \
+                                GconfKeys.KAFKA_ENDPOINT_KEY.value, const.kafka_scheme)
             if not kafka_endpoint:
                 sys.stderr.write(f'Failed to get kafka config. kafka_config: {kafka_endpoint}. \n')
                 sys.exit(1)
+            kafka_endpoints.append(kafka_endpoint)
 
             health_comm_msg_type = FAULT_TOLERANCE_KEYS.MONITOR_HA_MESSAGE_TYPE.value
 
             conf_file_dict = {'LOG' : {'path' : ha_log_path, 'level' : const.HA_LOG_LEVEL},
                          'consul_config' : {'endpoint' : consul_endpoint},
-                         'kafka_config' : {'endpoints': kafka_endpoint},
+                         'kafka_config' : {'endpoints': kafka_endpoints},
                          'event_topic' : 'hare',
                          'MONITOR' : {'message_type' : health_comm_msg_type, 'producer_id' : 'cluster_monitor'},
                          'EVENT_MANAGER' : {'message_type' : 'health_events', 'producer_id' : 'system_health',
@@ -244,7 +275,7 @@ class ConfigCmd(Cmd):
             Cmd.copy_file(const.SOURCE_HEALTH_HIERARCHY_FILE, const.HEALTH_HIERARCHY_FILE)
             # First populate the ha.conf and then do init. Because, in the init, this file will
             # be stored in the confstore as key values
-            ConfigManager.init("ha_setup")
+            ConfigManager.init("ha_setup", initialize_log=False)
 
             # Inside cluster.conf, cluster_id will be present under
             # "node".<actual POD machind id>."cluster_id". So,
@@ -266,7 +297,8 @@ class ConfigCmd(Cmd):
             kv_enable_batch_put = True
             self._confstore = ConfigManager.get_confstore(kv_enable_batch=kv_enable_batch_put)
 
-            Log.info(f'Populating the ha config file with consul_endpoint: {consul_endpoint}')
+            Log.info(f'Populating the ha config file with consul and kafka endpoint: \
+                     {consul_endpoint}, {kafka_endpoints}')
 
             Log.info('Performing event_manager subscription')
             event_manager = EventManager.get_instance()
@@ -303,12 +335,16 @@ class ConfigCmd(Cmd):
             Log.info("config command is successful")
             sys.stdout.write("config command is successful.\n")
         except TypeError as type_err:
+            Log.error(f'HA config command failed: Type mismatch: {type_err}.\n')
             sys.stderr.write(f'HA config command failed: Type mismatch: {type_err}.\n')
         except yaml.YAMLError as exc:
+            Log.error(f'HA config command failed: Invalid yaml configuration: {exc}.\n')
             sys.stderr.write(f'Ha config failed. Invalid yaml configuration: {exc}.\n')
         except OSError as os_err:
+            Log.error(f'HA config command failed: OS_error: {os_err}.\n')
             sys.stderr.write(f'HA Config failed. OS_error: {os_err}.\n')
         except Exception as c_err:
+            Log.error(f'HA config command failed: {c_err}.\n')
             sys.stderr.write(f'HA config command failed: {c_err}.\n')
 
     def _add_cluster_component_health(self) -> None:

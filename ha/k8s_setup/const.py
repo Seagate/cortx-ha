@@ -28,6 +28,8 @@ _DELIM=">"
 
 # consul endpoint scheme: http
 consul_scheme = 'http'
+# kafka endpoint scheme: tcp
+kafka_scheme = 'tcp'
 
 # Event_manager keys
 POD_EVENT="node"
@@ -45,9 +47,14 @@ class GconfKeys(enum.Enum):
     NODE_CONST = "node"
     SERVICE_CONST = "services"
     NAME_CONST = "name"
-    CVG_NAME = "node{_DELIM}{node_id}{_DELIM}storage{_DELIM}cvg[{cvg_index}]{_DELIM}name"
-    CVG_COUNT = "node{_DELIM}{node_id}{_DELIM}storage{_DELIM}num_cvg"
-    DATA_COUNT = "node{_DELIM}{node_id}{_DELIM}storage{_DELIM}cvg[{cvg_index}]{_DELIM}devices{_DELIM}num_data"
-    METADATA_COUNT = "node{_DELIM}{node_id}{_DELIM}storage{_DELIM}cvg[{cvg_index}]{_DELIM}devices{_DELIM}num_metadata"
-    DATA_DISK = "node{_DELIM}{node_id}{_DELIM}storage{_DELIM}cvg[{cvg_index}]{_DELIM}devices{_DELIM}data[{d_index}]"
-    METADATA_DISK = "node{_DELIM}{node_id}{_DELIM}storage{_DELIM}cvg[{cvg_index}]{_DELIM}devices{_DELIM}metadata[{m_index}]"
+    CONSUL_ENDPOINTS_NUM_KEY = "cortx{_DELIM}external{_DELIM}consul{_DELIM}num_endpoints"
+    CONSUL_ENDPOINT_KEY = "cortx{_DELIM}external{_DELIM}consul{_DELIM}endpoints[{endpoint_index}]"
+    KAFKA_ENDPOINTS_NUM_KEY = "cortx{_DELIM}external{_DELIM}kafka{_DELIM}num_endpoints"
+    KAFKA_ENDPOINT_KEY = "cortx{_DELIM}external{_DELIM}kafka{_DELIM}endpoints[{endpoint_index}]"
+    NUM_CVG = "num_cvg"
+    CVG_NAME = "node{_DELIM}{node_id}{_DELIM}cvg[{cvg_index}]{_DELIM}name"
+    CVG_COUNT = "node{_DELIM}{node_id}{_DELIM}num_cvg"
+    DATA_COUNT = "node{_DELIM}{node_id}{_DELIM}cvg[{cvg_index}]{_DELIM}devices{_DELIM}num_data"
+    METADATA_COUNT = "node{_DELIM}{node_id}{_DELIM}cvg[{cvg_index}]{_DELIM}devices{_DELIM}num_metadata"
+    DATA_DISK = "node{_DELIM}{node_id}{_DELIM}cvg[{cvg_index}]{_DELIM}devices{_DELIM}data[{d_index}]"
+    METADATA_DISK = "node{_DELIM}{node_id}{_DELIM}cvg[{cvg_index}]{_DELIM}devices{_DELIM}metadata[{m_index}]"
