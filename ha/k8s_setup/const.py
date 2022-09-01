@@ -23,8 +23,8 @@ SOURCE_CONFIG_PATH="{}/conf/etc".format(SOURCE_PATH)
 SOURCE_HEALTH_HIERARCHY_FILE = "{}/system_health_hierarchy.json".format(SOURCE_CONFIG_PATH)
 HEALTH_HIERARCHY_FILE = "{}/system_health_hierarchy.json".format(CONFIG_DIR)
 
-MESSAGE_BUS_RETRY_COUNT = '5'
-MESSAGE_BUS_SLEEP_TIME = '2'
+MESSAGE_BUS_RETRY_COUNT = 5
+MESSAGE_BUS_SLEEP_TIME = 2
 
 #Confstore delimiter
 _DELIM=">"
