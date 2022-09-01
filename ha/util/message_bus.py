@@ -16,6 +16,7 @@
 # cortx-questions@seagate.com.
 
 import json
+import time
 from typing import Callable
 from threading import Thread, Event
 from cortx.utils.conf_store.conf_store import Conf
@@ -253,8 +254,9 @@ class MessageBus:
                         raise(e)
                     else:
                         time.sleep(MESSAGE_BUS_SLEEP_TIME)
-                        Log.debug(f"Trying to register to messae bus.retry count: {count}")
+                        Log.debug(f"Trying to register to message bus.retry count: {count}")
                         continue
+                else: break
 
     @staticmethod
     def deregister(message_type: str):
