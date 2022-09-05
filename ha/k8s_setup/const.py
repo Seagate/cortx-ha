@@ -23,6 +23,9 @@ SOURCE_CONFIG_PATH="{}/conf/etc".format(SOURCE_PATH)
 SOURCE_HEALTH_HIERARCHY_FILE = "{}/system_health_hierarchy.json".format(SOURCE_CONFIG_PATH)
 HEALTH_HIERARCHY_FILE = "{}/system_health_hierarchy.json".format(CONFIG_DIR)
 
+# Set retry count and sleep time for connecting to message bus
+# From message bus side, we have 60s timeout.
+# So, 62s(60s + 2s sleep)*5=310 ~ 300s for HA POD to be up and running
 MESSAGE_BUS_RETRY_COUNT = 5
 MESSAGE_BUS_SLEEP_TIME = 2
 
