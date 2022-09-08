@@ -34,6 +34,7 @@ _DELIM=">"
 
 # consul endpoint scheme: http
 consul_scheme = 'http'
+CONSUL_TRANSACTIONS_LIMIT = 64
 # kafka endpoint scheme: tcp
 kafka_scheme = 'tcp'
 

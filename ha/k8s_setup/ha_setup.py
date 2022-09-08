@@ -34,7 +34,7 @@ from ha.k8s_setup import const
 from ha.core.config.config_manager import ConfigManager
 from ha.core.error import HaCleanupException
 from ha.core.error import SetupError
-from ha.k8s_setup.const import _DELIM, GconfKeys
+from ha.k8s_setup.const import _DELIM, GconfKeys, CONSUL_TRANSACTIONS_LIMIT
 from ha.core.event_manager.event_manager import EventManager
 from ha.core.event_manager.subscribe_event import SubscribeEvent
 from ha.core.event_manager.resources import NODE_FUNCTIONAL_TYPES
@@ -305,6 +305,7 @@ class ConfigCmd(Cmd):
             event_manager.subscribe(const.EVENT_COMPONENT,
                                     [SubscribeEvent(const.POD_EVENT, ["online", "offline", "failed"], [
                                         NODE_FUNCTIONAL_TYPES.SERVER.value, NODE_FUNCTIONAL_TYPES.DATA.value])])
+
             Log.info(f'event_manager subscription for {const.EVENT_COMPONENT}\
                        is successful for the event {const.POD_EVENT}')
             # Stopped disk event subscribption to reduce consul accesses
@@ -320,17 +321,24 @@ class ConfigCmd(Cmd):
 
             # Init cluster,site,rack health
             self._add_cluster_component_health()
-            # Init node health
-            self._add_node_health(data_pods, server_pods, control_pods)
-            # Init cvg and disk health
-            # Stopped disk, cvg resource key addition to consul to reduce consul accesses
-            # till CORTX-29667 gets resolved
-            #self._add_cvg_and_disk_health()
 
             # Note: if batch put is enabled needs to commit
             # to push all the local cashed values to consul server
             if kv_enable_batch_put:
+                Log.debug(f"Pushing event manager subscription and cluster/site/rack health transactions to store")
                 self._confstore.commit()
+
+            # Init node health
+            self._add_node_health(data_pods, server_pods, control_pods, kv_enable_batch_put)
+            # Init cvg and disk health
+            # Stopped disk, cvg resource key addition to consul to reduce consul accesses
+            # till CORTX-29667 gets resolved
+            # self._add_cvg_and_disk_health()
+
+            # Note: if batch put is enabled needs to commit
+            # to push all the local cashed values to consul server
+            # if kv_enable_batch_put:
+            #    self._confstore.commit()
 
             Log.info("config command is successful")
             sys.stdout.write("config command is successful.\n")
@@ -370,15 +378,26 @@ class ConfigCmd(Cmd):
                                    specific_info=specific_info)
 
 
-    def _add_node_health(self, data_node_ids, server_node_ids, control_node_ids) -> None:
+    def _add_node_health(self, data_node_ids, server_node_ids, control_node_ids, kv_enable_batch_put: bool = True) -> None:
         """
         Add node health
         """
         _, _, node_mapping = self._confStoreAPI.get_cluster_cardinality()
+        node_id_list = []
+        node_id_len = len(node_mapping)
         # cluster cardinality node_to_name mapping will have actual machine-ids
         # If that is part of one of the list from data, server or control node
         # list, then mark the respective functional type and update the specific info
         for node_id in node_mapping.values():
+            node_id_list.append(node_id)
+            if len(node_id_list) > CONSUL_TRANSACTIONS_LIMIT:
+                # Note: if batch put is enabled needs to commit
+                # to push all the local cashed values to consul server
+                if kv_enable_batch_put:
+                    Log.debug(f"pushing {CONSUL_TRANSACTIONS_LIMIT} node health transactions to store")
+                    self._confstore.commit()
+                node_id_list.clear()
+                node_id_list.append(node_id)
             functional_type = None
             if node_id in data_node_ids:
                 functional_type = NODE_FUNCTIONAL_TYPES.DATA.value
@@ -391,6 +410,12 @@ class ConfigCmd(Cmd):
                                    resource_type=CLUSTER_ELEMENTS.NODE.value,
                                    resource_id=node_id,
                                    specific_info=specific_info)
+        if node_id_list:
+            # Note: if batch put is enabled needs to commit
+            # to push all the local cashed values to consul server
+            if kv_enable_batch_put:
+                Log.debug(f"pushing node health transactions to store")
+                self._confstore.commit()
 
     def _add_cvg_and_disk_health(self) -> None:
         """
