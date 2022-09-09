@@ -305,7 +305,6 @@ class ConfigCmd(Cmd):
             event_manager.subscribe(const.EVENT_COMPONENT,
                                     [SubscribeEvent(const.POD_EVENT, ["online", "offline", "failed"], [
                                         NODE_FUNCTIONAL_TYPES.SERVER.value, NODE_FUNCTIONAL_TYPES.DATA.value])])
-
             Log.info(f'event_manager subscription for {const.EVENT_COMPONENT}\
                        is successful for the event {const.POD_EVENT}')
             # Stopped disk event subscribption to reduce consul accesses
@@ -322,7 +321,7 @@ class ConfigCmd(Cmd):
             # Init cluster,site,rack health
             self._add_cluster_component_health()
 
-            # Note: if batch put is enabled needs to commit
+            # Note: if batch put is enabled, need to commit
             # to push all the local cashed values to consul server
             if kv_enable_batch_put:
                 Log.debug(f"Pushing event manager subscription and cluster/site/rack health transactions to store")
@@ -334,11 +333,6 @@ class ConfigCmd(Cmd):
             # Stopped disk, cvg resource key addition to consul to reduce consul accesses
             # till CORTX-29667 gets resolved
             # self._add_cvg_and_disk_health()
-
-            # Note: if batch put is enabled needs to commit
-            # to push all the local cashed values to consul server
-            # if kv_enable_batch_put:
-            #    self._confstore.commit()
 
             Log.info("config command is successful")
             sys.stdout.write("config command is successful.\n")
@@ -391,7 +385,7 @@ class ConfigCmd(Cmd):
         for node_id in node_mapping.values():
             node_id_list.append(node_id)
             if len(node_id_list) > CONSUL_TRANSACTIONS_LIMIT:
-                # Note: if batch put is enabled needs to commit
+                # Note: if batch put is enabled, need to commit
                 # to push all the local cashed values to consul server
                 if kv_enable_batch_put:
                     Log.debug(f"pushing {CONSUL_TRANSACTIONS_LIMIT} node health transactions to store")
