@@ -337,15 +337,19 @@ class ConfigCmd(Cmd):
         except TypeError as type_err:
             Log.error(f'HA config command failed: Type mismatch: {type_err}.\n')
             sys.stderr.write(f'HA config command failed: Type mismatch: {type_err}.\n')
+            raise
         except yaml.YAMLError as exc:
             Log.error(f'HA config command failed: Invalid yaml configuration: {exc}.\n')
             sys.stderr.write(f'Ha config failed. Invalid yaml configuration: {exc}.\n')
+            raise
         except OSError as os_err:
             Log.error(f'HA config command failed: OS_error: {os_err}.\n')
             sys.stderr.write(f'HA Config failed. OS_error: {os_err}.\n')
+            raise
         except Exception as c_err:
             Log.error(f'HA config command failed: {c_err}.\n')
             sys.stderr.write(f'HA config command failed: {c_err}.\n')
+            raise
 
     def _add_cluster_component_health(self) -> None:
         """

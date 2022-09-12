@@ -16,6 +16,7 @@
 # cortx-questions@seagate.com.
 
 import json
+import time
 from typing import Callable
 from threading import Thread, Event
 from cortx.utils.conf_store.conf_store import Conf
@@ -25,6 +26,8 @@ from cortx.utils.message_bus import MessageProducer
 from cortx.utils.message_bus import MessageConsumer
 from cortx.utils.message_bus import MessageBus as utils_message_bus
 from ha import const
+from ha.k8s_setup.const import MESSAGE_BUS_RETRY_COUNT, MESSAGE_BUS_SLEEP_TIME
+
 
 class MessageBusProducer:
     PRODUCER_METHOD = "sync"
@@ -239,12 +242,21 @@ class MessageBus:
             partitions (int): Number of partition.
         """
         admin = MessageBusAdmin(admin_id=MessageBus.ADMIN_ID)
-        try:
-            if message_type not in admin.list_message_types():
-                admin.register_message_type(message_types=[message_type], partitions=partitions)
-        except Exception as e:
-            if "TOPIC_ALREADY_EXISTS" not in str(e):
-                raise(e)
+        for count in range(MESSAGE_BUS_RETRY_COUNT):
+            try:
+                if message_type not in admin.list_message_types():
+                    admin.register_message_type(message_types=[message_type], partitions=partitions)
+                    break
+            except Exception as e:
+                if "TOPIC_ALREADY_EXISTS" not in str(e):
+                    if count == MESSAGE_BUS_RETRY_COUNT - 1:
+                        Log.error(f"Unable to create message bus topic. Max retry exceeded: {e}")
+                        raise(e)
+                    else:
+                        time.sleep(MESSAGE_BUS_SLEEP_TIME)
+                        Log.debug(f"Trying to register to message bus.retry count: {count}")
+                        continue
+                else: break
 
     @staticmethod
     def deregister(message_type: str):
