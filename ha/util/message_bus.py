@@ -42,7 +42,9 @@ class MessageBusProducer:
         Raises:
             MessageBusError: Message bus error.
         """
+        Log.error("inside HA message us wrapper MessageBusProducer")
         self.producer = MessageProducer(producer_id=producer_id, message_type=message_type, method=MessageBusProducer.PRODUCER_METHOD)
+        Log.error("MessageBusProducer completed")
 
     def publish(self, message: any):
         """
@@ -230,7 +232,9 @@ class MessageBus:
         Raises:
             MessageBusError: Message bus error.
         """
+        Log.error("inside HA message us wrapper producer")
         MessageBus.register(message_type, partitions)
+        Log.error("message bus register done")
         return MessageBusProducer(producer_id, message_type, partitions)
 
     @staticmethod
@@ -241,8 +245,11 @@ class MessageBus:
             message_type (str): Message type.
             partitions (int): Number of partition.
         """
+        Log.error("inside HA message bus wrapper register")
         admin = MessageBusAdmin(admin_id=MessageBus.ADMIN_ID)
+        Log.error(f"admin = {admin}")
         for count in range(MESSAGE_BUS_RETRY_COUNT):
+            Log.error(f"retry = {count}")
             try:
                 if message_type not in admin.list_message_types():
                     admin.register_message_type(message_types=[message_type], partitions=partitions)

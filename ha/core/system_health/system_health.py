@@ -60,14 +60,17 @@ class SystemHealth(Subscriber):
         # TODO: Convert SystemHealthManager to singleton class
         self.healthmanager = SystemHealthManager(store)
         HealthEvaluatorFactory.init_evaluators()
+        Log.error(f"###### Init evaluators done...###")
         # TODO: Temporary code remove when all status method moved to evaluators
         self.health_evaluator = HealthEvaluatorFactory.get_generic_evaluator()
+        Log.error(f"###### Generic evaluators done...###")
         self.producer = self._get_producer()
         Log.info("All cluster element are loaded, Ready to process alerts .................")
 
     def _get_producer(self):
         message_type = Conf.get(const.HA_GLOBAL_INDEX, f"EVENT_MANAGER{_DELIM}message_type")
         producer_id = Conf.get(const.HA_GLOBAL_INDEX, f"EVENT_MANAGER{_DELIM}producer_id")
+        Log.error(f"##### get producer with {message_type} {producer_id}")
         return MessageBus.get_producer(producer_id, message_type)
 
     def _prepare_key(self, component: str, **kwargs) -> str:
