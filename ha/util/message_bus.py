@@ -43,8 +43,12 @@ class MessageBusProducer:
             MessageBusError: Message bus error.
         """
         Log.error("inside HA message us wrapper MessageBusProducer")
-        self.producer = MessageProducer(producer_id=producer_id, message_type=message_type, method=MessageBusProducer.PRODUCER_METHOD)
-        Log.error("MessageBusProducer completed")
+        try:
+            self.producer = MessageProducer(producer_id=producer_id, message_type=message_type, method=MessageBusProducer.PRODUCER_METHOD)
+            Log.error("MessageBusProducer completed")
+        except Exception as err:
+            Log.error(f"error at message bus producer: {err}")
+            raise(e)
 
     def publish(self, message: any):
         """
