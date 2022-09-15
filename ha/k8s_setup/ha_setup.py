@@ -377,21 +377,19 @@ class ConfigCmd(Cmd):
         Add node health
         """
         _, _, node_mapping = self._confStoreAPI.get_cluster_cardinality()
-        node_id_list = []
-        node_id_len = len(node_mapping)
+        node_mapping_len = len(node_mapping)
+        keys_commited = 0
         # cluster cardinality node_to_name mapping will have actual machine-ids
         # If that is part of one of the list from data, server or control node
         # list, then mark the respective functional type and update the specific info
-        for node_id in node_mapping.values():
-            node_id_list.append(node_id)
-            if len(node_id_list) > CONSUL_TRANSACTIONS_LIMIT:
+        for index, node_id in enumerate(node_mapping.values()):
+            if index > CONSUL_TRANSACTIONS_LIMIT:
                 # Note: if batch put is enabled, need to commit
                 # to push all the local cashed values to consul server
                 if kv_enable_batch_put:
                     Log.debug(f"pushing {CONSUL_TRANSACTIONS_LIMIT} node health transactions to store")
                     self._confstore.commit()
-                node_id_list.clear()
-                node_id_list.append(node_id)
+                    keys_commited = index
             functional_type = None
             if node_id in data_node_ids:
                 functional_type = NODE_FUNCTIONAL_TYPES.DATA.value
@@ -404,12 +402,11 @@ class ConfigCmd(Cmd):
                                    resource_type=CLUSTER_ELEMENTS.NODE.value,
                                    resource_id=node_id,
                                    specific_info=specific_info)
-        if node_id_list:
+        if node_mapping_len > keys_commited and kv_enable_batch_put:
             # Note: if batch put is enabled needs to commit
             # to push all the local cashed values to consul server
-            if kv_enable_batch_put:
-                Log.debug(f"pushing node health transactions to store")
-                self._confstore.commit()
+            Log.debug(f"pushing node health transactions to store")
+            self._confstore.commit()
 
     def _add_cvg_and_disk_health(self) -> None:
         """
